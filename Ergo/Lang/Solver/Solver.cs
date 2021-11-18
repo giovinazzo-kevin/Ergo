@@ -43,24 +43,24 @@ namespace Ergo.Lang
             return term;
         }
 
-        private void LogTrace(Term term)
+        private void LogTrace(Term term, int indent = 0)
         {
-            Trace?.Invoke(Term.Explain(term));
+            Trace?.Invoke(new string(' ', indent) + Term.Explain(term));
         }
 
-        public IEnumerable<Solution> Solve(Term term, List<Substitution> subs = null)
+        public IEnumerable<Solution> Solve(Term term, List<Substitution> subs = null, int indent = 0)
         {
+            LogTrace(term, indent: indent);
             subs ??= new List<Substitution>();
             // Treat comma-expression complex terms as proper expressions
-            if (term.Reduce(t => false, v => false, c => c.Functor.Equals(CommaExpression.Functor))) {
-                var expr = CommaExpression.Build(((Complex)term).Arguments);
-                foreach (var s in Solve(expr, subs)) {
+            if (CommaExpression.TryUnfold(term, out var expr)) {
+                foreach (var s in Solve(expr.Sequence, subs, indent)) {
                     yield return s;
                 }
                 yield break;
             }
             term = ResolveBuiltin(term, subs, out var signature);
-            if (term.Equals(Literals.False)) 
+            if (term.Equals(Literals.False))
                 yield break;
             if (term.Equals(Literals.True)) {
                 yield return new Solution(subs.ToArray());
@@ -73,23 +73,20 @@ namespace Ergo.Lang
                 yield break;
             }
             foreach (var m in matches) {
-                LogTrace(m.Rhs.Head);
-                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions))) {
+                LogTrace(m.Rhs.Head, indent: indent + 1);
+                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), indent + 1)) {
                     yield return s;
-                }
-                if (m.Rhs.Body.GetContents().Last().Equals(Literals.Cut)) {
-                    yield break;
                 }
             }
         }
 
-        public IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null)
+        public IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null, int indent = 0)
         {
             subs ??= new List<Substitution>();
             if(!CommaExpression.IsCommaExpression(goal)) {
                 throw new InvalidOperationException("Only CommaExpression sequences can be solved.");
             }
-            if(goal.IsEmpty) {
+            if (goal.IsEmpty) {
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
@@ -97,18 +94,10 @@ namespace Ergo.Lang
             var subGoal = goals.First();
             goals = goals[1..];
             // Get first solution for the current subgoal
-            foreach (var s in Solve(subGoal, subs)) {
-                if (goals.Length == 0) {
-                    yield return s;
-                    continue;
-                }
-                // Solve the rest of the expression with the current substitutions
+            foreach (var s in Solve(subGoal, subs, indent)) {
                 var rest = Sequence.Substitute(new Sequence(goal.Functor, goal.EmptyElement, goals), s.Substitutions);
-                foreach (var ss in Solve(rest, subs)) {
+                foreach (var ss in Solve(rest, subs, indent)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                    if (subGoal.Equals(Literals.Cut)) {
-                        yield break;
-                    }
                 }
             }
         }

@@ -10,7 +10,9 @@ namespace Ergo.Lang
     {
         public class InstantiationContext
         {
+            public readonly string VarPrefix;
             private volatile int _GlobalVarCounter;
+            public InstantiationContext(string prefix) => VarPrefix = prefix;
             public int GetFreeVariableId() => Interlocked.Increment(ref _GlobalVarCounter);
         }
 
@@ -122,7 +124,7 @@ namespace Ergo.Lang
                     return inst;
                 }
                 if(v.Equals(Literals.Discard) || !discardsOnly) {
-                    return vars[v.Name] = new Variable($"__G{ctx.GetFreeVariableId()}");
+                    return vars[v.Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
                 }
                 return v;
             }

@@ -11,7 +11,8 @@ todo('AST', ['Prefix/Infix/Postfix Operators', 'Annotations']).
 %: Writes a newline
 nl :- @print('\n').
 
-eval((A + B), C) :- @set(C, @math_add(A, B)).
-eval((A - B), C) :- @set(C, @math_sub(A, B)).
-eval((A * B), C) :- @set(C, @math_mul(A, B)).
-eval((A / B), C) :- @set(C, @math_div(A, B)).
+eval(A + B, C) :- eval(A, AEval), eval(B, BEval), @print(AEval, '+', BEval, '=', C, '\n'), C = @math_add(AEval, BEval), @cut.
+eval(A - B, C) :- eval(A, AEval), eval(B, BEval), @print(AEval, '-', BEval, '=', C, '\n'), C = @math_sub(AEval, BEval), @cut.
+eval(A * B, C) :- eval(A, AEval), eval(B, BEval), @print(AEval, '*', BEval, '=', C, '\n'), C = @math_mul(AEval, BEval), @cut.
+eval(A / B, C) :- eval(A, AEval), eval(B, BEval), @print(AEval, '/', BEval, '=', C, '\n'), C = @math_div(AEval, BEval), @cut.
+eval(X, X).

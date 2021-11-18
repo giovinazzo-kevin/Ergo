@@ -14,7 +14,7 @@ namespace Ergo.Lang
         public Parser(Lexer lexer)
         {
             _lexer = lexer;
-            _context = new Term.InstantiationContext();
+            _context = new Term.InstantiationContext("P");
         }
 
         public bool TryParseAtom(out Atom atom)

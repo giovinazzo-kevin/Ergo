@@ -10,11 +10,14 @@ namespace Ergo.Lang
     public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     {
         protected readonly OrderedDictionary Predicates;
+        protected readonly Term.InstantiationContext Context;
+
         public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 
         public KnowledgeBase()
         {
             Predicates = new OrderedDictionary();
+            Context = new("K");
         }
 
         private List<Predicate> GetOrCreate(string key, bool append=false)
@@ -48,8 +51,7 @@ namespace Ergo.Lang
                 foreach (var k in list) {
                     if(Predicate.TryUnify(head, k, out var subs)) {
                         // Instantiate and unify predicate head
-                        var inst = Term.Instantiate(new Term.InstantiationContext(), k.Head);
-                        if (!Substitution.TryUnify(new Substitution(head, inst), out var instSubs)) {
+                        if (!Substitution.TryUnify(new Substitution(head, k.Head), out var instSubs)) {
                             throw new InvalidOperationException("Unification between term and its instantiation failed.");
                         }
                         var allSubs = instSubs.Concat(subs).Distinct();

@@ -109,7 +109,6 @@ namespace Ergo.Lang
                     Cut.Value = true;
                     yield break;
                 }
-                LogTrace("-- BACKTRACK --", indent: indent);
             }
         }
 

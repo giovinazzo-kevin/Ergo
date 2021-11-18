@@ -61,7 +61,14 @@ namespace Ergo.Lang
                     break;
                 }
             }
-            seq = new Sequence(functor, emptyElement, args.ToArray());
+            // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
+            if(Operator.TryGetOperatorFromFunctor(new Atom(separator), out var op) && op.Equals(Operators.BinaryComma)
+              && args.Count == 1 && CommaExpression.TryUnfold(args.Single(), out var comma)) {
+                seq = new Sequence(functor, emptyElement, comma.Sequence.GetContents().ToArray());
+            }
+            else {
+                seq = new Sequence(functor, emptyElement, args.ToArray());
+            }
             return true;
 
             bool ExpectDelimiter(Func<string,bool> condition, out string d)

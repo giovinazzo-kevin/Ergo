@@ -11,12 +11,7 @@ todo('AST', ['Prefix/Infix/Postfix Operators', 'Annotations']).
 %: Writes a newline
 nl :- @print('\n').
 
-add(A, B, C) :- @set(C, @math_add(A, B)).
-
-map([], []) :- @cut.
-map([X], [Y]) :- 
-	add(1, X, Y).
-map('[|]'(Head, Rest), '[|]'(RetHead, RetRest)) :- 
-	@not(@eq(Rest, [])),
-	map([Head], [RetHead]), 
-	map(Rest, RetRest).
+eval((A + B), C) :- @set(C, @math_add(A, B)).
+eval((A - B), C) :- @set(C, @math_sub(A, B)).
+eval((A * B), C) :- @set(C, @math_mul(A, B)).
+eval((A / B), C) :- @set(C, @math_div(A, B)).

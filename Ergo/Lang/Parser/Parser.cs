@@ -77,7 +77,7 @@ namespace Ergo.Lang
             if (!TryParseSequence(
                   CommaExpression.Functor
                 , CommaExpression.EmptyLiteral
-                , () => TryParseTerm(out var t) ? (true, t) : (false, default)
+                , () => TryParseTermOrExpression(out var t) ? (true, t) : (false, default)
                 , "(", ",", ")"
                 , true
                 , out var inner
@@ -91,6 +91,17 @@ namespace Ergo.Lang
                 cplx = new Complex(new Atom(functor), inner.Root);
             }
             return true;
+        }
+        public bool TryParseTermOrExpression(out Term term)
+        {
+            if (TryParseExpression(out var expr)) {
+                term = expr.Complex;
+                return true;
+            }
+            if (TryParseTerm(out term))
+                return true;
+            term = default;
+            return false;
         }
         public bool TryParseTerm(out Term term)
         {
@@ -132,7 +143,7 @@ namespace Ergo.Lang
             if (!TryParseSequence(
                   List.Functor
                 , List.EmptyLiteral
-                , () => TryParseTerm(out var t) ? (true, t) : (false, default)
+                , () => TryParseTermOrExpression(out var t) ? (true, t) : (false, default)
                 , "[", ",", "]"
                 , true
                 , out var inner

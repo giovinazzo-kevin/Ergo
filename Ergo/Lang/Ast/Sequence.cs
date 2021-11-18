@@ -35,32 +35,20 @@ namespace Ergo.Lang
         }
 
         public IEnumerable<Term> GetContents() => GetContents(this);
-
+        public bool TryUnwrap(Term root, out Term arg, out Term next)
+        {
+            arg = next = default;
+            if (root.Equals(EmptyElement))
+                return false;
+            if (root.Type != TermType.Complex)
+                return false;
+            arg = ((Complex)root).Arguments[0];
+            next = ((Complex)root).Arguments[1];
+            return true;
+        }
         public static Sequence Instantiate(Term.InstantiationContext ctx, Sequence s, bool discardsOnly = false, Dictionary<string, Variable> vars = null)
         {
             return new Sequence(s.Functor, s.EmptyElement, s.GetContents().Select(t => Term.Instantiate(ctx, t, discardsOnly, vars)).ToArray());
-        }
-
-        public static string Explain(Sequence s)
-        {
-            if (s.IsEmpty) {
-                return Term.Explain(s.EmptyElement);
-            }
-            var contents = s.GetContents().ToList();
-            var tokens = new { Open = "{", Close = "}", Separator = ", ", WrapSingleElement = true };
-            // Sugaring is applied for atomic lists and comma expressions
-            if (s.Functor.Equals(List.Functor)) {
-                tokens = new { Open = "[", Close = "]", Separator = ", ", WrapSingleElement = true };
-            }
-            else if (s.Functor.Equals(CommaExpression.Functor)) {
-                tokens = new { Open = "(", Close = ")", Separator = ", ", WrapSingleElement = false };
-            }
-
-            var joined = String.Join(tokens.Separator, contents.Select(t => Term.Explain(t)));
-            if (contents.Count != 1 || tokens.WrapSingleElement) {
-                return $"{tokens.Open}{joined}{tokens.Close}";
-            }
-            return joined;
         }
 
         public static Sequence Substitute(Sequence s, IEnumerable<Substitution> subs)

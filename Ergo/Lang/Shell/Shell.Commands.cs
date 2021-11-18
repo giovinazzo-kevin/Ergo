@@ -175,7 +175,7 @@ namespace Ergo.Lang
 
             var query = parsed.Reduce(some => some, () => default);
             var contents = query.Goals.GetContents().ToArray();
-            WriteLine(Sequence.Explain(query.Goals), LogLevel.Dbg);
+            WriteLine(CommaExpression.Explain(new CommaExpression(query.Goals)), LogLevel.Dbg);
 
             var solutions = Interpreter.Solve(query.Goals); // Solution graph is walked lazily
             if (contents.Length == 1 && contents.Single().Type == TermType.Variable) {

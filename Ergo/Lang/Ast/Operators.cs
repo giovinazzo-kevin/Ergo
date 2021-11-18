@@ -9,6 +9,7 @@ namespace Ergo.Lang
         // To prevent cases where operands would be associated with two operators, or no operator at all,
         //   operators with the same precedence must have the same associativity. 
         public static readonly Operator BinaryComma = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 20, ",");
+        public static readonly Operator BinaryList = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 15, "|");
         public static readonly Operator BinaryAsterisk = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 600, "*");
         public static readonly Operator BinaryForwardSlash = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 600, "/");
         public static readonly Operator BinaryDoubleForwardSlash = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 600, "//");
@@ -24,6 +25,7 @@ namespace Ergo.Lang
 
         public static readonly Operator[] DefinedOperators = new[] {
               BinaryComma
+            , BinaryList
             , BinaryEquals
             , BinaryEvaluation
             , BinaryHorn

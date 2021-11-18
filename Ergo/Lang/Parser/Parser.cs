@@ -114,7 +114,7 @@ namespace Ergo.Lang
                 return true;
             }
             if (TryParseList(out var list)) {
-                term = list.Sequence.Root;
+                term = list.Root;
                 return true;
             }
             if (TryParseVariable(out var var)) {
@@ -140,18 +140,28 @@ namespace Ergo.Lang
         {
             seq = default;
             var pos = _lexer.State;
-            if (!TryParseSequence(
+            if (TryParseSequence(
                   List.Functor
                 , List.EmptyLiteral
                 , () => TryParseTermOrExpression(out var t) ? (true, t) : (false, default)
                 , "[", ",", "]"
                 , true
-                , out var inner
+                , out var full
             )) {
-                return Fail(pos);
+                var contents = full.GetContents().ToArray();
+                if (contents.Length == 1 && contents[0].Type == TermType.Complex && ((Complex)contents[0]) is var cplx
+                    && Operators.BinaryList.Synonyms.Contains(cplx.Functor)) {
+                    var arguments = new[] { cplx.Arguments[0] };
+                    if(CommaExpression.TryUnfold(cplx.Arguments[0], out var comma)) {
+                        arguments = comma.Sequence.GetContents().ToArray();
+                    }
+                    seq = new List(new Sequence(full.Functor, List.EmptyLiteral, arguments), cplx.Arguments[1]);
+                    return true;
+                }
+                seq = new List(full, List.EmptyLiteral);
+                return true;
             }
-            seq = new List(inner);
-            return true;
+            return Fail(pos);
         }
 
         private bool ExpectOperator(Func<Operator, bool> match, out Operator op)
@@ -301,7 +311,7 @@ namespace Ergo.Lang
                 var clauses = body.GetContents().ToArray();
                 var bodyVars = clauses.SelectMany(t => Term.Variables(t))
                     .Distinct();
-                var singletons = headVars.Where(v => !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1);
+                var singletons = headVars.Where(v => !v.Ignored && !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1);
                 if (singletons.Any()) {
                     Throw(pos, ErrorType.PredicateHasSingletonVariables, Predicate.Signature(head), String.Join(", ", singletons));
                 }

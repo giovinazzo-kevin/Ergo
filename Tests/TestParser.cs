@@ -45,7 +45,7 @@ namespace Tests
         public void ParseList(string toParse, string expected)
         {
             var p = new Parsed<List>(toParse, Thrower, _ => throw new Exception("Parse fail."));
-            Assert.AreEqual(expected, Sequence.Explain(p.Value.Reduce(some => some, () => default).Sequence));
+            Assert.AreEqual(expected, List.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
         [DataRow("a(_)", "a(_)")]

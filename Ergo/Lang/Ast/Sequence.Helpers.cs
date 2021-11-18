@@ -30,8 +30,7 @@ namespace Ergo.Lang
                     if(c.Functor.Equals(s.Functor)) {
                         if (c.Arity != 2)
                             throw new InvalidOperationException();
-                        return GetContents(new Sequence(s, c.Arguments[1]))
-                            .Prepend(c.Arguments[0]);
+                        return GetContents(new Sequence(s, c.Arguments[1])).Prepend(c.Arguments[0]);
                     }
                     throw new InvalidOperationException();
                 }

@@ -14,10 +14,10 @@ namespace Ergo.Lang
         public static string Explain(Complex c)
         {
             if (CommaExpression.TryUnfold(c, out var comma)) {
-                return Sequence.Explain(comma.Sequence);
+                return CommaExpression.Explain(comma);
             }
             if (List.TryUnfold(c, out var list)) {
-                return Sequence.Explain(list.Sequence);
+                return List.Explain(list);
             }
             return $"{c.Functor}({String.Join(", ", c.Arguments)})";
         }

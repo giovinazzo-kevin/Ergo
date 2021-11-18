@@ -10,8 +10,3 @@ todo('AST', ['Prefix/Infix/Postfix Operators', 'Annotations']).
 
 %: Writes a newline
 nl :- @print('\n').
-
-eval(A + B, C) :- 
-	C = @math_add(A, B),
-	@cut.
-eval(X, X).

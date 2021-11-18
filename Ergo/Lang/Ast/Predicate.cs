@@ -17,7 +17,7 @@ namespace Ergo.Lang
                 return $"{Term.Explain(p.Head)}.";
             }
 
-            var expl = $"{Term.Explain(p.Head)} :- {Sequence.Explain(p.Body)}.";
+            var expl = $"{Term.Explain(p.Head)} :- {CommaExpression.Explain(new CommaExpression(p.Body))}.";
             if (!String.IsNullOrWhiteSpace(p.Documentation)) {
                 expl = $"{String.Join("\r\n", p.Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r))}\r\n" + expl;
             }

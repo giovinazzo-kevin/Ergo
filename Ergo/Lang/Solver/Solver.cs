@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Ergo.Lang
 {
 
     public partial class Solver
     {
-        protected int GlobalVarCounter;
+        protected readonly AsyncLocal<bool> Cut = new();
 
         protected readonly KnowledgeBase Kb;
         protected readonly IReadOnlyDictionary<string, BuiltIn> BuiltIns;
@@ -20,7 +21,6 @@ namespace Ergo.Lang
             Kb = kb;
             Flags = flags;
             BuiltIns = builtins;
-            GlobalVarCounter = 0;
         }
 
         private Term ResolveBuiltin(Term term, List<Substitution> subs, out string sig)
@@ -48,39 +48,42 @@ namespace Ergo.Lang
             Trace?.Invoke(new string(' ', indent) + Term.Explain(term));
         }
 
-        public IEnumerable<Solution> Solve(Term term, List<Substitution> subs = null, int indent = 0)
+        private void LogTrace(string s, int indent = 0)
         {
-            LogTrace(term, indent: indent);
+            Trace?.Invoke(new string(' ', indent) + s);
+        }
+
+        protected IEnumerable<Solution> Solve(Term goal, List<Substitution> subs = null, int indent = 0)
+        {
+            LogTrace(goal, indent: indent);
             subs ??= new List<Substitution>();
             // Treat comma-expression complex terms as proper expressions
-            if (CommaExpression.TryUnfold(term, out var expr)) {
+            if (CommaExpression.TryUnfold(goal, out var expr)) {
                 foreach (var s in Solve(expr.Sequence, subs, indent)) {
                     yield return s;
                 }
                 yield break;
             }
-            term = ResolveBuiltin(term, subs, out var signature);
-            if (term.Equals(Literals.False))
+            // Transform builtins into the literal they evaluate to
+            goal = ResolveBuiltin(goal, subs, out var signature);
+            if (goal.Equals(Literals.False)) {
                 yield break;
-            if (term.Equals(Literals.True)) {
+            }
+            if (goal.Equals(Literals.True)) {
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            if (!Kb.TryGetMatches(term, out var matches) && Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound)) {
+            if (!Kb.TryGetMatches(goal, out var matches) && Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound)) {
                 throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
             }
-            if (!matches.Any()) {
-                yield break;
-            }
             foreach (var m in matches) {
-                LogTrace(m.Rhs.Head, indent: indent + 1);
                 foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), indent + 1)) {
                     yield return s;
                 }
             }
         }
 
-        public IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null, int indent = 0)
+        protected IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null, int indent = 0)
         {
             subs ??= new List<Substitution>();
             if(!CommaExpression.IsCommaExpression(goal)) {
@@ -95,11 +98,25 @@ namespace Ergo.Lang
             goals = goals[1..];
             // Get first solution for the current subgoal
             foreach (var s in Solve(subGoal, subs, indent)) {
+                if(Cut.Value) {
+                    yield break;
+                }
                 var rest = Sequence.Substitute(new Sequence(goal.Functor, goal.EmptyElement, goals), s.Substitutions);
                 foreach (var ss in Solve(rest, subs, indent)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
+                if(subGoal.Equals(Literals.Cut)) {
+                    Cut.Value = true;
+                    yield break;
+                }
+                LogTrace("-- BACKTRACK --", indent: indent);
             }
+        }
+
+        public IEnumerable<Solution> Solve(Sequence goal)
+        {
+            Cut.Value = false;
+            return Solve(goal, null, 0);
         }
     }
 }

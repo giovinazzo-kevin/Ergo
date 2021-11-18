@@ -55,7 +55,7 @@ namespace Ergo.Lang
         {
             var solver = new Solver(KnowledgeBase, BuiltInsDict, flags);
             solver.Trace += HandleTrace;
-            var solutions = solver.Solve(goal, new List<Substitution>());
+            var solutions = solver.Solve(goal);
             //solver.Trace -= HandleTrace;
             return solutions;
 

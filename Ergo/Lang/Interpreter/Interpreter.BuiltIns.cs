@@ -33,20 +33,11 @@ namespace Ergo.Lang
                 "Is true if its argument is a ground term."
                 , new Atom("@ground"), 1, BuiltIn_Ground));
             AddBuiltIn(new BuiltIn(
-                "Unifies the left hand sie with the right hand side."
+                "Unifies the left hand side with the right hand side."
                 , new Atom("="), 2, BuiltIn_Unify));
             AddBuiltIn(new BuiltIn(
-                "A + B."
-                , new Atom("@math_add"), 2, t => BuiltIn_Math(t, (a, b) => a + b)));
-            AddBuiltIn(new BuiltIn(
-                "A - B."
-                , new Atom("@math_sub"), 2, t => BuiltIn_Math(t, (a, b) => a - b)));
-            AddBuiltIn(new BuiltIn(
-                "A * B."
-                , new Atom("@math_mul"), 2, t => BuiltIn_Math(t, (a, b) => a * b)));
-            AddBuiltIn(new BuiltIn(
-                "A / B."
-                , new Atom("@math_div"), 2, t => BuiltIn_Math(t, (a, b) => a / b)));
+                "Evaluates the right hand side and assigns the result to the left hand side."
+                , new Atom("is"), 2, BuiltIn_Evaluate));
             AddBuiltIn(new BuiltIn(
                 "Builds a complex term with the desired arity where all terms are discarded variables."
                 , new Atom("@anon"), 2, BuiltIn_AnonymousComplex));
@@ -144,28 +135,39 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.False);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Math(Term t, Func<decimal, decimal, decimal> op)
+        protected virtual BuiltIn.Evaluation BuiltIn_Evaluate(Term t)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 2) {
                     return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 2);
                 }
-                if (c.Arguments[0].Type != TermType.Atom) {
-                    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(c.Arguments[0]));
-                }
-                if (c.Arguments[1].Type != TermType.Atom) {
-                    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(c.Arguments[1]));
-                }
                 return null;
             });
-            var args = (Left: (Atom)c.Arguments[0], Right: (Atom)c.Arguments[1]);
-            if (!(args.Left.Value is decimal a)) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(args.Left));
+
+            var result = new Atom(Eval(c.Arguments[1]));
+            if (Substitution.TryUnify(new Substitution(c.Arguments[0], result), out var subs)) {
+                return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
             }
-            if (!(args.Right.Value is decimal b)) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(args.Right));
+            return new BuiltIn.Evaluation(Literals.False);
+
+            static decimal Eval(Term t)
+            {
+                return t.Reduce(
+                    a => a.Value is decimal d ? d : Throw(a),
+                    v => Throw(v),
+                    c => c.Functor switch {
+                          var f when Operators.BinaryPlus.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
+                        , var f when Operators.BinaryMinus.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
+                        , var f when Operators.BinaryAsterisk.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
+                        , var f when Operators.BinaryForwardSlash.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
+                        , _ => Throw(c)
+                    }
+                );
+                static decimal Throw(Term t)
+                {
+                    throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(t));
+                }
             }
-            return new BuiltIn.Evaluation(new Atom(op(a, b)));
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Print(Term t)

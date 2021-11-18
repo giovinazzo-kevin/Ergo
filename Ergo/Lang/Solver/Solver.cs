@@ -77,7 +77,7 @@ namespace Ergo.Lang
                 throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
             }
             foreach (var m in matches) {
-                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), indent + 1)) {
+                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), indent)) {
                     yield return s;
                 }
             }

@@ -19,11 +19,13 @@ namespace Ergo.Lang
         public static readonly Operator BinaryMod = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 300, "mod");
         public static readonly Operator BinaryXor = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 200, "xor");
         public static readonly Operator BinaryEquals = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "=");
+        public static readonly Operator BinaryEvaluation = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "is");
         public static readonly Operator BinaryHorn = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 10, ":-", "-?");
 
         public static readonly Operator[] DefinedOperators = new[] {
               BinaryComma
             , BinaryEquals
+            , BinaryEvaluation
             , BinaryHorn
             , BinaryPlus
             , BinaryMinus

@@ -56,7 +56,7 @@ namespace Ergo.Lang
                 return Term.Explain(expr.Sequence.EmptyElement);
             }
             var contents = expr.Sequence.GetContents().ToList();
-            var joined = String.Join(',', contents.Select(t => Term.Explain(t)));
+            var joined = String.Join(", ", contents.Select(t => Term.Explain(t)));
             if (contents.Count != 1) {
                 return $"({joined})";
             }

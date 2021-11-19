@@ -38,16 +38,22 @@ namespace Tests
                     data(A),
                     data(B),
                     data(C).
+
+                map([], []) :- @cut.
+                map([X|[]], [Y|[]]) :- Y is (X + 1), @cut.
+                map([X|XT], [Y|YT]) :- map([X], [Y]), map(XT, YT).
             "));
             return i;
         }
 
         [DataRow("data(X)", "X/1; X/2")]
-        [DataRow("data(_)", "_/1; _/2")]
+        [DataRow("data(_)", "; ")]
         [DataRow("tuple(X, Y, Z)", "X/1, Y/1, Z/1; X/2, Y/2, Z/2; X/1, Y/2, Z/3")]
         [DataRow("indr_3(X)", "X/1; X/2")]
         [DataRow("dynamic(X, Y)", "X/1, Y/1; X/1, Y/2; X/2, Y/1; X/2, Y/2")]
         [DataRow("dynamic(X, Y, Z)", "X/1, Y/1, Z/1; X/1, Y/1, Z/2; X/1, Y/2, Z/1; X/1, Y/2, Z/2; X/2, Y/1, Z/1; X/2, Y/1, Z/2; X/2, Y/2, Z/1; X/2, Y/2, Z/2")]
+        [DataRow("map([1], X)", "X/[2]")]
+        [DataRow("map([1, 2], X)", "X/[2, 3]")]
         [DataTestMethod]
         public void SolveSimpleQuery(string query, string expected)
         {
@@ -55,7 +61,7 @@ namespace Tests
             var Predicates = new Parsed<Query>(query, Thrower, _ => throw new Exception("Parse fail."));
             var ans = interpreter.Solve(Predicates.Value.Reduce(some => some, () => default).Goals);
             Assert.IsNotNull(ans);
-            Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Substitutions.Select(s => s.Explanation)))));
+            Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explanation)))));
         }
     }
 }

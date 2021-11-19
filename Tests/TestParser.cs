@@ -41,6 +41,8 @@ namespace Tests
         [DataRow("[1, 2, 3, 4]", "[1, 2, 3, 4]")]
         [DataRow("[1, 2, [3, 4]]", "[1, 2, [3, 4]]")]
         [DataRow("[[1, 2], 3, 4]", "[[1, 2], 3, 4]")]
+        [DataRow("[1, 2, 3 | [4, 5, 6]]", "[1, 2, 3|[4, 5, 6]]")]
+        [DataRow("[1, 2|[]]", "[1, 2]")]
         [DataTestMethod]
         public void ParseList(string toParse, string expected)
         {

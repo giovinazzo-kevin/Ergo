@@ -192,7 +192,7 @@ namespace Ergo.Lang
                     foreach (var s in solutions) {
                         any = true;
                         if(s.Substitutions.Any()) {
-                            var join = String.Join(", ", s.Substitutions.Where(s => s.Lhs.Reduce(t => false, v => !v.Ignored, c => false)).Select(s => s.Explanation));
+                            var join = String.Join(", ", s.Simplify().Select(s => s.Explanation));
                             WriteLine($"\t| {join}");
                             if (ReadChar(true) != ' ') {
                                 break;

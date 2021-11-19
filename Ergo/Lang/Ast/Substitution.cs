@@ -91,6 +91,8 @@ namespace Ergo.Lang
             return false;
         }
 
+        public Substitution Inverted() => new(Rhs, Lhs);
+
         public override string ToString()
         {
             return Explanation;

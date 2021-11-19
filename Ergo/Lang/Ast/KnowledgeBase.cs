@@ -49,14 +49,14 @@ namespace Ergo.Lang
             matches = lst;
             if (TryGet(Predicate.Signature(head), out var list)) {
                 foreach (var k in list) {
-                    if(Predicate.TryUnify(head, k, out var subs)) {
+                    if(Predicate.TryUnify(head, k, out var matchSubs)) {
+                        var ks = Predicate.Substitute(k, matchSubs);
                         // Instantiate and unify predicate head
-                        if (!Substitution.TryUnify(new Substitution(head, k.Head), out var instSubs)) {
+                        if (!Substitution.TryUnify(new Substitution(head, ks.Head), out var instSubs)) {
                             throw new InvalidOperationException("Unification between term and its instantiation failed.");
                         }
-                        var allSubs = instSubs.Concat(subs).Distinct();
-                        var ks = Predicate.Substitute(k, allSubs);
-                        lst.Add(new Match(head, ks, allSubs));
+                        ks = Predicate.Substitute(ks, instSubs);
+                        lst.Add(new Match(head, ks, instSubs));
                     }
                 }
                 return true;

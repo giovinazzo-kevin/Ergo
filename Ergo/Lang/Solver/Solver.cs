@@ -97,7 +97,7 @@ namespace Ergo.Lang
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            var goals = goal.GetContents().ToArray();
+            var goals = goal.Contents;
             var subGoal = goals.First();
             goals = goals[1..];
             // Get first solution for the current subgoal

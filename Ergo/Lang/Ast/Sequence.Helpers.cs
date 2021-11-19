@@ -17,25 +17,6 @@ namespace Ergo.Lang
             rev.Reverse();
             return rev.Prepend(emptyElement).Aggregate((a, b) => new Complex(functor, b, a));
         }
-
-        private static IEnumerable<Term> GetContents(Sequence s)
-        {
-            return s.Root.Reduce(
-                // a == EmptyElement
-                a => Array.Empty<Term>(),
-                // Unreachable
-                v => throw new InvalidOperationException(),
-                // Subsequence
-                c => {
-                    if(c.Functor.Equals(s.Functor)) {
-                        if (c.Arity != 2)
-                            throw new InvalidOperationException();
-                        return GetContents(new Sequence(s, c.Arguments[1])).Prepend(c.Arguments[0]);
-                    }
-                    throw new InvalidOperationException();
-                }
-            );
-        }
     }
 
 }

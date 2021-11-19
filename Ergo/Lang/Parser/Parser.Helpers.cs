@@ -64,7 +64,7 @@ namespace Ergo.Lang
             // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
             if(Operator.TryGetOperatorFromFunctor(new Atom(separator), out var op) && op.Equals(Operators.BinaryComma)
               && args.Count == 1 && CommaExpression.TryUnfold(args.Single(), out var comma)) {
-                seq = new Sequence(functor, emptyElement, comma.Sequence.GetContents().ToArray());
+                seq = new Sequence(functor, emptyElement, comma.Sequence.Contents);
             }
             else {
                 seq = new Sequence(functor, emptyElement, args.ToArray());

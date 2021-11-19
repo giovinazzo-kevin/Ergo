@@ -83,7 +83,7 @@ namespace Ergo.Lang
                 return Fail(pos);
             }
             if (CommaExpression.IsCommaExpression(inner)) {
-                cplx = new Complex(new Atom(functor), inner.GetContents().ToArray());
+                cplx = new Complex(new Atom(functor), inner.Contents);
             }
             else {
                 cplx = new Complex(new Atom(functor), inner.Root);
@@ -142,12 +142,11 @@ namespace Ergo.Lang
                 , true
                 , out var full
             )) {
-                var contents = full.GetContents().ToArray();
-                if (contents.Length == 1 && contents[0].Type == TermType.Complex && ((Complex)contents[0]) is var cplx
+                if (full.Contents.Length == 1 && full.Contents[0].Type == TermType.Complex && ((Complex)full.Contents[0]) is var cplx
                     && Operators.BinaryList.Synonyms.Contains(cplx.Functor)) {
                     var arguments = new[] { cplx.Arguments[0] };
                     if(CommaExpression.TryUnfold(cplx.Arguments[0], out var comma)) {
-                        arguments = comma.Sequence.GetContents().ToArray();
+                        arguments = comma.Sequence.Contents;
                     }
                     seq = new List(new Sequence(full.Functor, List.EmptyLiteral, arguments), cplx.Arguments[1]);
                     return true;
@@ -302,8 +301,7 @@ namespace Ergo.Lang
             {
                 var headVars = Term.Variables(head)
                     .Where(v => !v.Equals(Literals.Discard));
-                var clauses = body.GetContents().ToArray();
-                var bodyVars = clauses.SelectMany(t => Term.Variables(t))
+                var bodyVars = body.Contents.SelectMany(t => Term.Variables(t))
                     .Distinct();
                 var singletons = headVars.Where(v => !v.Ignored && !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1);
                 if (singletons.Any()) {

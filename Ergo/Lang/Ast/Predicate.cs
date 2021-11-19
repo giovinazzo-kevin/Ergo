@@ -13,7 +13,7 @@ namespace Ergo.Lang
 
         public static string Explain(Predicate p)
         {
-            if(p.Body.IsEmpty || p.Body.GetContents().SequenceEqual(new Term[] { new Atom(true) })) {
+            if(p.Body.IsEmpty || p.Body.Contents.SequenceEqual(new Term[] { new Atom(true) })) {
                 return $"{Term.Explain(p.Head)}.";
             }
 

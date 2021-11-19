@@ -36,7 +36,7 @@ namespace Ergo.Lang
                     return true;
                 }
                 if (TryUnfold(c.Arguments[1], out var subExpr)) {
-                    args.AddRange(subExpr.Sequence.GetContents());
+                    args.AddRange(subExpr.Sequence.Contents);
                     expr = new CommaExpression(new Sequence(Functor, EmptyLiteral, args.ToArray()));
                     return true;
                 }
@@ -55,9 +55,8 @@ namespace Ergo.Lang
             if (expr.Sequence.IsEmpty) {
                 return Term.Explain(expr.Sequence.EmptyElement);
             }
-            var contents = expr.Sequence.GetContents().ToList();
-            var joined = String.Join(", ", contents.Select(t => Term.Explain(t)));
-            if (contents.Count != 1) {
+            var joined = String.Join(", ", expr.Sequence.Contents.Select(t => Term.Explain(t)));
+            if (expr.Sequence.Contents.Length != 1) {
                 return $"({joined})";
             }
             return joined;

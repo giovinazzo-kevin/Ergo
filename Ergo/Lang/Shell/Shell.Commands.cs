@@ -174,11 +174,10 @@ namespace Ergo.Lang
             }
 
             var query = parsed.Reduce(some => some, () => default);
-            var contents = query.Goals.GetContents().ToArray();
             WriteLine(CommaExpression.Explain(new CommaExpression(query.Goals)), LogLevel.Dbg);
 
             var solutions = Interpreter.Solve(query.Goals); // Solution graph is walked lazily
-            if (contents.Length == 1 && contents.Single().Type == TermType.Variable) {
+            if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single().Type == TermType.Variable) {
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
                 WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
                 No();
@@ -203,7 +202,7 @@ namespace Ergo.Lang
                 }
                 else {
                     var cols = query.Goals
-                        .GetContents()
+                        .Contents
                         .SelectMany(t => Term.Variables(t))
                         .Where(v => !v.Ignored)
                         .Select(v => v.Name)

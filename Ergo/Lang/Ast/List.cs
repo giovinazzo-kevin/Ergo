@@ -14,7 +14,7 @@ namespace Ergo.Lang
         { 
             Head = head; 
             Tail = tail;
-            Root = new Sequence(Functor, tail, head.GetContents().ToArray()).Root;
+            Root = new Sequence(Functor, tail, head.Contents).Root;
         }
 
         public readonly static Atom Functor = new Atom("[|]");
@@ -38,7 +38,7 @@ namespace Ergo.Lang
                 if (c.Arguments.Length != 2)
                     return false;
                 if (TryUnfold(c.Arguments[1], out var subExpr)) {
-                    args.AddRange(subExpr.Head.GetContents());
+                    args.AddRange(subExpr.Head.Contents);
                     expr = new List(new Sequence(Functor, EmptyLiteral, args.ToArray()), subExpr.Tail);
                     return true;
                 }
@@ -55,8 +55,7 @@ namespace Ergo.Lang
             if (list.Head.IsEmpty) {
                 return Term.Explain(list.Tail);
             }
-            var contents = list.Head.GetContents().ToList();
-            var joined = String.Join(", ", contents.Select(t => Term.Explain(t)));
+            var joined = String.Join(", ", list.Head.Contents.Select(t => Term.Explain(t)));
             if(!list.Tail.Equals(list.Head.EmptyElement)) {
                 return $"[{joined}|{Term.Explain(list.Tail)}]";
             }

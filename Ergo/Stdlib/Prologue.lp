@@ -10,3 +10,6 @@ todo('AST', ['Prefix/Infix/Postfix Operators', 'Annotations']).
 
 %: Writes a newline
 nl :- @print('\n').
+
+yinAndYang([], []).
+yinAndYang([yin|Tail1], [yang|Tail2]) :- yinAndYang(Tail1, Tail2).

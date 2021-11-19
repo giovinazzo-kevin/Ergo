@@ -43,20 +43,21 @@ namespace Ergo.Lang
             return false;
         }
 
-        public bool TryGetMatches(Term head, out IEnumerable<Match> matches)
+        public bool TryGetMatches(Term goal, out IEnumerable<Match> matches)
         {
             var lst = new List<Match>();
             matches = lst;
+            // Instantiate goal
+            if(!Substitution.TryUnify(new Substitution(Term.Instantiate(Context, goal), goal), out var subs)) {
+                return false;
+            }
+            var head = Term.Substitute(goal, subs);
             if (TryGet(Predicate.Signature(head), out var list)) {
                 foreach (var k in list) {
-                    if(Predicate.TryUnify(head, k, out var matchSubs)) {
-                        var ks = Predicate.Substitute(k, matchSubs);
-                        // Instantiate and unify predicate head
-                        if (!Substitution.TryUnify(new Substitution(head, ks.Head), out var instSubs)) {
-                            throw new InvalidOperationException("Unification between term and its instantiation failed.");
-                        }
-                        ks = Predicate.Substitute(ks, instSubs);
-                        lst.Add(new Match(head, ks, instSubs));
+                    var ks = Predicate.Instantiate(Context, k);
+                    if (Predicate.TryUnify(head, ks, out var matchSubs)) {
+                        ks = Predicate.Substitute(ks, matchSubs);
+                        lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
                     }
                 }
                 return true;

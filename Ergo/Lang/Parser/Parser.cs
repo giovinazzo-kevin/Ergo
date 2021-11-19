@@ -315,11 +315,10 @@ namespace Ergo.Lang
                 if (singletons.Any()) {
                     Throw(pos, ErrorType.PredicateHasSingletonVariables, Predicate.Signature(head), String.Join(", ", singletons));
                 }
-                var dict = new Dictionary<string, Variable>();
                 c = new Predicate(
                     desc
-                    , Term.Instantiate(_context, head, false, dict)
-                    , Sequence.Instantiate(_context, body, false, dict)
+                    , head
+                    , body
                 );
                 return true;
             }

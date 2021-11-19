@@ -43,23 +43,22 @@ namespace Ergo.Lang
             return term;
         }
 
-        private void LogTrace(Term term, int indent = 0)
+        private void LogTrace(TraceType type, Term term, int depth = 0)
         {
-            Trace?.Invoke(new string(' ', indent) + Term.Explain(term));
+            LogTrace(type, Term.Explain(term), depth);
         }
 
-        private void LogTrace(string s, int indent = 0)
+        private void LogTrace(TraceType type, string s, int depth = 0)
         {
-            Trace?.Invoke(new string(' ', indent) + s);
+            Trace?.Invoke($"{type}: ({depth:00}) {s}");
         }
 
-        protected IEnumerable<Solution> Solve(Term goal, List<Substitution> subs = null, int indent = 0)
+        protected IEnumerable<Solution> Solve(Term goal, List<Substitution> subs = null, int depth = 0)
         {
-            LogTrace(goal, indent: indent);
             subs ??= new List<Substitution>();
             // Treat comma-expression complex terms as proper expressions
             if (CommaExpression.TryUnfold(goal, out var expr)) {
-                foreach (var s in Solve(expr.Sequence, subs, indent)) {
+                foreach (var s in Solve(expr.Sequence, subs, depth)) {
                     yield return s;
                 }
                 yield break;
@@ -76,8 +75,10 @@ namespace Ergo.Lang
             if (!Kb.TryGetMatches(goal, out var matches) && Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound)) {
                 throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
             }
+            LogTrace(TraceType.Call, goal, depth);
             foreach (var m in matches) {
-                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(subs.Concat(m.Substitutions)), indent)) {
+                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
+                    LogTrace(TraceType.Exit, m.Rhs.Head, depth);
                     yield return s;
                 }
                 if (Cut.Value) {
@@ -86,10 +87,10 @@ namespace Ergo.Lang
             }
         }
 
-        protected IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null, int indent = 0)
+        protected IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null, int depth = 0)
         {
             subs ??= new List<Substitution>();
-            if(!CommaExpression.IsCommaExpression(goal)) {
+            if (!CommaExpression.IsCommaExpression(goal)) {
                 throw new InvalidOperationException("Only CommaExpression sequences can be solved.");
             }
             if (goal.IsEmpty) {
@@ -100,12 +101,12 @@ namespace Ergo.Lang
             var subGoal = goals.First();
             goals = goals[1..];
             // Get first solution for the current subgoal
-            foreach (var s in Solve(subGoal, subs, indent)) {
+            foreach (var s in Solve(subGoal, subs, depth)) {
                 if(Cut.Value) {
                     yield break;
                 }
                 var rest = Sequence.Substitute(new Sequence(goal.Functor, goal.EmptyElement, goals), s.Substitutions);
-                foreach (var ss in Solve(rest, subs, indent)) {
+                foreach (var ss in Solve(rest, subs, depth)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
                 if(subGoal.Equals(Literals.Cut)) {

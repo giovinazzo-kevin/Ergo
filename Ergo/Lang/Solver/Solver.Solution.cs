@@ -14,18 +14,27 @@ namespace Ergo.Lang
             /// </summary>
             public IEnumerable<Substitution> Simplify()
             {
+                //return Substitutions;
+
                 return Inner(Substitutions)
                     .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
                     .OrderBy(s => s.Lhs.ToString());
                 IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
                 {
-                    subs = subs.OrderByDescending(s => s.Lhs.ToString());
+                    subs = subs.OrderBy(s => s.Lhs.ToString());
                     foreach (var s in subs) {
+                        var chg = 0;
                         var ret = s;
-                        foreach (var ss in subs) {
-                            if (s.Equals(ss)) continue;
-                            ret = ret.WithRhs(Term.Substitute(ret.Rhs, ss));
+                        do {
+                            chg = 0;
+                            foreach (var ss in subs) {
+                                if (s.Equals(ss)) continue;
+                                var newRet = ret.WithRhs(Term.Substitute(ret.Rhs, ss));
+                                if (!newRet.Equals(ret)) chg++;
+                                ret = newRet;
+                            }
                         }
+                        while (chg > 0);
                         yield return ret;
                     }
                 }

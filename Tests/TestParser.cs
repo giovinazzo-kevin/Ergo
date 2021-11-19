@@ -80,8 +80,8 @@ namespace Tests
         [DataRow("fact :- true.", "fact.")]
         [DataRow("fact :- false.", "fact :- false.")]
         [DataRow("pred :- fact.", "pred :- fact.")]
-        [DataRow("pred(X) :- fact(X).", "pred(__G1) :- fact(__G1).")]
-        [DataRow("pred(X) :- fact(X), test(X).", "pred(__G1) :- (fact(__G1), test(__G1)).")]
+        [DataRow("pred(X) :- fact(X).", "pred(X) :- fact(X).")]
+        [DataRow("pred(X) :- fact(X), test(X).", "pred(X) :- (fact(X), test(X)).")]
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {

@@ -41,6 +41,10 @@ namespace Tests
 
                 yinAndYang([], []).
                 yinAndYang([yin|Tail1], [yang|Tail2]) :- yinAndYang(Tail1, Tail2).
+
+                map([], []) :- @cut.
+                map([X|[]], [Y|[]]) :- Y is (X + 1), @cut.
+                map([X|XT], [Y|YT]) :- @not(XT = []), map([X], [Y]), map(XT, YT).
             "));
             return i;
         }
@@ -54,6 +58,8 @@ namespace Tests
         [DataRow("yinAndYang([yin], Y)", "Y/[yang]")]
         [DataRow("yinAndYang([yin, yin], Y)", "Y/[yang, yang]")]
         [DataRow("yinAndYang([yin, yin, yin], Y)", "Y/[yang, yang, yang]")]
+        [DataRow("map([1,2,3,4,5,6,7,8], X)", "X/[2, 3, 4, 5, 6, 7, 8, 9]")]
+        [DataRow("map([1,2,3], X), map(X, Y)", "X/[2, 3, 4], Y/[3, 4, 5]")]
         [DataTestMethod]
         public void SolveSimpleQuery(string query, string expected)
         {

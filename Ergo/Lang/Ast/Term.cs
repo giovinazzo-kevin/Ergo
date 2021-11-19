@@ -80,9 +80,18 @@ namespace Ergo.Lang
 
         public static Term Substitute(Term @base, IEnumerable<Substitution> subs)
         {
-            foreach (var s in subs) {
-                @base = Substitute(@base, s);
+            int changes;
+            do {
+                changes = 0;
+                foreach (var s in subs) {
+                    var newBase = Substitute(@base, s);
+                    if(!newBase.Equals(@base)) {
+                        ++changes;
+                        @base = newBase;
+                    }
+                }
             }
+            while (changes > 0);
             return @base;
         }
 

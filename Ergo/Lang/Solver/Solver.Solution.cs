@@ -14,8 +14,6 @@ namespace Ergo.Lang
             /// </summary>
             public IEnumerable<Substitution> Simplify()
             {
-                //return Substitutions;
-
                 return Inner(Substitutions)
                     .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
                     .OrderBy(s => s.Lhs.ToString());

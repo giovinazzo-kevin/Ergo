@@ -21,11 +21,11 @@ namespace Ergo.Lang
         protected virtual void AddBuiltins()
         {
             AddVariadicBuiltIn(new BuiltIn(
-                "Print something to the console."
+                "Prints something to the console."
                 , new Atom("@print"), 0, BuiltIn_Print));
             AddBuiltIn(new BuiltIn(
-                "Assigns the right hand side to the left hand side."
-                , new Atom("@set"), 2, BuiltIn_Assign));
+                "Grabs the first solution for the previous clause, instead of every solution."
+                , new Atom("@cut"), 0, BuiltIn_Cut));
             AddBuiltIn(new BuiltIn(
                 "Is true if its argument cannot be proven true."
                 , new Atom("@unprovable"), 1, BuiltIn_Unprovable));
@@ -36,23 +36,23 @@ namespace Ergo.Lang
                 "Is true if its argument is a ground term."
                 , new Atom("@ground"), 1, BuiltIn_Ground));
             AddBuiltIn(new BuiltIn(
+                "Builds a complex term with the desired arity where all terms are discarded variables."
+                , new Atom("@anon"), 2, BuiltIn_AnonymousComplex));
+            AddBuiltIn(new BuiltIn(
+                "Compares two terms for equality."
+                , new Atom("@eq"), 2, BuiltIn_Equals));
+            AddBuiltIn(new BuiltIn(
+                "Assigns the right hand side to the left hand side."
+                , new Atom("@set"), 2, BuiltIn_Assign));
+            AddBuiltIn(new BuiltIn(
+                "Evaluates the right hand side and assigns the result to the left hand side."
+                , new Atom("@eval"), 2, BuiltIn_Evaluate));
+            AddBuiltIn(new BuiltIn(
                 "Unifies the left hand side with the right hand side."
                 , new Atom("@unify"), 2, BuiltIn_Unify));
             AddBuiltIn(new BuiltIn(
                 "Produces the list of equations necessary to unify the left hand side with the right hand side."
                 , new Atom("@unifiable"), 3, BuiltIn_Unifiable));
-            AddBuiltIn(new BuiltIn(
-                "Evaluates the right hand side and assigns the result to the left hand side."
-                , new Atom("@eval"), 2, BuiltIn_Evaluate));
-            AddBuiltIn(new BuiltIn(
-                "Builds a complex term with the desired arity where all terms are discarded variables."
-                , new Atom("@anon"), 2, BuiltIn_AnonymousComplex));
-            AddBuiltIn(new BuiltIn(
-                "Grabs the first solution for the previous clause, instead of every solution."
-                , new Atom("@cut"), 0, BuiltIn_Cut));
-            AddBuiltIn(new BuiltIn(
-                "Compares two terms for equality."
-                , new Atom("@eq"), 2, BuiltIn_Equals));
         }
 
         protected Complex ComplexGuard(Term t, Func<Complex, Exception> @throw)
@@ -138,9 +138,6 @@ namespace Ergo.Lang
                 if (c.Arguments.Length != 2) {
                     return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 2);
                 }
-                //if (c.Arguments[0].Type != TermType.Variable) {
-                //    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.FreeVariable, Term.Explain(c.Arguments[0]));
-                //}
                 return null;
             });
             return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], c.Arguments[1]));

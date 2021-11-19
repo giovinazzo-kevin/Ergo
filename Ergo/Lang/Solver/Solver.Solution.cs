@@ -19,10 +19,9 @@ namespace Ergo.Lang
                     ;
                 IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
                 {
-                    subs = subs.OrderBy(s => s.Lhs.ToString());
                     foreach (var s in subs) {
-                        var chg = 0;
                         var ret = s;
+                        int chg;
                         do {
                             chg = 0;
                             foreach (var ss in subs) {

@@ -5,7 +5,7 @@
 todo('Global', ['Modules']).
 todo('Interpreter', ['Metapredicates', 'Typesystem']).
 todo('Parser', ['Directives']).
-todo('AST', ['Prefix/Infix/Postfix Operators', 'Annotations']).
+todo('AST', ['Annotations']).
 
 %: Writes a newline
 nl :- @print('\n').

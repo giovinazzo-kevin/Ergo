@@ -159,9 +159,6 @@ namespace Ergo.Lang
 
         protected virtual BuiltIn.Evaluation BuiltIn_Unifiable(Term t)
         {
-            // unifiable(@X, @Y, -Unifier)
-            // If X and Y can unify, unify Unifier with a list of Var = Value, representing the bindings required to make X and Y equivalent.
-            // This predicate can handle cyclic terms. Attributed variables are handled as normal variables.Associated hooks are not executed.
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 3) {
                     return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 3);

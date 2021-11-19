@@ -215,7 +215,7 @@ namespace Ergo.Lang
                     return Fail(pos);
                 }
                 while (lookahead.Affix == Operator.AffixType.Infix && lookahead.Precedence >= minPrecedence) {
-                    Debug.Assert(_lexer.TryReadNextToken(out _));
+                    _lexer.TryReadNextToken(out _);
                     var op = lookahead;
                     if(!TryParsePrimary(out var rhs)) {
                         expr = op.BuildExpression(lhs, Maybe<Term>.None);

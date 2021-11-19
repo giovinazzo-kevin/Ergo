@@ -34,19 +34,19 @@ namespace Ergo.Lang
                 , new Atom("@ground"), 1, BuiltIn_Ground));
             AddBuiltIn(new BuiltIn(
                 "Unifies the left hand side with the right hand side."
-                , new Atom("="), 2, BuiltIn_Unify));
+                , new Atom("@unify"), 2, BuiltIn_Unify));
             AddBuiltIn(new BuiltIn(
                 "Evaluates the right hand side and assigns the result to the left hand side."
-                , new Atom("is"), 2, BuiltIn_Evaluate));
+                , new Atom("@eval"), 2, BuiltIn_Evaluate));
             AddBuiltIn(new BuiltIn(
                 "Builds a complex term with the desired arity where all terms are discarded variables."
                 , new Atom("@anon"), 2, BuiltIn_AnonymousComplex));
             AddBuiltIn(new BuiltIn(
-                "Compares two terms for equality."
-                , new Atom("@eq"), 2, BuiltIn_Equals));
-            AddBuiltIn(new BuiltIn(
                 "Grabs the first solution for the previous clause, instead of every solution."
                 , new Atom("@cut"), 0, BuiltIn_Cut));
+            AddBuiltIn(new BuiltIn(
+                "Compares two terms for equality."
+                , new Atom("@eq"), 2, BuiltIn_Equals));
         }
 
         protected Complex ComplexGuard(Term t, Func<Complex, Exception> @throw)

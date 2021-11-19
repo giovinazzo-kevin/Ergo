@@ -16,7 +16,7 @@ namespace Ergo.Lang
             {
                 return Inner(Substitutions)
                     .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
-                    .OrderBy(s => s.Lhs.ToString());
+                    ;
                 IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
                 {
                     subs = subs.OrderBy(s => s.Lhs.ToString());

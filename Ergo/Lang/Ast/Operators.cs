@@ -19,15 +19,20 @@ namespace Ergo.Lang
         public static readonly Operator BinaryDisjunction = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 400, "\\/");
         public static readonly Operator BinaryMod = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 300, "mod");
         public static readonly Operator BinaryXor = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 200, "xor");
-        public static readonly Operator BinaryEquals = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "=");
+        public static readonly Operator BinaryUnification = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "=");
+        public static readonly Operator BinaryAssignment = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, ":=");
+        public static readonly Operator BinaryEquality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "==");
         public static readonly Operator BinaryEvaluation = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "is");
         public static readonly Operator BinaryHorn = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 10, ":-", "-?");
+        public static readonly Operator UnaryNegation = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 30, "\\+");
 
         public static readonly Operator[] DefinedOperators = new[] {
               BinaryComma
             , BinaryList
-            , BinaryEquals
+            , BinaryUnification
             , BinaryEvaluation
+            , BinaryEquality
+            , BinaryAssignment
             , BinaryHorn
             , BinaryPlus
             , BinaryMinus
@@ -38,6 +43,7 @@ namespace Ergo.Lang
             , BinaryDoubleForwardSlash
             , BinaryXor
             , BinaryMod
+            , UnaryNegation
         };
     }
 

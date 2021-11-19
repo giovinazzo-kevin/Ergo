@@ -210,8 +210,7 @@ namespace Ergo.Lang
                         .Distinct()
                         .ToArray();
                     var rows = solutions
-                        .Select(s => s.Substitutions
-                            .Where(s => s.Lhs.Reduce(t => false, v => !v.Ignored, c => false))
+                        .Select(s => s.Simplify()
                             .Select(r => Term.Explain(r.Rhs))
                             .ToArray())
                         .ToArray();

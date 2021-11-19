@@ -9,10 +9,11 @@ namespace Ergo.Lang
     public partial class Parser : IDisposable
     {
         private readonly Lexer _lexer;
-
+        private readonly Term.InstantiationContext _discardContext;
         public Parser(Lexer lexer)
         {
             _lexer = lexer;
+            _discardContext = new(string.Empty);
         }
 
         public bool TryParseAtom(out Atom atom)
@@ -57,8 +58,11 @@ namespace Ergo.Lang
                 if (!IsVariableIdentifier(term)) {
                     return Fail(pos);
                 }
-                if (term.StartsWith("__G")) {
+                if (term.StartsWith("__K")) {
                     Throw(pos, ErrorType.TermHasIllegalName, var.Name);
+                }
+                if(term.Equals(Literals.Discard.ToString())) {
+                    term = $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}";
                 }
                 var = new Variable(term);
                 return true;

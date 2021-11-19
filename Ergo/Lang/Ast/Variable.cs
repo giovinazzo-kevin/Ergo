@@ -19,12 +19,7 @@ namespace Ergo.Lang
                 throw new InvalidOperationException("Variables must have a name that starts with an uppercase letter.");
             }
             Name = name;
-            Ignored = Name.StartsWith('_');
-        }
-
-        public Variable WithName(string newName)
-        {
-            return new Variable(newName);
+            Ignored = name.StartsWith('_');
         }
 
         public override bool Equals(object obj)

@@ -15,6 +15,6 @@ nl :- @print('\n').
 '=='(A, B) :- @eq(A, B).
 '\\=='(A, B) :- @not(@eq(A, B)).
 ':='(A, B) :- @set(A, B).
-'?='(A,B) :- \+(@unifiable(A,B,S), S \= []).
+'?='(A,B) :- \+@unifiable(A,B,[_|_]).
 ';'(A, _) :- A.
 ';'(_, B) :- B.

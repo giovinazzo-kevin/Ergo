@@ -28,7 +28,7 @@ namespace Ergo.Lang
                 , new Atom("@set"), 2, BuiltIn_Assign));
             AddBuiltIn(new BuiltIn(
                 "Is true if its argument cannot be proven true."
-                , new Atom("@unproved"), 1, BuiltIn_Unproved));
+                , new Atom("@unprovable"), 1, BuiltIn_Unprovable));
             AddBuiltIn(new BuiltIn(
                 "Boolean negation."
                 , new Atom("@not"), 1, BuiltIn_Not));
@@ -78,7 +78,7 @@ namespace Ergo.Lang
             return c;
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Unproved(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Unprovable(Term t)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 1) {

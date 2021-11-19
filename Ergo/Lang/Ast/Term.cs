@@ -117,13 +117,13 @@ namespace Ergo.Lang
             return new Term(default, default, complex, TermType.Complex);
         }
 
-        public static Term Instantiate(InstantiationContext ctx, Term t, bool discardsOnly = false, Dictionary<string, Variable> vars = null)
+        public static Term Instantiate(InstantiationContext ctx, Term t, Dictionary<string, Variable> vars = null)
         {
             vars ??= new Dictionary<string, Variable>();
             var ret = t.Map(
                 atom => atom
                 , InstantiateVariable
-                , complex => new Complex(complex.Functor, complex.Arguments.Select(a => Instantiate(ctx, a, discardsOnly, vars)).ToArray())
+                , complex => new Complex(complex.Functor, complex.Arguments.Select(a => Instantiate(ctx, a, vars)).ToArray())
             );
             return ret;
 
@@ -132,10 +132,7 @@ namespace Ergo.Lang
                 if(vars.TryGetValue(v.Name, out var inst)) {
                     return inst;
                 }
-                if(v.Equals(Literals.Discard) || !discardsOnly) {
-                    return vars[v.Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
-                }
-                return v;
+                return vars[v.Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
             }
         }
 

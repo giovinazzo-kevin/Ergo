@@ -47,9 +47,9 @@ namespace Ergo.Lang
             }
         }
 
-        public static Sequence Instantiate(Term.InstantiationContext ctx, Sequence s, bool discardsOnly = false, Dictionary<string, Variable> vars = null)
+        public static Sequence Instantiate(Term.InstantiationContext ctx, Sequence s, Dictionary<string, Variable> vars = null)
         {
-            return new Sequence(s.Functor, s.EmptyElement, s.Contents.Select(t => Term.Instantiate(ctx, t, discardsOnly, vars)).ToArray());
+            return new Sequence(s.Functor, s.EmptyElement, s.Contents.Select(t => Term.Instantiate(ctx, t, vars)).ToArray());
         }
 
         public static Sequence Substitute(Sequence s, IEnumerable<Substitution> subs)

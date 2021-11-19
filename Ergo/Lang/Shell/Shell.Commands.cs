@@ -12,7 +12,7 @@ namespace Ergo.Lang
         protected virtual void InitializeCommandDispatcher()
         {
             Dispatcher.Add(
-                @"^\s*(?:\?|help)\s*(?<cmd>[^\s].*)\s*$"
+                @"^\s*(?:\?|help)\s+(?<cmd>[^\s].*)\s*$"
                 , m => Cmd_PrintHelp(m.Groups["cmd"])
                 , "? <cmd>"
                 , "(alias: help) Displays help about all commands that start with the given string."
@@ -26,7 +26,7 @@ namespace Ergo.Lang
             );
 
             Dispatcher.Add(
-                @"^\s*(?::\?|expl)\s*(?<term>[^\s].*)\s*$"
+                @"^\s*(?::\?|expl)\s+(?<term>[^\s].*)\s*$"
                 , m => CmdPrintPredicates(m.Groups["term"], explain: true)
                 , ":? <term>"
                 , "(alias: expl) Explains all the predicates that match the given term."
@@ -40,7 +40,7 @@ namespace Ergo.Lang
             );
 
             Dispatcher.Add(
-                @"^\s*(?::#|builtin)\s*(?<term>[^\s].*)\s*$"
+                @"^\s*(?::#|builtin)\s+(?<term>[^\s].*)\s*$"
                 , m => CmdPrintBuiltIns(m.Groups["term"])
                 , ":# <term>"
                 , "(alias: builtin) Describes all the built-ins that match the given term."
@@ -55,7 +55,7 @@ namespace Ergo.Lang
 
 
             Dispatcher.Add(
-                @"^\s*(?::|desc)\s*(?<term>[^\s].*)\s*$"
+                @"^\s*(?::|desc)\s+(?<term>[^\s].*)\s*$"
                 , m => CmdPrintPredicates(m.Groups["term"], explain: false)
                 , ": <term>"
                 , "(alias: desc) Describes all the predicates that match the given term."
@@ -70,42 +70,42 @@ namespace Ergo.Lang
 
 
             Dispatcher.Add(
-                @"^\s*(?:!-|asserta)\s*(?<predicate>.*)\s*$"
+                @"^\s*(?:!-|asserta)\s+(?<predicate>.*)\s*$"
                 , m => Cmd_Assert(m.Groups["predicate"], start: true)
                 , "!- <predicate>"
                 , "(alias: asserta) Asserts a predicate at the beginning of the knowledge bank."
             );
 
             Dispatcher.Add(
-                @"^\s*(?:-!|assertz)\s*(?<predicate>.*)\s*$"
+                @"^\s*(?:-!|assertz)\s+(?<predicate>.*)\s*$"
                 , m => Cmd_Assert(m.Groups["predicate"], start: false)
                 , "-! <predicate>"
                 , "(alias: assertz) Asserts a predicate at the end of the knowledge bank."
             );
 
             Dispatcher.Add(
-                @"^\s*(?:\*\*|retractall)\s*(?<term>[^\s].*)\s*$"
+                @"^\s*(?:\*\*|retractall)\s+(?<term>[^\s].*)\s*$"
                 , m => Cmd_Retract(m.Groups["term"], all: true)
                 , "** <term>"
                 , "(alias: retractall) Retracts all predicates that match the given term from the knowledge bank."
             );
 
             Dispatcher.Add(
-                @"^\s*(?:\*|retract)\s*(?<term>[^\s].*)\s*$"
+                @"^\s*(?:\*|retract)\s+(?<term>[^\s].*)\s*$"
                 , m => Cmd_Retract(m.Groups["term"], all: false)
                 , "* <term> "
                 , "(alias: retract) Retracts the first predicate that matches the given term from the knowledge bank."
             );
 
             Dispatcher.Add(
-                @"^\s*load\s*(?<path>.*)\s*$"
+                @"^\s*load\s+(?<path>.*)\s*$"
                 , m => Cmd_Load(m.Groups["path"])
                 , "load <path>"
                 , "Loads a knowledge bank from disk."
             );
 
             Dispatcher.Add(
-                @"^\s*save\s*(?<path>.*)\s*$"
+                @"^\s*save\s+(?<path>.*)\s*$"
                 , m => Cmd_Save(m.Groups["path"])
                 , "save <path>"
                 , "Saves the current knowledge bank to disk."

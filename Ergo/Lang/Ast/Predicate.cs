@@ -46,13 +46,13 @@ namespace Ergo.Lang
             Body = body;
         }
 
-        public static Predicate Instantiate(Term.InstantiationContext ctx, Predicate p, bool discardsOnly = false, Dictionary<string, Variable> vars = null)
+        public static Predicate Instantiate(Term.InstantiationContext ctx, Predicate p, Dictionary<string, Variable> vars = null)
         {
             vars ??= new Dictionary<string, Variable>();
             return new Predicate(
                 p.Documentation
-                , Term.Instantiate(ctx, p.Head, discardsOnly, vars)
-                , Sequence.Instantiate(ctx, p.Body, discardsOnly, vars)
+                , Term.Instantiate(ctx, p.Head, vars)
+                , Sequence.Instantiate(ctx, p.Body, vars)
             );
         }
 

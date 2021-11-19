@@ -45,7 +45,7 @@ namespace Tests
 
                 map([], []) :- @cut.
                 map([X|[]], [Y|[]]) :- Y is (X + 1), @cut.
-                map([X|XT], [Y|YT]) :- @not(XT = []), map([X], [Y]), map(XT, YT).
+                map([X|XT], [Y|YT]) :- XT \= [], map([X], [Y]), map(XT, YT).
             "));
             return i;
         }

@@ -9,12 +9,10 @@ namespace Ergo.Lang
     public partial class Parser : IDisposable
     {
         private readonly Lexer _lexer;
-        private readonly Term.InstantiationContext _context;
 
         public Parser(Lexer lexer)
         {
             _lexer = lexer;
-            _context = new Term.InstantiationContext("G");
         }
 
         public bool TryParseAtom(out Atom atom)
@@ -119,10 +117,6 @@ namespace Ergo.Lang
             }
             if (TryParseVariable(out var var)) {
                 term = var;
-                // Iff var = _ then var = __G{N}
-                if (var.Equals(Literals.Discard)) {
-                    term = Term.Instantiate(_context, var, discardsOnly: true, vars: new Dictionary<string, Variable>());
-                }
                 return true;
             }
             if (TryParseComplex(out var cplx)) {

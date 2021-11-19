@@ -11,5 +11,6 @@ todo('AST', ['Prefix/Infix/Postfix Operators', 'Annotations']).
 %: Writes a newline
 nl :- @print('\n').
 
-yinAndYang([], []).
-yinAndYang([yin|Tail1], [yang|Tail2]) :- yinAndYang(Tail1, Tail2).
+map([], []) :- @cut.
+map([X|[]], [Y|[]]) :- Y is (X + 1), @cut.
+map([X|XT], [Y|YT]) :- @not(XT = []), map([X], [Y]), map(XT, YT).

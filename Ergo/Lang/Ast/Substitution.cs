@@ -77,9 +77,8 @@ namespace Ergo.Lang
 
             void ApplySubstitution(Substitution s)
             {
-                E = new List<Substitution>(E.Select(eq => new Substitution(Term.Substitute(eq.Lhs, s), Term.Substitute(eq.Rhs, s))));
-                S = new List<Substitution>(S.Select(eq => new Substitution(Term.Substitute(eq.Lhs, s), Term.Substitute(eq.Rhs, s))));
-                S.Add(s);
+                E = new List<Substitution>(E.Select(eq => new Substitution(Term.Substitute(eq.Lhs, s), Term.Substitute(eq.Rhs, s))).Distinct());
+                S = new List<Substitution>(S.Select(eq => new Substitution(Term.Substitute(eq.Lhs, s), Term.Substitute(eq.Rhs, s))).Append(s).Distinct());
             }
         }
 

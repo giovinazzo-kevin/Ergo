@@ -9,6 +9,7 @@ namespace Ergo.Lang
         // To prevent cases where operands would be associated with two operators, or no operator at all,
         //   operators with the same precedence must have the same associativity. 
         public static readonly Operator BinaryComma = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 20, ",");
+        public static readonly Operator BinarySemicolon = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 30, ";");
         public static readonly Operator BinaryList = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 15, "|");
         public static readonly Operator BinaryAsterisk = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 600, "*");
         public static readonly Operator BinaryForwardSlash = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 600, "/");
@@ -22,16 +23,21 @@ namespace Ergo.Lang
         public static readonly Operator BinaryUnification = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "=");
         public static readonly Operator BinaryAssignment = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, ":=");
         public static readonly Operator BinaryEquality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "==");
+        public static readonly Operator BinaryInequality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "\\==");
+        public static readonly Operator BinaryUnprovability = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "\\=");
         public static readonly Operator BinaryEvaluation = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "is");
         public static readonly Operator BinaryHorn = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 10, ":-", "-?");
-        public static readonly Operator UnaryNegation = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 30, "\\+");
+        public static readonly Operator UnaryUnprovability = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 30, "\\+");
 
         public static readonly Operator[] DefinedOperators = new[] {
               BinaryComma
+            , BinarySemicolon
             , BinaryList
             , BinaryUnification
             , BinaryEvaluation
             , BinaryEquality
+            , BinaryInequality
+            , BinaryUnprovability
             , BinaryAssignment
             , BinaryHorn
             , BinaryPlus
@@ -43,7 +49,7 @@ namespace Ergo.Lang
             , BinaryDoubleForwardSlash
             , BinaryXor
             , BinaryMod
-            , UnaryNegation
+            , UnaryUnprovability
         };
     }
 

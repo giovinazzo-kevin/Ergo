@@ -28,13 +28,19 @@ namespace Ergo.Lang
                 , new Atom("@set"), 2, BuiltIn_Assign));
             AddBuiltIn(new BuiltIn(
                 "Is true if its argument cannot be proven true."
-                , new Atom("@not"), 1, BuiltIn_Negate));
+                , new Atom("@unproved"), 1, BuiltIn_Unproved));
+            AddBuiltIn(new BuiltIn(
+                "Boolean negation."
+                , new Atom("@not"), 1, BuiltIn_Not));
             AddBuiltIn(new BuiltIn(
                 "Is true if its argument is a ground term."
                 , new Atom("@ground"), 1, BuiltIn_Ground));
             AddBuiltIn(new BuiltIn(
                 "Unifies the left hand side with the right hand side."
                 , new Atom("@unify"), 2, BuiltIn_Unify));
+            AddBuiltIn(new BuiltIn(
+                "Produces the list of equations necessary to unify the left hand side with the right hand side."
+                , new Atom("@unifiable"), 3, BuiltIn_Unifiable));
             AddBuiltIn(new BuiltIn(
                 "Evaluates the right hand side and assigns the result to the left hand side."
                 , new Atom("@eval"), 2, BuiltIn_Evaluate));
@@ -72,7 +78,7 @@ namespace Ergo.Lang
             return c;
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Negate(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Unproved(Term t)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 1) {
@@ -86,6 +92,25 @@ namespace Ergo.Lang
                 return new BuiltIn.Evaluation(Literals.False);
             }
             return new BuiltIn.Evaluation(Literals.True);
+        }
+
+        protected virtual BuiltIn.Evaluation BuiltIn_Not(Term t)
+        {
+            var c = ComplexGuard(t, c => {
+                if (c.Arguments.Length != 1) {
+                    return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 1);
+                }
+                if (c.Arguments[0].Type != TermType.Atom) {
+                    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, Term.Explain(c.Arguments[0]));
+                }
+                return null;
+            });
+
+            var arg = c.Arguments.Single();
+            if (!(((Atom)arg).Value is bool eval)) {
+                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, Term.Explain(arg));
+            }
+            return new BuiltIn.Evaluation(new Atom(!eval));
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Equals(Term t)
@@ -113,9 +138,9 @@ namespace Ergo.Lang
                 if (c.Arguments.Length != 2) {
                     return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 2);
                 }
-                if (c.Arguments[0].Type != TermType.Variable) {
-                    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.FreeVariable, Term.Explain(c.Arguments[0]));
-                }
+                //if (c.Arguments[0].Type != TermType.Variable) {
+                //    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.FreeVariable, Term.Explain(c.Arguments[0]));
+                //}
                 return null;
             });
             return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], c.Arguments[1]));
@@ -131,6 +156,27 @@ namespace Ergo.Lang
             });
             if (Substitution.TryUnify(new Substitution(c.Arguments[0], c.Arguments[1]), out var subs)) {
                 return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
+            }
+            return new BuiltIn.Evaluation(Literals.False);
+        }
+
+        protected virtual BuiltIn.Evaluation BuiltIn_Unifiable(Term t)
+        {
+            // unifiable(@X, @Y, -Unifier)
+            // If X and Y can unify, unify Unifier with a list of Var = Value, representing the bindings required to make X and Y equivalent.
+            // This predicate can handle cyclic terms. Attributed variables are handled as normal variables.Associated hooks are not executed.
+            var c = ComplexGuard(t, c => {
+                if (c.Arguments.Length != 3) {
+                    return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 3);
+                }
+                return null;
+            });
+            if (Substitution.TryUnify(new Substitution(c.Arguments[0], c.Arguments[1]), out var subs)) {
+                var equations = subs.Select(s => (Term)new Complex(Operators.BinaryUnification.CanonicalFunctor, s.Lhs, s.Rhs));
+                var list = List.Build(equations.ToArray());
+                if (Substitution.TryUnify(new Substitution(c.Arguments[2], list.Root), out subs)) {
+                    return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
+                }
             }
             return new BuiltIn.Evaluation(Literals.False);
         }
@@ -156,11 +202,15 @@ namespace Ergo.Lang
                     a => a.Value is decimal d ? d : Throw(a),
                     v => Throw(v),
                     c => c.Functor switch {
-                          var f when Operators.BinaryPlus.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
-                        , var f when Operators.BinaryMinus.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
-                        , var f when Operators.BinaryAsterisk.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
-                        , var f when Operators.BinaryForwardSlash.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
-                        , _ => Throw(c)
+                        var f when Operators.BinaryPlus.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
+                        ,
+                        var f when Operators.BinaryMinus.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
+                        ,
+                        var f when Operators.BinaryAsterisk.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
+                        ,
+                        var f when Operators.BinaryForwardSlash.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
+                        ,
+                        _ => Throw(c)
                     }
                 );
                 static decimal Throw(Term t)
@@ -221,7 +271,7 @@ namespace Ergo.Lang
         }
         protected virtual BuiltIn.Evaluation BuiltIn_Ground(Term t)
         {
-            if(t.Ground) {
+            if (t.Ground) {
                 return new BuiltIn.Evaluation(Literals.True);
             }
             return new BuiltIn.Evaluation(Literals.False);

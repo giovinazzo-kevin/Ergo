@@ -11,7 +11,6 @@ namespace Tests
     public class TestInterpreter
     {
         private readonly ExceptionHandler Thrower = new(ex => throw ex);
-        private readonly ExceptionHandler Silent = new(ex => { });
         protected static Interpreter MakeInterpreter()
         {
             var i = new Interpreter();

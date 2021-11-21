@@ -283,6 +283,7 @@ namespace Ergo.Lang
         public void Dispose()
         {
             _reader.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

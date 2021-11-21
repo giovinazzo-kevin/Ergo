@@ -37,7 +37,7 @@ namespace Ergo.Lang
         public Complex WithArguments(params Term[] args)
         {
             if (args.Length != Arguments.Length)
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(args));
             return new Complex(Functor, args);
         }
 
@@ -63,6 +63,16 @@ namespace Ergo.Lang
         public static implicit operator Term(Complex rhs)
         {
             return Term.FromComplex(rhs);
+        }
+
+        public static bool operator ==(Complex left, Complex right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Complex left, Complex right)
+        {
+            return !(left == right);
         }
     }
 

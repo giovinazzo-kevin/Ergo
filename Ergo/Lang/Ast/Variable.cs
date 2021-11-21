@@ -41,6 +41,16 @@ namespace Ergo.Lang
         {
             return Term.FromVariable(rhs);
         }
+
+        public static bool operator ==(Variable left, Variable right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Variable left, Variable right)
+        {
+            return !(left == right);
+        }
     }
 
 }

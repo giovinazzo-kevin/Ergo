@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang
+﻿using System;
+
+namespace Ergo.Lang
 {
     public partial class Lexer
     {
@@ -16,7 +18,7 @@
                 Position = pos;
                 Line = line;
                 Column = col;
-                Context = ctx ?? System.String.Empty;
+                Context = ctx ?? String.Empty;
             }
         }
     }

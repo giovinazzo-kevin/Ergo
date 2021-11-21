@@ -298,12 +298,12 @@ namespace Ergo.Lang
                 return null;
             });
 
-            var args = (Functor: (Atom)c.Arguments[0], Arity: (Atom)c.Arguments[1]);
-            if (args.Functor.Value is not string functor) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, Term.Explain(args.Functor));
+            var (Functor, Arity) = ((Atom)c.Arguments[0], (Atom)c.Arguments[1]);
+            if (Functor.Value is not string functor) {
+                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, Term.Explain(Functor));
             }
-            if (args.Arity.Value is not double arity) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(args.Arity));
+            if (Arity.Value is not double arity) {
+                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(Arity));
             }
             if (arity - (int)arity != 0) {
                 throw new InterpreterException(ErrorType.ExpectedAtomWithDomain, BuiltIn.Domains.Integers);
@@ -311,7 +311,7 @@ namespace Ergo.Lang
             var predArgs = Enumerable.Range(0, (int)arity)
                 .Select(i => Literals.Discard)
                 .ToArray();
-            return new BuiltIn.Evaluation(new Complex(args.Functor, predArgs));
+            return new BuiltIn.Evaluation(new Complex(Functor, predArgs));
         }
         protected virtual BuiltIn.Evaluation BuiltIn_Ground(Term t)
         {

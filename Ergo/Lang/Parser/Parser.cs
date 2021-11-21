@@ -86,12 +86,9 @@ namespace Ergo.Lang
             )) {
                 return Fail(pos);
             }
-            if (CommaExpression.IsCommaExpression(inner)) {
-                cplx = new Complex(new Atom(functor), inner.Contents);
-            }
-            else {
-                cplx = new Complex(new Atom(functor), inner.Root);
-            }
+            cplx = CommaExpression.IsCommaExpression(inner)
+                ? new Complex(new Atom(functor), inner.Contents)
+                : new Complex(new Atom(functor), inner.Root);
             return true;
         }
         public bool TryParseTermOrExpression(out Term term, out bool parenthesized)
@@ -359,6 +356,7 @@ namespace Ergo.Lang
         public void Dispose()
         {
             _lexer.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

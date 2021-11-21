@@ -213,7 +213,8 @@ namespace Ergo.Lang
                 a => a.Value is double d ? d : Throw(a),
                 v => Throw(v),
                 c => c.Functor switch {
-                      var f when c.Arguments.Length == 2 && Operators.BinarySum.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
+                      var f when c.Arguments.Length == 2 && Operators.BinaryMod.Synonyms.Contains(f) => Eval(c.Arguments[0]) % Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinarySum.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
                     , var f when c.Arguments.Length == 2 && Operators.BinarySubtraction.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
                     , var f when c.Arguments.Length == 2 && Operators.BinaryMultiplication.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
                     , var f when c.Arguments.Length == 2 && Operators.BinaryDivision.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])

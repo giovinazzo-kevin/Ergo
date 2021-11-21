@@ -18,7 +18,6 @@ namespace Ergo.Lang
         public static readonly Operator BinarySubtraction = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 500, "-");
         public static readonly Operator BinaryPower = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 700, "^");
         public static readonly Operator BinaryMod = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 300, "mod");
-        public static readonly Operator BinaryXor = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 200, "xor");
         public static readonly Operator BinaryUnification = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "=");
         public static readonly Operator BinaryAssignment = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, ":=");
         public static readonly Operator BinaryEquality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "==");
@@ -49,7 +48,6 @@ namespace Ergo.Lang
             , BinaryDivision
             , BinaryIntegerDivision
             , BinaryPower
-            , BinaryXor
             , BinaryMod
             , UnaryUnprovability
             , UnaryPositive

@@ -147,7 +147,7 @@ namespace Ergo.Lang
 
         public override bool Equals(object other)
         {
-            if (!(other is Term term)) {
+            if (other is not Term term) {
                 if (other is Atom a) term = a;
                 else if (other is Variable v) term = v;
                 else if (other is Complex c) term = c;

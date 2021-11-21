@@ -113,7 +113,7 @@ namespace Ergo.Lang
             });
 
             var arg = c.Arguments.Single();
-            if (!(((Atom)arg).Value is bool eval)) {
+            if (((Atom)arg).Value is not bool eval) {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, Term.Explain(arg));
             }
             return new BuiltIn.Evaluation(new Atom(!eval));
@@ -299,10 +299,10 @@ namespace Ergo.Lang
             });
 
             var args = (Functor: (Atom)c.Arguments[0], Arity: (Atom)c.Arguments[1]);
-            if (!(args.Functor.Value is string functor)) {
+            if (args.Functor.Value is not string functor) {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, Term.Explain(args.Functor));
             }
-            if (!(args.Arity.Value is double arity)) {
+            if (args.Arity.Value is not double arity) {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(args.Arity));
             }
             if (arity - (int)arity != 0) {

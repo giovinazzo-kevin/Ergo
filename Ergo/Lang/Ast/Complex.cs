@@ -48,7 +48,7 @@ namespace Ergo.Lang
 
         public override bool Equals(object obj)
         {
-            if (!(obj is Complex other)) {
+            if (obj is not Complex other) {
                 return false;
             }
             var args = Arguments;

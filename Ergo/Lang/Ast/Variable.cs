@@ -26,7 +26,7 @@ namespace Ergo.Lang
 
         public override bool Equals(object obj)
         {
-            if(!(obj is Variable other)) {
+            if(obj is not Variable other) {
                 return false;
             }
             return Equals(Name, other.Name);

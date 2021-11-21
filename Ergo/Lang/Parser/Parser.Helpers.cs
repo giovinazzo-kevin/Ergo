@@ -19,7 +19,7 @@ namespace Ergo.Lang
         {
             var pos = _lexer.State;
             value = default;
-            if (!_lexer.TryReadNextToken(out var token) || token.Type != type || !(token.Value is T t) || !pred(t)) {
+            if (!_lexer.TryReadNextToken(out var token) || token.Type != type || token.Value is not T t || !pred(t)) {
                 return Fail(pos);
             }
             value = t;

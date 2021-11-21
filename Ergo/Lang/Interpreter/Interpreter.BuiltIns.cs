@@ -36,6 +36,12 @@ namespace Ergo.Lang
                 "Is true if its argument is a ground term."
                 , new Atom("@ground"), 1, BuiltIn_Ground));
             AddBuiltIn(new BuiltIn(
+                "Evaluates to the result of its argument, a comparison."
+                , new Atom("@cmp"), 1, BuiltIn_Cmp1));
+            AddBuiltIn(new BuiltIn(
+                "Evaluates to the result of its argument, a mathematical expression."
+                , new Atom("@eval"), 1, BuiltIn_Eval1));
+            AddBuiltIn(new BuiltIn(
                 "Builds a complex term with the desired arity where all terms are discarded variables."
                 , new Atom("@anon"), 2, BuiltIn_AnonymousComplex));
             AddBuiltIn(new BuiltIn(
@@ -44,9 +50,6 @@ namespace Ergo.Lang
             AddBuiltIn(new BuiltIn(
                 "Assigns the right hand side to the left hand side."
                 , new Atom("@set"), 2, BuiltIn_Assign));
-            AddBuiltIn(new BuiltIn(
-                "Evaluates to the result of its argument, a mathematical expression."
-                , new Atom("@eval"), 1, BuiltIn_Eval1));
             AddBuiltIn(new BuiltIn(
                 "Evaluates the rhs, a mathematical expression, and substitutes the lhs with the result."
                 , new Atom("@eval"), 2, BuiltIn_Eval2));
@@ -190,6 +193,18 @@ namespace Ergo.Lang
             var result = new Atom(Eval(c.Arguments[0]));
             return new BuiltIn.Evaluation(result);
         }
+        protected virtual BuiltIn.Evaluation BuiltIn_Cmp1(Term t)
+        {
+            var c = ComplexGuard(t, c => {
+                if (c.Arguments.Length != 1) {
+                    return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 1);
+                }
+                return null;
+            });
+
+            var result = new Atom(Cmp(c.Arguments[0]));
+            return new BuiltIn.Evaluation(result);
+        }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Eval2(Term t)
         {
@@ -225,6 +240,25 @@ namespace Ergo.Lang
                 }
             );
             static double Throw(Term t)
+            {
+                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(t));
+            }
+        }
+
+        static bool Cmp(Term t)
+        {
+            return t.Reduce(
+                a => Throw(a),
+                v => Throw(v),
+                c => c.Functor switch {
+                      var f when c.Arguments.Length == 2 && Operators.BinaryComparisonGt.Synonyms.Contains(f) => Eval(c.Arguments[0]) > Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinaryComparisonGte.Synonyms.Contains(f) => Eval(c.Arguments[0]) >= Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinaryComparisonLt.Synonyms.Contains(f) => Eval(c.Arguments[0]) < Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinaryComparisonLte.Synonyms.Contains(f) => Eval(c.Arguments[0]) <= Eval(c.Arguments[1])
+                    , _ => Throw(c)
+                }
+            );
+            static bool Throw(Term t)
             {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(t));
             }

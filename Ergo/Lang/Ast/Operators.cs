@@ -22,6 +22,10 @@ namespace Ergo.Lang
         public static readonly Operator BinaryAssignment = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, ":=");
         public static readonly Operator BinaryEquality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "==");
         public static readonly Operator BinaryInequality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "\\==");
+        public static readonly Operator BinaryComparisonGt = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 51, ">");
+        public static readonly Operator BinaryComparisonGte = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Right, 51, ">=");
+        public static readonly Operator BinaryComparisonLt = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 49, "<");
+        public static readonly Operator BinaryComparisonLte = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.Left, 49, "<=");
         public static readonly Operator BinaryUnprovability = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "\\=");
         public static readonly Operator BinarySynctacticEquality = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "?=");
         public static readonly Operator BinaryEvaluation = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "is");
@@ -37,6 +41,10 @@ namespace Ergo.Lang
             , BinaryUnification
             , BinaryEvaluation
             , BinaryEquality
+            , BinaryComparisonGt
+            , BinaryComparisonGte
+            , BinaryComparisonLt
+            , BinaryComparisonLte
             , BinarySynctacticEquality
             , BinaryInequality
             , BinaryUnprovability

@@ -16,7 +16,7 @@
                 Position = pos;
                 Line = line;
                 Column = col;
-                Context = ctx ?? string.Empty;
+                Context = ctx ?? System.String.Empty;
             }
         }
     }

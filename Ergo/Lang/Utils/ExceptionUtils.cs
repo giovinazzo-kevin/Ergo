@@ -64,7 +64,7 @@ namespace Ergo.Lang.Utils
             var ctx = state.Context.Replace("\t", "    ");
             var ctxIndicator = new string('~', ctx.Length) + "^";
             var ret = $"at line {state.Line}, col {state.Column}:\r\n\t{error}\r\n\r\n\t{ctx}\r\n\t{ctxIndicator} (here)\r\n";
-            if (!string.IsNullOrEmpty(state.Filename)) {
+            if (!String.IsNullOrEmpty(state.Filename)) {
                 ret = $"In file '{state.Filename}', " + ret;
             }
             return ret;

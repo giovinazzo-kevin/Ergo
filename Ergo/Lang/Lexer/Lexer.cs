@@ -177,7 +177,7 @@ namespace Ergo.Lang
                 var integralPlaces = -1;
                 for (int i = 0; !Eof && IsNumberPiece(Peek()); ++i) {
                     if (IsDigit(Peek())) {
-                        var digit = int.Parse(Read().ToString());
+                        var digit = Int32.Parse(Read().ToString());
                         if (integralPlaces == -1) {
                             number = number * 10 + digit;
                         }

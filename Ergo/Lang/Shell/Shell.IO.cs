@@ -199,7 +199,7 @@ namespace Ergo.Lang
                         continue;
                     var str = "";
                     for (int i = 0; i < row.Length; i++) {
-                        var cell = row[i].Length > j ? row[i][j] : string.Empty;
+                        var cell = row[i].Length > j ? row[i][j] : String.Empty;
                         str += cell.PadRight(longestCells[i], ' ');
                         if (i < row.Length - 1) {
                             str += " ║ ";

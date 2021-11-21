@@ -13,7 +13,7 @@ namespace Ergo.Lang
         public Parser(Lexer lexer)
         {
             _lexer = lexer;
-            _discardContext = new(string.Empty);
+            _discardContext = new(String.Empty);
         }
 
         public bool TryParseAtom(out Atom atom)
@@ -302,7 +302,7 @@ namespace Ergo.Lang
             if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc)) {
                 desc = desc[1..].TrimStart();
                 while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc)) {
-                    if (!string.IsNullOrEmpty(newDesc)) {
+                    if (!String.IsNullOrEmpty(newDesc)) {
                         desc += "\n" + newDesc[1..].TrimStart();
                     }
                 }

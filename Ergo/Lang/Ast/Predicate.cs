@@ -30,7 +30,7 @@ namespace Ergo.Lang
             return head.Type switch
             {
                 TermType.Atom => $"{Term.Explain(head)}/0"
-                , TermType.Complex when (Complex)head is var c => $"{c.Functor}/{c.Arity}"
+                , TermType.Complex when (Complex)head is var c => $"{Atom.Explain(c.Functor)}/{c.Arity}"
                 , TermType.Variable => $"{Term.Explain(head)}/?"
                 , _ => throw new InvalidOperationException(head.Type.ToString())
             };
@@ -71,11 +71,6 @@ namespace Ergo.Lang
             }
             substitutions = default;
             return false;
-        }
-
-        public override string ToString()
-        {
-            return Explain(this);
         }
     }
 }

@@ -10,13 +10,10 @@ namespace Ergo.Lang
         public readonly Term Lhs { get; }
         public readonly Term Rhs { get; }
 
-        public readonly string Explanation { get; }
-
         public Substitution(Term lhs, Term rhs)
         {
             Lhs = lhs;
             Rhs = rhs;
-            Explanation = $"{Lhs}/{Rhs}";
         }
 
         public Substitution WithRhs(Term newRhs)
@@ -92,14 +89,14 @@ namespace Ergo.Lang
 
         public Substitution Inverted() => new(Rhs, Lhs);
 
-        public override string ToString()
-        {
-            return Explanation;
-        }
-
         public override int GetHashCode()
         {
             return HashCode.Combine(Lhs, Rhs);
+        }
+
+        public static string Explain(Substitution s)
+        {
+            return $"{Term.Explain(s.Lhs)}/{Term.Explain(s.Rhs)}";
         }
     }
 }

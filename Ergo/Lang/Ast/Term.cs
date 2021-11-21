@@ -21,7 +21,7 @@ namespace Ergo.Lang
         private readonly Variable VariableValue;
         private readonly Complex ComplexValue;
 
-        public readonly bool Ground;
+        public readonly bool IsGround;
 
         public static string Explain(Term t)
         {
@@ -101,7 +101,7 @@ namespace Ergo.Lang
             VariableValue = variable;
             ComplexValue = complex;
             Type = kind;
-            Ground = kind == TermType.Atom || kind == TermType.Complex && ComplexValue.Arguments.All(a => a.Ground);
+            IsGround = kind == TermType.Atom || kind == TermType.Complex && ComplexValue.Arguments.All(a => a.IsGround);
         }
 
         public static Term FromAtom(Atom atom)
@@ -196,11 +196,6 @@ namespace Ergo.Lang
                 return rhs.ComplexValue;
             }
             throw new InvalidCastException(rhs.Type.ToString());
-        }
-
-        public override string ToString()
-        {
-            return Explain(this);
         }
     }
 }

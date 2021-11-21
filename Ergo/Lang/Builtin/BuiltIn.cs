@@ -16,7 +16,7 @@ namespace Ergo.Lang
             Functor = functor;
             Arity = arity;
             Apply = apply;
-            Signature = $"{functor}/{arity}";
+            Signature = $"{Atom.Explain(functor)}/{arity}";
             Documentation = documentation;
         }
 

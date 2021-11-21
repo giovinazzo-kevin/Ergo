@@ -1,8 +1,4 @@
-﻿teaches(dr_fred, history).
-teaches(dr_fred, english).
-teaches(dr_fred, drama).
-teaches(dr_fiona, physics). 	          	
-studies(alice, english).
-studies(angus, english).
-studies(amelia, drama).
-studies(alex, physics).
+﻿fib(0, 0) :- @cut.
+fib(1, 1) :- @cut.
+fib(X, Y) :- X1 is X - 1, X2 is X - 2, fib(X1, Y1), fib(X2, Y2), Y is Y1 + Y2.
+

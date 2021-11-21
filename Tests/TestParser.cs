@@ -30,7 +30,7 @@ namespace Tests
         [DataRow("Variable", "Variable")]
         [DataRow("_X", "_X")]
         [DataRow("_variable", "_variable")]
-        [DataRow("_", "_")]
+        [DataRow("_", "_1")]
         [DataTestMethod]
         public void ParseVariable(string variable, string normalized)
         {
@@ -50,7 +50,7 @@ namespace Tests
             Assert.AreEqual(expected, List.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
-        [DataRow("a(_)", "a(_)")]
+        [DataRow("a(_)", "a(_3)")]
         [DataRow("a(X)", "a(X)")]
         [DataRow("f(A, B, C)", "f(A, B, C)")]
         [DataRow("f(A, B, g(C, D))", "f(A, B, g(C, D))")]

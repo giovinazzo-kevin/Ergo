@@ -19,19 +19,17 @@ namespace Ergo.Lang
                     ;
                 IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
                 {
-                    foreach (var s in subs) {
-                        var ret = s;
-                        int chg;
-                        do {
-                            chg = 0;
-                            foreach (var ss in subs) {
-                                if (s.Equals(ss)) continue;
-                                var newRet = ret.WithRhs(Term.Substitute(ret.Rhs, ss));
-                                if (!newRet.Equals(ret)) chg++;
-                                ret = newRet;
-                            }
+                    var answers = subs
+                        .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false));
+                    var steps = subs
+                        .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false))
+                        .ToDictionary(s => s.Lhs);
+
+                    foreach (var ans in answers) {
+                        var ret = ans;
+                        while(!ret.Rhs.IsGround) {
+                            ret = ret.WithRhs(Term.Variables(ret.Rhs).Aggregate(ret.Rhs, (a, b) => Term.Substitute(a, steps[b])));
                         }
-                        while (chg > 0);
                         yield return ret;
                     }
                 }

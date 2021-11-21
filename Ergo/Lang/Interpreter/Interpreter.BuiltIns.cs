@@ -265,7 +265,7 @@ namespace Ergo.Lang
         }
         protected virtual BuiltIn.Evaluation BuiltIn_Ground(Term t)
         {
-            if (t.Ground) {
+            if (t.IsGround) {
                 return new BuiltIn.Evaluation(Literals.True);
             }
             return new BuiltIn.Evaluation(Literals.False);

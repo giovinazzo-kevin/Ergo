@@ -43,11 +43,17 @@ namespace Ergo.Lang
 
         public bool RetractOne(Term head)
         {
+            if (TryGetBuiltIn(head, out _)) {
+                throw new InterpreterException(ErrorType.UnknownPredicate, head);
+            }
             return KnowledgeBase.RetractOne(head);
         }
 
         public int RetractAll(Term head)
         {
+            if (TryGetBuiltIn(head, out _)) {
+                throw new InterpreterException(ErrorType.UnknownPredicate, head);
+            }
             return KnowledgeBase.RetractAll(head);
         }
 
@@ -56,7 +62,6 @@ namespace Ergo.Lang
             var solver = new Solver(KnowledgeBase, BuiltInsDict, flags);
             solver.Trace += HandleTrace;
             var solutions = solver.Solve(goal);
-            //solver.Trace -= HandleTrace;
             return solutions;
 
             void HandleTrace(string msg) => Trace?.Invoke(msg);
@@ -73,11 +78,7 @@ namespace Ergo.Lang
             }
 
             foreach (var k in program.KnowledgeBank) {
-                var sig = Predicate.Signature(k.Head);
-                if (BuiltInsDict.TryGetValue(sig, out var builtIn)) {
-                    throw new InterpreterException(ErrorType.UserPredicateConflictsWithBuiltIn, sig);
-                }
-                KnowledgeBase.AssertZ(k);
+                AssertZ(k);
             }
 
             MaybeClose();

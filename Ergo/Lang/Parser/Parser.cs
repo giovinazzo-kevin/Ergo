@@ -61,7 +61,7 @@ namespace Ergo.Lang
                 if (term.StartsWith("__K")) {
                     Throw(pos, ErrorType.TermHasIllegalName, var.Name);
                 }
-                if(term.Equals(Literals.Discard.ToString())) {
+                if(term.Equals(Term.Explain(Literals.Discard))) {
                     term = $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}";
                 }
                 var = new Variable(term);

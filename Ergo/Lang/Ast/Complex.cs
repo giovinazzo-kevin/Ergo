@@ -4,11 +4,10 @@ using System.Linq;
 
 namespace Ergo.Lang
 {
-
     public readonly partial struct Complex
     {
-        public readonly Atom Functor { get; }
-        public readonly Term[] Arguments { get; }
+        public readonly Atom Functor;
+        public readonly Term[] Arguments;
         public readonly int Arity => Arguments.Length;
 
         public static string Explain(Complex c)
@@ -19,7 +18,7 @@ namespace Ergo.Lang
             if (List.TryUnfold(c, out var list)) {
                 return List.Explain(list);
             }
-            return $"{c.Functor}({String.Join(", ", c.Arguments)})";
+            return $"{Atom.Explain(c.Functor)}({String.Join(", ", c.Arguments.Select(arg => Term.Explain(arg)))})";
         }
 
         public Complex(Atom functor, params Term[] args)
@@ -62,11 +61,6 @@ namespace Ergo.Lang
         public static implicit operator Term(Complex rhs)
         {
             return Term.FromComplex(rhs);
-        }
-
-        public override string ToString()
-        {
-            return Explain(this);
         }
     }
 

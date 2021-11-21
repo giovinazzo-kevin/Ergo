@@ -74,7 +74,7 @@ namespace Ergo.Lang
                 WriteLine($"File already exists: {fileName}", LogLevel.Err);
                 return;
             }
-            var text = new Program(Interpreter.Predicates.ToArray()).ToString();
+            var text = Program.Explain(new Program(Interpreter.Predicates.ToArray()));
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }

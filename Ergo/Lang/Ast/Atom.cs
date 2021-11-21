@@ -78,11 +78,6 @@ namespace Ergo.Lang
         {
             return Term.FromAtom(rhs);
         }
-
-        public override string ToString()
-        {
-            return Explain(this);
-        }
     }
 
 }

@@ -191,7 +191,7 @@ namespace Ergo.Lang
                     foreach (var s in solutions) {
                         any = true;
                         if(s.Substitutions.Any()) {
-                            var join = String.Join(", ", s.Simplify().Select(s => s.Explanation));
+                            var join = String.Join(", ", s.Simplify().Select(s => Substitution.Explain(s)));
                             WriteLine($"\t| {join}");
                             if (ReadChar(true) != ' ') {
                                 break;
@@ -241,12 +241,14 @@ namespace Ergo.Lang
                 return;
             }
             var pred = parsed.Reduce(some => some, () => default);
-            if (start) {
-                Interpreter.AssertA(pred);
-            }
-            else {
-                Interpreter.AssertZ(pred);
-            }
+            Handler.Try(() => {
+                if (start) {
+                    Interpreter.AssertA(pred);
+                }
+                else {
+                    Interpreter.AssertZ(pred);
+                }
+            });
             WriteLine($"Asserted {Predicate.Signature(pred.Head)} at the {(start ? "beginning" : "end")} of the predicate list.", LogLevel.Inf);
         }
 
@@ -256,24 +258,25 @@ namespace Ergo.Lang
             if (!parsed.HasValue) {
                 return;
             }
-
             var t = parsed.Reduce(some => some, () => default);
-            if (all) {
-                if(Interpreter.RetractAll(t) is { } delta && delta > 0) {
-                    WriteLine($"Retracted {delta} predicates that matched with {t}.", LogLevel.Inf);
+            Handler.Try(() => {
+                if (all) {
+                    if (Interpreter.RetractAll(t) is { } delta && delta > 0) {
+                        WriteLine($"Retracted {delta} predicates that matched with {t}.", LogLevel.Inf);
+                    }
+                    else {
+                        No();
+                    }
                 }
                 else {
-                    No();
+                    if (Interpreter.RetractOne(t)) {
+                        Yes();
+                    }
+                    else {
+                        No();
+                    }
                 }
-            }
-            else {
-                if(Interpreter.RetractOne(t)) {
-                    Yes();
-                }
-                else {
-                    No();
-                }
-            }
+            });
         }
 
         protected virtual void Cmd_PrintHelp(Group cmd)
@@ -363,7 +366,7 @@ namespace Ergo.Lang
                     r.Signature, 
                     r.Documentation,
                     Name = r.Signature.Substring(0, r.Signature.LastIndexOf('/')),
-                    Arity = Int32.Parse(r.Signature.Substring(r.Signature.LastIndexOf('/') + 1))
+                    Arity = Int32.Parse(r.Signature[(r.Signature.LastIndexOf('/') + 1)..])
                 })
                 .GroupBy(x => x.Name)
                 .Select(g => {

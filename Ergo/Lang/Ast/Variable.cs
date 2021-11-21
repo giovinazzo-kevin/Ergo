@@ -39,11 +39,6 @@ namespace Ergo.Lang
         {
             return Term.FromVariable(rhs);
         }
-
-        public override string ToString()
-        {
-            return Explain(this);
-        }
     }
 
 }

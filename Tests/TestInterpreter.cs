@@ -68,7 +68,7 @@ namespace Tests
             var Predicates = new Parsed<Query>(query, Thrower, _ => throw new Exception("Parse fail."));
             var ans = interpreter.Solve(Predicates.Value.Reduce(some => some, () => default).Goals);
             Assert.IsNotNull(ans);
-            Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explanation)))));
+            Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => Substitution.Explain(s))))));
         }
     }
 }

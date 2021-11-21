@@ -22,11 +22,6 @@ namespace Ergo.Lang
                 KnowledgeBank.AssertZ(k);
             }
         }
-
-        public override string ToString()
-        {
-            return Explain(this);
-        }
     }
 
 }

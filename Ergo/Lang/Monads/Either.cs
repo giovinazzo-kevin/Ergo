@@ -44,8 +44,8 @@ namespace Ergo.Lang
             return false;
         }
 
-        public static Either<TA, TB> FromA(TA a) => new Either<TA, TB>(a, default, true);
-        public static Either<TA, TB> FromB(TB b) => new Either<TA, TB>(default, b, false);
+        public static Either<TA, TB> FromA(TA a) => new(a, default, true);
+        public static Either<TA, TB> FromB(TB b) => new(default, b, false);
 
         public override int GetHashCode()
         {

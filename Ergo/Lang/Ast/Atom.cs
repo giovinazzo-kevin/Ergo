@@ -58,7 +58,7 @@ namespace Ergo.Lang
             Value = value;
         }
 
-        public Atom WithValue(object newValue) => new Atom(newValue);
+        public Atom WithValue(object newValue) => new(newValue);
 
         public override bool Equals(object obj)
         {

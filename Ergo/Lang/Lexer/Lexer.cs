@@ -15,7 +15,7 @@ namespace Ergo.Lang
         protected long Position => _reader.Position;
         protected string Context { get; private set; }
         protected string Filename { get; private set; }
-        public StreamState State => new StreamState(Filename, Position, Line, Column, Context);
+        public StreamState State => new(Filename, Position, Line, Column, Context);
         public void Seek(StreamState state, SeekOrigin origin = SeekOrigin.Begin)
         {
             _reader.Seek(state.Position, origin);

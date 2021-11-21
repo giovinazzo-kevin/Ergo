@@ -19,9 +19,9 @@ namespace Ergo.Lang
             Root = new Sequence(Functor, tail, head.Contents).Root;
         }
 
-        public readonly static Atom Functor = new Atom("[|]");
+        public readonly static Atom Functor = new("[|]");
         public readonly static Term EmptyLiteral = new Atom("[]");
-        public static Sequence Build(params Term[] args) => new Sequence(Functor, EmptyLiteral, args);
+        public static Sequence Build(params Term[] args) => new(Functor, EmptyLiteral, args);
         public static bool IsList(Sequence s) => s.Functor.Equals(Functor);
         public static bool IsList(Complex c) => c.Functor.Equals(Functor);
         public static bool TryUnfold(Term t, out List expr)

@@ -20,7 +20,7 @@ namespace Ergo.Lang
             Documentation = documentation;
         }
 
-        public BuiltIn WithArity(int newArity) => new BuiltIn(Documentation, Functor, newArity, Apply);
+        public BuiltIn WithArity(int newArity) => new(Documentation, Functor, newArity, Apply);
     }
 
 }

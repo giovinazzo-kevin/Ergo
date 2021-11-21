@@ -9,7 +9,7 @@ namespace Tests
     [TestClass]
     public class TestParser
     {
-        private readonly ExceptionHandler Thrower = new ExceptionHandler(ex => throw ex);
+        private readonly ExceptionHandler Thrower = new(ex => throw ex);
 
         [DataRow("a_simple_atom", "a_simple_atom")]
         [DataRow("'a string'", "'a string'")]

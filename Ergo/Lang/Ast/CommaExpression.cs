@@ -13,9 +13,9 @@ namespace Ergo.Lang
         public readonly Sequence Sequence;
         public CommaExpression(Sequence from) { Sequence = from; }
 
-        public readonly static Atom Functor = new Atom(",");
+        public readonly static Atom Functor = new(",");
         public readonly static Term EmptyLiteral = new Atom("()");
-        public static Sequence Build(params Term[] args) => new Sequence(Functor, EmptyLiteral, args);
+        public static Sequence Build(params Term[] args) => new(Functor, EmptyLiteral, args);
         public static bool IsCommaExpression(Sequence s) => s.Functor.Equals(Functor);
         public static bool IsExpression(Complex c) => c.Functor.Equals(Functor);
         public static bool TryUnfold(Term t, out CommaExpression expr)

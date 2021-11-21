@@ -44,6 +44,6 @@ namespace Ergo.Lang
         }
 
         public static readonly Maybe<T> None = default;
-        public static Maybe<T> Some(T value) => new Maybe<T>(value);
+        public static Maybe<T> Some(T value) => new(value);
     }
 }

@@ -1,11 +1,13 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ergo.Lang
 {
 
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct CommaExpression
     {
         public readonly Sequence Sequence;

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ergo.Lang
 {
 
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Predicate
     {
         public readonly Term Head { get; }

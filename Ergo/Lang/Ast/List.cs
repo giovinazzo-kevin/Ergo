@@ -1,10 +1,12 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ergo.Lang
 {
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct List
     {
         public readonly Sequence Head;

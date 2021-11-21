@@ -1,9 +1,11 @@
 ﻿
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ergo.Lang
 {
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly partial struct Complex
     {
         public readonly Atom Functor;

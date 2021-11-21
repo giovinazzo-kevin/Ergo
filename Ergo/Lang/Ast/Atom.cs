@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Lang
 {
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Atom
     {
         public static readonly char[] IdentifierPunctuation = new char[] {

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Ergo.Lang
 {
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Variable
     {
         public readonly string Name { get; }

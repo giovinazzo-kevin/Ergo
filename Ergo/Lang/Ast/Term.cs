@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 
 namespace Ergo.Lang
 {
+
+    [DebuggerDisplay("{ Explain(this) }")]
     public readonly partial struct Term
     {
         public class InstantiationContext
@@ -80,18 +83,11 @@ namespace Ergo.Lang
 
         public static Term Substitute(Term @base, IEnumerable<Substitution> subs)
         {
-            int changes;
-            do {
-                changes = 0;
-                foreach (var s in subs) {
-                    var newBase = Substitute(@base, s);
-                    if(!newBase.Equals(@base)) {
-                        ++changes;
-                        @base = newBase;
-                    }
-                }
+            var steps = subs.ToDictionary(s => s.Lhs);
+            var variables = Term.Variables(@base);
+            foreach (var var in variables) {
+                @base = Substitute(@base, steps[var]);
             }
-            while (changes > 0);
             return @base;
         }
 

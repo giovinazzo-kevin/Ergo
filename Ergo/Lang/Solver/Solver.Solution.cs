@@ -24,11 +24,16 @@ namespace Ergo.Lang
                     var steps = subs
                         .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false))
                         .ToDictionary(s => s.Lhs);
-
                     foreach (var ans in answers) {
                         var ret = ans;
-                        while(!ret.Rhs.IsGround) {
-                            ret = ret.WithRhs(Term.Variables(ret.Rhs).Aggregate(ret.Rhs, (a, b) => Term.Substitute(a, steps[b])));
+                        var vars = Term.Variables(ret.Rhs).ToArray();
+                        while (!ret.Rhs.IsGround) {
+                            ret = ret.WithRhs(vars.Aggregate(ret.Rhs, (a, b) => steps.ContainsKey(b) ? Term.Substitute(a, steps[b]) : a));
+                            var newVars = Term.Variables(ret.Rhs).ToArray();
+                            if(newVars.Where(v => vars.Contains(v)).Any()) {
+                                break;
+                            }
+                            vars = newVars;
                         }
                         yield return ret;
                     }

@@ -135,12 +135,12 @@ namespace Ergo.Lang
             }
         }
 
-        public static Variable[] Variables(Term t)
+        public static IEnumerable<Variable> Variables(Term t)
         {
             return t.Type switch
             {
                 TermType.Variable => new[] { t.VariableValue }
-                , TermType.Complex => t.ComplexValue.Arguments.SelectMany(arg => Variables(arg)).ToArray()
+                , TermType.Complex => t.ComplexValue.Arguments.SelectMany(arg => Variables(arg))
                 , _ => Array.Empty<Variable>()
             };
         }

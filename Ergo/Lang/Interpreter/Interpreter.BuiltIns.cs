@@ -45,8 +45,11 @@ namespace Ergo.Lang
                 "Assigns the right hand side to the left hand side."
                 , new Atom("@set"), 2, BuiltIn_Assign));
             AddBuiltIn(new BuiltIn(
-                "Evaluates the right hand side and assigns the result to the left hand side."
-                , new Atom("@eval"), 2, BuiltIn_Evaluate));
+                "Evaluates to the result of its argument, a mathematical expression."
+                , new Atom("@eval"), 1, BuiltIn_Eval1));
+            AddBuiltIn(new BuiltIn(
+                "Evaluates the rhs, a mathematical expression, and substitutes the lhs with the result."
+                , new Atom("@eval"), 2, BuiltIn_Eval2));
             AddBuiltIn(new BuiltIn(
                 "Unifies the left hand side with the right hand side."
                 , new Atom("@unify"), 2, BuiltIn_Unify));
@@ -175,7 +178,20 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.False);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Evaluate(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Eval1(Term t)
+        {
+            var c = ComplexGuard(t, c => {
+                if (c.Arguments.Length != 1) {
+                    return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 1);
+                }
+                return null;
+            });
+
+            var result = new Atom(Eval(c.Arguments[0]));
+            return new BuiltIn.Evaluation(result);
+        }
+
+        protected virtual BuiltIn.Evaluation BuiltIn_Eval2(Term t)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 2) {
@@ -189,28 +205,25 @@ namespace Ergo.Lang
                 return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
             }
             return new BuiltIn.Evaluation(Literals.False);
+        }
 
-            static decimal Eval(Term t)
-            {
-                return t.Reduce(
-                    a => a.Value is decimal d ? d : Throw(a),
-                    v => Throw(v),
-                    c => c.Functor switch {
-                        var f when Operators.BinaryPlus.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
-                        ,
-                        var f when Operators.BinaryMinus.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
-                        ,
-                        var f when Operators.BinaryAsterisk.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
-                        ,
-                        var f when Operators.BinaryForwardSlash.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
-                        ,
-                        _ => Throw(c)
-                    }
-                );
-                static decimal Throw(Term t)
-                {
-                    throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(t));
+        static decimal Eval(Term t)
+        {
+            return t.Reduce(
+                a => a.Value is decimal d ? d : Throw(a),
+                v => Throw(v),
+                c => c.Functor switch {
+                    var f when Operators.BinarySum.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
+                    , var f when Operators.BinarySubtraction.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
+                    , var f when Operators.BinaryMultiplication.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
+                    , var f when Operators.BinaryDivision.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
+                    , var f when Operators.BinaryPower.Synonyms.Contains(f) => (decimal)Math.Pow((double)Eval(c.Arguments[0]), (double)Eval(c.Arguments[1]))
+                    , _ => Throw(c)
                 }
+            );
+            static decimal Throw(Term t)
+            {
+                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(t));
             }
         }
 

@@ -19,7 +19,7 @@ namespace Ergo.Lang
                 , _ when typeof(T) == typeof(Complex) => 
                     (Parser p) => p.TryParseComplex(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(Term) => 
-                    (Parser p) => p.TryParseTerm(out var x) ? Box(x) : onParseFail(data)
+                    (Parser p) => p.TryParseTerm(out var x, out _) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(CommaExpression) => 
                     (Parser p) => p.TryParseExpression(out var x) && CommaExpression.TryUnfold(x.Complex, out var expr) ? Box(expr) : onParseFail(data)
                 , _ when typeof(T) == typeof(Expression) => 
@@ -33,7 +33,7 @@ namespace Ergo.Lang
                         ? CommaExpression.TryUnfold(x.Complex, out var expr) 
                             ? Box(new Query(expr.Sequence))
                             : Box(new Query(CommaExpression.Build(x.Complex)))
-                        : p.TryParseTerm(out var t)
+                        : p.TryParseTerm(out var t, out _)
                             ? Box(new Query(CommaExpression.Build(t)))
                             : onParseFail(data)
                 , _ when typeof(T) == typeof(Program) => 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Ergo.Lang
@@ -20,18 +21,19 @@ namespace Ergo.Lang
             Precedence = precedence;
         }
 
-        public static bool TryGetOperatorFromFunctor(Atom functor, out Operator op)
+        public static bool TryGetOperatorsFromFunctor(Atom functor, out IEnumerable<Operator> ops)
         {
-            op = default;
-            var match = Operators.DefinedOperators.Where(op => op.Synonyms.Any(s => functor.Equals(s)));
+            ops = default;
+            var match = Operators.DefinedOperators
+                .Where(op => op.Synonyms.Any(s => functor.Equals(s)));
             if (!match.Any()) {
                 return false;
             }
-            op = match.Single();
+            ops = match;
             return true;
         }
 
-        public Expression BuildExpression(Term lhs, Maybe<Term> maybeRhs = default)
+        public Expression BuildExpression(Term lhs, Maybe<Term> maybeRhs = default, bool lhsParenthesized = false)
         {
             var _this = this;
             return maybeRhs.Reduce(
@@ -43,7 +45,8 @@ namespace Ergo.Lang
             {
                 // When the lhs represents an expression with the same precedence as this (and thus associativity, by design)
                 // and right associativity, we have to swap the arguments around until they look right.
-                if(Expression.TryConvert(lhs, out var lhsExpr)
+                if(!lhsParenthesized 
+                && Expression.TryConvert(lhs, out var lhsExpr)
                 && lhsExpr.Operator.Affix == AffixType.Infix
                 && lhsExpr.Operator.Associativity == AssociativityType.Right
                 && lhsExpr.Operator.Precedence == _this.Precedence) {

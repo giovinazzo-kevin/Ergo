@@ -79,7 +79,7 @@ namespace Ergo.Lang
             if (!TryParseSequence(
                   CommaExpression.Functor
                 , CommaExpression.EmptyLiteral
-                , () => TryParseTermOrExpression(out var t) ? (true, t) : (false, default)
+                , () => TryParseTermOrExpression(out var t, out _) ? (true, t) : (false, default)
                 , "(", ",", ")"
                 , true
                 , out var inner
@@ -94,44 +94,61 @@ namespace Ergo.Lang
             }
             return true;
         }
-        public bool TryParseTermOrExpression(out Term term)
+        public bool TryParseTermOrExpression(out Term term, out bool parenthesized)
         {
+            var pos = _lexer.State;
+            parenthesized = false;
             if (TryParseExpression(out var expr)) {
                 term = expr.Complex;
                 return true;
             }
-            if (TryParseTerm(out term))
+            if (TryParseTerm(out term, out parenthesized)) {
                 return true;
+            }
             term = default;
-            return false;
+            return Fail(pos);
         }
-        public bool TryParseTerm(out Term term)
+        public bool TryParseTerm(out Term term, out bool parenthesized)
         {
-            term = default;
+            term = default; parenthesized = false;
             var pos = _lexer.State;
-            if(Expect(Lexer.TokenType.Punctuation, str => str.Equals("("), out string _)
-            && TryParseExpression(out var expr)
-            && Expect(Lexer.TokenType.Punctuation, str => str.Equals(")"), out string _)) {
+            if(Parenthesized(() => TryParseExpression(out var expr) ? (true, expr) : (false, default), out var expr)) {
                 term = expr.Complex;
+                parenthesized = true;
                 return true;
             }
-            if (TryParseList(out var list)) {
-                term = list.Root;
+            if (Parenthesized(() => TryParseTerm(out var eval, out _) ? (true, eval) : (false, default), out var eval)) {
+                term = eval;
+                parenthesized = true;
                 return true;
             }
-            if (TryParseVariable(out var var)) {
-                term = var;
-                return true;
-            }
-            if (TryParseComplex(out var cplx)) {
-                term = cplx;
-                return true;
-            }
-            if (TryParseAtom(out var atom)) {
-                term = atom;
+            if(TryParseTermInner(out var t)) {
+                term = t;
                 return true;
             }
             return Fail(pos);
+
+            bool TryParseTermInner(out Term term)
+            {
+                if (TryParseList(out var list)) {
+                    term = list.Root;
+                    return true;
+                }
+                if (TryParseVariable(out var var)) {
+                    term = var;
+                    return true;
+                }
+                if (TryParseComplex(out var cplx)) {
+                    term = cplx;
+                    return true;
+                }
+                if (TryParseAtom(out var atom)) {
+                    term = atom;
+                    return true;
+                }
+                term = default;
+                return false;
+            }
         }
 
         public bool TryParseList(out List seq)
@@ -141,7 +158,7 @@ namespace Ergo.Lang
             if (TryParseSequence(
                   List.Functor
                 , List.EmptyLiteral
-                , () => TryParseTermOrExpression(out var t) ? (true, t) : (false, default)
+                , () => TryParseTermOrExpression(out var t, out _) ? (true, t) : (false, default)
                 , "[", ",", "]"
                 , true
                 , out var full
@@ -164,15 +181,20 @@ namespace Ergo.Lang
         private bool ExpectOperator(Func<Operator, bool> match, out Operator op)
         {
             op = default;
-            return Expect(Lexer.TokenType.Operator, str => Operator.TryGetOperatorFromFunctor(new Atom(str), out var _op) && match(_op), out string str)
-                && Operator.TryGetOperatorFromFunctor(new Atom(str), out op);
+            if(Expect(Lexer.TokenType.Operator, str => Operator.TryGetOperatorsFromFunctor(new Atom(str), out var _op) && _op.Any(match)
+            , out string str)
+                && Operator.TryGetOperatorsFromFunctor(new Atom(str), out var ops)) {
+                op = ops.Single(match);
+                return true;
+            }
+            return false;
         }
 
         public bool TryParsePrefixExpression(out Expression expr)
         {
             expr = default; var pos = _lexer.State;
             if (ExpectOperator(op => op.Affix == Operator.AffixType.Prefix, out var op)
-            && TryParseTerm(out var arg)) {
+            && TryParseTerm(out var arg, out _)) {
                 expr = op.BuildExpression(arg);
                 return true;
             }
@@ -182,7 +204,7 @@ namespace Ergo.Lang
         public bool TryParsePostfixExpression(out Expression expr)
         {
             expr = default; var pos = _lexer.State;
-            if (TryParseTerm(out var arg) 
+            if (TryParseTerm(out var arg, out _) 
             && ExpectOperator(op => op.Affix == Operator.AffixType.Postfix, out var op)) {
                 expr = op.BuildExpression(arg);
                 return true;
@@ -193,22 +215,23 @@ namespace Ergo.Lang
         public bool TryParseExpression(out Expression expr)
         {
             expr = default; var pos = _lexer.State;
-            if (TryParsePrimary(out var lhs)) {
-                if(WithMinPrecedence(lhs, 0, out expr)) {
+            if (TryParsePrimary(out var lhs, out var lhsParenthesized)) {
+                if(WithMinPrecedence(lhs, lhsParenthesized, 0, out expr)) {
                     return true;
                 }
                 // Special case for unary expressions
                 if(lhs.Type != TermType.Complex || !((Complex)lhs is var cplx)
                     || cplx.Arguments.Length > 1
-                    || !Operator.TryGetOperatorFromFunctor(cplx.Functor, out var op)) {
+                    || !Operator.TryGetOperatorsFromFunctor(cplx.Functor, out var ops)) {
                     return Fail(pos);
                 }
+                var op = ops.Single(op => op.Affix != Operator.AffixType.Infix);
                 expr = op.BuildExpression(cplx.Arguments[0], Maybe<Term>.None);
                 return true;
             }
             return Fail(pos);
 
-            bool WithMinPrecedence(Term lhs, int minPrecedence, out Expression expr)
+            bool WithMinPrecedence(Term lhs, bool lhsParenthesized, int minPrecedence, out Expression expr)
             {
                 expr = default; var pos = _lexer.State;
                 if (!TryPeekNextOperator(out var lookahead)) { 
@@ -220,17 +243,16 @@ namespace Ergo.Lang
                 while (lookahead.Affix == Operator.AffixType.Infix && lookahead.Precedence >= minPrecedence) {
                     _lexer.TryReadNextToken(out _);
                     var op = lookahead;
-                    if(!TryParsePrimary(out var rhs)) {
-                        expr = op.BuildExpression(lhs, Maybe<Term>.None);
-                        break;
+                    if(!TryParsePrimary(out var rhs, out var rhsParenthesized)) {
+                        return Fail(pos);
                     }
-                    if(!TryPeekNextOperator(out lookahead)) {
-                        expr = op.BuildExpression(lhs, Maybe.Some(rhs));
+                    if (!TryPeekNextOperator(out lookahead)) {
+                        expr = op.BuildExpression(lhs, Maybe.Some(rhs), lhsParenthesized);
                         break;
                     }
                     while(lookahead.Affix == Operator.AffixType.Infix && lookahead.Precedence > op.Precedence
                         || lookahead.Associativity == Operator.AssociativityType.Right && lookahead.Precedence == op.Precedence) {
-                        if(!WithMinPrecedence(rhs, op.Precedence + 1, out var newRhs)) {
+                        if(!WithMinPrecedence(rhs, rhsParenthesized, op.Precedence + 1, out var newRhs)) {
                             break;
                         }
                         rhs = newRhs.Complex;
@@ -243,9 +265,10 @@ namespace Ergo.Lang
                 return true;
             }
 
-            bool TryParsePrimary(out Term term)
+            bool TryParsePrimary(out Term term, out bool parenthesized)
             {
                 term = default; var pos = _lexer.State;
+                parenthesized = false;
                 if (TryParsePrefixExpression(out var prefix)) {
                     term = prefix.Complex;
                     return true;
@@ -254,7 +277,7 @@ namespace Ergo.Lang
                     term = postfix.Complex;
                     return true;
                 }
-                if (TryParseTerm(out term)) {
+                if (TryParseTerm(out term, out parenthesized)) {
                     return true;
                 }
                 return Fail(pos);
@@ -263,8 +286,12 @@ namespace Ergo.Lang
             bool TryPeekNextOperator(out Operator op)
             {
                 op = default;
-                return _lexer.TryPeekNextToken(out var lookahead)
-                && Operator.TryGetOperatorFromFunctor(new Atom(lookahead.Value), out op);
+                if(_lexer.TryPeekNextToken(out var lookahead)
+                && Operator.TryGetOperatorsFromFunctor(new Atom(lookahead.Value), out var ops)) {
+                    op = ops.Where(op => op.Affix == Operator.AffixType.Infix).Single();
+                    return true;
+                }
+                return false;
             }
         }
 
@@ -284,7 +311,7 @@ namespace Ergo.Lang
             if (_lexer.Eof)
                 return Fail(pos);
             if (!TryParseExpression(out var op)) {
-                if (TryParseTerm(out var head) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
+                if (TryParseTerm(out var head, out _) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
                     return MakePredicate(pos, desc, head, CommaExpression.Build(new Atom(true)), out predicate);
                 }
                 Throw(pos, ErrorType.ExpectedClauseList);

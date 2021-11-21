@@ -2,7 +2,8 @@
 %: This is a documentation comment.
 % This is another single-line comment that isn't part of the documentation.
 %: TODO: List of work to be done.
-todo(global, ['Modules', 'Coroutining', 'Regex', 'C# Interface']).
+todo(global, ['Modules', 'Coroutining', 'Regex']).
+todo(csharp, ['Generators', 'CLR Attributes']).
 todo(interpreter, ['Metapredicates', 'User-defined operators', 'Basic typesystem']).
 todo(parser, ['Directives']).
 todo(ast, ['Annotations']).

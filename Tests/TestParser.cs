@@ -50,7 +50,6 @@ namespace Tests
             Assert.AreEqual(expected, List.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
-        [DataRow("a(_)", "a(_3)")]
         [DataRow("a(X)", "a(X)")]
         [DataRow("f(A, B, C)", "f(A, B, C)")]
         [DataRow("f(A, B, g(C, D))", "f(A, B, g(C, D))")]
@@ -63,12 +62,27 @@ namespace Tests
         }
 
 
+
+        [DataRow("(((((a)))) + ((((b)))))", "+(a, b)")]
+        [DataRow("((((a))))", "a")]
+        [DataRow("((((a + b))))", "+(a, b)")]
+        [DataRow("((((-a))))", "-(a)")]
+        [DataTestMethod]
+        public void ParseTerm(string exp, string normalized)
+        {
+            var p = new Parsed<Term>(exp, Thrower, _ => throw new Exception("Parse fail."));
+            Assert.AreEqual(normalized, Term.Explain(p.Value.Reduce(some => some, () => default)));
+        }
+
+        [DataRow("-a", "-(a)")]
         [DataRow("a, b, c, d", "(a, b, c, d)")]
         [DataRow("a + b * c", "+(a, *(b, c))")]
         [DataRow("(a + b) * c", "*(+(a, b), c)")]
         [DataRow("a + b * c - d", "-(+(a, *(b, c)), d)")]
         [DataRow("a + b * c * d - e", "-(+(a, *(*(b, c), d)), e)")]
         [DataRow("X = a + b * c * d - e", "=(X, -(+(a, *(*(b, c), d)), e))")]
+        [DataRow("F is B * 2 ^ (1/12) ^ N", "is(F, *(B, ^(2, ^(/(1, 12), N))))")]
+        [DataRow("F is B * (2 ^ (1/12)) ^ N", "is(F, *(B, ^(^(2, /(1, 12)), N)))")]
         [DataTestMethod]
         public void ParseExpression(string exp, string normalized)
         {

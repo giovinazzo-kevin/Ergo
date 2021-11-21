@@ -25,8 +25,12 @@ namespace Ergo.Lang
             if (t.Type != TermType.Complex)
                 return false;
             var cplx = (Complex)t;
-            if (!Operator.TryGetOperatorFromFunctor(cplx.Functor, out var op))
+            if (!Operator.TryGetOperatorsFromFunctor(cplx.Functor, out var ops))
                 return false;
+            var op = ops.Single(op => cplx.Arity switch {
+                1 => op.Affix != Operator.AffixType.Infix
+                , _ => op.Affix == Operator.AffixType.Infix
+            });
             if (cplx.Arguments.Length == 1) {
                 expr = op.BuildExpression(cplx.Arguments[0]);
                 return true;

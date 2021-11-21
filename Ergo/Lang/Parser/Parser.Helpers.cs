@@ -17,16 +17,26 @@ namespace Ergo.Lang
         }
         protected bool Expect<T>(Lexer.TokenType type, Func<T, bool> pred, out T value)
         {
-            var s = _lexer.State;
+            var pos = _lexer.State;
             value = default;
             if (!_lexer.TryReadNextToken(out var token) || token.Type != type || !(token.Value is T t) || !pred(t)) {
-                _lexer.Seek(s);
-                return false;
+                return Fail(pos);
             }
             value = t;
             return true;
         }
         protected bool Expect<T>(Lexer.TokenType type, out T value) => Expect(type, _ => true, out value);
+        protected bool Parenthesized<T>(Func<(bool Parsed, T Result)> tryParse, out T value)
+        {
+            var pos = _lexer.State; value = default;
+            if (Expect(Lexer.TokenType.Punctuation, str => str.Equals("("), out string _)
+            && tryParse() is (true, var res)
+            && Expect(Lexer.TokenType.Punctuation, str => str.Equals(")"), out string _)) {
+                value = res;
+                return true;
+            }
+            return Fail(pos);
+        }
         protected void Throw(Lexer.StreamState s, ErrorType error, params object[] args)
         {
             var old = _lexer.State;
@@ -62,7 +72,7 @@ namespace Ergo.Lang
                 }
             }
             // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
-            if(Operator.TryGetOperatorFromFunctor(new Atom(separator), out var op) && op.Equals(Operators.BinaryComma)
+            if(Operator.TryGetOperatorsFromFunctor(new Atom(separator), out var ops) && ops.Contains(Operators.BinaryConjunction)
               && args.Count == 1 && CommaExpression.TryUnfold(args.Single(), out var comma)) {
                 seq = new Sequence(functor, emptyElement, comma.Sequence.Contents);
             }

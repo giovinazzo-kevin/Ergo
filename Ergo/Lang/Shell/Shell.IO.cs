@@ -158,11 +158,11 @@ namespace Ergo.Lang
             for (int i = 0; i < described.Length; i++) {
                 for (int j = 0; j < described[i].Length; j++) {
                     AlternateColors(-1);
-                    Write("\t║ ");
+                    Write("\t║");
                     AlternateColors(i);
-                    Write(described[i][j]);
+                    Write(" " + described[i][j] + " ");
                     AlternateColors(-1);
-                    WriteLine(" ║ ");
+                    WriteLine("║ ");
                 }
             }
             AlternateColors(-1);

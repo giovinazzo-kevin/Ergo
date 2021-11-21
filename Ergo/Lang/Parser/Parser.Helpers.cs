@@ -7,9 +7,9 @@ namespace Ergo.Lang
 {
     public partial class Parser
     {
-        protected bool IsPunctuation(Lexer.Token token, [NotNull] string p) => token.Type == Lexer.TokenType.Punctuation && p.Equals(token.Value);
-        protected bool IsAtomIdentifier(string s) => s[0] == '@' || Char.IsLetter(s[0]) && Char.IsLower(s[0]);
-        protected bool IsVariableIdentifier(string s) => s[0] == '_' || (Char.IsLetter(s[0]) && Char.IsUpper(s[0]));
+        protected static bool IsPunctuation(Lexer.Token token, [NotNull] string p) => token.Type == Lexer.TokenType.Punctuation && p.Equals(token.Value);
+        protected static bool IsAtomIdentifier(string s) => s[0] == '@' || Char.IsLetter(s[0]) && Char.IsLower(s[0]);
+        protected static bool IsVariableIdentifier(string s) => s[0] == '_' || (Char.IsLetter(s[0]) && Char.IsUpper(s[0]));
         protected bool Fail(Lexer.StreamState s)
         {
             _lexer.Seek(s);

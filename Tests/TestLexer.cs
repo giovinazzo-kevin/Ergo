@@ -10,7 +10,7 @@ namespace Tests
     [TestClass]
     public class TestLexer
     {
-        private void AssertNextToken(Lexer l, Lexer.TokenType expectedType, object expectedValue)
+        private static void AssertNextToken(Lexer l, Lexer.TokenType expectedType, object expectedValue)
         {
             Assert.IsTrue(l.TryReadNextToken(out var token));
             Assert.AreEqual(expectedType, token.Type);

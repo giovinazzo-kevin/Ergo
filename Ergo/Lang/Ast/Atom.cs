@@ -58,7 +58,7 @@ namespace Ergo.Lang
             Value = value;
         }
 
-        public Atom WithValue(object newValue) => new(newValue);
+        public static Atom WithValue(object newValue) => new(newValue);
 
         public override bool Equals(object obj)
         {
@@ -79,6 +79,16 @@ namespace Ergo.Lang
         public static implicit operator Term(Atom rhs)
         {
             return Term.FromAtom(rhs);
+        }
+
+        public static bool operator ==(Atom left, Atom right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Atom left, Atom right)
+        {
+            return !(left == right);
         }
     }
 

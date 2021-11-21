@@ -61,7 +61,7 @@ namespace Ergo.Lang
                 , new Atom("@unifiable"), 3, BuiltIn_Unifiable));
         }
 
-        protected Complex ComplexGuard(Term t, Func<Complex, Exception> @throw)
+        protected static Complex ComplexGuard(Term t, Func<Complex, Exception> @throw)
         {
             if (t.Type != TermType.Complex) {
                 @throw(default);
@@ -72,7 +72,7 @@ namespace Ergo.Lang
             }
             return c;
         }
-        protected Atom AtomGuard(Term t, Func<Atom, Exception> @throw)
+        protected static Atom AtomGuard(Term t, Func<Atom, Exception> @throw)
         {
             if (t.Type != TermType.Atom) {
                 @throw(default);

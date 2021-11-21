@@ -196,5 +196,15 @@ namespace Ergo.Lang
             }
             throw new InvalidCastException(rhs.Type.ToString());
         }
+
+        public static bool operator ==(Term left, Term right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Term left, Term right)
+        {
+            return !(left == right);
+        }
     }
 }

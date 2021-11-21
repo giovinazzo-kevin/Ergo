@@ -207,21 +207,23 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.False);
         }
 
-        static decimal Eval(Term t)
+        static double Eval(Term t)
         {
             return t.Reduce(
-                a => a.Value is decimal d ? d : Throw(a),
+                a => a.Value is double d ? d : Throw(a),
                 v => Throw(v),
                 c => c.Functor switch {
-                    var f when Operators.BinarySum.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
-                    , var f when Operators.BinarySubtraction.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
-                    , var f when Operators.BinaryMultiplication.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
-                    , var f when Operators.BinaryDivision.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
-                    , var f when Operators.BinaryPower.Synonyms.Contains(f) => (decimal)Math.Pow((double)Eval(c.Arguments[0]), (double)Eval(c.Arguments[1]))
+                      var f when c.Arguments.Length == 2 && Operators.BinarySum.Synonyms.Contains(f) => Eval(c.Arguments[0]) + Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinarySubtraction.Synonyms.Contains(f) => Eval(c.Arguments[0]) - Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinaryMultiplication.Synonyms.Contains(f) => Eval(c.Arguments[0]) * Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinaryDivision.Synonyms.Contains(f) => Eval(c.Arguments[0]) / Eval(c.Arguments[1])
+                    , var f when c.Arguments.Length == 2 && Operators.BinaryPower.Synonyms.Contains(f) => Math.Pow(Eval(c.Arguments[0]), Eval(c.Arguments[1]))
+                    , var f when c.Arguments.Length == 1 && Operators.UnaryNegative.Synonyms.Contains(f) => -Eval(c.Arguments[0])
+                    , var f when c.Arguments.Length == 1 && Operators.UnaryPositive.Synonyms.Contains(f) => +Eval(c.Arguments[0])
                     , _ => Throw(c)
                 }
             );
-            static decimal Throw(Term t)
+            static double Throw(Term t)
             {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(t));
             }
@@ -265,7 +267,7 @@ namespace Ergo.Lang
             if (!(args.Functor.Value is string functor)) {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, Term.Explain(args.Functor));
             }
-            if (!(args.Arity.Value is decimal arity)) {
+            if (!(args.Arity.Value is double arity)) {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(args.Arity));
             }
             if (arity - (int)arity != 0) {

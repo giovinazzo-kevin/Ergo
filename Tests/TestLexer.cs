@@ -22,9 +22,9 @@ namespace Tests
         {
             using var stream = FileStreamUtils.MemoryStream("1234.56789.123");
             var lexer = new Lexer(stream);
-            AssertNextToken(lexer, Lexer.TokenType.Number, 1234.56789M);
+            AssertNextToken(lexer, Lexer.TokenType.Number, 1234.56789d);
             AssertNextToken(lexer, Lexer.TokenType.Punctuation, ".");
-            AssertNextToken(lexer, Lexer.TokenType.Number, 123M);
+            AssertNextToken(lexer, Lexer.TokenType.Number, 123d);
         }
 
         [TestMethod]

@@ -32,7 +32,7 @@ namespace Ergo.Lang
                 }
                 return true;
             }
-            else if (Expect(Lexer.TokenType.Number, out decimal dec)) {
+            else if (Expect(Lexer.TokenType.Number, out double dec)) {
                 atom = new Atom(dec);
                 return true;
             }

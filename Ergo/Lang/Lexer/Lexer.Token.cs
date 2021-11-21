@@ -14,7 +14,7 @@
             }
 
             public static Token FromString(string value) => new Token(TokenType.String, value);
-            public static Token FromNumber(decimal value) => new Token(TokenType.Number, value);
+            public static Token FromNumber(double value) => new Token(TokenType.Number, value);
             public static Token FromKeyword(string value) => new Token(TokenType.Keyword, value);
             public static Token FromTerm(string value) => new Token(TokenType.Term, value);
             public static Token FromPunctuation(string value) => new Token(TokenType.Punctuation, value);

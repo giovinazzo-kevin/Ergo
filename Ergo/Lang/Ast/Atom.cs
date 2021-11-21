@@ -65,8 +65,8 @@ namespace Ergo.Lang
             if(!(obj is Atom other)) {
                 return false;
             }
-            if(other.Value is decimal n && Value is decimal m) {
-                return m - n == 0M;
+            if(other.Value is double n && Value is double m) {
+                return m - n == 0d;
             }
             return Equals(Value, other.Value);
         }

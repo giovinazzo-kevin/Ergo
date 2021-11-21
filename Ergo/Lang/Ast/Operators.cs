@@ -28,7 +28,8 @@ namespace Ergo.Lang
         public static readonly Operator BinaryEvaluation = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "is");
         public static readonly Operator BinaryHorn = new Operator(Operator.AffixType.Infix, Operator.AssociativityType.None, 10, ":-", "-?");
         public static readonly Operator UnaryUnprovability = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 30, "\\+");
-        public static readonly Operator UnaryNegation = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 5, "-");
+        public static readonly Operator UnaryNegative = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 5, "-");
+        public static readonly Operator UnaryPositive = new Operator(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 5, "+");
 
         public static readonly Operator[] DefinedOperators = new[] {
               BinaryConjunction
@@ -51,7 +52,8 @@ namespace Ergo.Lang
             , BinaryXor
             , BinaryMod
             , UnaryUnprovability
-            , UnaryNegation
+            , UnaryPositive
+            , UnaryNegative
         };
     }
 

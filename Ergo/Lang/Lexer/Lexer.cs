@@ -115,7 +115,7 @@ namespace Ergo.Lang
             bool IsDecimalDelimiter(char c) => c == '.';
             bool IsDocumentationCommentStart(char c) => c == ':';
             bool IsNumberStart(char c) => IsDigit(c);
-            bool IsNumberPiece(char c) => IsNumberStart(c) || IsDecimalDelimiter(c);
+            bool IsNumberPiece(char c) => IsNumberStart(c) || IsDecimalDelimiter(c) || c == '-' || c == '+';
             bool IsIdentifierStart(char c) => Char.IsLetter(c) || c == '@' || c == '_';
             bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
             bool IsKeyword(string s) => KeywordSymbols.Contains(s);
@@ -173,7 +173,7 @@ namespace Ergo.Lang
 
             Token ReadNumber()
             {
-                var number = 0M;
+                var number = 0d;
                 var integralPlaces = -1;
                 for (int i = 0; !Eof && IsNumberPiece(Peek()); ++i) {
                     if (IsDigit(Peek())) {
@@ -182,7 +182,7 @@ namespace Ergo.Lang
                             number = number * 10 + digit;
                         }
                         else {
-                            number += digit / (decimal)Math.Pow(10, i - integralPlaces);
+                            number += digit / Math.Pow(10, i - integralPlaces);
                         }
                     }
                     else if (IsDecimalDelimiter(Peek())) {

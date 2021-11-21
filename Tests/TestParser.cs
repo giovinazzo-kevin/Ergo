@@ -18,7 +18,7 @@ namespace Tests
         [DataRow("\"another 'nested' string\"", "'another \\'nested\\' string'")]
         [DataRow("42", "42")]
         [DataRow("42.30", "42.3")]
-        [DataRow("0.009423480", "0.00942348")]
+        [DataRow("0.25", "0.25")]
         [DataTestMethod]
         public void ParseAtom(string atom, string normalized)
         {
@@ -66,7 +66,7 @@ namespace Tests
         [DataRow("(((((a)))) + ((((b)))))", "+(a, b)")]
         [DataRow("((((a))))", "a")]
         [DataRow("((((a + b))))", "+(a, b)")]
-        [DataRow("((((-a))))", "-(a)")]
+        [DataRow("((((-1.25))))", "-(1.25)")]
         [DataTestMethod]
         public void ParseTerm(string exp, string normalized)
         {

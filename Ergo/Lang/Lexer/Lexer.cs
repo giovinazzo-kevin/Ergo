@@ -187,7 +187,12 @@ namespace Ergo.Lang
                     }
                     else if (IsDecimalDelimiter(Peek())) {
                         if (integralPlaces != -1) break;
+                        var s = State;
                         Read();
+                        if(!IsNumberPiece(Peek())) {
+                            Seek(s);
+                            break;
+                        }
                         integralPlaces = i;
                     }
                 }

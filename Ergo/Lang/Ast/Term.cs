@@ -84,9 +84,12 @@ namespace Ergo.Lang
         public static Term Substitute(Term @base, IEnumerable<Substitution> subs)
         {
             var steps = subs.ToDictionary(s => s.Lhs);
-            var variables = Term.Variables(@base);
-            foreach (var var in variables) {
-                @base = Substitute(@base, steps[var]);
+            var variables = Variables(@base).Where(var => steps.ContainsKey(var));
+            while (variables.Any()) {
+                foreach (var var in variables) {
+                    @base = Substitute(@base, steps[var]);
+                }
+                variables = Variables(@base).Where(var => steps.ContainsKey(var));
             }
             return @base;
         }

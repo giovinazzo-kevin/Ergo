@@ -133,9 +133,14 @@ namespace Ergo.Lang
                 , "Toggles throw mode, wherein unhandled .NET exceptions are thrown (for debugging purposes)."
             );
 #endif
+            var colorMap = Enum.GetNames(typeof(ConsoleColor))
+                .Select(v => v.ToString())
+                .ToList();
+            var colorAlternatives = String.Join('|', colorMap);
             Dispatcher.Add(
-                @"^\s*\$\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)\s*$"
-                , m => Cmd_Solve(m.Groups["query"], interactive: false)
+                @$"^\s*\$(?<color>{colorAlternatives})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)\s*$"
+                , m => Cmd_Solve(m.Groups["query"], interactive: false, 
+                    accentColor: m.Groups["color"] is { Success: true, Value: var v } ? Enum.Parse<ConsoleColor>(colorMap.Single(x => x.Equals(v, StringComparison.OrdinalIgnoreCase))) : ConsoleColor.Black)
                 , "$ <query>"
                 , "Solves a clause or group of clauses in tabular mode, aggregating and returning all solutions at once."
             );
@@ -161,7 +166,7 @@ namespace Ergo.Lang
             WriteLine($"Throw mode {(ThrowUnhandledExceptions ? "enabled" : "disabled")}.", LogLevel.Inf);
         }
 
-        protected void Cmd_Solve(Group q, bool interactive)
+        protected void Cmd_Solve(Group q, bool interactive, ConsoleColor accentColor = ConsoleColor.Black)
         {
             var userQuery = q.Value;
             if(!userQuery.EndsWith('.')) {
@@ -214,7 +219,7 @@ namespace Ergo.Lang
                             .ToArray())
                         .ToArray();
                     if (rows.Length > 0 && rows[0].Length == cols.Length) {
-                        WriteTable(cols, rows, ConsoleColor.Black);
+                        WriteTable(cols, rows, accentColor);
                         Yes();
                     }
                     else {

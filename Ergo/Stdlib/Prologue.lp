@@ -2,11 +2,11 @@
 %: This is a documentation comment.
 % This is another single-line comment that isn't part of the documentation.
 %: TODO: List of work to be done.
-todo(global, ['Unicode', 'Modules', 'Coroutining', 'Regex']).
-todo(csharp, ['Generators', 'CLR Attributes']).
-todo(interpreter, ['Metapredicates', 'User-defined operators', 'Basic typesystem']).
-todo(parser, ['Directives']).
-todo(ast, ['Annotations']).
+todo('Global', X) :- member(X, ['Unicode', 'Modules', 'Coroutining', 'Foreach/Forall', 'Regex']).
+todo('C#', X) :- member(X, ['Generators', 'CLR Attributes']).
+todo('Interpreter', X) :- member(X, ['Metapredicates', 'User-defined operators', 'Basic typesystem']).
+todo('Parser', X) :- member(X, ['Directives']).
+todo('AST', X) :- member(X, ['Annotations']).
 
 nl :- @print('\n').
 

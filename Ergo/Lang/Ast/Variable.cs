@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Ergo.Lang
 {
     [DebuggerDisplay("{ Explain(this) }")]
-    public readonly struct Variable
+    public readonly struct Variable : IComparable<Term>
     {
         public readonly string Name { get; }
         public readonly bool Ignored { get; }
@@ -36,6 +36,19 @@ namespace Ergo.Lang
         {
             return HashCode.Combine(Name);
         }
+
+        public int CompareTo(Term other)
+        {
+            return other.Type switch {
+                TermType.Atom => this.CompareTo((Atom)other)
+                , TermType.Variable => this.CompareTo((Variable)other)
+                , TermType.Complex => this.CompareTo((Complex)other)
+                , _ => throw new InvalidOperationException(other.Type.ToString())
+            };
+        }
+        public int CompareTo(Atom _) => -1;
+        public int CompareTo(Variable other) => Name.CompareTo(other.Name);
+        public int CompareTo(Complex _) => -1;
 
         public static implicit operator Term(Variable rhs)
         {

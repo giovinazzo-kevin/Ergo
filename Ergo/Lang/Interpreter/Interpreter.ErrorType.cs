@@ -9,6 +9,7 @@
             , UnknownPredicate
             , UserPredicateConflictsWithBuiltIn
             , ExpectedTermOfTypeAt
+            , UninstantiatedTermAt
             , ExpectedTermWithArity
             , ExpectedAtomWithDomain
         }

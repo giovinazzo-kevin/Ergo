@@ -10,9 +10,9 @@ namespace Ergo
         {
             var interpreter = new Interpreter();
             var shell = new Shell(interpreter);
-            shell.Load("Stdlib/Prologue.lp");
-            shell.Load("Stdlib/User.lp");
-            shell.Repl();
+            shell.Load("Stdlib/Prologue.ergo");
+            shell.Load("Stdlib/User.ergo");
+            shell.EnterRepl();
         }
     }
 }

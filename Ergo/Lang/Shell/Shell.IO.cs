@@ -97,9 +97,9 @@ namespace Ergo.Lang
 
             WithColors(lvl, () => {
                 foreach (var line in lines.Take(lines.Length - 1)) {
-                    Console.WriteLine(FormatLine(line));
+                    Console.WriteLine(LineFormatter(line));
                 }
-                Console.Write(FormatLine(lines.Last())  );
+                Console.Write(LineFormatter(lines.Last())  );
             });
         }
 

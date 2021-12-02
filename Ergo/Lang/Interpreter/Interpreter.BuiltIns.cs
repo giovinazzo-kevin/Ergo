@@ -37,16 +37,13 @@ namespace Ergo.Lang
                 , new Atom("@ground"), 1, BuiltIn_Ground));
             AddBuiltIn(new BuiltIn(
                 "Evaluates to the result of its argument, a comparison."
-                , new Atom("@cmp"), 1, BuiltIn_Cmp1));
+                , new Atom("@evalcmp"), 1, BuiltIn_Cmp1));
             AddBuiltIn(new BuiltIn(
                 "Evaluates to the result of its argument, a mathematical expression."
                 , new Atom("@eval"), 1, BuiltIn_Eval1));
             AddBuiltIn(new BuiltIn(
                 "Builds a complex term with the desired arity where all terms are discarded variables."
                 , new Atom("@anon"), 2, BuiltIn_AnonymousComplex));
-            AddBuiltIn(new BuiltIn(
-                "Compares two terms for equality."
-                , new Atom("@eq"), 2, BuiltIn_Equals));
             AddBuiltIn(new BuiltIn(
                 "Assigns the right hand side to the left hand side."
                 , new Atom("@set"), 2, BuiltIn_Assign));
@@ -57,8 +54,14 @@ namespace Ergo.Lang
                 "Unifies the left hand side with the right hand side."
                 , new Atom("@unify"), 2, BuiltIn_Unify));
             AddBuiltIn(new BuiltIn(
+                "Sorts a list."
+                , new Atom("@list_sort"), 4, BuiltIn_ListSort));
+            AddBuiltIn(new BuiltIn(
                 "Produces the list of equations necessary to unify the left hand side with the right hand side."
                 , new Atom("@unifiable"), 3, BuiltIn_Unifiable));
+            AddBuiltIn(new BuiltIn(
+                "Compares two terms according to the standard order of terms."
+                , new Atom("@compare"), 3, BuiltIn_Compare));
         }
 
         protected static Complex ComplexGuard(Term t, Func<Complex, Exception> @throw)
@@ -119,20 +122,6 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(new Atom(!eval));
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Equals(Term t)
-        {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 2) {
-                    return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 2);
-                }
-                return null;
-            });
-            if (!c.Arguments[0].Equals(c.Arguments[1])) {
-                return new BuiltIn.Evaluation(Literals.False);
-            }
-            return new BuiltIn.Evaluation(Literals.True);
-        }
-
         protected virtual BuiltIn.Evaluation BuiltIn_Cut(Term t)
         {
             return new BuiltIn.Evaluation(Literals.True);
@@ -163,6 +152,96 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.False);
         }
 
+        protected virtual BuiltIn.Evaluation BuiltIn_ListSort(Term t)
+        {
+            throw new NotImplementedException();
+            //var c = ComplexGuard(t, c => {
+            //    if (c.Arguments.Length != 4) {
+            //        return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 4);
+            //    }
+            //    if (c.Arguments[0].Type != TermType.Atom) {
+            //        return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, Term.Explain(c.Arguments[0]));
+            //    }
+            //    if (c.Arguments[1].Type != TermType.Atom) {
+            //        return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, Term.Explain(c.Arguments[1]));
+            //    }
+            //    return null;
+            //});
+
+            //var key = c.Arguments[0];
+            //if (!key.IsGround) {
+            //    throw new InterpreterException(ErrorType.UninstantiatedTermAt, Term.Explain(key));
+            //}
+
+            //var (descending, removeDuplicates) = ((Atom)c.Arguments[1]) switch {
+            //      var x when Operators.BinaryTermComparisonGt.Synonyms.Contains(x)  => (true, true)
+            //    , var x when Operators.BinaryTermComparisonGte.Synonyms.Contains(x) => (true, false)
+            //    , var x when Operators.BinaryTermComparisonLt.Synonyms.Contains(x)  => (false, true)
+            //    , var x when Operators.BinaryTermComparisonLte.Synonyms.Contains(x) => (false, false)
+            //    , _ => throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, "(term comparison operator)", Term.Explain(key))
+            //};
+
+            //var (list, sorted) = (c.Arguments[2], c.Arguments[3]);
+            //if(list.Type != TermType.Variable) {
+            //    if(list.Type != TermType.Complex || !List.IsList((Complex)list)) {
+            //        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.List, Term.Explain(list));
+            //    }
+            //    if(sorted.Type != TermType.Variable) {
+            //        if (sorted.Type != TermType.Complex || !List.IsList((Complex)sorted)) {
+            //            throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.List, Term.Explain(sorted));
+            //        }
+            //        if(Substitution.TryUnify(new(list, sorted), out var subs_)) {
+            //            return new BuiltIn.Evaluation(Literals.True, subs_.ToArray());
+            //        }
+            //        return new BuiltIn.Evaluation(Literals.False);
+            //    }
+            //    List.TryUnfold(list, out var l);
+
+            //    if (Substitution.TryUnify(new(list, sorted), out var subs)) {
+            //        return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
+            //    }
+            //}
+
+            //return new BuiltIn.Evaluation(Literals.False);
+
+            //List Sort(List l)
+            //{
+            //    var items = l.Head.Contents.AsEnumerable();
+            //    if (List.TryUnfold(l.Tail, out var rest)) {
+            //        items = items.Concat(rest.Head.Contents);
+            //    }
+            //    if(key.Equals(new Atom(0))) {
+            //        items = descending 
+            //            ? items.OrderByDescending(t => t) 
+            //            : items.OrderBy(t => t);
+            //    }
+            //    else if (key.Type == TermType.Atom && ((Atom)key).Value is double d && (int)d is var i) {
+            //        items = descending
+            //            ? items.Cast<Complex>().OrderByDescending(t => t.Arguments[i]).Cast<Term>()
+            //            : items.Cast<Complex>().OrderBy(t => t.Arguments[i]).Cast<Term>();
+            //    }
+            //    else {
+            //        items = descending
+            //            ? items.OrderByDescending(t => t.Arguments[i])
+            //            : items.OrderBy(t => t.Arguments[i]);
+            //    }
+            //}
+
+            //int SortByNthArg(int i, Complex a, Complex b)
+            //{
+            //    if (!descending) return a.Arguments[i].CompareTo(b);
+            //    return b.Arguments[i].CompareTo(a);
+            //}
+
+            //int SortByKey(Term key, Complex a, Complex b)
+            //{
+            //    var aByKey = a.Arguments.Single(x => Substitution.TryUnify(new(x, key), out _));
+            //    var bByKey = b.Arguments.Single(x => Substitution.TryUnify(new(x, key), out _));
+            //    if (!descending) return aByKey.CompareTo(bByKey);
+            //    return bByKey.CompareTo(aByKey);
+            //}
+        }
+
         protected virtual BuiltIn.Evaluation BuiltIn_Unifiable(Term t)
         {
             var c = ComplexGuard(t, c => {
@@ -179,6 +258,34 @@ namespace Ergo.Lang
                 }
             }
             return new BuiltIn.Evaluation(Literals.False);
+        }
+
+        protected virtual BuiltIn.Evaluation BuiltIn_Compare(Term t)
+        {
+            var c = ComplexGuard(t, c => {
+                if (c.Arguments.Length != 3) {
+                    return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 3);
+                }
+                return null;
+            });
+
+            var cmp = (double)c.Arguments[1].CompareTo(c.Arguments[2]);
+            if(c.Arguments[0].IsGround) {
+                var a = AtomGuard(c.Arguments[0], a => {
+                    if(a.Value is not double d) {
+                        return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Term.Explain(a));
+                    }
+                    if(d - (int)d != 0) {
+                        return new InterpreterException(ErrorType.ExpectedAtomWithDomain, BuiltIn.Domains.Integers);
+                    }
+                    return null;
+                });
+                if(a.Value.Equals(cmp)) {
+                    return new BuiltIn.Evaluation(Literals.True);
+                }
+                return new BuiltIn.Evaluation(Literals.False);
+            }
+            return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], new Atom(cmp)));
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Eval1(Term t)

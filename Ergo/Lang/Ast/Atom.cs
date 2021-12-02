@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace Ergo.Lang
 {
     [DebuggerDisplay("{ Explain(this) }")]
-    public readonly struct Atom
+    public readonly struct Atom : IComparable<Term>, IComparable<Complex>, IComparable<Variable>, IComparable<Atom>
     {
         public static readonly char[] IdentifierPunctuation = new char[] {
             '@', '_', '(', ')', '[', ']'
@@ -75,6 +75,29 @@ namespace Ergo.Lang
         {
             return HashCode.Combine(Value);
         }
+
+        public int CompareTo(Term other)
+        {
+            return other.Type switch
+            {
+                TermType.Atom => this.CompareTo((Atom)other)
+                , TermType.Variable => this.CompareTo((Variable)other)
+                , TermType.Complex => this.CompareTo((Complex)other)
+                , _ => throw new InvalidOperationException(other.Type.ToString())
+            };
+        }
+        public int CompareTo(Atom other)
+        {
+            if(Value is double d && other.Value is double e) {
+                return d.CompareTo(e);
+            }
+            if(Value is string s && other.Value is string t) {
+                return s.CompareTo(t);
+            }
+            return Explain(this).CompareTo(Explain(other));
+        }
+        public int CompareTo(Variable other) => 1;
+        public int CompareTo(Complex other) => -1;
 
         public static implicit operator Term(Atom rhs)
         {

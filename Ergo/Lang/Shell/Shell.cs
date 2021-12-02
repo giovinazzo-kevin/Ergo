@@ -10,11 +10,11 @@ namespace Ergo.Lang
 {
     public partial class Shell
     {
-        protected readonly string PromptTag;
-        protected readonly Func<LogLine, string> FormatLine;
-        protected readonly Interpreter Interpreter;
-        protected readonly CommandDispatcher Dispatcher;
         protected readonly ExceptionHandler Handler;
+        public readonly Interpreter Interpreter;
+        public readonly CommandDispatcher Dispatcher;
+        public Func<LogLine, string> LineFormatter { get; set; }
+        public string PromptTag { get; set; }
 
         private volatile bool _repl;
 
@@ -40,12 +40,12 @@ namespace Ergo.Lang
             set => _throw = value;
         }
 
-        public Shell(Interpreter interpreter, string prompt = "ergo> ", Func<LogLine, string> formatter = null)
+        public Shell(Interpreter interpreter = null, string prompt = "ergo> ", Func<LogLine, string> formatter = null)
         {
             PromptTag = prompt;
-            Interpreter = interpreter;
+            Interpreter = interpreter ?? new();
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
-            FormatLine = formatter ?? DefaultLineFormatter;
+            LineFormatter = formatter ?? DefaultLineFormatter;
             Handler = new ExceptionHandler(ex => {
                 WriteLine(ex.Message, LogLevel.Err);
                 if (_throw && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException)) {
@@ -79,32 +79,43 @@ namespace Ergo.Lang
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }
 
-        public virtual void Load(string fileName)
+        public virtual void Parse(string code, string fileName = "")
         {
-            if (!File.Exists(fileName)) {
-                WriteLine($"File does not exist: {fileName}", LogLevel.Err);
-                return;
-            }
-            var fs = FileStreamUtils.EncodedFileStream(File.OpenRead(fileName), closeStream: true);
-
             var oldPredicates = Interpreter.Predicates.Count();
-            if(Handler.Try(() => Interpreter.Load(fileName, fs, closeStream: true))) {
+            if (Handler.Try(() => Interpreter.Parse(code, fileName)))
+            {
                 var newPredicates = Interpreter.Predicates.Count();
                 var delta = newPredicates - oldPredicates;
                 WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
             }
         }
 
-        public virtual void Repl()
+        public virtual void Load(string fileName)
+        {
+            var oldPredicates = Interpreter.Predicates.Count();
+            if (Handler.Try(() => Interpreter.Load(fileName)))
+            {
+                var newPredicates = Interpreter.Predicates.Count();
+                var delta = newPredicates - oldPredicates;
+                WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
+            }
+        }
+
+        public virtual void EnterRepl()
         {
             _repl = true;
             do {
-                Dispatcher.Dispatch(Prompt());
+                Do(Prompt());
             }
             while (_repl);
         }
 
-        public virtual void CloseRepl()
+        public bool Do(string command)
+        {
+            return Dispatcher.Dispatch(command);
+        }
+
+        public virtual void ExitRepl()
         {
             _repl = false;
         }

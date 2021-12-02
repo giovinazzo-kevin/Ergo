@@ -14,7 +14,7 @@ namespace Tests
         protected static Interpreter MakeInterpreter()
         {
             var i = new Interpreter();
-            i.Load("Prologue", FileStreamUtils.EncodedFileStream(File.OpenRead("Stdlib/Prologue.lp"), closeStream: true));
+            i.Load("Prologue", FileStreamUtils.EncodedFileStream(File.OpenRead("Stdlib/Prologue.ergo"), closeStream: true));
             i.Load("Test", FileStreamUtils.MemoryStream(@"
                 fact.
                 data(1).

@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang;
+using Ergo.Lang.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,6 +68,22 @@ namespace Ergo.Lang
             void HandleTrace(string msg) => Trace?.Invoke(msg);
         }
 
+        public virtual void Parse(string code, string fileName = "")
+        {
+            var fs = FileStreamUtils.MemoryStream(code);
+            Load(fileName, fs, closeStream: true);
+        }
+
+        public virtual void Load(string fileName)
+        {
+            if (!File.Exists(fileName))
+            {
+                throw new FileNotFoundException(fileName);
+            }
+            var fs = FileStreamUtils.EncodedFileStream(File.OpenRead(fileName), closeStream: true);
+            Load(fileName, fs, closeStream: true);
+        }
+
         public virtual void Load(string name, Stream file, bool closeStream = true)
         {
             var lexer = new Lexer(file, name);
@@ -78,6 +95,10 @@ namespace Ergo.Lang
             }
 
             foreach (var k in program.KnowledgeBank) {
+                RetractAll(k.Head);
+            }
+            foreach (var k in program.KnowledgeBank)
+            {
                 AssertZ(k);
             }
 

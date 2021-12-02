@@ -9,7 +9,7 @@ namespace Ergo.Lang
 {
 
     [DebuggerDisplay("{ Explain(this) }")]
-    public readonly partial struct Term
+    public readonly partial struct Term : IComparable<Term>
     {
         public class InstantiationContext
         {
@@ -169,6 +169,17 @@ namespace Ergo.Lang
                 TermType.Atom => AtomValue.GetHashCode()
                 , TermType.Variable => VariableValue.GetHashCode()
                 , TermType.Complex => ComplexValue.GetHashCode()
+                , _ => throw new InvalidOperationException(Type.ToString())
+            };
+        }
+
+        public int CompareTo(Term other) 
+        {
+            return Type switch
+            {
+                TermType.Atom => AtomValue.CompareTo(other)
+                , TermType.Variable => VariableValue.CompareTo(other)
+                , TermType.Complex => ComplexValue.CompareTo(other)
                 , _ => throw new InvalidOperationException(Type.ToString())
             };
         }

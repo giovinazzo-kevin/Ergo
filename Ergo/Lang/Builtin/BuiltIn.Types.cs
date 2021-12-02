@@ -10,6 +10,7 @@
             public const string String = nameof(String);
             public const string Functor = nameof(Functor);
             public const string Complex = nameof(Complex);
+            public const string List = nameof(List);
             public const string Error = nameof(Error);
         }
     }

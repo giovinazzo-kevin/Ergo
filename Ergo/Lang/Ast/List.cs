@@ -20,8 +20,8 @@ namespace Ergo.Lang
         }
 
         public readonly static Atom Functor = new("[|]");
-        public readonly static Term EmptyLiteral = new Atom("[]");
-        public static Sequence Build(params Term[] args) => new(Functor, EmptyLiteral, args);
+        public readonly static Atom EmptyLiteral = new Atom("[]");
+        public static List Build(params Term[] args) => new(new(Functor, EmptyLiteral, args), EmptyLiteral);
         public static bool IsList(Sequence s) => s.Functor.Equals(Functor);
         public static bool IsList(Complex c) => c.Functor.Equals(Functor);
         public static bool TryUnfold(Term t, out List expr)

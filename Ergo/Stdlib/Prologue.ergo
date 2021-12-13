@@ -1,4 +1,29 @@
-﻿% This is a single-line comment.
+﻿:- module(prologue, [
+	'\\+'/1,
+	'is'/1,
+	'='/2,
+	'\\='/2,
+	'>'/2,
+	'<'/2,
+	'>='/2,
+	'<='/2,
+	'=='/2,
+	'\\=='/2,
+	'#<'/2,
+	'#>'/2,
+	'#<='/2,
+	'#>='/2,
+	':='/2,
+	'?='/2,
+	';'/2,
+
+	nl/0,
+	todo/2
+]).
+:- use_module(list).
+:- use_module(math).
+
+% This is a single-line comment.
 %: This is a documentation comment.
 % This is another single-line comment that isn't part of the documentation.
 %: TODO: List of work to be done.
@@ -22,36 +47,10 @@ nl :- @print('\n').
 '=='(A, B) :- @compare(0, A, B).
 '\\=='(A, B) :- @not(@compare(0, A, B)).
 '#<'(A, B)  :- @compare(X, A, B), X  < 0.
-'#=<'(A, B) :- @compare(X, A, B), X <= 0.
+'#<='(A, B) :- @compare(X, A, B), X <= 0.
 '#>'(A, B)  :- @compare(X, A, B), X  > 0.
 '#>='(A, B) :- @compare(X, A, B), X >= 0.
 ':='(A, B) :- @set(A, B).
 '?='(A,B) :- \+@unifiable(A,B,[_|_]).
 ';'(A, _) :- A.
 ';'(_, B) :- B.
-
-% GENERIC HELPERS
-
-% LIST HELPERS
-
-member(_, [], _) :- false.
-member(X, [H|T], '>') :- X = H ; member(X, T, '>').
-member(X, [H|T], '<') :- member(X, T, '<') ; X = H.
-member(X, Y) :- member(X, Y, '>').
-
-length([], 0).
-length([_|[]], 1) :- @cut.
-length([_|T], L) :- length(T, M), L is M + 1.
-
-% MATH HELPERS
-
-between_(Min, _, _, M) :- M is Min.
-between_(Min, Max, Step, M) :-
-	Min < Max,
-	between_(@eval(Min + Step), Max, Step, M).
-
-between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
-between('(', Min, Max, ']', Step, M) :- between_(@eval(Min + Step), Max, Step, M).
-between('[', Min, Max, ')', Step, M) :- between_(Min, @eval(Max - Step), Step, M).
-between('(', Min, Max, ')', Step, M) :- between_(@eval(Min + Step), @eval(Max - Step), Step, M).
-between(Min, Max, X) :- between('[', Min, Max, ')', 1, X).

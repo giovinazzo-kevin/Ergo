@@ -40,6 +40,8 @@ namespace Ergo.Lang
             set => _throw = value;
         }
 
+        protected IEnumerable<Predicate> GetInterpreterPredicates() => Interpreter.GetSolver().KnowledgeBase.AsEnumerable();
+
         public Shell(Interpreter interpreter = null, string prompt = "ergo> ", Func<LogLine, string> formatter = null)
         {
             PromptTag = prompt;
@@ -70,21 +72,24 @@ namespace Ergo.Lang
 
         public virtual void Save(string fileName, bool force = true)
         {
-            if (File.Exists(fileName) && !force) {
+            var preds = GetInterpreterPredicates();
+            if (File.Exists(fileName) && !force)
+            {
                 WriteLine($"File already exists: {fileName}", LogLevel.Err);
                 return;
             }
-            var text = Program.Explain(new Program(Interpreter.Predicates.ToArray()));
+            var text = Program.Explain(new Program(Array.Empty<Directive>(), preds.ToArray()));
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }
 
         public virtual void Parse(string code, string fileName = "")
         {
-            var oldPredicates = Interpreter.Predicates.Count();
+            var preds = GetInterpreterPredicates();
+            var oldPredicates = preds.Count();
             if (Handler.Try(() => Interpreter.Parse(code, fileName)))
             {
-                var newPredicates = Interpreter.Predicates.Count();
+                var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
                 WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
             }
@@ -92,10 +97,11 @@ namespace Ergo.Lang
 
         public virtual void Load(string fileName)
         {
-            var oldPredicates = Interpreter.Predicates.Count();
+            var preds = GetInterpreterPredicates();
+            var oldPredicates = preds.Count();
             if (Handler.Try(() => Interpreter.Load(fileName)))
             {
-                var newPredicates = Interpreter.Predicates.Count();
+                var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
                 WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
             }

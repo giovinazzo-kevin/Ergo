@@ -28,6 +28,8 @@ namespace Ergo.Lang
                     (Parser p) => p.TryParseList(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(Predicate) => 
                     (Parser p) => p.TryParsePredicate(out var x) ? Box(x) : onParseFail(data)
+                , _ when typeof(T) == typeof(Directive) => 
+                    (Parser p) => p.TryParseDirective(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(Query) => 
                     (Parser p) => p.TryParseExpression(out var x) 
                         ? CommaExpression.TryUnfold(x.Complex, out var expr) 

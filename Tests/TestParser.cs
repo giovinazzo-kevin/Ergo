@@ -102,5 +102,13 @@ namespace Tests
             var p = new Parsed<Predicate>(predicate, Thrower, _ => throw new Exception("Parse fail."));
             Assert.AreEqual(normalized, Predicate.Explain(p.Value.Reduce(some => some, () => default)).RemoveExtraWhitespace());
         }
+
+        [DataRow(":- module(test, []).", ":- module(test, []).")]
+        [DataTestMethod]
+        public void ParseDirective(string directive, string normalized)
+        {
+            var p = new Parsed<Directive>(directive, Thrower, _ => throw new Exception("Parse fail."));
+            Assert.AreEqual(normalized, Directive.Explain(p.Value.Reduce(some => some, () => default)).RemoveExtraWhitespace());
+        }
     }
 }

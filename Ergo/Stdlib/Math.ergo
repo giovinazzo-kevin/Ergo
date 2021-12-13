@@ -1,0 +1,14 @@
+﻿:- module(math, [
+	between/6, between/3
+]).
+
+between_(Min, _, _, M) :- M is Min.
+between_(Min, Max, Step, M) :-
+	Min < Max,
+	between_(@eval(Min + Step), Max, Step, M).
+
+between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
+between('(', Min, Max, ']', Step, M) :- between_(@eval(Min + Step), Max, Step, M).
+between('[', Min, Max, ')', Step, M) :- between_(Min, @eval(Max - Step), Step, M).
+between('(', Min, Max, ')', Step, M) :- between_(@eval(Min + Step), @eval(Max - Step), Step, M).
+between(Min, Max, X) :- between('[', Min, Max, ')', 1, X).

@@ -292,6 +292,51 @@ namespace Ergo.Lang
             }
         }
 
+
+        public bool TryParseDirective(out Directive directive)
+        {
+            directive = default;
+            var pos = _lexer.State;
+            if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
+            {
+                desc = desc[1..].TrimStart();
+                while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
+                {
+                    if (!String.IsNullOrEmpty(newDesc))
+                    {
+                        desc += "\n" + newDesc[1..].TrimStart();
+                    }
+                }
+            }
+            desc ??= " ";
+            if (_lexer.Eof)
+                return Fail(pos);
+            if (!TryParseExpression(out var op))
+            {
+                return Fail(pos);
+            }
+            if (!Operators.UnaryHorn.Equals(op.Operator))
+            {
+                return Fail(pos);
+            }
+            if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
+            {
+                Throw(pos, ErrorType.UnterminatedClauseList);
+            }
+            var lhs = op.Left;
+            if (CommaExpression.TryUnfold(lhs, out var expr))
+            {
+                lhs = expr.Sequence.Root;
+            }
+            return MakeDirective(pos, desc, lhs, out directive);
+
+            bool MakeDirective(Lexer.StreamState pos, string desc, Term body, out Directive d)
+            {
+                d = new Directive(desc, body);
+                return true;
+            }
+        }
+
         public bool TryParsePredicate(out Predicate predicate)
         {
             predicate = default;
@@ -343,13 +388,19 @@ namespace Ergo.Lang
                 return true;
             }
         }
+
         public bool TryParseProgram(out Program program)
         {
+            var directives = new List<Directive>();
             var predicates = new List<Predicate>();
+            while (TryParseDirective(out var directive))
+            {
+                directives.Add(directive);
+            }
             while (TryParsePredicate(out var predicate)) {
                 predicates.Add(predicate);
             }
-            program = new Program(predicates.ToArray());
+            program = new Program(directives.ToArray(), predicates.ToArray());
             return true;
         }
 

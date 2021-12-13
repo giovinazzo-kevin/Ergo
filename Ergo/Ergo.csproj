@@ -10,10 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Stdlib\Prologue.ergo">
+    <None Update="Stdlib\List.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\User.ergo">
+    <None Update="Stdlib\Math.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Stdlib\Prologue.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Stdlib\User.ergoergo">

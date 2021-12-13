@@ -247,10 +247,10 @@ namespace Ergo.Lang
             var pred = parsed.Reduce(some => some, () => default);
             Handler.Try(() => {
                 if (start) {
-                    Interpreter.AssertA(pred);
+                    Interpreter.AssertA(Interpreter.UserModule, pred);
                 }
                 else {
-                    Interpreter.AssertZ(pred);
+                    Interpreter.AssertZ(Interpreter.UserModule, pred);
                 }
             });
             WriteLine($"Asserted {Predicate.Signature(pred.Head)} at the {(start ? "beginning" : "end")} of the predicate list.", LogLevel.Inf);
@@ -265,7 +265,7 @@ namespace Ergo.Lang
             var t = parsed.Reduce(some => some, () => default);
             Handler.Try(() => {
                 if (all) {
-                    if (Interpreter.RetractAll(t) is { } delta && delta > 0) {
+                    if (Interpreter.RetractAll(Interpreter.UserModule, t) is { } delta && delta > 0) {
                         WriteLine($"Retracted {delta} predicates that matched with {t}.", LogLevel.Inf);
                     }
                     else {
@@ -273,7 +273,7 @@ namespace Ergo.Lang
                     }
                 }
                 else {
-                    if (Interpreter.RetractOne(t)) {
+                    if (Interpreter.RetractOne(Interpreter.UserModule, t)) {
                         Yes();
                     }
                     else {
@@ -305,7 +305,7 @@ namespace Ergo.Lang
 
         protected virtual void CmdPrintPredicates(Group term, bool explain)
         {
-            var predicates = Interpreter.Predicates;
+            var predicates = GetInterpreterPredicates();
             if (term?.Success ?? false) {
                 var parsed = new Parsed<Term>(term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
                 if (!parsed.HasValue) {

@@ -33,6 +33,7 @@ namespace Ergo.Lang
         public static readonly Operator BinaryUnprovability = new(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "\\=");
         public static readonly Operator BinarySynctacticEquality = new(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "?=");
         public static readonly Operator BinaryEvaluation = new(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "is");
+        public static readonly Operator UnaryHorn = new(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 10, ":-", "-?");
         public static readonly Operator BinaryHorn = new(Operator.AffixType.Infix, Operator.AssociativityType.None, 10, ":-", "-?");
         public static readonly Operator UnaryUnprovability = new(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 30, "\\+");
         public static readonly Operator UnaryNegative = new(Operator.AffixType.Prefix, Operator.AssociativityType.Right, 5, "-");
@@ -57,6 +58,7 @@ namespace Ergo.Lang
             , BinaryInequality
             , BinaryUnprovability
             , BinaryAssignment
+            , UnaryHorn
             , BinaryHorn
             , BinarySum
             , BinarySubtraction

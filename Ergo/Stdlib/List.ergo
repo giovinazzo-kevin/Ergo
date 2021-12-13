@@ -1,0 +1,12 @@
+﻿:- module(list, [
+	member/2, member/3, length/2
+]).
+
+member(_, [], _) :- false.
+member(X, [H|T], '>') :- X = H ; member(X, T, '>').
+member(X, [H|T], '<') :- member(X, T, '<') ; X = H.
+member(X, Y) :- member(X, Y, '>').
+
+length([], 0).
+length([_|[]], 1) :- @cut.
+length([_|T], L) :- length(T, M), L is M + 1.

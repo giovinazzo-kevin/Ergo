@@ -12,6 +12,7 @@
             public const string Complex = nameof(Complex);
             public const string List = nameof(List);
             public const string Error = nameof(Error);
+            public const string PredicateIndicator = nameof(PredicateIndicator);
         }
     }
 

@@ -23,6 +23,9 @@ namespace Ergo.Lang
             return $"{Atom.Explain(c.Functor)}({String.Join(", ", c.Arguments.Select(arg => Term.Explain(arg)))})";
         }
 
+        public static Complex OfArity(Atom functor, int arity) => 
+            new(functor, Enumerable.Range(0, arity).Select(i => (Term)new Variable($"_{i}")).ToArray());
+
         public Complex(Atom functor, params Term[] args)
         {
             Functor = functor;

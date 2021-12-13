@@ -10,17 +10,39 @@ namespace Ergo.Lang
     {
         protected readonly AsyncLocal<bool> Cut = new();
 
-        protected readonly KnowledgeBase Kb;
+        public readonly KnowledgeBase KnowledgeBase;
+
+        protected readonly IReadOnlyDictionary<Atom, Module> Modules;
         protected readonly IReadOnlyDictionary<string, BuiltIn> BuiltIns;
         protected readonly SolverFlags Flags;
 
         public event Action<string> Trace;
 
-        public Solver(KnowledgeBase kb, IReadOnlyDictionary<string, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
+        public Solver(IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<string, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
         {
-            Kb = kb;
+            Modules = modules;
             Flags = flags;
             BuiltIns = builtins;
+            KnowledgeBase = new KnowledgeBase();
+            foreach (var module in Modules.Values)
+            {
+                LoadModule(module);
+            }
+            void LoadModule(Module module, HashSet<Atom> added = null)
+            {
+                added ??= new();
+                added.Add(module.Name);
+                foreach (var subModule in module.Imports.Head.Contents.Select(c => (Atom)c))
+                {
+                    if (added.Contains(subModule))
+                        continue;
+                    LoadModule(Modules[subModule]);
+                }
+                foreach (var pred in module.KnowledgeBase)
+                {
+                    KnowledgeBase.AssertZ(pred);
+                }
+            }
         }
 
         private Term ResolveBuiltin(Term term, List<Substitution> subs, out string sig)
@@ -72,7 +94,7 @@ namespace Ergo.Lang
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            if (!Kb.TryGetMatches(goal, out var matches) && Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound)) {
+            if (!KnowledgeBase.TryGetMatches(goal, out var matches) && Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound)) {
                 throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
             }
             LogTrace(TraceType.Call, goal, depth);

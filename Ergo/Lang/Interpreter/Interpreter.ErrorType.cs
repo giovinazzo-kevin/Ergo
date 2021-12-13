@@ -12,6 +12,8 @@
             , UninstantiatedTermAt
             , ExpectedTermWithArity
             , ExpectedAtomWithDomain
+            , ModuleNameClash
+            , ModuleRedefinition
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Ergo.Lang
                 }
                 foreach (var pred in module.KnowledgeBase)
                 {
-                    KnowledgeBase.AssertZ(pred);
+                    KnowledgeBase.AssertZ(pred.Qualified(module));
                 }
             }
         }
@@ -94,10 +94,8 @@ namespace Ergo.Lang
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            if (!KnowledgeBase.TryGetMatches(goal, out var matches) && Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound)) {
-                throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
-            }
             LogTrace(TraceType.Call, goal, depth);
+            var matches = QualifyGoal(goal);
             foreach (var m in matches) {
                 foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
                     LogTrace(TraceType.Exit, m.Rhs.Head, depth);
@@ -106,6 +104,27 @@ namespace Ergo.Lang
                 if (Cut.Value) {
                     yield break;
                 }
+            }
+
+            IEnumerable<KnowledgeBase.Match> QualifyGoal(Term goal)
+            {
+                foreach (var module in Modules.Keys)
+                {
+                    var qualifiedGoal = goal.Reduce<Term>(
+                        a => new Atom($"{Atom.Explain(module)}:{Atom.Explain(a)}"),
+                        v => new Variable($"{Atom.Explain(module)}:{Variable.Explain(v)}"),
+                        c => new Complex(new Atom($"{Atom.Explain(module)}:{Atom.Explain(c.Functor)}"), c.Arguments)
+                    );
+                    if (KnowledgeBase.TryGetMatches(qualifiedGoal, out var matches))
+                    {
+                        return matches;
+                    }
+                }
+                if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                {
+                    throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
+                }
+                return Enumerable.Empty<KnowledgeBase.Match>();
             }
         }
 

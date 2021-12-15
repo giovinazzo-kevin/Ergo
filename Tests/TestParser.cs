@@ -96,6 +96,7 @@ namespace Tests
         [DataRow("pred :- fact.", "pred :- fact.")]
         [DataRow("pred(X) :- fact(X).", "pred(X) :- fact(X).")]
         [DataRow("pred(X) :- fact(X), test(X).", "pred(X) :- (fact(X), test(X)).")]
+        [DataRow("module:pred(X) :- fact(X), test(X).", ":(module, pred(X)) :- (fact(X), test(X)).")]
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {

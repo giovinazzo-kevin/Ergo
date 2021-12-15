@@ -16,6 +16,7 @@ namespace Ergo.Lang
         public static readonly Operator BinaryIntegerDivision = new(Operator.AffixType.Infix, Operator.AssociativityType.Left, 600, "//");
         public static readonly Operator BinarySum = new(Operator.AffixType.Infix, Operator.AssociativityType.Left, 500, "+");
         public static readonly Operator BinarySubtraction = new(Operator.AffixType.Infix, Operator.AssociativityType.Left, 500, "-");
+        public static readonly Operator BinaryColon = new(Operator.AffixType.Infix, Operator.AssociativityType.Left, 50, ":");
         public static readonly Operator BinaryPower = new(Operator.AffixType.Infix, Operator.AssociativityType.Right, 700, "^");
         public static readonly Operator BinaryMod = new(Operator.AffixType.Infix, Operator.AssociativityType.Left, 300, "mod");
         public static readonly Operator BinaryUnification = new(Operator.AffixType.Infix, Operator.AssociativityType.None, 50, "=");
@@ -42,6 +43,7 @@ namespace Ergo.Lang
         public static readonly Operator[] DefinedOperators = new[] {
               BinaryConjunction
             , BinaryDisjunction
+            , BinaryColon
             , BinaryList
             , BinaryUnification
             , BinaryEvaluation

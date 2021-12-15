@@ -11,8 +11,8 @@ namespace Ergo.Lang
 {
     public partial class Interpreter
     {
-        public readonly Atom PrologueModule = new("prologue");
-        public readonly Atom UserModule = new("user");
+        public static readonly Atom PrologueModule = new("prologue");
+        public static readonly Atom UserModule = new("user");
 
         public readonly Dictionary<Atom, Module> Modules;
         public readonly Dictionary<string, BuiltIn> BuiltInsDict;

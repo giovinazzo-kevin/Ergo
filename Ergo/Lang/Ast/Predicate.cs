@@ -63,6 +63,13 @@ namespace Ergo.Lang
             return new Predicate(k.Documentation, Term.Substitute(k.Head, s), Sequence.Substitute(k.Body, s));
         }
 
+        public Predicate Qualified(Module module) 
+            => new(Documentation, Head.Reduce<Term>(
+                a => new Atom($"{Atom.Explain(module.Name)}:{Atom.Explain(a)}"),
+                v => new Variable($"{Atom.Explain(module.Name)}:{Variable.Explain(v)}"),
+                c => new Complex(new Atom($"{Atom.Explain(module.Name)}:{Atom.Explain(c.Functor)}"), c.Arguments)
+            ), Body);
+
         public static bool TryUnify(Term head, Predicate predicate, out IEnumerable<Substitution> substitutions)
         {
             var S = new List<Substitution>();

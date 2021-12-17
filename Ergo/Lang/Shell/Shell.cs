@@ -41,6 +41,7 @@ namespace Ergo.Lang
         }
 
         protected IEnumerable<Predicate> GetInterpreterPredicates() => Interpreter.GetSolver().KnowledgeBase.AsEnumerable();
+        protected IEnumerable<Predicate> GetUserPredicates() => Interpreter.Modules[Interpreter.UserModule].KnowledgeBase.AsEnumerable();
 
         public Shell(Interpreter interpreter = null, Func<LogLine, string> formatter = null)
         {
@@ -72,13 +73,15 @@ namespace Ergo.Lang
 
         public virtual void Save(string fileName, bool force = true)
         {
-            var preds = GetInterpreterPredicates();
+            var preds = GetUserPredicates();
             if (File.Exists(fileName) && !force)
             {
                 WriteLine($"File already exists: {fileName}", LogLevel.Err);
                 return;
             }
-            var text = Program.Explain(new Program(Array.Empty<Directive>(), preds.ToArray()));
+            var dirs = Interpreter.Modules[Interpreter.UserModule].Imports.Head.Contents
+                .Select(m => new Directive(string.Empty, new Complex(new("use_module"), m))).ToArray();
+            var text = Program.Explain(new Program(dirs, preds.ToArray()));
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }

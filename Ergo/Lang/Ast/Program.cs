@@ -15,7 +15,10 @@ namespace Ergo.Lang
 
         public static string Explain(Program p)
         {
-            return String.Join("\r\n\r\n", p.KnowledgeBank.Select(r => Predicate.Explain(r)));
+            return String.Join("\r\n\r\n",
+                p.Directives.Select(d => Directive.Explain(d)).Concat(
+                p.KnowledgeBank.Select(r => Predicate.Explain(r)))
+            );
         }
 
         public Program(Directive[] directives, Predicate[] kb)

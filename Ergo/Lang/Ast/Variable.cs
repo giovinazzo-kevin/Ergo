@@ -6,8 +6,10 @@ namespace Ergo.Lang
     [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Variable : IComparable<Term>
     {
-        public readonly string Name { get; }
-        public readonly bool Ignored { get; }
+        public readonly string Name;
+        public readonly bool Ignored;
+
+        private readonly int HashCode;
 
         public static string Explain(Variable v)
         {
@@ -22,6 +24,7 @@ namespace Ergo.Lang
             }
             Name = name;
             Ignored = name.StartsWith('_');
+            HashCode = Name.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -34,7 +37,7 @@ namespace Ergo.Lang
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Name);
+            return HashCode;
         }
 
         public int CompareTo(Term other)

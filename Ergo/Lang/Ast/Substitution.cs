@@ -9,8 +9,8 @@ namespace Ergo.Lang
     [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Substitution
     {
-        public readonly Term Lhs { get; }
-        public readonly Term Rhs { get; }
+        public readonly Term Lhs;
+        public readonly Term Rhs;
 
         public Substitution(Term lhs, Term rhs)
         {

@@ -12,6 +12,8 @@ namespace Ergo.Lang
         public readonly Term[] Arguments;
         public readonly int Arity => Arguments.Length;
 
+        private readonly int HashCode;
+
         public static string Explain(Complex c)
         {
             if (CommaExpression.TryUnfold(c, out var comma)) {
@@ -30,6 +32,7 @@ namespace Ergo.Lang
         {
             Functor = functor;
             Arguments = args;
+            HashCode = System.HashCode.Combine(Functor, Arguments.Length);
         }
 
         public Complex WithFunctor(Atom functor)
@@ -60,7 +63,7 @@ namespace Ergo.Lang
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Functor, Arity);
+            return HashCode;
         }
 
         public int CompareTo(Term other)

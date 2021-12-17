@@ -9,7 +9,7 @@
 %: TODO: List of work to be done.
 todo('Global', X) :- member(X, ['Unicode', 'Coroutining', 'Foreach/Forall', 'Try/Catch', 'Regex']).
 todo('C#', X) :- member(X, ['Generators', 'CLR Attributes']).
-todo('Interpreter', X) :- member(X, ['Basic typesystem']).
+todo('Interpreter', X) :- member(X, ['Virtualized stack', 'Basic typesystem']).
 todo('Modules', X) :- member(X, []).
 todo('Parser', X) :- member(X, ['User-defined operators']).
 todo('AST', X) :- member(X, ['Annotations']).

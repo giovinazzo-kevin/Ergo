@@ -14,6 +14,7 @@
             , ExpectedAtomWithDomain
             , ModuleNameClash
             , ModuleRedefinition
+            , UndefinedPredicate
         }
     }
 }

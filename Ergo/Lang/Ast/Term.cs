@@ -19,12 +19,13 @@ namespace Ergo.Lang
             public int GetFreeVariableId() => Interlocked.Increment(ref _GlobalVarCounter);
         }
 
-        public readonly TermType Type { get; }
+        public readonly TermType Type;
         private readonly Atom AtomValue;
         private readonly Variable VariableValue;
         private readonly Complex ComplexValue;
 
         public readonly bool IsGround;
+        private readonly int HashCode;
 
         public static string Explain(Term t)
         {
@@ -120,6 +121,13 @@ namespace Ergo.Lang
             ComplexValue = complex;
             Type = kind;
             IsGround = kind == TermType.Atom || kind == TermType.Complex && ComplexValue.Arguments.All(a => a.IsGround);
+            HashCode = Type switch
+            {
+                TermType.Atom => AtomValue.GetHashCode()
+                , TermType.Variable => VariableValue.GetHashCode()
+                , TermType.Complex => ComplexValue.GetHashCode()
+                , _ => throw new InvalidOperationException(Type.ToString())
+            };
         }
 
         public static Term FromAtom(Atom atom)
@@ -183,13 +191,7 @@ namespace Ergo.Lang
 
         public override int GetHashCode()
         {
-            return Type switch
-            {
-                TermType.Atom => AtomValue.GetHashCode()
-                , TermType.Variable => VariableValue.GetHashCode()
-                , TermType.Complex => ComplexValue.GetHashCode()
-                , _ => throw new InvalidOperationException(Type.ToString())
-            };
+            return HashCode;
         }
 
         public int CompareTo(Term other) 

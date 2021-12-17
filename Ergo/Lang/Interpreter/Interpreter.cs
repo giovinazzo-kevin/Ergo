@@ -194,12 +194,13 @@ namespace Ergo.Lang
                 {
                     module = new Module(moduleName, List.Build(), exports);
                 }
+                currentModule = Modules[moduleName] = module;
                 var P = new Variable("P");
                 var A = new Variable("A");
                 var predicateSlashArity = new Expression(Operators.BinaryDivision, P, Maybe<Term>.Some(A)).Complex;
                 foreach (var item in exports.Head.Contents)
                 {
-                    // make sure that 'item' is in the form 'predicate/arity'
+                    // make sure that 'item' is in the form 'predicate/arity', and that it is asserted
                     if(!Substitution.TryUnify(new(predicateSlashArity, item), out var subs))
                     {
                         throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, Term.Explain(item));
@@ -211,8 +212,6 @@ namespace Ergo.Lang
                         throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, Term.Explain(item));
                     }
                 }
-                Modules[moduleName] = module;
-                currentModule = Modules[moduleName];
                 return true;
             }
             bool UseModule(ref Module currentModule)

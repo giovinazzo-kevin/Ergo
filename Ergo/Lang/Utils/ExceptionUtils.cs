@@ -47,6 +47,7 @@ namespace Ergo.Lang.Utils
                 Interpreter.ErrorType.UnknownPredicate => String.Format("Predicate not found: {0}", args)
                 , Interpreter.ErrorType.UserPredicateConflictsWithBuiltIn => String.Format("User-defined predicate conflicts with built-in: {0}", args)
                 , Interpreter.ErrorType.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
+                , Interpreter.ErrorType.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
                 , Interpreter.ErrorType.ExpectedAtomWithDomain => String.Format("Expected ground term with domain: {0}", args)
                 , Interpreter.ErrorType.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
                 , Interpreter.ErrorType.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)

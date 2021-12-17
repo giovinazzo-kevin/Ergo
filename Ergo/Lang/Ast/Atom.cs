@@ -17,7 +17,8 @@ namespace Ergo.Lang
             ','
         };
 
-        public readonly object Value { get; }
+        public readonly object Value;
+        private readonly int HashCode;
 
         public static string Explain(Atom a)
         {
@@ -56,6 +57,7 @@ namespace Ergo.Lang
         public Atom(object value)
         {
             Value = value;
+            HashCode = value?.GetHashCode() ?? 0;
         }
 
         public static Atom WithValue(object newValue) => new(newValue);
@@ -73,7 +75,7 @@ namespace Ergo.Lang
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Value);
+            return HashCode;
         }
 
         public int CompareTo(Term other)

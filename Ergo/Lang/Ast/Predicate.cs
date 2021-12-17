@@ -9,10 +9,10 @@ namespace Ergo.Lang
     [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Predicate
     {
-        public readonly Atom DeclaringModule { get; }
-        public readonly Term Head { get; }
-        public readonly Sequence Body { get; }
-        public readonly string Documentation { get; }
+        public readonly Atom DeclaringModule;
+        public readonly Term Head;
+        public readonly Sequence Body;
+        public readonly string Documentation;
 
         public static string Explain(Predicate p)
         {

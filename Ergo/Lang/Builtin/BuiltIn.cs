@@ -4,10 +4,10 @@ namespace Ergo.Lang
 {
     public readonly partial struct BuiltIn
     {
-        public readonly Atom Functor { get; }
-        public readonly int Arity { get; }
-        public readonly string Signature { get; }
-        public readonly string Documentation { get; }
+        public readonly Atom Functor;
+        public readonly int Arity;
+        public readonly string Signature;
+        public readonly string Documentation;
 
         public readonly Func<Term, Atom, Evaluation> Apply { get; }
 

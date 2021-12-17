@@ -46,11 +46,11 @@ namespace Ergo.Lang
                     var predicateSlashArity = new Expression(Operators.BinaryDivision, head, Maybe<Term>.Some(new Atom((double)Predicate.Arity(pred.Head)))).Complex;
                     if(module.Exports.Head.Contents.Any(t => Substitution.TryUnify(new(t, predicateSlashArity), out _)))
                     {
-                        KnowledgeBase.AssertZ(pred);
+                        KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
                     }
                     else
                     {
-                        KnowledgeBase.AssertZ(pred.Qualified(module));
+                        KnowledgeBase.AssertZ(pred.WithModuleName(module.Name).Qualified());
                     }
                 }
             }
@@ -104,10 +104,10 @@ namespace Ergo.Lang
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            var (newScope, qualifiedGoal, matches) = QualifyGoal(scope, goal);
+            var (qualifiedGoal, matches) = QualifyGoal(scope, goal);
             LogTrace(TraceType.Call, qualifiedGoal, depth);
             foreach (var m in matches) {
-                foreach (var s in Solve(newScope, m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
+                foreach (var s in Solve(Modules[m.Rhs.ModuleName], m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
                     LogTrace(TraceType.Exit, m.Rhs.Head, depth);
                     yield return s;
                 }
@@ -116,29 +116,26 @@ namespace Ergo.Lang
                 }
             }
 
-            (Module Scope, Term Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module scope, Term goal)
+            (Term Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module scope, Term goal)
             {
                 if (KnowledgeBase.TryGetMatches(goal, out var matches))
                 {
-                    return (scope, goal, matches);
+                    return (goal, matches);
                 }
-                foreach (var module in Modules.Keys.Prepend(scope.Name).Distinct())
+                var qualifiedGoal = goal.Reduce<Term>(
+                    a => new Atom($"{Atom.Explain(scope.Name)}:{Atom.Explain(a)}"),
+                    v => new Variable($"{Atom.Explain(scope.Name)}:{Variable.Explain(v)}"),
+                    c => new Complex(new Atom($"{Atom.Explain(scope.Name)}:{Atom.Explain(c.Functor)}"), c.Arguments)
+                );
+                if (KnowledgeBase.TryGetMatches(qualifiedGoal, out matches))
                 {
-                    var qualifiedGoal = goal.Reduce<Term>(
-                        a => new Atom($"{Atom.Explain(module)}:{Atom.Explain(a)}"),
-                        v => new Variable($"{Atom.Explain(module)}:{Variable.Explain(v)}"),
-                        c => new Complex(new Atom($"{Atom.Explain(module)}:{Atom.Explain(c.Functor)}"), c.Arguments)
-                    );
-                    if (KnowledgeBase.TryGetMatches(qualifiedGoal, out matches))
-                    {
-                        return (Modules[module], qualifiedGoal, matches);
-                    }
+                    return (qualifiedGoal, matches);
                 }
-                if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                 {
                     throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
                 }
-                return (scope, goal, Enumerable.Empty<KnowledgeBase.Match>());
+                return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
         }
 

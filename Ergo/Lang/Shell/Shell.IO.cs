@@ -55,7 +55,7 @@ namespace Ergo.Lang
             return ReadLine(until);
         }
 
-        protected virtual void WithColors(LogLevel lvl, Action action)
+        protected virtual void WithColors(LogLevel lvl, Solver.TraceType trc, Action action)
         {
             var oldFg = Console.ForegroundColor;
             var oldBg = Console.BackgroundColor;
@@ -81,7 +81,24 @@ namespace Ergo.Lang
                     Console.BackgroundColor = ConsoleColor.White;
                     break;
                 case LogLevel.Trc:
-                    Console.ForegroundColor = ConsoleColor.Magenta;
+                    switch(trc)
+                    {
+                        case Solver.TraceType.Call:
+                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                            break;
+                        case Solver.TraceType.Exit:
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            break;
+                        case Solver.TraceType.Retn:
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            break;
+                        case Solver.TraceType.Fail:
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            break;
+                        default:
+                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                            break;
+                    }
                     Console.BackgroundColor = ConsoleColor.White;
                     break;
             }
@@ -90,12 +107,12 @@ namespace Ergo.Lang
             Console.BackgroundColor = oldBg;
         }
 
-        public virtual void Write(string str, LogLevel lvl = LogLevel.Rpl)
+        public virtual void Write(string str, LogLevel lvl = LogLevel.Rpl, Solver.TraceType trc = Solver.TraceType.Call)
         {
             var now = DateTime.Now;
             var lines = str.Replace("\r", "").Split('\n').Select(l => new LogLine(l, lvl, now)).ToArray();
 
-            WithColors(lvl, () => {
+            WithColors(lvl, trc, () => {
                 foreach (var line in lines.Take(lines.Length - 1)) {
                     Console.WriteLine(LineFormatter(line));
                 }
@@ -103,9 +120,9 @@ namespace Ergo.Lang
             });
         }
 
-        public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl)
+        public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, Solver.TraceType trc = Solver.TraceType.Call)
         {
-            Write(str, lvl);
+            Write(str, lvl, trc);
             Console.WriteLine();
         }
 

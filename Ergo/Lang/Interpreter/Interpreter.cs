@@ -29,7 +29,7 @@ namespace Ergo.Lang
 
         public IEnumerable<BuiltIn> BuiltIns => BuiltInsDict.Values;
 
-        public event Action<string> Trace;
+        public event Action<Solver.TraceType, string> Trace;
 
         protected void InitializeModules()
         {
@@ -117,7 +117,7 @@ namespace Ergo.Lang
             var solutions = solver.Solve(goal);
             return solutions;
 
-            void HandleTrace(string msg) => Trace?.Invoke(msg);
+            void HandleTrace(Solver.TraceType type, string msg) => Trace?.Invoke(type, msg);
         }
 
         public virtual void Parse(string code, string fileName = "")

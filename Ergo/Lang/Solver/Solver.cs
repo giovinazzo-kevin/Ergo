@@ -16,7 +16,7 @@ namespace Ergo.Lang
         protected readonly IReadOnlyDictionary<string, BuiltIn> BuiltIns;
         protected readonly SolverFlags Flags;
 
-        public event Action<string> Trace;
+        public event Action<TraceType, string> Trace;
 
         public Solver(Atom entryModule, IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<string, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
         {
@@ -81,7 +81,7 @@ namespace Ergo.Lang
 
         private void LogTrace(TraceType type, string s, int depth = 0)
         {
-            Trace?.Invoke($"{type}: ({depth:00}) {s}");
+            Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
         }
 
         protected IEnumerable<Solution> Solve(Module scope, Term goal, List<Substitution> subs = null, int depth = 0)

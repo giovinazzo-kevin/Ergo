@@ -28,9 +28,9 @@ namespace Ergo.Lang
                 else {
                     Interpreter.Trace -= HandleTrace;
                 }
-                void HandleTrace(string trace)
+                void HandleTrace(Solver.TraceType type, string trace)
                 {
-                    WriteLine(trace, LogLevel.Trc);
+                    WriteLine(trace, LogLevel.Trc, type);
                 }
             }
         }

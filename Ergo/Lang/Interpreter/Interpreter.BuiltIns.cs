@@ -147,7 +147,7 @@ namespace Ergo.Lang
                 }
                 return null;
             });
-            if (Substitution.TryUnify(new Substitution(c.Arguments[0], c.Arguments[1]), out var subs))
+            if (Term.TryUnify(c.Arguments[0], c.Arguments[1], out var subs))
             {
                 return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
             }
@@ -252,10 +252,10 @@ namespace Ergo.Lang
                 }
                 return null;
             });
-            if (Substitution.TryUnify(new Substitution(c.Arguments[0], c.Arguments[1]), out var subs)) {
+            if (Term.TryUnify(c.Arguments[0], c.Arguments[1], out var subs)) {
                 var equations = subs.Select(s => (Term)new Complex(Operators.BinaryUnification.CanonicalFunctor, s.Lhs, s.Rhs));
                 var list = List.Build(equations.ToArray());
-                if (Substitution.TryUnify(new Substitution(c.Arguments[2], list.Root), out subs)) {
+                if (Term.TryUnify(c.Arguments[2], list.Root, out subs)) {
                     return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
                 }
             }
@@ -325,7 +325,7 @@ namespace Ergo.Lang
             });
 
             var result = new Atom(Eval(c.Arguments[1]));
-            if (Substitution.TryUnify(new Substitution(c.Arguments[0], result), out var subs)) {
+            if (Term.TryUnify(c.Arguments[0], result, out var subs)) {
                 return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
             }
             return new BuiltIn.Evaluation(Literals.False);
@@ -416,6 +416,10 @@ namespace Ergo.Lang
             }
             if (arity - (int)arity != 0) {
                 throw new InterpreterException(ErrorType.ExpectedAtomWithDomain, BuiltIn.Domains.Integers);
+            }
+            if (arity == 0)
+            {
+                return new BuiltIn.Evaluation(Functor);
             }
             var predArgs = Enumerable.Range(0, (int)arity)
                 .Select(i => (Term)new Variable($"{i}"))

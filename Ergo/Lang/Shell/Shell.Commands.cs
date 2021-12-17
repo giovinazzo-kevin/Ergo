@@ -326,15 +326,21 @@ namespace Ergo.Lang
         {
             var predicates = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             if (term?.Success ?? false) {
-                var parsed = new Parsed<Term>(term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
+                var parsed = new Parsed<CommaExpression>($"{term.Value}, true", Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
                 if (!parsed.HasValue) {
                     No();
                     return;
                 }
-                if (Interpreter.TryGetMatches(parsed.Reduce(some => some, () => default), out var matches)) {
-                    predicates = matches.Select(m => m.Rhs);
-                }
-                else {
+                if(!Handler.TryGet(() =>
+                {
+                    if (Interpreter.TryGetMatches(parsed.Reduce(some => some.Sequence.Contents.First(), () => default), CurrentModule, out var matches))
+                    {
+                        predicates = matches.Select(m => m.Rhs);
+                        return true;
+                    }
+                    return false;
+                }, out var yes) || !yes)
+                {
                     No();
                     return;
                 }

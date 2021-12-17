@@ -47,7 +47,18 @@ namespace Ergo.Lang
             AddBuiltins();
         }
 
-        public bool TryGetMatches(Term head, out IEnumerable<KnowledgeBase.Match> matches) => new Solver(UserModule, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
+        public bool TryGetMatches(Term head, Atom module, out IEnumerable<KnowledgeBase.Match> matches)
+        {
+            // if head is in the form predicate/arity (or its built-in equivalent),
+            // do some syntactic de-sugaring and convert it into an actual anonymous complex
+            if(Term.TryUnify(head, "/(Predicate, Arity)", out _, out var subs)
+            || Term.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs))
+            {
+                var anon = Term.Substitute("@anon(Predicate, Arity)", subs, out _);
+                head = BuiltIn_AnonymousComplex(anon, module).Result;
+            }
+            return new Solver(module, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
+        }
         public bool TryGetBuiltIn(Term match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(Predicate.Signature(match), out builtin);
         protected Module EnsureModule(Atom name)
         {

@@ -48,7 +48,7 @@ namespace Ergo.Lang
             var lst = new List<Match>();
             matches = lst;
             // Instantiate goal
-            if(!Substitution.TryUnify(new Substitution(Term.Instantiate(Context, goal), goal), out var subs)) {
+            if(!Term.TryUnify(Term.Instantiate(Context, goal), goal, out var subs)) {
                 return false;
             }
             var head = Term.Substitute(goal, subs);

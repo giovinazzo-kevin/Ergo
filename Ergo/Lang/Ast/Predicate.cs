@@ -91,7 +91,7 @@ namespace Ergo.Lang
         public static bool TryUnify(Term head, Predicate predicate, out IEnumerable<Substitution> substitutions)
         {
             var S = new List<Substitution>();
-            if (Substitution.TryUnify(new Substitution(head, predicate.Head), out var subs)) {
+            if (Term.TryUnify(head, predicate.Head, out var subs)) {
                 S.AddRange(subs);
                 substitutions = S;
                 return true;

@@ -58,6 +58,13 @@ namespace Ergo.Lang
             };
         }
 
+        public static Term Substitute(string parse, IEnumerable<Substitution> s, out Term parsed)
+        {
+            parsed = new Parsed<Term>(parse, new(), str => throw new InterpreterException(Interpreter.ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, parse))
+                .Value.Reduce(some => some, () => default);
+            return Substitute(parsed, s);
+        }
+
         public static Term Substitute(Term @base, Substitution s)
         {
             switch (@base.Type) {
@@ -92,6 +99,18 @@ namespace Ergo.Lang
                 variables = Variables(@base).Where(var => steps.ContainsKey(var));
             }
             return @base;
+        }
+
+        public static bool TryUnify(Term a, Term b, out IEnumerable<Substitution> subs)
+        {
+            return Substitution.TryUnify(new(a, b), out subs);
+        }
+
+        public static bool TryUnify(Term a, string parse, out Term parsed, out IEnumerable<Substitution> subs)
+        {
+            parsed = new Parsed<Term>(parse, new(), str => throw new InterpreterException(Interpreter.ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, parse))
+                .Value.Reduce(some => some, () => default);
+            return Substitution.TryUnify(new(a, parsed), out subs);
         }
 
         private Term(Atom atom, Variable variable, Complex complex, TermType kind)

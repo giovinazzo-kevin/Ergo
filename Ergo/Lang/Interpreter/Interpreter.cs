@@ -11,9 +11,18 @@ namespace Ergo.Lang
 {
     public partial class Interpreter
     {
+        [Flags]
+        public enum InterpreterFlags
+        {
+            Default = None,
+            None = 0,
+            AllowStaticModuleRedefinition = 1
+        }
+
         public static readonly Atom PrologueModule = new("prologue");
         public static readonly Atom UserModule = new("user");
 
+        public readonly InterpreterFlags Flags;
         public readonly Dictionary<Atom, Module> Modules;
         public readonly Dictionary<string, BuiltIn> BuiltInsDict;
         public readonly List<string> SearchDirectories;
@@ -22,25 +31,37 @@ namespace Ergo.Lang
 
         public event Action<string> Trace;
 
+        protected void InitializeModules()
+        {
+            Modules.Clear();
+            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build(), runtime: true);
+            Load(Atom.Explain(PrologueModule));
+        }
 
-
-        public Interpreter()
+        public Interpreter(InterpreterFlags flags = InterpreterFlags.Default)
         {
             BuiltInsDict = new();
             Modules = new();
             SearchDirectories = new() { "", "stdlib/" };
-            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build(), runtime: true);
-            Load(Atom.Explain(PrologueModule));
+            InitializeModules();
             AddBuiltins();
         }
 
-        public bool TryGetMatches(Term head, out IEnumerable<KnowledgeBase.Match> matches) => Modules[UserModule].KnowledgeBase.TryGetMatches(head, out matches);
+        public bool TryGetMatches(Term head, out IEnumerable<KnowledgeBase.Match> matches) => new Solver(UserModule, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
         public bool TryGetBuiltIn(Term match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(Predicate.Signature(match), out builtin);
         protected Module EnsureModule(Atom name)
         {
             if(!Modules.TryGetValue(name, out var module))
             {
-                Modules[name] = module = new(name, List.Build(), List.Build(), runtime: true);
+                try
+                {
+                    Load(Atom.Explain(name));
+                    module = Modules[name];
+                }
+                catch(FileNotFoundException)
+                {
+                    Modules[name] = module = new(name, List.Build(), List.Build(), runtime: true);
+                }
             }
             return module;
         }
@@ -76,11 +97,11 @@ namespace Ergo.Lang
             return Modules[module].KnowledgeBase.RetractAll(head);
         }
 
-        public Solver GetSolver(Solver.SolverFlags flags = Solver.SolverFlags.Default) => new Solver(Modules, BuiltInsDict, flags);
+        public Solver GetSolver(Atom entryModule, Solver.SolverFlags flags = Solver.SolverFlags.Default) => new Solver(entryModule, Modules, BuiltInsDict, flags);
 
-        public IEnumerable<Solver.Solution> Solve(Sequence goal, Solver.SolverFlags flags = Solver.SolverFlags.Default)
+        public IEnumerable<Solver.Solution> Solve(Sequence goal, Maybe<Atom> entryModule = default, Solver.SolverFlags flags = Solver.SolverFlags.Default)
         {
-            var solver = GetSolver(flags);
+            var solver = GetSolver(entryModule.Reduce(some => some, () => UserModule), flags);
             solver.Trace += HandleTrace;
             var solutions = solver.Solve(goal);
             return solutions;
@@ -130,6 +151,7 @@ namespace Ergo.Lang
                 // first arg: module name; second arg: export list
                 var moduleName = body.Arguments[0]
                     .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                InitializeModules(); // Clear modules and re-scope into the current module
                 currentModule = EnsureModule(moduleName);
                 return true;
             }
@@ -140,10 +162,6 @@ namespace Ergo.Lang
                 // first arg: module name; second arg: export list
                 var moduleName = body.Arguments[0]
                     .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
-                if (currentModule.Name != UserModule)
-                {
-                    throw new InterpreterException(ErrorType.ModuleRedefinition, moduleName, currentModule.Name);
-                }
                 var exports = body.Arguments[1].Reduce(
                     a => a.Equals(List.EmptyLiteral) ? List.Build() : throw new ArgumentException(),
                     v => throw new ArgumentException(),
@@ -151,9 +169,9 @@ namespace Ergo.Lang
                 );
                 if (Modules.TryGetValue(moduleName, out var module))
                 {
-                    if (!module.Runtime)
+                    if (!module.Runtime && !Flags.HasFlag(InterpreterFlags.AllowStaticModuleRedefinition))
                     {
-                        throw new InterpreterException(ErrorType.ModuleNameClash, Atom.Explain(moduleName));
+                        throw new InterpreterException(ErrorType.ModuleRedefinition, Atom.Explain(moduleName));
                     }
                     module = module.WithExports(exports.Head.Contents);
                 }

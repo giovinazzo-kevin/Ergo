@@ -9,9 +9,9 @@ namespace Ergo.Lang
         public readonly string Signature { get; }
         public readonly string Documentation { get; }
 
-        public readonly Func<Term, Evaluation> Apply { get; }
+        public readonly Func<Term, Atom, Evaluation> Apply { get; }
 
-        public BuiltIn(string documentation, Atom functor, int arity, Func<Term, Evaluation> apply)
+        public BuiltIn(string documentation, Atom functor, int arity, Func<Term, Atom, Evaluation> apply)
         {
             Functor = functor;
             Arity = arity;

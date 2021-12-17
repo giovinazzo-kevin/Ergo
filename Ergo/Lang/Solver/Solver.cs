@@ -18,13 +18,14 @@ namespace Ergo.Lang
 
         public event Action<string> Trace;
 
-        public Solver(IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<string, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
+        public Solver(Atom entryModule, IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<string, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
         {
             Modules = modules;
             Flags = flags;
             BuiltIns = builtins;
             KnowledgeBase = new KnowledgeBase();
             var added = new HashSet<Atom>();
+            LoadModule(modules[entryModule], added);
             foreach (var module in Modules.Values)
             {
                 LoadModule(module, added);
@@ -56,12 +57,12 @@ namespace Ergo.Lang
             }
         }
 
-        private Term ResolveBuiltin(Term term, List<Substitution> subs, out string sig)
+        private Term ResolveBuiltin(Term term, Atom module, List<Substitution> subs, out string sig)
         {
             sig = Predicate.Signature(term);
-            term = term.Map(t => t, v => v, c => c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, subs, out _)).ToArray()));
+            term = term.Map(t => t, v => v, c => c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, module, subs, out _)).ToArray()));
             while (BuiltIns.TryGetValue(sig, out var builtIn)) {
-                var eval = builtIn.Apply(term);
+                var eval = builtIn.Apply(term, module);
                 term = eval.Result;
                 subs.AddRange(eval.Substitutions);
                 var newSig = Predicate.Signature(term);
@@ -94,7 +95,7 @@ namespace Ergo.Lang
                 yield break;
             }
             // Transform builtins into the literal they evaluate to
-            goal = ResolveBuiltin(goal, subs, out var signature);
+            goal = ResolveBuiltin(goal, scope.Name, subs, out var signature);
             if (goal.Equals(Literals.False)) {
                 LogTrace(TraceType.Retn, "false", depth);
                 yield break;

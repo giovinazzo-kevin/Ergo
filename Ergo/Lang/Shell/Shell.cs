@@ -40,7 +40,9 @@ namespace Ergo.Lang
             set => _throw = value;
         }
 
-        protected IEnumerable<Predicate> GetInterpreterPredicates() => Interpreter.GetSolver().KnowledgeBase.AsEnumerable();
+        protected IEnumerable<Predicate> GetInterpreterPredicates(Maybe<Atom> entryModule = default) => Interpreter
+            .GetSolver(entryModule.Reduce(some => some, () => Interpreter.UserModule))
+            .KnowledgeBase.AsEnumerable();
         protected IEnumerable<Predicate> GetUserPredicates() => Interpreter.Modules[Interpreter.UserModule].KnowledgeBase.AsEnumerable();
 
         public Shell(Interpreter interpreter = null, Func<LogLine, string> formatter = null)
@@ -88,7 +90,7 @@ namespace Ergo.Lang
 
         public virtual void Parse(string code, string fileName = "")
         {
-            var preds = GetInterpreterPredicates();
+            var preds = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             var oldPredicates = preds.Count();
             if (Handler.Try(() => Interpreter.Parse(code, fileName)))
             {
@@ -100,7 +102,7 @@ namespace Ergo.Lang
 
         public virtual void Load(string fileName)
         {
-            var preds = GetInterpreterPredicates();
+            var preds = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             var oldPredicates = preds.Count();
             if (Handler.Try(() => Interpreter.Load(fileName)))
             {

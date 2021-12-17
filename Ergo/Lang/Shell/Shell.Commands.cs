@@ -187,7 +187,7 @@ namespace Ergo.Lang
             var query = parsed.Reduce(some => some, () => default);
             WriteLine(CommaExpression.Explain(new CommaExpression(query.Goals)), LogLevel.Dbg);
 
-            var solutions = Interpreter.Solve(query.Goals); // Solution graph is walked lazily
+            var solutions = Interpreter.Solve(query.Goals, Maybe.Some(CurrentModule)); // Solution graph is walked lazily
             if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single().Type == TermType.Variable) {
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
                 WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
@@ -248,7 +248,7 @@ namespace Ergo.Lang
         protected void Cmd_Directive(Group dir)
         {
             var currentModule = Interpreter.Modules[Interpreter.UserModule];
-            var parsed = new Parsed<Directive>($":- {dir.Value}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive.")).Value;
+            var parsed = new Parsed<Directive>($":- {(dir.Value.EndsWith('.') ? dir.Value : dir.Value + '.')}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive.")).Value;
             var directive = parsed.Reduce(some => some, () => default);
             if (Interpreter.RunDirective(directive, ref currentModule))
             {
@@ -324,7 +324,7 @@ namespace Ergo.Lang
 
         protected virtual void CmdPrintPredicates(Group term, bool explain)
         {
-            var predicates = GetInterpreterPredicates();
+            var predicates = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             if (term?.Success ?? false) {
                 var parsed = new Parsed<Term>(term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
                 if (!parsed.HasValue) {
@@ -346,16 +346,16 @@ namespace Ergo.Lang
 
             var canonicals = predicates
                 .Select(r => explain 
-                    ? new[] { Predicate.Signature(r.Head), Predicate.Explain(r) }
-                    : new[] { Predicate.Signature(r.Head), r.Documentation })
+                    ? new[] { Predicate.Signature(r.Head), Atom.Explain(r.DeclaringModule), Predicate.Explain(r) }
+                    : new[] { Predicate.Signature(r.Head), Atom.Explain(r.DeclaringModule), r.Documentation })
                 .ToArray();
             if (canonicals.Length == 0) {
                 No();
                 return;
             }
             var cols = explain
-                ? new[] { "Predicate", "Explanation" }
-                : new[] { "Predicate", "Documentation" }
+                ? new[] { "Predicate", "Module", "Explanation" }
+                : new[] { "Predicate", "Module", "Documentation" }
                 ;
             WriteTable(cols, canonicals, explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
         }

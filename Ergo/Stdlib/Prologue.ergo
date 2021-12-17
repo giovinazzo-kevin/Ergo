@@ -21,8 +21,6 @@
 	nl/0,
 	todo/2
 ]).
-:- use_module(list).
-:- use_module(math).
 
 nl :- @print('\n').
 

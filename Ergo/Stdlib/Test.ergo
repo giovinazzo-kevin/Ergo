@@ -1,0 +1,6 @@
+﻿:- module(test, [
+	test/1
+]).
+:- use_module(math).
+
+test(X) :- between(1, 10, X).

@@ -87,7 +87,7 @@ namespace Ergo.Lang
             return c;
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Unprovable(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Unprovable(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 1) {
@@ -97,13 +97,13 @@ namespace Ergo.Lang
             });
 
             var arg = c.Arguments.Single();
-            if (Solve(CommaExpression.Build(arg)).Any()) {
+            if (Solve(CommaExpression.Build(arg), Maybe.Some(module)).Any()) {
                 return new BuiltIn.Evaluation(Literals.False);
             }
             return new BuiltIn.Evaluation(Literals.True);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Not(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Not(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 1) {
@@ -122,12 +122,12 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(new Atom(!eval));
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Cut(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Cut(Term t, Atom module)
         {
             return new BuiltIn.Evaluation(Literals.True);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Assign(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Assign(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 2) {
@@ -138,7 +138,7 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], c.Arguments[1]));
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Unify(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Unify(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 2)
@@ -154,7 +154,7 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.False);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_ListSort(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_ListSort(Term t, Atom module)
         {
             throw new NotImplementedException();
             //var c = ComplexGuard(t, c => {
@@ -244,7 +244,7 @@ namespace Ergo.Lang
             //}
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Unifiable(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Unifiable(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 3) {
@@ -262,7 +262,7 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.False);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Compare(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Compare(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 3) {
@@ -290,7 +290,7 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], new Atom(cmp)));
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Eval1(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Eval1(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 1) {
@@ -302,7 +302,7 @@ namespace Ergo.Lang
             var result = new Atom(Eval(c.Arguments[0]));
             return new BuiltIn.Evaluation(result);
         }
-        protected virtual BuiltIn.Evaluation BuiltIn_Cmp1(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Cmp1(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 1) {
@@ -315,7 +315,7 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(result);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Eval2(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Eval2(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 2) {
@@ -373,7 +373,7 @@ namespace Ergo.Lang
             }
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_Print(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Print(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => null);
             var args = c.Arguments
@@ -392,7 +392,7 @@ namespace Ergo.Lang
             return new BuiltIn.Evaluation(Literals.True);
         }
 
-        protected virtual BuiltIn.Evaluation BuiltIn_AnonymousComplex(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_AnonymousComplex(Term t, Atom module)
         {
             var c = ComplexGuard(t, c => {
                 if (c.Arguments.Length != 2) {
@@ -422,7 +422,7 @@ namespace Ergo.Lang
                 .ToArray();
             return new BuiltIn.Evaluation(new Complex(Functor, predArgs));
         }
-        protected virtual BuiltIn.Evaluation BuiltIn_Ground(Term t)
+        protected virtual BuiltIn.Evaluation BuiltIn_Ground(Term t, Atom module)
         {
             if (t.IsGround) {
                 return new BuiltIn.Evaluation(Literals.True);

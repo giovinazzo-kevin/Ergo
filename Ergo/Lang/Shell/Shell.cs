@@ -14,7 +14,7 @@ namespace Ergo.Lang
         public readonly Interpreter Interpreter;
         public readonly CommandDispatcher Dispatcher;
         public Func<LogLine, string> LineFormatter { get; set; }
-        public string PromptTag { get; set; }
+        public Atom CurrentModule { get; private set; }
 
         private volatile bool _repl;
 
@@ -42,10 +42,10 @@ namespace Ergo.Lang
 
         protected IEnumerable<Predicate> GetInterpreterPredicates() => Interpreter.GetSolver().KnowledgeBase.AsEnumerable();
 
-        public Shell(Interpreter interpreter = null, string prompt = "ergo> ", Func<LogLine, string> formatter = null)
+        public Shell(Interpreter interpreter = null, Func<LogLine, string> formatter = null)
         {
-            PromptTag = prompt;
             Interpreter = interpreter ?? new();
+            CurrentModule = Interpreter.UserModule;
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
             LineFormatter = formatter ?? DefaultLineFormatter;
             Handler = new ExceptionHandler(ex => {

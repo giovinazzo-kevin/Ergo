@@ -247,10 +247,14 @@ namespace Ergo.Lang
 
         protected void Cmd_Directive(Group dir)
         {
-            var userModule = Interpreter.Modules[Interpreter.UserModule];
+            var currentModule = Interpreter.Modules[Interpreter.UserModule];
             var parsed = new Parsed<Directive>($":- {dir.Value}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive.")).Value;
             var directive = parsed.Reduce(some => some, () => default);
-            Interpreter.RunDirective(directive, ref userModule);
+            if (Interpreter.RunDirective(directive, ref currentModule))
+            {
+                CurrentModule = currentModule.Name;
+            }
+            else throw new ShellException($"'{dir.Value}' does not resolve to a directive.");
         }
 
         protected void Cmd_Assert(Group predicate, bool start)
@@ -262,10 +266,10 @@ namespace Ergo.Lang
             var pred = parsed.Reduce(some => some, () => default);
             Handler.Try(() => {
                 if (start) {
-                    Interpreter.AssertA(Interpreter.UserModule, pred);
+                    Interpreter.AssertA(CurrentModule, pred);
                 }
                 else {
-                    Interpreter.AssertZ(Interpreter.UserModule, pred);
+                    Interpreter.AssertZ(CurrentModule, pred);
                 }
             });
             WriteLine($"Asserted {Predicate.Signature(pred.Head)} at the {(start ? "beginning" : "end")} of the predicate list.", LogLevel.Inf);

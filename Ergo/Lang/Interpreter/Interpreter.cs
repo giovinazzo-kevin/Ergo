@@ -29,13 +29,22 @@ namespace Ergo.Lang
             BuiltInsDict = new();
             Modules = new();
             SearchDirectories = new() { "", "stdlib/" };
-            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build());
+            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build(), runtime: true);
             Load(Atom.Explain(PrologueModule));
             AddBuiltins();
         }
 
         public bool TryGetMatches(Term head, out IEnumerable<KnowledgeBase.Match> matches) => Modules[UserModule].KnowledgeBase.TryGetMatches(head, out matches);
         public bool TryGetBuiltIn(Term match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(Predicate.Signature(match), out builtin);
+        protected Module EnsureModule(Atom name)
+        {
+            if(!Modules.TryGetValue(name, out var module))
+            {
+                Modules[name] = module = new(name, List.Build(), List.Build(), runtime: true);
+            }
+            return module;
+        }
+
         public void AssertA(Atom module, Predicate p)
         {
             if (TryGetBuiltIn(p.Head, out _)) {
@@ -101,9 +110,13 @@ namespace Ergo.Lang
 
         public virtual bool RunDirective(Directive d, ref Module currentModule)
         {
-            if (Substitution.TryUnify(new(d.Body, Directives.Module.Body), out _))
+            if (Substitution.TryUnify(new(d.Body, Directives.ChooseModule.Body), out _))
             {
-                return Module(ref currentModule);
+                return ChooseModule(ref currentModule);
+            }
+            if (Substitution.TryUnify(new(d.Body, Directives.DefineModule.Body), out _))
+            {
+                return DefineModule(ref currentModule);
             }
             if (Substitution.TryUnify(new(d.Body, Directives.UseModule.Body), out _))
             {
@@ -111,7 +124,17 @@ namespace Ergo.Lang
             }
             return false;
 
-            bool Module(ref Module currentModule)
+            bool ChooseModule(ref Module currentModule)
+            {
+                var body = ((Complex)d.Body);
+                // first arg: module name; second arg: export list
+                var moduleName = body.Arguments[0]
+                    .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                currentModule = EnsureModule(moduleName);
+                return true;
+            }
+ 
+            bool DefineModule(ref Module currentModule)
             {
                 var body = ((Complex)d.Body);
                 // first arg: module name; second arg: export list
@@ -121,15 +144,23 @@ namespace Ergo.Lang
                 {
                     throw new InterpreterException(ErrorType.ModuleRedefinition, moduleName, currentModule.Name);
                 }
-                if (Modules.TryGetValue(moduleName, out var module))
-                {
-                    throw new InterpreterException(ErrorType.ModuleNameClash, Atom.Explain(moduleName));
-                }
                 var exports = body.Arguments[1].Reduce(
                     a => a.Equals(List.EmptyLiteral) ? List.Build() : throw new ArgumentException(),
                     v => throw new ArgumentException(),
                     c => List.TryUnfold(c, out var l) ? l : List.Build()
                 );
+                if (Modules.TryGetValue(moduleName, out var module))
+                {
+                    if (!module.Runtime)
+                    {
+                        throw new InterpreterException(ErrorType.ModuleNameClash, Atom.Explain(moduleName));
+                    }
+                    module = module.WithExports(exports.Head.Contents);
+                }
+                else
+                {
+                    module = new Module(moduleName, List.Build(), exports);
+                }
                 var P = new Variable("P");
                 var A = new Variable("A");
                 var predicateSlashArity = new Expression(Operators.BinaryDivision, P, Maybe<Term>.Some(A)).Complex;
@@ -147,7 +178,7 @@ namespace Ergo.Lang
                         throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, Term.Explain(item));
                     }
                 }
-                Modules[moduleName] = new(moduleName, List.Build(), exports);
+                Modules[moduleName] = module;
                 currentModule = Modules[moduleName];
                 return true;
             }

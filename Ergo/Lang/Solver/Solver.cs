@@ -24,23 +24,34 @@ namespace Ergo.Lang
             Flags = flags;
             BuiltIns = builtins;
             KnowledgeBase = new KnowledgeBase();
+            var added = new HashSet<Atom>();
             foreach (var module in Modules.Values)
             {
-                LoadModule(module);
+                LoadModule(module, added);
             }
-            void LoadModule(Module module, HashSet<Atom> added = null)
+            void LoadModule(Module module, HashSet<Atom> added)
             {
-                added ??= new();
+                if (added.Contains(module.Name))
+                    return;
                 added.Add(module.Name);
                 foreach (var subModule in module.Imports.Head.Contents.Select(c => (Atom)c))
                 {
                     if (added.Contains(subModule))
                         continue;
-                    LoadModule(Modules[subModule]);
+                    LoadModule(Modules[subModule], added);
                 }
                 foreach (var pred in module.KnowledgeBase)
                 {
-                    KnowledgeBase.AssertZ(pred.Qualified(module));
+                    var head = pred.Head.Reduce(a => a, v => throw new ArgumentException(), c => c.Functor);
+                    var predicateSlashArity = new Expression(Operators.BinaryDivision, head, Maybe<Term>.Some(new Atom((double)Predicate.Arity(pred.Head)))).Complex;
+                    if(module.Exports.Head.Contents.Any(t => Substitution.TryUnify(new(t, predicateSlashArity), out _)))
+                    {
+                        KnowledgeBase.AssertZ(pred);
+                    }
+                    else
+                    {
+                        KnowledgeBase.AssertZ(pred.Qualified(module));
+                    }
                 }
             }
         }
@@ -59,9 +70,6 @@ namespace Ergo.Lang
                 }
                 sig = newSig;
             }
-            // Apply static literal transformations, such as () --> true
-            //if (term.Equals(Literals.EmptyCommaExpression))
-            //    term = Literals.True;
             return term;
         }
 
@@ -75,12 +83,12 @@ namespace Ergo.Lang
             Trace?.Invoke($"{type}: ({depth:00}) {s}");
         }
 
-        protected IEnumerable<Solution> Solve(Term goal, List<Substitution> subs = null, int depth = 0)
+        protected IEnumerable<Solution> Solve(Module scope, Term goal, List<Substitution> subs = null, int depth = 0)
         {
             subs ??= new List<Substitution>();
             // Treat comma-expression complex terms as proper expressions
             if (CommaExpression.TryUnfold(goal, out var expr)) {
-                foreach (var s in Solve(expr.Sequence, subs, depth)) {
+                foreach (var s in Solve(scope, expr.Sequence, subs, depth)) {
                     yield return s;
                 }
                 yield break;
@@ -88,16 +96,18 @@ namespace Ergo.Lang
             // Transform builtins into the literal they evaluate to
             goal = ResolveBuiltin(goal, subs, out var signature);
             if (goal.Equals(Literals.False)) {
+                LogTrace(TraceType.Retn, "false", depth);
                 yield break;
             }
             if (goal.Equals(Literals.True)) {
+                LogTrace(TraceType.Retn, "true", depth);
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            LogTrace(TraceType.Call, goal, depth);
-            var matches = QualifyGoal(goal);
+            var (newScope, qualifiedGoal, matches) = QualifyGoal(scope, goal);
+            LogTrace(TraceType.Call, qualifiedGoal, depth);
             foreach (var m in matches) {
-                foreach (var s in Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
+                foreach (var s in Solve(newScope, m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
                     LogTrace(TraceType.Exit, m.Rhs.Head, depth);
                     yield return s;
                 }
@@ -106,29 +116,33 @@ namespace Ergo.Lang
                 }
             }
 
-            IEnumerable<KnowledgeBase.Match> QualifyGoal(Term goal)
+            (Module Scope, Term Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module scope, Term goal)
             {
-                foreach (var module in Modules.Keys)
+                if (KnowledgeBase.TryGetMatches(goal, out var matches))
+                {
+                    return (scope, goal, matches);
+                }
+                foreach (var module in Modules.Keys.Prepend(scope.Name).Distinct())
                 {
                     var qualifiedGoal = goal.Reduce<Term>(
                         a => new Atom($"{Atom.Explain(module)}:{Atom.Explain(a)}"),
                         v => new Variable($"{Atom.Explain(module)}:{Variable.Explain(v)}"),
                         c => new Complex(new Atom($"{Atom.Explain(module)}:{Atom.Explain(c.Functor)}"), c.Arguments)
                     );
-                    if (KnowledgeBase.TryGetMatches(qualifiedGoal, out var matches))
+                    if (KnowledgeBase.TryGetMatches(qualifiedGoal, out matches))
                     {
-                        return matches;
+                        return (Modules[module], qualifiedGoal, matches);
                     }
                 }
                 if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                 {
                     throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
                 }
-                return Enumerable.Empty<KnowledgeBase.Match>();
+                return (scope, goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
         }
 
-        protected IEnumerable<Solution> Solve(Sequence goal, List<Substitution> subs = null, int depth = 0)
+        protected IEnumerable<Solution> Solve(Module scope, Sequence goal, List<Substitution> subs = null, int depth = 0)
         {
             subs ??= new List<Substitution>();
             if (!CommaExpression.IsCommaExpression(goal)) {
@@ -142,12 +156,12 @@ namespace Ergo.Lang
             var subGoal = goals.First();
             goals = goals[1..];
             // Get first solution for the current subgoal
-            foreach (var s in Solve(subGoal, subs, depth)) {
+            foreach (var s in Solve(scope, subGoal, subs, depth)) {
                 if(Cut.Value) {
                     yield break;
                 }
                 var rest = Sequence.Substitute(new Sequence(goal.Functor, goal.EmptyElement, goals), s.Substitutions);
-                foreach (var ss in Solve(rest, subs, depth)) {
+                foreach (var ss in Solve(scope, rest, subs, depth)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
                 if(subGoal.Equals(Literals.Cut)) {
@@ -160,7 +174,7 @@ namespace Ergo.Lang
         public IEnumerable<Solution> Solve(Sequence goal)
         {
             Cut.Value = false;
-            return Solve(goal, null, 0);
+            return Solve(Modules[Interpreter.UserModule], goal, null, 0);
         }
     }
 }

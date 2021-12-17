@@ -141,12 +141,14 @@ namespace Ergo.Lang
         protected virtual BuiltIn.Evaluation BuiltIn_Unify(Term t)
         {
             var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 2) {
+                if (c.Arguments.Length != 2)
+                {
                     return new InterpreterException(ErrorType.ExpectedTermWithArity, Term.Explain(c.Functor), 2);
                 }
                 return null;
             });
-            if (Substitution.TryUnify(new Substitution(c.Arguments[0], c.Arguments[1]), out var subs)) {
+            if (Substitution.TryUnify(new Substitution(c.Arguments[0], c.Arguments[1]), out var subs))
+            {
                 return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
             }
             return new BuiltIn.Evaluation(Literals.False);

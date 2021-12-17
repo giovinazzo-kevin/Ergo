@@ -5,6 +5,7 @@
     {
         public enum TraceType
         {
+            Retn,
             Call,
             Exit,
             Fail

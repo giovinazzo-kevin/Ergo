@@ -27,6 +27,16 @@ namespace Ergo.Lang
             return expl;
         }
 
+        public static int Arity(Term head)
+        {
+            return head.Type switch
+            {
+                TermType.Atom => 0
+                , TermType.Complex when (Complex)head is var c => c.Arity
+                , _ => throw new InvalidOperationException(head.Type.ToString())
+            };
+        }
+
         public static string Signature(Term head)
         {
             return head.Type switch

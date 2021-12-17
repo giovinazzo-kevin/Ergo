@@ -123,7 +123,7 @@ namespace Ergo.Lang
 
         public bool Do(string command)
         {
-            return Dispatcher.Dispatch(command);
+            return Handler.TryGet(() => Dispatcher.Dispatch(command), out var success) && success;
         }
 
         public virtual void ExitRepl()

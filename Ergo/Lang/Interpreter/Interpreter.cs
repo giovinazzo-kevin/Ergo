@@ -169,14 +169,14 @@ namespace Ergo.Lang
  
             bool DefineModule(ref Module currentModule)
             {
-                if(!fromCli && currentModule.Name != UserModule)
-                {
-                    throw new InterpreterException(ErrorType.ModuleRedefinition, Atom.Explain(currentModule.Name));
-                }
                 var body = ((Complex)d.Body);
                 // first arg: module name; second arg: export list
                 var moduleName = body.Arguments[0]
                     .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                if (!fromCli && currentModule.Name != UserModule)
+                {
+                    throw new InterpreterException(ErrorType.ModuleRedefinition, Atom.Explain(currentModule.Name), Atom.Explain(moduleName));
+                }
                 var exports = body.Arguments[1].Reduce(
                     a => a.Equals(List.EmptyLiteral) ? List.Build() : throw new ArgumentException(),
                     v => throw new ArgumentException(),

@@ -49,6 +49,8 @@ namespace Ergo.Lang.Utils
                 , Interpreter.ErrorType.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
                 , Interpreter.ErrorType.ExpectedAtomWithDomain => String.Format("Expected ground term with domain: {0}", args)
                 , Interpreter.ErrorType.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
+                , Interpreter.ErrorType.ModuleRedefinition => String.Format("Module {1} can't be declared inside module {0}", args)
+                , Interpreter.ErrorType.ModuleNameClash => String.Format("Module {0} is already declared and it is not a runtime module", args)
                 , _ => error.ToString()
             };
 

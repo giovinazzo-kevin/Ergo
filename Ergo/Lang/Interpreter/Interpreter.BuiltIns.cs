@@ -418,7 +418,7 @@ namespace Ergo.Lang
                 throw new InterpreterException(ErrorType.ExpectedAtomWithDomain, BuiltIn.Domains.Integers);
             }
             var predArgs = Enumerable.Range(0, (int)arity)
-                .Select(i => Literals.Discard)
+                .Select(i => (Term)new Variable($"{i}"))
                 .ToArray();
             return new BuiltIn.Evaluation(new Complex(Functor, predArgs));
         }

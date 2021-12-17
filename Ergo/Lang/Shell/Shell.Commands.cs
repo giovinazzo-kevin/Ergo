@@ -250,7 +250,7 @@ namespace Ergo.Lang
             var currentModule = Interpreter.Modules[Interpreter.UserModule];
             var parsed = new Parsed<Directive>($":- {(dir.Value.EndsWith('.') ? dir.Value : dir.Value + '.')}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive.")).Value;
             var directive = parsed.Reduce(some => some, () => default);
-            if (Interpreter.RunDirective(directive, ref currentModule))
+            if (Interpreter.RunDirective(directive, ref currentModule, fromCli: true))
             {
                 CurrentModule = currentModule.Name;
             }

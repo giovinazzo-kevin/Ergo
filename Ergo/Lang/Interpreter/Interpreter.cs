@@ -140,7 +140,7 @@ namespace Ergo.Lang
             return Load(fileName, fs, closeStream: true);
         }
 
-        public virtual bool RunDirective(Directive d, ref Module currentModule)
+        public virtual bool RunDirective(Directive d, ref Module currentModule, bool fromCli = false)
         {
             if (Substitution.TryUnify(new(d.Body, Directives.ChooseModule.Body), out _))
             {
@@ -169,6 +169,10 @@ namespace Ergo.Lang
  
             bool DefineModule(ref Module currentModule)
             {
+                if(!fromCli && currentModule.Name != UserModule)
+                {
+                    throw new InterpreterException(ErrorType.ModuleRedefinition, Atom.Explain(currentModule.Name));
+                }
                 var body = ((Complex)d.Body);
                 // first arg: module name; second arg: export list
                 var moduleName = body.Arguments[0]
@@ -182,7 +186,7 @@ namespace Ergo.Lang
                 {
                     if (!module.Runtime && !Flags.HasFlag(InterpreterFlags.AllowStaticModuleRedefinition))
                     {
-                        throw new InterpreterException(ErrorType.ModuleRedefinition, Atom.Explain(moduleName));
+                        throw new InterpreterException(ErrorType.ModuleNameClash, Atom.Explain(moduleName));
                     }
                     module = module.WithExports(exports.Head.Contents);
                 }

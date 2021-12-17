@@ -111,6 +111,13 @@ namespace Ergo.Lang
             );
 
             Dispatcher.Add(
+                @"^\s*:-\s+(?<dir>.*)\s*$"
+                , m => Cmd_Directive(m.Groups["dir"])
+                , ":- <directive>"
+                , "Executes an interpreter directive."
+            );
+
+            Dispatcher.Add(
                 @"^\s*cls\s*$"
                 , m => Clear()
                 , "cls"
@@ -236,6 +243,14 @@ namespace Ergo.Lang
         protected void Cmd_Save(Group path)
         {
             Save(path.Value);
+        }
+
+        protected void Cmd_Directive(Group dir)
+        {
+            var userModule = Interpreter.Modules[Interpreter.UserModule];
+            var parsed = new Parsed<Directive>($":- {dir.Value}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive.")).Value;
+            var directive = parsed.Reduce(some => some, () => default);
+            Interpreter.RunDirective(directive, ref userModule);
         }
 
         protected void Cmd_Assert(Group predicate, bool start)

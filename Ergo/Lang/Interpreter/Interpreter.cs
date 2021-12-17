@@ -161,6 +161,10 @@ namespace Ergo.Lang
                 {
                     return false;
                 }
+                if(!Modules.ContainsKey(moduleName))
+                {
+                    Load(Atom.Explain(moduleName));
+                }
                 currentModule = Modules[currentModule.Name] = currentModule.WithImport(moduleName);
                 return true;
             }

@@ -107,7 +107,7 @@ namespace Ergo.Lang
             var (qualifiedGoal, matches) = QualifyGoal(scope, goal);
             LogTrace(TraceType.Call, qualifiedGoal, depth);
             foreach (var m in matches) {
-                foreach (var s in Solve(Modules[m.Rhs.ModuleName], m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
+                foreach (var s in Solve(Modules[m.Rhs.DeclaringModule], m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1)) {
                     LogTrace(TraceType.Exit, m.Rhs.Head, depth);
                     yield return s;
                 }

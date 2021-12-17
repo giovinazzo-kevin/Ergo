@@ -9,7 +9,7 @@ namespace Ergo.Lang
     [DebuggerDisplay("{ Explain(this) }")]
     public readonly struct Predicate
     {
-        public readonly Atom ModuleName { get; }
+        public readonly Atom DeclaringModule { get; }
         public readonly Term Head { get; }
         public readonly Sequence Body { get; }
         public readonly string Documentation { get; }
@@ -55,7 +55,7 @@ namespace Ergo.Lang
                 throw new InvalidOperationException("Predicates may only be built out of CommaExpression sequences.");
             }
             Documentation = desc;
-            ModuleName = module;
+            DeclaringModule = module;
             Head = head;
             Body = body;
         }
@@ -65,7 +65,7 @@ namespace Ergo.Lang
             vars ??= new Dictionary<string, Variable>();
             return new Predicate(
                 p.Documentation
-                , p.ModuleName
+                , p.DeclaringModule
                 , Term.Instantiate(ctx, p.Head, vars)
                 , Sequence.Instantiate(ctx, p.Body, vars)
             );
@@ -73,15 +73,15 @@ namespace Ergo.Lang
 
         public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
         {
-            return new Predicate(k.Documentation, k.ModuleName, Term.Substitute(k.Head, s), Sequence.Substitute(k.Body, s));
+            return new Predicate(k.Documentation, k.DeclaringModule, Term.Substitute(k.Head, s), Sequence.Substitute(k.Body, s));
         }
 
         public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body);
 
         public Predicate Qualified()
         {
-            var moduleName = ModuleName;
-            return new(Documentation, ModuleName, Head.Reduce<Term>(
+            var moduleName = DeclaringModule;
+            return new(Documentation, DeclaringModule, Head.Reduce<Term>(
                 a => new Atom($"{Atom.Explain(moduleName)}:{Atom.Explain(a)}"),
                 v => new Variable($"{Atom.Explain(moduleName)}:{Variable.Explain(v)}"),
                 c => new Complex(new Atom($"{Atom.Explain(moduleName)}:{Atom.Explain(c.Functor)}"), c.Arguments)

@@ -112,7 +112,8 @@ namespace Ergo.Lang
 
         public IEnumerable<Solver.Solution> Solve(Sequence goal, Maybe<Atom> entryModule = default, Solver.SolverFlags flags = Solver.SolverFlags.Default)
         {
-            var solver = GetSolver(entryModule.Reduce(some => some, () => UserModule), flags);
+            var module = entryModule.Reduce(some => some, () => UserModule);
+            var solver = GetSolver(module, flags);
             solver.Trace += HandleTrace;
             var solutions = solver.Solve(goal);
             return solutions;

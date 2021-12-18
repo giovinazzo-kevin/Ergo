@@ -5,6 +5,7 @@ namespace Ergo.Lang
 
     public partial class Solver
     {
+
         [Flags]
         public enum SolverFlags
         {

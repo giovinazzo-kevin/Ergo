@@ -48,7 +48,7 @@ namespace Ergo.Lang
             || Term.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
             {
                 var anon = Term.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
-                head = BuiltIn_AnonymousComplex(anon, module).Result;
+                try { head = BuiltIn_AnonymousComplex(anon, module).Result; } catch(Exception) { }
             }
             return new Solver(module, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
         }
@@ -164,8 +164,8 @@ namespace Ergo.Lang
 
                 var (affix, assoc) = op.Type switch
                 {
-                    "xf" => (Operator.AffixType.Prefix, Operator.AssociativityType.Right),
-                    "fx" => (Operator.AffixType.Postfix, Operator.AssociativityType.Left),
+                    "fx" => (Operator.AffixType.Prefix, Operator.AssociativityType.Right),
+                    "xf" => (Operator.AffixType.Postfix, Operator.AssociativityType.Left),
                     "xfx" => (Operator.AffixType.Infix, Operator.AssociativityType.None),
                     "xfy" => (Operator.AffixType.Infix, Operator.AssociativityType.Right),
                     "yfx" => (Operator.AffixType.Infix, Operator.AssociativityType.Left),
@@ -263,6 +263,19 @@ namespace Ergo.Lang
             {
                 foreach (var importedOp in GetUserDefinedOperators((Atom)import))
                 {
+                    if (!Modules[(Atom)import].Exports.Head.Contents.Any(t =>
+                     {
+                         var x = TermMarshall.FromTerm(t, new
+                         { Predicate = default(string), Arity = default(int) },
+                             TermMarshall.MarshallingMode.Positional
+                         );
+                         return importedOp.Synonyms.Any(s => Equals(s.Value, x.Predicate))
+                         && (x.Arity == 1 && importedOp.Affix != Operator.AffixType.Infix
+                         || x.Arity == 2);
+                     }))
+                    {
+                        continue;
+                    }
                     yield return importedOp;
                 }
             }
@@ -278,7 +291,7 @@ namespace Ergo.Lang
             var operators = GetUserDefinedOperators(currentModule.Name).ToArray();
             var lexer = new Lexer(file, operators, name);
             var parser = new Parser(lexer, operators);
-            if (!parser.TryParseProgram(out var program))
+            if (!parser.TryParseProgramDirectives(out var program))
             {
                 MaybeClose();
                 throw new InterpreterException(ErrorType.CouldNotLoadFile);
@@ -286,6 +299,21 @@ namespace Ergo.Lang
             foreach (var d in program.Directives)
             {
                 RunDirective(d, ref currentModule);
+            }
+            var newOperators = GetUserDefinedOperators(currentModule.Name)
+                .Except(operators)
+                .ToArray();
+            if (newOperators.Length > 0)
+            {
+                operators = operators.Concat(newOperators).ToArray();
+                file.Seek(0, SeekOrigin.Begin);
+                lexer = new Lexer(file, operators, name);
+                parser = new Parser(lexer, operators);
+            }
+            if (!parser.TryParseProgram(out program))
+            {
+                MaybeClose();
+                throw new InterpreterException(ErrorType.CouldNotLoadFile);
             }
             foreach (var item in currentModule.Imports.Head.Contents)
             {

@@ -81,8 +81,11 @@ namespace Ergo.Lang
                 WriteLine($"File already exists: {fileName}", LogLevel.Err);
                 return;
             }
-            var dirs = Interpreter.Modules[Interpreter.UserModule].Imports.Head.Contents
-                .Select(m => new Directive(string.Empty, new Complex(new("use_module"), m))).ToArray();
+            var module = Interpreter.Modules[CurrentModule];
+            // TODO: make it easier to save directives
+            var dirs = module.Imports.Head.Contents
+                .Select(m => new Directive(string.Empty, new Complex(new("use_module"), m)))
+                .ToArray();
             var text = Program.Explain(new Program(dirs, preds.ToArray()));
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);

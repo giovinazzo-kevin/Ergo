@@ -47,7 +47,8 @@ namespace Ergo.Lang
                 {
                     var head = pred.Head.Reduce(a => a, v => throw new ArgumentException(), c => c.Functor);
                     var predicateSlashArity = new Expression(Operators.BinaryDivision, head, Maybe<Term>.Some(new Atom((double)Predicate.Arity(pred.Head)))).Complex;
-                    if(module.Exports.Head.Contents.Any(t => Substitution.TryUnify(new(t, predicateSlashArity), out _)))
+                    if(module.Name == Interpreter.UserModule 
+                    || module.Exports.Head.Contents.Any(t => Substitution.TryUnify(new(t, predicateSlashArity), out _)))
                     {
                         KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
                     }

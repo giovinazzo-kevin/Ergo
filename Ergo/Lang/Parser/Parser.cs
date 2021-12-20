@@ -466,10 +466,22 @@ namespace Ergo.Lang
             {
                 directives.Add(directive);
             }
-            while (TryParsePredicate(out var predicate)) {
+            while (TryParsePredicate(out var predicate))
+            {
                 predicates.Add(predicate);
             }
             program = new Program(directives.ToArray(), predicates.ToArray());
+            return true;
+        }
+
+        public bool TryParseProgramDirectives(out Program program)
+        {
+            var directives = new List<Directive>();
+            while (TryParseDirective(out var directive))
+            {
+                directives.Add(directive);
+            }
+            program = new Program(directives.ToArray(), Array.Empty<Predicate>());
             return true;
         }
 

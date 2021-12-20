@@ -11,14 +11,6 @@ namespace Ergo.Lang
 {
     public partial class Interpreter
     {
-        [Flags]
-        public enum InterpreterFlags
-        {
-            Default = None,
-            None = 0,
-            AllowStaticModuleRedefinition = 1
-        }
-
         public static readonly Atom PrologueModule = new("prologue");
         public static readonly Atom UserModule = new("user");
 
@@ -143,19 +135,31 @@ namespace Ergo.Lang
 
         public virtual bool RunDirective(Directive d, ref Module currentModule, bool fromCli = false)
         {
-            if (Substitution.TryUnify(new(d.Body, Directives.ChooseModule.Body), out _))
+            if (Term.TryUnify(d.Body, Directives.ChooseModule.Body, out _))
             {
                 return ChooseModule(ref currentModule);
             }
-            if (Substitution.TryUnify(new(d.Body, Directives.DefineModule.Body), out _))
+            if (Term.TryUnify(d.Body, Directives.DefineModule.Body, out _))
             {
                 return DefineModule(ref currentModule);
             }
-            if (Substitution.TryUnify(new(d.Body, Directives.UseModule.Body), out _))
+            if (Term.TryUnify(d.Body, Directives.UseModule.Body, out _))
             {
                 return UseModule(ref currentModule);
             }
+            if (Term.TryUnify(d.Body, Directives.DefineOperator.Body, out _))
+            {
+                return DefineOperator(ref currentModule);
+            }
             return false;
+
+            bool DefineOperator(ref Module currentModule)
+            {
+                var body = ((Complex)d.Body);
+                // first arg: precedence; second arg: type; third arg: name
+                var precedence = body.Arguments[0].Reduce(a => a.Value, v => throw new ArgumentException(), c => throw new ArgumentException());
+                return false;
+            }
 
             bool ChooseModule(ref Module currentModule)
             {

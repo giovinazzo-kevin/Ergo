@@ -8,9 +8,9 @@ namespace Ergo.Lang
         private readonly Lazy<Maybe<T>> _value;
         public readonly Maybe<T> Value => _value.Value;
 
-        public Parsed(string data, ExceptionHandler handler, Func<string, T> onParseFail)
+        public Parsed(string data, ExceptionHandler handler, Func<string, T> onParseFail, Operator[] userOperators)
         {
-            var parser = new Parser(new Lexer(Utils.FileStreamUtils.MemoryStream(data)));
+            var parser = new Parser(new Lexer(Utils.FileStreamUtils.MemoryStream(data), userOperators), userOperators);
             Func<Parser, T> parse = true switch {
                     _ when typeof(T) == typeof(Atom) => 
                     (Parser p) => p.TryParseAtom(out var x) ? Box(x) : onParseFail(data)

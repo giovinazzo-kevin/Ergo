@@ -26,7 +26,7 @@ namespace Ergo.Lang
         protected void InitializeModules()
         {
             Modules.Clear();
-            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build(), runtime: true);
+            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build(), Array.Empty<Operator>(), runtime: true);
             Load(Atom.Explain(PrologueModule));
         }
 
@@ -41,12 +41,13 @@ namespace Ergo.Lang
 
         public bool TryGetMatches(Term head, Atom module, out IEnumerable<KnowledgeBase.Match> matches)
         {
+            var operators = GetUserDefinedOperators(module).ToArray();
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
-            if(Term.TryUnify(head, "/(Predicate, Arity)", out _, out var subs)
-            || Term.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs))
+            if(Term.TryUnify(head, "/(Predicate, Arity)", out _, out var subs, operators)
+            || Term.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
             {
-                var anon = Term.Substitute("@anon(Predicate, Arity)", subs, out _);
+                var anon = Term.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
                 head = BuiltIn_AnonymousComplex(anon, module).Result;
             }
             return new Solver(module, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
@@ -63,7 +64,7 @@ namespace Ergo.Lang
                 }
                 catch(FileNotFoundException)
                 {
-                    Modules[name] = module = new(name, List.Build(), List.Build(), runtime: true);
+                    Modules[name] = module = new(name, List.Build(), List.Build(), Array.Empty<Operator>(), runtime: true);
                 }
             }
             return module;
@@ -119,7 +120,7 @@ namespace Ergo.Lang
             Load(fileName, fs, closeStream: true);
         }
 
-        public virtual Module Load(string fileName)
+        public virtual Module Load(string fileName, Maybe<Atom> entryModule = default)
         {
             var dir = SearchDirectories.FirstOrDefault(
                 d => File.Exists(Path.ChangeExtension(Path.Combine(d, fileName), "ergo"))
@@ -130,7 +131,7 @@ namespace Ergo.Lang
             }
             fileName = Path.ChangeExtension(Path.Combine(dir, fileName), "ergo");
             var fs = FileStreamUtils.EncodedFileStream(File.OpenRead(fileName), closeStream: true);
-            return Load(fileName, fs, closeStream: true);
+            return Load(fileName, fs, closeStream: true, entryModule);
         }
 
         public virtual bool RunDirective(Directive d, ref Module currentModule, bool fromCli = false)
@@ -156,14 +157,26 @@ namespace Ergo.Lang
             bool DefineOperator(ref Module currentModule)
             {
                 // first arg: precedence; second arg: type; third arg: name
-                var op = TypeMarshall.FromTerm(d.Body, new
-                {
-                    Precedence = default(int),
-                    Type = default(string),
-                    Name = default(string)
-                }, TypeMarshall.MarshallingMode.Positional);
+                var op = TermMarshall.FromTerm(d.Body, new
+                    { Precedence = default(int), Type = default(string), Name = default(string) },
+                    TermMarshall.MarshallingMode.Positional
+                );
 
-                return false;
+                var (affix, assoc) = op.Type switch
+                {
+                    "xf" => (Operator.AffixType.Prefix, Operator.AssociativityType.Right),
+                    "fx" => (Operator.AffixType.Postfix, Operator.AssociativityType.Left),
+                    "xfx" => (Operator.AffixType.Infix, Operator.AssociativityType.None),
+                    "xfy" => (Operator.AffixType.Infix, Operator.AssociativityType.Right),
+                    "yfx" => (Operator.AffixType.Infix, Operator.AssociativityType.Left),
+                    _ => throw new NotSupportedException()
+                };
+
+                currentModule = Modules[currentModule.Name] = currentModule.WithOperators(currentModule.Operators
+                    .Append(new Operator(affix, assoc, op.Precedence, op.Name))
+                    .ToArray());
+
+                return true;
             }
 
             bool ChooseModule(ref Module currentModule)
@@ -202,7 +215,7 @@ namespace Ergo.Lang
                 }
                 else
                 {
-                    module = new Module(moduleName, List.Build(), exports);
+                    module = new Module(moduleName, List.Build(), exports, Array.Empty<Operator>());
                 }
                 currentModule = Modules[moduleName] = module;
                 var P = new Variable("P");
@@ -243,15 +256,33 @@ namespace Ergo.Lang
             }
         }
 
-        public virtual Module Load(string name, Stream file, bool closeStream = true)
+        public IEnumerable<Operator> GetUserDefinedOperators(Atom entryModule)
         {
-            var lexer = new Lexer(file, name);
-            var parser = new Parser(lexer);
-            if (!parser.TryParseProgram(out var program)) {
+            var module = EnsureModule(entryModule);
+            foreach (var import in module.Imports.Head.Contents)
+            {
+                foreach (var importedOp in GetUserDefinedOperators((Atom)import))
+                {
+                    yield return importedOp;
+                }
+            }
+            foreach (var op in module.Operators)
+            {
+                yield return op;
+            }
+        }
+
+        public virtual Module Load(string name, Stream file, bool closeStream = true, Maybe<Atom> entryModule = default)
+        {
+            var currentModule = Modules[entryModule.Reduce(some => some, () => UserModule)];
+            var operators = GetUserDefinedOperators(currentModule.Name).ToArray();
+            var lexer = new Lexer(file, operators, name);
+            var parser = new Parser(lexer, operators);
+            if (!parser.TryParseProgram(out var program))
+            {
                 MaybeClose();
                 throw new InterpreterException(ErrorType.CouldNotLoadFile);
             }
-            var currentModule = Modules[UserModule];
             foreach (var d in program.Directives)
             {
                 RunDirective(d, ref currentModule);
@@ -261,7 +292,7 @@ namespace Ergo.Lang
                 var import = item.Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
                 if(!Modules.TryGetValue(import, out var module))
                 {
-                    module = Load(Atom.Explain(import));
+                    module = Load(Atom.Explain(import), entryModule: Maybe.Some(currentModule.Name));
                     if (module.Name != import)
                     {
                         throw new ArgumentException(Atom.Explain(module.Name));

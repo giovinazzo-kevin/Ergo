@@ -179,7 +179,7 @@ namespace Ergo.Lang
                 // Syntactic sugar
                 userQuery += '.';
             }
-            var parsed = new Parsed<Query>(userQuery, Handler, str => throw new ShellException($"'{str}' does not resolve to a query.")).Value;
+            var parsed = new Parsed<Query>(userQuery, Handler, str => throw new ShellException($"'{str}' does not resolve to a query."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
             if (!parsed.HasValue) {
                 return;
             }
@@ -248,7 +248,7 @@ namespace Ergo.Lang
         protected void Cmd_Directive(Group dir)
         {
             var currentModule = Interpreter.Modules[Interpreter.UserModule];
-            var parsed = new Parsed<Directive>($":- {(dir.Value.EndsWith('.') ? dir.Value : dir.Value + '.')}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive.")).Value;
+            var parsed = new Parsed<Directive>($":- {(dir.Value.EndsWith('.') ? dir.Value : dir.Value + '.')}", Handler, str => throw new ShellException($"'{str}' does not resolve to a directive."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
             var directive = parsed.Reduce(some => some, () => default);
             if (Interpreter.RunDirective(directive, ref currentModule, fromCli: true))
             {
@@ -259,7 +259,7 @@ namespace Ergo.Lang
 
         protected void Cmd_Assert(Group predicate, bool start)
         {
-            var parsed = new Parsed<Predicate>(predicate.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a predicate.")).Value;
+            var parsed = new Parsed<Predicate>(predicate.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a predicate."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
             if (!parsed.HasValue) {
                 return;
             }
@@ -277,7 +277,7 @@ namespace Ergo.Lang
 
         protected void Cmd_Retract(Group term, bool all)
         {
-            var parsed = new Parsed<Term>(term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
+            var parsed = new Parsed<Term>(term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
             if (!parsed.HasValue) {
                 return;
             }
@@ -326,7 +326,7 @@ namespace Ergo.Lang
         {
             var predicates = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             if (term?.Success ?? false) {
-                var parsed = new Parsed<CommaExpression>($"{term.Value}, true", Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
+                var parsed = new Parsed<CommaExpression>($"{term.Value}, true", Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
                 if (!parsed.HasValue) {
                     No();
                     return;
@@ -371,7 +371,7 @@ namespace Ergo.Lang
         {
             var builtins = new List<BuiltIn>();
             if (_term?.Success ?? false) {
-                var parsed = new Parsed<Term>(_term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term.")).Value;
+                var parsed = new Parsed<Term>(_term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
                 if (!parsed.HasValue) {
                     No();
                     return;

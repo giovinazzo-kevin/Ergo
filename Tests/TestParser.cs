@@ -22,7 +22,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseAtom(string atom, string normalized)
         {
-            var p = new Parsed<Atom>(atom, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Atom>(atom, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Atom.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
@@ -34,7 +34,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseVariable(string variable, string normalized)
         {
-            var p = new Parsed<Variable>(variable, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Variable>(variable, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Variable.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
@@ -46,7 +46,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseList(string toParse, string expected)
         {
-            var p = new Parsed<List>(toParse, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<List>(toParse, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(expected, List.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
@@ -57,7 +57,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseComplex(string complex, string normalized)
         {
-            var p = new Parsed<Complex>(complex, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Complex>(complex, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Complex.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
@@ -70,7 +70,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseTerm(string exp, string normalized)
         {
-            var p = new Parsed<Term>(exp, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Term>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Term.Explain(p.Value.Reduce(some => some, () => default)));
         }
 
@@ -86,7 +86,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseExpression(string exp, string normalized)
         {
-            var p = new Parsed<Expression>(exp, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Expression>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Complex.Explain(p.Value.Reduce(some => some, () => default).Complex));
         }
 
@@ -99,7 +99,7 @@ namespace Tests
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {
-            var p = new Parsed<Predicate>(predicate, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Predicate>(predicate, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Predicate.Explain(p.Value.Reduce(some => some, () => default)).RemoveExtraWhitespace());
         }
 
@@ -107,7 +107,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseDirective(string directive, string normalized)
         {
-            var p = new Parsed<Directive>(directive, Thrower, _ => throw new Exception("Parse fail."));
+            var p = new Parsed<Directive>(directive, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, Directive.Explain(p.Value.Reduce(some => some, () => default)).RemoveExtraWhitespace());
         }
     }

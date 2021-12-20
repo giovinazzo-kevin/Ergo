@@ -10,10 +10,26 @@ namespace Ergo.Lang
     {
         private readonly Lexer _lexer;
         private readonly Term.InstantiationContext _discardContext;
-        public Parser(Lexer lexer)
+        private readonly Operator[] _userDefinedOperators;
+
+        public Parser(Lexer lexer, Operator[] userOperators)
         {
             _lexer = lexer;
             _discardContext = new(String.Empty);
+            _userDefinedOperators = userOperators;
+        }
+
+        public bool TryGetOperatorsFromFunctor(Atom functor, out IEnumerable<Operator> ops)
+        {
+            ops = default;
+            var match = Operators.DefinedOperators.Concat(_userDefinedOperators)
+                .Where(op => op.Synonyms.Any(s => functor.Equals(s)));
+            if (!match.Any())
+            {
+                return false;
+            }
+            ops = match;
+            return true;
         }
 
         public bool TryParseAtom(out Atom atom)
@@ -178,13 +194,65 @@ namespace Ergo.Lang
         private bool ExpectOperator(Func<Operator, bool> match, out Operator op)
         {
             op = default;
-            if(Expect(Lexer.TokenType.Operator, str => Operator.TryGetOperatorsFromFunctor(new Atom(str), out var _op) && _op.Any(match)
+            if(Expect(Lexer.TokenType.Operator, str => TryGetOperatorsFromFunctor(new Atom(str), out var _op) && _op.Any(match)
             , out string str)
-                && Operator.TryGetOperatorsFromFunctor(new Atom(str), out var ops)) {
+                && TryGetOperatorsFromFunctor(new Atom(str), out var ops)) {
                 op = ops.Single(match);
                 return true;
             }
             return false;
+        }
+
+        public Expression BuildExpression(Operator op, Term lhs, Maybe<Term> maybeRhs = default, bool lhsParenthesized = false)
+        {
+            return maybeRhs.Reduce(
+                rhs => Associate(lhs, rhs),
+                () => new Expression(op, lhs, Maybe<Term>.None)
+            );
+
+            Expression Associate(Term lhs, Term rhs)
+            {
+                // When the lhs represents an expression with the same precedence as this (and thus associativity, by design)
+                // and right associativity, we have to swap the arguments around until they look right.
+                if (!lhsParenthesized
+                && TryConvertExpression(lhs, out var lhsExpr)
+                && lhsExpr.Operator.Affix == Operator.AffixType.Infix
+                && lhsExpr.Operator.Associativity == Operator.AssociativityType.Right
+                && lhsExpr.Operator.Precedence == op.Precedence)
+                {
+                    // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
+                    var lhsRhs = lhsExpr.Right.Reduce(x => x, () => throw new InvalidOperationException());
+                    var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs));
+                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<Term>(newRhs.Complex));
+                }
+                return new Expression(op, lhs, Maybe.Some(rhs));
+            }
+
+            bool TryConvertExpression(Term t, out Expression expr)
+            {
+                expr = default;
+                if (t.Type != TermType.Complex)
+                    return false;
+                var cplx = (Complex)t;
+                if (!TryGetOperatorsFromFunctor(cplx.Functor, out var ops))
+                    return false;
+                var op = ops.Single(op => cplx.Arity switch {
+                    1 => op.Affix != Operator.AffixType.Infix
+                    ,
+                    _ => op.Affix == Operator.AffixType.Infix
+                });
+                if (cplx.Arguments.Length == 1)
+                {
+                    expr = BuildExpression(op, cplx.Arguments[0]);
+                    return true;
+                }
+                if (cplx.Arguments.Length == 2)
+                {
+                    expr = BuildExpression(op, cplx.Arguments[0], Maybe.Some(cplx.Arguments[1]));
+                    return true;
+                }
+                return false;
+            }
         }
 
         public bool TryParsePrefixExpression(out Expression expr)
@@ -192,7 +260,7 @@ namespace Ergo.Lang
             expr = default; var pos = _lexer.State;
             if (ExpectOperator(op => op.Affix == Operator.AffixType.Prefix, out var op)
             && TryParseTerm(out var arg, out _)) {
-                expr = op.BuildExpression(arg);
+                expr = BuildExpression(op, arg);
                 return true;
             }
             return Fail(pos);
@@ -203,7 +271,7 @@ namespace Ergo.Lang
             expr = default; var pos = _lexer.State;
             if (TryParseTerm(out var arg, out _) 
             && ExpectOperator(op => op.Affix == Operator.AffixType.Postfix, out var op)) {
-                expr = op.BuildExpression(arg);
+                expr = BuildExpression(op, arg);
                 return true;
             }
             return Fail(pos);
@@ -219,11 +287,11 @@ namespace Ergo.Lang
                 // Special case for unary expressions
                 if(lhs.Type != TermType.Complex || !((Complex)lhs is var cplx)
                     || cplx.Arguments.Length > 1
-                    || !Operator.TryGetOperatorsFromFunctor(cplx.Functor, out var ops)) {
+                    || !TryGetOperatorsFromFunctor(cplx.Functor, out var ops)) {
                     return Fail(pos);
                 }
                 var op = ops.Single(op => op.Affix != Operator.AffixType.Infix);
-                expr = op.BuildExpression(cplx.Arguments[0], Maybe<Term>.None);
+                expr = BuildExpression(op, cplx.Arguments[0], Maybe<Term>.None);
                 return true;
             }
             return Fail(pos);
@@ -244,7 +312,7 @@ namespace Ergo.Lang
                         return Fail(pos);
                     }
                     if (!TryPeekNextOperator(out lookahead)) {
-                        expr = op.BuildExpression(lhs, Maybe.Some(rhs), lhsParenthesized);
+                        expr = BuildExpression(op, lhs, Maybe.Some(rhs), lhsParenthesized);
                         break;
                     }
                     while(lookahead.Affix == Operator.AffixType.Infix && lookahead.Precedence > op.Precedence
@@ -257,7 +325,7 @@ namespace Ergo.Lang
                             break;
                         }
                     }
-                    lhs = (expr = op.BuildExpression(lhs, Maybe.Some(rhs))).Complex;
+                    lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
                 }
                 return true;
             }
@@ -284,7 +352,7 @@ namespace Ergo.Lang
             {
                 op = default;
                 if(_lexer.TryPeekNextToken(out var lookahead)
-                && Operator.TryGetOperatorsFromFunctor(new Atom(lookahead.Value), out var ops)) {
+                && TryGetOperatorsFromFunctor(new Atom(lookahead.Value), out var ops)) {
                     op = ops.Where(op => op.Affix == Operator.AffixType.Infix).Single();
                     return true;
                 }

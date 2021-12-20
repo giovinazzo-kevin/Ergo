@@ -53,7 +53,7 @@ namespace Ergo.Lang
                 var constructorParameters = constructor.GetParameters().ToDictionary(p => p.Name);
                 var instance = constructor.Invoke(args.Select(a =>
                 {
-                    var value = TypeMarshall.FromTerm(args[a.Key], Properties[a.Key].PropertyType, TypeMarshall.MarshallingMode.Named);
+                    var value = TermMarshall.FromTerm(args[a.Key], Properties[a.Key].PropertyType, TermMarshall.MarshallingMode.Named);
                     value = Convert.ChangeType(value, constructorParameters[a.Key].ParameterType);
                     return value;
                 }).ToArray());
@@ -65,7 +65,7 @@ namespace Ergo.Lang
                 var args = ((Complex)t).Arguments.ToDictionary(a => (string)((Complex)a).Functor.Value, a => ((Complex)a).Arguments[0]);
                 foreach (var prop in Properties.Values)
                 {
-                    var value = TypeMarshall.FromTerm(args[prop.Name], prop.PropertyType, TypeMarshall.MarshallingMode.Named);
+                    var value = TermMarshall.FromTerm(args[prop.Name], prop.PropertyType, TermMarshall.MarshallingMode.Named);
                     value = Convert.ChangeType(value, prop.PropertyType);
                     prop.SetValue(instance, value);
                 }
@@ -81,7 +81,7 @@ namespace Ergo.Lang
             if (IsAtomic) return functor;
 
             return new Complex(functor, Properties.Values.Select(
-                v => (Term)new Complex(new(v.Name), TypeMarshall.ToTerm(v.GetValue(o), TypeMarshall.MarshallingMode.Named))
+                v => (Term)new Complex(new(v.Name), TermMarshall.ToTerm(v.GetValue(o), TermMarshall.MarshallingMode.Named))
             ).ToArray());
         }
     }

@@ -9,14 +9,16 @@ namespace Ergo.Lang
         public readonly Atom Name;
         public readonly List Exports;
         public readonly List Imports;
+        public readonly Operator[] Operators;
         public readonly bool Runtime;
         public readonly KnowledgeBase KnowledgeBase;
 
-        public Module(Atom name, List import, List export, KnowledgeBase kb = null, bool runtime = false)
+        public Module(Atom name, List import, List export, Operator[] operators, KnowledgeBase kb = null, bool runtime = false)
         {
             Name = name;
             Imports = import;
             Exports = export;
+            Operators = operators;
             Runtime = runtime;
             KnowledgeBase = kb ?? new();
         }
@@ -27,7 +29,8 @@ namespace Ergo.Lang
             return expl;
         }
 
-        public Module WithImport(Atom import) => new(Name, List.Build(Imports.Head.Contents.Append(import).ToArray()), Exports, KnowledgeBase, Runtime);
-        public Module WithExports(Term[] exports) => new(Name, Imports, List.Build(exports), KnowledgeBase, Runtime);
+        public Module WithImport(Atom import) => new(Name, List.Build(Imports.Head.Contents.Append(import).ToArray()), Exports, Operators, KnowledgeBase, Runtime);
+        public Module WithExports(Term[] exports) => new(Name, Imports, List.Build(exports), Operators, KnowledgeBase, Runtime);
+        public Module WithOperators(Operator[] operators) => new(Name, Imports, Exports, operators, KnowledgeBase, Runtime);
     }
 }

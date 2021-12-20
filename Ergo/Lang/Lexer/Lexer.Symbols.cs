@@ -12,10 +12,7 @@ namespace Ergo.Lang
             "(", ")", "///", "[", "]", ",", "."
         };
 
-        public static readonly string[] OperatorSymbols = Operators.DefinedOperators
-            .SelectMany(op => op.Synonyms
-                .Select(s => (string)s.Value))
-            .ToArray();
+        public readonly string[] OperatorSymbols;
 
     }
 }

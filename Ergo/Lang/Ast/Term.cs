@@ -59,9 +59,9 @@ namespace Ergo.Lang
             };
         }
 
-        public static Term Substitute(string parse, IEnumerable<Substitution> s, out Term parsed)
+        public static Term Substitute(string parse, IEnumerable<Substitution> s, out Term parsed, Operator[] ops)
         {
-            parsed = new Parsed<Term>(parse, new(), str => throw new InterpreterException(Interpreter.ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, parse))
+            parsed = new Parsed<Term>(parse, new(), str => throw new InterpreterException(Interpreter.ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, parse), ops)
                 .Value.Reduce(some => some, () => default);
             return Substitute(parsed, s);
         }
@@ -107,9 +107,9 @@ namespace Ergo.Lang
             return Substitution.TryUnify(new(a, b), out subs);
         }
 
-        public static bool TryUnify(Term a, string parse, out Term parsed, out IEnumerable<Substitution> subs)
+        public static bool TryUnify(Term a, string parse, out Term parsed, out IEnumerable<Substitution> subs, Operator[] ops)
         {
-            parsed = new Parsed<Term>(parse, new(), str => throw new InterpreterException(Interpreter.ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, parse))
+            parsed = new Parsed<Term>(parse, new(), str => throw new InterpreterException(Interpreter.ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, parse), ops)
                 .Value.Reduce(some => some, () => default);
             return Substitution.TryUnify(new(a, parsed), out subs);
         }

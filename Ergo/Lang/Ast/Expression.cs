@@ -18,29 +18,6 @@ namespace Ergo.Lang
             Right = right;
             Complex = new Complex(op.CanonicalFunctor, right.Reduce(some => new[] { left, some }, () => new[] { left }));
         }
-
-        public static bool TryConvert(Term t, out Expression expr)
-        {
-            expr = default;
-            if (t.Type != TermType.Complex)
-                return false;
-            var cplx = (Complex)t;
-            if (!Operator.TryGetOperatorsFromFunctor(cplx.Functor, out var ops))
-                return false;
-            var op = ops.Single(op => cplx.Arity switch {
-                1 => op.Affix != Operator.AffixType.Infix
-                , _ => op.Affix == Operator.AffixType.Infix
-            });
-            if (cplx.Arguments.Length == 1) {
-                expr = op.BuildExpression(cplx.Arguments[0]);
-                return true;
-            }
-            if (cplx.Arguments.Length == 2) {
-                expr = op.BuildExpression(cplx.Arguments[0], Maybe.Some(cplx.Arguments[1]));
-                return true;
-            }
-            return false;
-        }
     }
 
 }

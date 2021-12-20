@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Ergo.Lang
 {
-    public partial class TypeMarshall
+    public partial class TermMarshall
     {
         internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
         internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();

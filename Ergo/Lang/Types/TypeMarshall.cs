@@ -6,21 +6,51 @@ using System.Threading.Tasks;
 
 namespace Ergo.Lang
 {
-
-    public class TypeMarshall
+    public partial class TypeMarshall
     {
-        internal static readonly ConcurrentDictionary<Type, ITypeResolver> Resolvers = new();
+        internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
+        internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
 
-        internal static ITypeResolver EnsureResolver<T>()
+        internal static ITypeResolver EnsurePositionalResolver(Type t)
         {
-            if(!Resolvers.TryGetValue(typeof(T), out var resolver))
+            if (!PositionalResolvers.TryGetValue(t, out var resolver))
             {
-                Resolvers.AddOrUpdate(typeof(T), resolver = new TypeResolver<T>(), (t, r) => r);
+                resolver = (ITypeResolver)Activator.CreateInstance(typeof(PositionalPropertyTypeResolver<>).MakeGenericType(t));
+                NamedResolvers.AddOrUpdate(t, resolver, (t, r) => r);
             }
             return resolver;
         }
-        public static bool CanMarshall(Type t) => Resolvers.ContainsKey(t);
-        public static Term ToTerm<T>(T value) => EnsureResolver<T>().ToTerm(value);
-        public static T FromTerm<T>(Term value, T _ = default)=> (T)EnsureResolver<T>().FromTerm(value);
+
+        internal static ITypeResolver EnsureNamedResolver(Type t)
+        {
+            if (!NamedResolvers.TryGetValue(t, out var resolver))
+            {
+                resolver = (ITypeResolver)Activator.CreateInstance(typeof(NamedPropertyTypeResolver<>).MakeGenericType(t));
+                NamedResolvers.AddOrUpdate(t, resolver, (t, r) => r);
+            }
+            return resolver;
+        }
+
+        public static Term ToTerm<T>(T value, MarshallingMode mode = MarshallingMode.Positional) =>
+            mode switch
+            {
+                MarshallingMode.Positional => EnsurePositionalResolver(typeof(T)).ToTerm(value),
+                MarshallingMode.Named => EnsureNamedResolver(typeof(T)).ToTerm(value),
+                _ => throw new NotImplementedException()
+            };
+        public static T FromTerm<T>(Term value, T _ = default, MarshallingMode mode = MarshallingMode.Positional) =>
+            mode switch
+            {
+                MarshallingMode.Positional => (T)EnsurePositionalResolver(typeof(T)).FromTerm(value),
+                MarshallingMode.Named => (T)EnsureNamedResolver(typeof(T)).FromTerm(value),
+                _ => throw new NotImplementedException()
+            };
+        public static object FromTerm(Term value, Type type, MarshallingMode mode = MarshallingMode.Positional) =>
+            mode switch
+            {
+                MarshallingMode.Positional => EnsurePositionalResolver(type).FromTerm(value),
+                MarshallingMode.Named => EnsureNamedResolver(type).FromTerm(value),
+                _ => throw new NotImplementedException()
+            };
     }
 }

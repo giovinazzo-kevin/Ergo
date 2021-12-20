@@ -155,9 +155,14 @@ namespace Ergo.Lang
 
             bool DefineOperator(ref Module currentModule)
             {
-                var body = ((Complex)d.Body);
                 // first arg: precedence; second arg: type; third arg: name
-                var precedence = body.Arguments[0].Reduce(a => a.Value, v => throw new ArgumentException(), c => throw new ArgumentException());
+                var op = TypeMarshall.FromTerm(d.Body, new
+                {
+                    Precedence = default(int),
+                    Type = default(string),
+                    Name = default(string)
+                }, TypeMarshall.MarshallingMode.Positional);
+
                 return false;
             }
 

@@ -40,6 +40,8 @@ namespace Ergo.Lang
             AddReflectedBuiltIns();
         }
 
+        public bool TryAddBuiltIn(BuiltIn b) => BuiltInsDict.TryAdd(b.Signature, b);
+
         protected void AddReflectedBuiltIns()
         {
             var assembly = typeof(BuiltIns.Print).Assembly;

@@ -88,14 +88,14 @@ namespace Ergo.Lang
         public void AssertA(Atom module, Predicate p)
         {
             if (TryGetBuiltIn(p.Head, out _)) {
-                throw new InterpreterException(ErrorType.UserPredicateConflictsWithBuiltIn, Predicate.Signature(p.Head));
+                throw new InterpreterException(InterpreterError.UserPredicateConflictsWithBuiltIn, Predicate.Signature(p.Head));
             }
             Modules[module].KnowledgeBase.AssertA(p);
         }
         public void AssertZ(Atom module, Predicate p)
         {
             if (TryGetBuiltIn(p.Head, out _)) {
-                throw new InterpreterException(ErrorType.UserPredicateConflictsWithBuiltIn, Predicate.Signature(p.Head));
+                throw new InterpreterException(InterpreterError.UserPredicateConflictsWithBuiltIn, Predicate.Signature(p.Head));
             }
             Modules[module].KnowledgeBase.AssertZ(p);
         }
@@ -103,7 +103,7 @@ namespace Ergo.Lang
         public bool RetractOne(Atom module, ITerm head)
         {
             if (TryGetBuiltIn(head, out _)) {
-                throw new InterpreterException(ErrorType.UnknownPredicate, head);
+                throw new InterpreterException(InterpreterError.UnknownPredicate, head);
             }
             return Modules[module].KnowledgeBase.RetractOne(head);
         }
@@ -111,7 +111,7 @@ namespace Ergo.Lang
         public int RetractAll(Atom module, ITerm head)
         {
             if (TryGetBuiltIn(head, out _)) {
-                throw new InterpreterException(ErrorType.UnknownPredicate, head);
+                throw new InterpreterException(InterpreterError.UnknownPredicate, head);
             }
             return Modules[module].KnowledgeBase.RetractAll(head);
         }
@@ -211,7 +211,7 @@ namespace Ergo.Lang
                 var moduleName = (Atom)body.Arguments[0];
                 if (!fromCli && currentModule.Name != UserModule)
                 {
-                    throw new InterpreterException(ErrorType.ModuleRedefinition, currentModule.Name.Explain(), moduleName.Explain());
+                    throw new InterpreterException(InterpreterError.ModuleRedefinition, currentModule.Name.Explain(), moduleName.Explain());
                 }
                 var exports = List.Empty;
                 if(body.Arguments[1] is Complex c)
@@ -223,7 +223,7 @@ namespace Ergo.Lang
                 {
                     if (!module.Runtime && !Flags.HasFlag(InterpreterFlags.AllowStaticModuleRedefinition))
                     {
-                        throw new InterpreterException(ErrorType.ModuleNameClash, moduleName.Explain());
+                        throw new InterpreterException(InterpreterError.ModuleNameClash, moduleName.Explain());
                     }
                     module = module.WithExports(exports.Contents);
                 }
@@ -240,13 +240,13 @@ namespace Ergo.Lang
                     // make sure that 'item' is in the form 'predicate/arity', and that it is asserted
                     if(!new Substitution(predicateSlashArity, item).TryUnify(out var subs))
                     {
-                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
+                        throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
                     }
                     var predicate = subs.Single(x => x.Lhs.Equals(P)).Rhs;
                     var arity = subs.Single(x => x.Lhs.Equals(A)).Rhs;
                     if(predicate is not Atom || arity is not Atom || ((Atom)arity).Value is not double d)
                     {
-                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
+                        throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
                     }
                 }
                 return true;
@@ -307,7 +307,7 @@ namespace Ergo.Lang
             if (!parser.TryParseProgramDirectives(out var program))
             {
                 MaybeClose();
-                throw new InterpreterException(ErrorType.CouldNotLoadFile);
+                throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
             foreach (var d in program.Directives)
             {
@@ -326,7 +326,7 @@ namespace Ergo.Lang
             if (!parser.TryParseProgram(out program))
             {
                 MaybeClose();
-                throw new InterpreterException(ErrorType.CouldNotLoadFile);
+                throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
             foreach (var item in currentModule.Imports.Contents)
             {

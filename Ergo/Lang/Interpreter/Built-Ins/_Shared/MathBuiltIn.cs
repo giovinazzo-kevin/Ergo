@@ -34,7 +34,7 @@ namespace Ergo.Lang
             };
             static double Throw(ITerm t)
             {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.Number, t.Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Number, t.Explain());
             }
         }
     }

@@ -14,7 +14,7 @@ namespace Ergo.Lang
             var arg = arguments.Single();
             if (!arg.Matches<bool>(out var eval))
             {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.Boolean, arg.Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Boolean, arg.Explain());
             }
             return new(new Atom(!eval));
         }

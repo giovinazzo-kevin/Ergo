@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang
 {
-    public enum ErrorType
+    public enum InterpreterError
     {
         CouldNotLoadFile
         , UnknownPredicate

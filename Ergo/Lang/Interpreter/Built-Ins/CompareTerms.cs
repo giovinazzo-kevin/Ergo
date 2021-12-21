@@ -14,7 +14,7 @@
             {
                 if (!arguments[0].Matches<int>(out var result))
                 {
-                    throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.Number, arguments[0].Explain());
+                    throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Number, arguments[0].Explain());
                 }
                 if (result.Equals(cmp))
                 {

@@ -146,7 +146,7 @@ namespace Ergo.Lang
                 }
                 if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                 {
-                    throw new InterpreterException(ErrorType.UnknownPredicate, qualifiedGoal.GetBuiltInSignature().Explain());
+                    throw new InterpreterException(InterpreterError.UnknownPredicate, qualifiedGoal.GetBuiltInSignature().Explain());
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }

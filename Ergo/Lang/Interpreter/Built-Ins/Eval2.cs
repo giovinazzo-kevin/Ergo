@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang
 {
-    public sealed class Eval2 : Evaluate
+    public sealed class Eval2 : MathBuiltIn
     {
         public Eval2()
             : base("", new("@eval"), Maybe<int>.Some(2))

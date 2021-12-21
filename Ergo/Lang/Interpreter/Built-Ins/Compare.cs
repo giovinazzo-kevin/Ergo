@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang
 {
-    public sealed class Compare : Evaluate
+    public sealed class Compare : MathBuiltIn
     {
         public Compare()
             : base("", new("@evalcmp"), Maybe<int>.Some(1))

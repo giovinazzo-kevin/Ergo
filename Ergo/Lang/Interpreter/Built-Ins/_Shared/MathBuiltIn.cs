@@ -3,9 +3,9 @@ using System.Linq;
 
 namespace Ergo.Lang
 {
-    public abstract class Evaluate : BuiltIn
+    public abstract class MathBuiltIn : BuiltIn
     {
-        protected Evaluate(string documentation, Atom functor, Maybe<int> arity) 
+        protected MathBuiltIn(string documentation, Atom functor, Maybe<int> arity) 
             : base(documentation, functor, arity)
         {
         }

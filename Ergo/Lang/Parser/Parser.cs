@@ -137,13 +137,13 @@ namespace Ergo.Lang
                 parenthesized = true;
                 return true;
             }
-            if(TryParseITermInner(out var t)) {
+            if(TryParseTermInner(out var t)) {
                 ITerm = t;
                 return true;
             }
             return Fail(pos);
 
-            bool TryParseITermInner(out ITerm ITerm)
+            bool TryParseTermInner(out ITerm ITerm)
             {
                 if (TryParseList(out var list)) {
                     ITerm = list.Root;

@@ -158,9 +158,9 @@ namespace Ergo.Lang
             bool DefineOperator(ref Module currentModule)
             {
                 // first arg: precedence; second arg: type; third arg: name
-                var op = ITermMarshall.FromITerm(d.Body, new
+                var op = TermMarshall.FromTerm(d.Body, new
                     { Precedence = default(int), Type = default(string), Name = default(string) },
-                    ITermMarshall.MarshallingMode.Positional
+                    TermMarshall.MarshallingMode.Positional
                 );
 
                 var (affix, assoc) = op.Type switch
@@ -264,9 +264,9 @@ namespace Ergo.Lang
                 {
                     if (!Modules[(Atom)import].Exports.Contents.Any(t =>
                      {
-                         var x = ITermMarshall.FromITerm(t, new
+                         var x = TermMarshall.FromTerm(t, new
                          { Predicate = default(string), Arity = default(int) },
-                             ITermMarshall.MarshallingMode.Positional
+                             TermMarshall.MarshallingMode.Positional
                          );
                          return importedOp.Synonyms.Any(s => Equals(s.Value, x.Predicate))
                          && (x.Arity == 1 && importedOp.Affix != OperatorAffix.Infix

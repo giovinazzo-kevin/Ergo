@@ -86,26 +86,17 @@ namespace Ergo.Lang
 
         protected virtual BuiltIn.Evaluation BuiltIn_Unprovable(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 1) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 1);
-                }
-                return null;
-            });
-
+            var c = (Complex)t;
             var arg = c.Arguments.Single();
             if (Solve(new Query(new(arg)), Maybe.Some(module)).Any()) {
-                return new BuiltIn.Evaluation(Literals.False);
+                return new(Literals.False);
             }
-            return new BuiltIn.Evaluation(Literals.True);
+            return new(Literals.True);
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Not(ITerm t, Atom module)
         {
             var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 1) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 1);
-                }
                 if (c.Arguments[0] is not Atom) {
                     return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, c.Arguments[0].Explain());
                 }
@@ -116,68 +107,46 @@ namespace Ergo.Lang
             if (((Atom)arg).Value is not bool eval) {
                 throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Boolean, arg.Explain());
             }
-            return new BuiltIn.Evaluation(new Atom(!eval));
+            return new(new Atom(!eval));
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Cut(ITerm t, Atom module)
         {
-            return new BuiltIn.Evaluation(Literals.True);
+            return new(Literals.True);
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Assign(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 2) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 2);
-                }
-                return null;
-            });
-            return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], c.Arguments[1]));
+            var c = (Complex)t;
+            return new(Literals.True, new Substitution(c.Arguments[0], c.Arguments[1]));
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Unify(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 2)
-                {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 2);
-                }
-                return null;
-            });
+            var c = (Complex)t;
             if (new Substitution(c.Arguments[0], c.Arguments[1]).TryUnify(out var subs))
             {
-                return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
+                return new(Literals.True, subs.ToArray());
             }
-            return new BuiltIn.Evaluation(Literals.False);
+            return new(Literals.False);
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Unifiable(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 3) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 3);
-                }
-                return null;
-            });
+            var c = (Complex)t;
             if (new Substitution(c.Arguments[0], c.Arguments[1]).TryUnify(out var subs)) {
                 var equations = subs.Select(s => (ITerm)new Complex(Operators.BinaryUnification.CanonicalFunctor, s.Lhs, s.Rhs));
                 var list = new List(equations.ToArray());
                 if (new Substitution(c.Arguments[2], list.Root).TryUnify(out subs)) {
-                    return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
+                    return new(Literals.True, subs.ToArray());
                 }
             }
-            return new BuiltIn.Evaluation(Literals.False);
+            return new(Literals.False);
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Compare(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 3) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 3);
-                }
-                return null;
-            });
-
+            var c = (Complex)t;
             var cmp = (double)c.Arguments[1].CompareTo(c.Arguments[2]);
             if(c.Arguments[0].IsGround) {
                 var a = AtomGuard(c.Arguments[0], a => {
@@ -190,52 +159,31 @@ namespace Ergo.Lang
                     return null;
                 });
                 if(a.Value.Equals(cmp)) {
-                    return new BuiltIn.Evaluation(Literals.True);
+                    return new(Literals.True);
                 }
-                return new BuiltIn.Evaluation(Literals.False);
+                return new(Literals.False);
             }
-            return new BuiltIn.Evaluation(Literals.True, new Substitution(c.Arguments[0], new Atom(cmp)));
+            return new(Literals.True, new Substitution(c.Arguments[0], new Atom(cmp)));
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Eval1(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 1) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 1);
-                }
-                return null;
-            });
-
-            var result = new Atom(Eval(c.Arguments[0]));
-            return new BuiltIn.Evaluation(result);
+            var result = new Atom(Eval(((Complex)t).Arguments[0]));
+            return new(result);
         }
         protected virtual BuiltIn.Evaluation BuiltIn_Cmp1(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 1) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 1);
-                }
-                return null;
-            });
-
-            var result = new Atom(Cmp(c.Arguments[0]));
-            return new BuiltIn.Evaluation(result);
+            var result = new Atom(Cmp(((Complex)t).Arguments[0]));
+            return new(result);
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_Eval2(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 2) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 2);
-                }
-                return null;
-            });
-
-            var result = new Atom(Eval(c.Arguments[1]));
-            if (new Substitution(c.Arguments[0], result).TryUnify(out var subs)) {
-                return new BuiltIn.Evaluation(Literals.True, subs.ToArray());
+            var result = new Atom(Eval(((Complex)t).Arguments[1]));
+            if (new Substitution(((Complex)t).Arguments[0], result).TryUnify(out var subs)) {
+                return new(Literals.True, subs.ToArray());
             }
-            return new BuiltIn.Evaluation(Literals.False);
+            return new(Literals.False);
         }
 
         static double Eval(ITerm t)
@@ -277,56 +225,33 @@ namespace Ergo.Lang
 
         protected virtual BuiltIn.Evaluation BuiltIn_Print(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => null);
-            var args = c.Arguments
+            var args = ((Complex)t).Arguments
                 .Select(a => a.Explain())
                 .ToArray();
             foreach (var arg in args) {
                 Console.Write(arg);
             }
-            return new BuiltIn.Evaluation(Literals.True);
+            return new(Literals.True);
         }
 
         protected virtual BuiltIn.Evaluation BuiltIn_AnonymousComplex(ITerm t, Atom module)
         {
-            var c = ComplexGuard(t, c => {
-                if (c.Arguments.Length != 2) {
-                    return new InterpreterException(ErrorType.ExpectedITermWithArity, c.Functor.Explain(), 2);
-                }
-                if (c.Arguments[0] is Atom) {
-                    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, c.Arguments[0].Explain());
-                }
-                if (c.Arguments[1] is Atom) {
-                    return new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, c.Arguments[1].Explain());
-                }
-                return null;
-            });
-
-            var (Functor, Arity) = ((Atom)c.Arguments[0], (Atom)c.Arguments[1]);
-            if (Functor.Value is not string functor) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Functor, Functor.Explain());
-            }
-            if (Arity.Value is not double arity) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Number, Arity.Explain());
-            }
-            if (arity - (int)arity != 0) {
-                throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.Integer, Arity.Explain());
-            }
-            if (arity == 0)
+            if(t.Matches(out var match, new { Functor = default(string), Arity = default(int) }))
             {
-                return new BuiltIn.Evaluation(Functor);
+                if (match.Arity == 0) { return new(new Atom(match.Functor)); }
+                var predArgs = Enumerable.Range(0, match.Arity)
+                    .Select(i => (ITerm)new Variable($"{i}"))
+                    .ToArray();
+                return new(new Complex(new(match.Functor), predArgs));
             }
-            var predArgs = Enumerable.Range(0, (int)arity)
-                .Select(i => (ITerm)new Variable($"{i}"))
-                .ToArray();
-            return new BuiltIn.Evaluation(new Complex(Functor, predArgs));
+            return new(Literals.False);
         }
         protected virtual BuiltIn.Evaluation BuiltIn_Ground(ITerm t, Atom module)
         {
             if (t.IsGround) {
-                return new BuiltIn.Evaluation(Literals.True);
+                return new(Literals.True);
             }
-            return new BuiltIn.Evaluation(Literals.False);
+            return new(Literals.False);
         }
     }
 }

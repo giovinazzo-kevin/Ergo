@@ -11,5 +11,16 @@ namespace Ergo.Lang
             if (t is Complex c) return ifComplex(c);
             throw new NotSupportedException(t.GetType().Name);
         }
+
+        public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, TermMarshall.MarshallingMode marshalling = TermMarshall.MarshallingMode.Positional)
+        {
+            match = default;
+            try
+            {
+                match = TermMarshall.FromTerm(t, shape, marshalling);
+                return filter?.Invoke(match) ?? true;
+            }
+            catch (Exception) { return false; }
+        }
     }
 }

@@ -38,7 +38,7 @@ namespace Ergo.Lang
             }
         }
 
-        public object FromITerm(ITerm t)
+        public object FromTerm(ITerm t)
         {
             if (IsAtomic)
             {
@@ -51,7 +51,7 @@ namespace Ergo.Lang
                 var constructorParameters = constructor.GetParameters();
                 var args = ((Complex)t).Arguments.Select((a, i) =>
                 {
-                    var value = ITermMarshall.FromITerm(a, Properties[i].PropertyType, ITermMarshall.MarshallingMode.Positional);
+                    var value = TermMarshall.FromTerm(a, Properties[i].PropertyType, TermMarshall.MarshallingMode.Positional);
                     value = Convert.ChangeType(value, constructorParameters[i].ParameterType);
                     return value;
                 })
@@ -65,7 +65,7 @@ namespace Ergo.Lang
                 var args = ((Complex)t).Arguments;
                 for (int i = 0; i < Properties.Length; i++)
                 {
-                    var value = ITermMarshall.FromITerm(args[i], Properties[i].PropertyType, ITermMarshall.MarshallingMode.Positional);
+                    var value = TermMarshall.FromTerm(args[i], Properties[i].PropertyType, TermMarshall.MarshallingMode.Positional);
                     value = Convert.ChangeType(value, Properties[i].PropertyType);
                     Properties[i].SetValue(instance, value);
                 }
@@ -73,7 +73,7 @@ namespace Ergo.Lang
             }
         }
 
-        public ITerm ToITerm(object o)
+        public ITerm ToTerm(object o)
         {
             if (o.GetType() != Type) throw new ArgumentException(null, nameof(o));
 
@@ -81,7 +81,7 @@ namespace Ergo.Lang
             if (IsAtomic) return functor;
 
             return new Complex(functor, Properties.Select(
-                v => ITermMarshall.ToITerm(v.GetValue(o), ITermMarshall.MarshallingMode.Positional)
+                v => TermMarshall.ToTerm(v.GetValue(o), TermMarshall.MarshallingMode.Positional)
             ).ToArray());
         }
     }

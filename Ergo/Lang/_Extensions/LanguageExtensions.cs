@@ -22,5 +22,14 @@ namespace Ergo.Lang
             }
             catch (Exception) { return false; }
         }
+
+
+        public static BuiltInSignature GetBuiltInSignature(this ITerm term)
+        {
+            return new BuiltInSignature(
+                term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
+                Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity))
+            );
+        }
     }
 }

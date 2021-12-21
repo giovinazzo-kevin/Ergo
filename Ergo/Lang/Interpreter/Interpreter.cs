@@ -16,7 +16,7 @@ namespace Ergo.Lang
 
         public readonly InterpreterFlags Flags;
         public readonly Dictionary<Atom, Module> Modules;
-        public readonly Dictionary<string, BuiltIn> BuiltInsDict;
+        public readonly Dictionary<BuiltInSignature, BuiltIn> BuiltInsDict;
         public readonly List<string> SearchDirectories;
 
         public IEnumerable<BuiltIn> BuiltIns => BuiltInsDict.Values;
@@ -37,7 +37,19 @@ namespace Ergo.Lang
             SearchDirectories = new() { "", "stdlib/" };
             Flags = flags;
             InitializeModules();
-            AddBuiltins();
+            AddReflectedBuiltIns();
+        }
+
+        protected void AddReflectedBuiltIns()
+        {
+            var assembly = typeof(BuiltIns.Print).Assembly;
+            foreach (var type in assembly.GetTypes())
+            {
+                if (!type.IsAssignableTo(typeof(BuiltIn))) continue;
+                if(!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
+                var inst = (BuiltIn)Activator.CreateInstance(type);
+                BuiltInsDict[inst.Signature] = inst;
+            }
         }
 
         public bool TryGetMatches(ITerm head, Atom module, out IEnumerable<KnowledgeBase.Match> matches)
@@ -53,7 +65,7 @@ namespace Ergo.Lang
             //}
             return new Solver(module, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
         }
-        public bool TryGetBuiltIn(ITerm match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(Predicate.Signature(match), out builtin);
+        public bool TryGetBuiltIn(ITerm match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(match.GetBuiltInSignature(), out builtin);
         protected Module EnsureModule(Atom name)
         {
             if(!Modules.TryGetValue(name, out var module))
@@ -226,13 +238,13 @@ namespace Ergo.Lang
                     // make sure that 'item' is in the form 'predicate/arity', and that it is asserted
                     if(!new Substitution(predicateSlashArity, item).TryUnify(out var subs))
                     {
-                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, item.Explain());
+                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
                     }
                     var predicate = subs.Single(x => x.Lhs.Equals(P)).Rhs;
                     var arity = subs.Single(x => x.Lhs.Equals(A)).Rhs;
                     if(predicate is not Atom || arity is not Atom || ((Atom)arity).Value is not double d)
                     {
-                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, item.Explain());
+                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
                     }
                 }
                 return true;

@@ -14,12 +14,12 @@ namespace Ergo.Lang
         public readonly Atom EntryModule;
 
         protected readonly IReadOnlyDictionary<Atom, Module> Modules;
-        protected readonly IReadOnlyDictionary<string, BuiltIn> BuiltIns;
+        protected readonly IReadOnlyDictionary<BuiltInSignature, BuiltIn> BuiltIns;
         protected readonly SolverFlags Flags;
 
         public event Action<TraceType, string> Trace;
 
-        public Solver(Atom entryModule, IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<string, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
+        public Solver(Atom entryModule, IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<BuiltInSignature, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
         {
             EntryModule = entryModule;
             Modules = modules;
@@ -64,19 +64,21 @@ namespace Ergo.Lang
             }
         }
 
-        private ITerm ResolveBuiltin(ITerm term, Atom module, List<Substitution> subs, out string sig)
+        private ITerm ResolveBuiltin(ITerm term, Scope scope, List<Substitution> subs, int depth, out BuiltInSignature sig)
         {
-            sig = Predicate.Signature(term);
-            if(term is Complex c)
+            sig = term.GetBuiltInSignature();
+            if (term is Complex c)
             {
-                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, module, subs, out _)).ToArray());
+                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, scope, subs, depth, out _)).ToArray());
             }
-            while (BuiltIns.TryGetValue(sig, out var builtIn)) {
-                var eval = builtIn.Apply(term, module);
+            while (BuiltIns.TryGetValue(sig, out var builtIn)
+            || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
+                var eval = builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments));
+                LogTrace(TraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()}", depth);
                 term = eval.Result;
                 subs.AddRange(eval.Substitutions);
-                var newSig = Predicate.Signature(term);
-                if (sig == newSig) {
+                var newSig = term.GetBuiltInSignature();
+                if (sig.Equals(newSig)) {
                     break;
                 }
                 sig = newSig;
@@ -105,8 +107,8 @@ namespace Ergo.Lang
                 yield break;
             }
             // Transform builtins into the literal they evaluate to
-            goal = ResolveBuiltin(goal, scope.Module, subs, out var signature);
-            if (goal.Equals(Literals.False)) {
+            goal = ResolveBuiltin(goal, scope, subs, depth, out var signature);
+            if (goal.Equals(Literals.False) || goal is Variable) {
                 LogTrace(TraceType.Retn, "false", depth);
                 yield break;
             }
@@ -144,7 +146,7 @@ namespace Ergo.Lang
                 }
                 if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                 {
-                    throw new InterpreterException(Interpreter.ErrorType.UnknownPredicate, signature);
+                    throw new InterpreterException(ErrorType.UnknownPredicate, qualifiedGoal.GetBuiltInSignature().Explain());
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
@@ -176,10 +178,10 @@ namespace Ergo.Lang
             }
         }
 
-        public IEnumerable<Solution> Solve(Query goal)
+        public IEnumerable<Solution> Solve(Query goal, Maybe<Scope> scope = default)
         {
             Cut.Value = false;
-            return Solve(new Scope(EntryModule, default, default), goal.Goals);
+            return Solve(scope.Reduce(some => some, () => new Scope(EntryModule, default, default)), goal.Goals);
         }
     }
 }

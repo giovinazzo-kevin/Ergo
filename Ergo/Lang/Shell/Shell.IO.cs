@@ -92,6 +92,9 @@ namespace Ergo.Lang
                         case Solver.TraceType.Retn:
                             Console.ForegroundColor = ConsoleColor.Magenta;
                             break;
+                        case Solver.TraceType.Resv:
+                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                            break;
                         case Solver.TraceType.Fail:
                             Console.ForegroundColor = ConsoleColor.Red;
                             break;

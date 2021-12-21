@@ -393,8 +393,8 @@ namespace Ergo.Lang
                 .Select(r => new { 
                     r.Signature, 
                     r.Documentation,
-                    Name = r.Signature.Substring(0, r.Signature.LastIndexOf('/')),
-                    Arity = Int32.Parse(r.Signature[(r.Signature.LastIndexOf('/') + 1)..])
+                    Name = r.Signature.Functor.Explain(),
+                    Arity = r.Signature.Arity.Reduce(some => some.ToString(), () => "*")
                 })
                 .GroupBy(x => x.Name)
                 .Select(g => {

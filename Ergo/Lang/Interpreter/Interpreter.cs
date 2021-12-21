@@ -26,8 +26,8 @@ namespace Ergo.Lang
         protected void InitializeModules()
         {
             Modules.Clear();
-            Modules[UserModule] = new Module(UserModule, List.Build(), List.Build(), Array.Empty<Operator>(), runtime: true);
-            Load(Atom.Explain(PrologueModule));
+            Modules[UserModule] = new Module(UserModule, List.Empty, List.Empty, Array.Empty<Operator>(), runtime: true);
+            Load(PrologueModule.Explain());
         }
 
         public Interpreter(InterpreterFlags flags = InterpreterFlags.Default)
@@ -35,36 +35,37 @@ namespace Ergo.Lang
             BuiltInsDict = new();
             Modules = new();
             SearchDirectories = new() { "", "stdlib/" };
+            Flags = flags;
             InitializeModules();
             AddBuiltins();
         }
 
-        public bool TryGetMatches(Term head, Atom module, out IEnumerable<KnowledgeBase.Match> matches)
+        public bool TryGetMatches(ITerm head, Atom module, out IEnumerable<KnowledgeBase.Match> matches)
         {
-            var operators = GetUserDefinedOperators(module).ToArray();
-            // if head is in the form predicate/arity (or its built-in equivalent),
-            // do some syntactic de-sugaring and convert it into an actual anonymous complex
-            if(Term.TryUnify(head, "/(Predicate, Arity)", out _, out var subs, operators)
-            || Term.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
-            {
-                var anon = Term.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
-                try { head = BuiltIn_AnonymousComplex(anon, module).Result; } catch(Exception) { }
-            }
+            //var operators = GetUserDefinedOperators(module).ToArray();
+            //// if head is in the form predicate/arity (or its built-in equivalent),
+            //// do some syntactic de-sugaring and convert it into an actual anonymous complex
+            //if(ITerm.TryUnify(head, "/(Predicate, Arity)", out _, out var subs, operators)
+            //|| ITerm.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
+            //{
+            //    var anon = ITerm.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
+            //    try { head = BuiltIn_AnonymousComplex(anon, module).Result; } catch(Exception) { }
+            //}
             return new Solver(module, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
         }
-        public bool TryGetBuiltIn(Term match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(Predicate.Signature(match), out builtin);
+        public bool TryGetBuiltIn(ITerm match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(Predicate.Signature(match), out builtin);
         protected Module EnsureModule(Atom name)
         {
             if(!Modules.TryGetValue(name, out var module))
             {
                 try
                 {
-                    Load(Atom.Explain(name));
+                    Load(name.Explain());
                     module = Modules[name];
                 }
                 catch(FileNotFoundException)
                 {
-                    Modules[name] = module = new(name, List.Build(), List.Build(), Array.Empty<Operator>(), runtime: true);
+                    Modules[name] = module = new(name, List.Empty, List.Empty, Array.Empty<Operator>(), runtime: true);
                 }
             }
             return module;
@@ -85,7 +86,7 @@ namespace Ergo.Lang
             Modules[module].KnowledgeBase.AssertZ(p);
         }
 
-        public bool RetractOne(Atom module, Term head)
+        public bool RetractOne(Atom module, ITerm head)
         {
             if (TryGetBuiltIn(head, out _)) {
                 throw new InterpreterException(ErrorType.UnknownPredicate, head);
@@ -93,7 +94,7 @@ namespace Ergo.Lang
             return Modules[module].KnowledgeBase.RetractOne(head);
         }
 
-        public int RetractAll(Atom module, Term head)
+        public int RetractAll(Atom module, ITerm head)
         {
             if (TryGetBuiltIn(head, out _)) {
                 throw new InterpreterException(ErrorType.UnknownPredicate, head);
@@ -103,7 +104,7 @@ namespace Ergo.Lang
 
         public Solver GetSolver(Atom entryModule, Solver.SolverFlags flags = Solver.SolverFlags.Default) => new Solver(entryModule, Modules, BuiltInsDict, flags);
 
-        public IEnumerable<Solver.Solution> Solve(Sequence goal, Maybe<Atom> entryModule = default, Solver.SolverFlags flags = Solver.SolverFlags.Default)
+        public IEnumerable<Solver.Solution> Solve(Query goal, Maybe<Atom> entryModule = default, Solver.SolverFlags flags = Solver.SolverFlags.Default)
         {
             var module = entryModule.Reduce(some => some, () => UserModule);
             var solver = GetSolver(module, flags);
@@ -136,19 +137,19 @@ namespace Ergo.Lang
 
         public virtual bool RunDirective(Directive d, ref Module currentModule, bool fromCli = false)
         {
-            if (Term.TryUnify(d.Body, Directives.ChooseModule.Body, out _))
+            if (new Substitution(d.Body, Directives.ChooseModule.Body).TryUnify(out _))
             {
                 return ChooseModule(ref currentModule);
             }
-            if (Term.TryUnify(d.Body, Directives.DefineModule.Body, out _))
+            if (new Substitution(d.Body, Directives.DefineModule.Body).TryUnify(out _))
             {
                 return DefineModule(ref currentModule);
             }
-            if (Term.TryUnify(d.Body, Directives.UseModule.Body, out _))
+            if (new Substitution(d.Body, Directives.UseModule.Body).TryUnify(out _))
             {
                 return UseModule(ref currentModule);
             }
-            if (Term.TryUnify(d.Body, Directives.DefineOperator.Body, out _))
+            if (new Substitution(d.Body, Directives.DefineOperator.Body).TryUnify(out _))
             {
                 return DefineOperator(ref currentModule);
             }
@@ -157,18 +158,18 @@ namespace Ergo.Lang
             bool DefineOperator(ref Module currentModule)
             {
                 // first arg: precedence; second arg: type; third arg: name
-                var op = TermMarshall.FromTerm(d.Body, new
+                var op = ITermMarshall.FromITerm(d.Body, new
                     { Precedence = default(int), Type = default(string), Name = default(string) },
-                    TermMarshall.MarshallingMode.Positional
+                    ITermMarshall.MarshallingMode.Positional
                 );
 
                 var (affix, assoc) = op.Type switch
                 {
-                    "fx" => (Operator.AffixType.Prefix, Operator.AssociativityType.Right),
-                    "xf" => (Operator.AffixType.Postfix, Operator.AssociativityType.Left),
-                    "xfx" => (Operator.AffixType.Infix, Operator.AssociativityType.None),
-                    "xfy" => (Operator.AffixType.Infix, Operator.AssociativityType.Right),
-                    "yfx" => (Operator.AffixType.Infix, Operator.AssociativityType.Left),
+                    "fx" => (OperatorAffix.Prefix, OperatorAssociativity.Right),
+                    "xf" => (OperatorAffix.Postfix, OperatorAssociativity.Left),
+                    "xfx" => (OperatorAffix.Infix, OperatorAssociativity.None),
+                    "xfy" => (OperatorAffix.Infix, OperatorAssociativity.Right),
+                    "yfx" => (OperatorAffix.Infix, OperatorAssociativity.Left),
                     _ => throw new NotSupportedException()
                 };
 
@@ -183,8 +184,7 @@ namespace Ergo.Lang
             {
                 var body = ((Complex)d.Body);
                 // first arg: module name; second arg: export list
-                var moduleName = body.Arguments[0]
-                    .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                var moduleName = (Atom)body.Arguments[0];
                 InitializeModules(); // Clear modules and re-scope into the current module
                 currentModule = EnsureModule(moduleName);
                 return true;
@@ -194,45 +194,45 @@ namespace Ergo.Lang
             {
                 var body = ((Complex)d.Body);
                 // first arg: module name; second arg: export list
-                var moduleName = body.Arguments[0]
-                    .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                var moduleName = (Atom)body.Arguments[0];
                 if (!fromCli && currentModule.Name != UserModule)
                 {
-                    throw new InterpreterException(ErrorType.ModuleRedefinition, Atom.Explain(currentModule.Name), Atom.Explain(moduleName));
+                    throw new InterpreterException(ErrorType.ModuleRedefinition, currentModule.Name.Explain(), moduleName.Explain());
                 }
-                var exports = body.Arguments[1].Reduce(
-                    a => a.Equals(List.EmptyLiteral) ? List.Build() : throw new ArgumentException(),
-                    v => throw new ArgumentException(),
-                    c => List.TryUnfold(c, out var l) ? l : List.Build()
-                );
+                var exports = List.Empty;
+                if(body.Arguments[1] is Complex c)
+                {
+                    List.TryUnfold(c, out exports);
+                }
+
                 if (Modules.TryGetValue(moduleName, out var module))
                 {
                     if (!module.Runtime && !Flags.HasFlag(InterpreterFlags.AllowStaticModuleRedefinition))
                     {
-                        throw new InterpreterException(ErrorType.ModuleNameClash, Atom.Explain(moduleName));
+                        throw new InterpreterException(ErrorType.ModuleNameClash, moduleName.Explain());
                     }
-                    module = module.WithExports(exports.Head.Contents);
+                    module = module.WithExports(exports.Contents);
                 }
                 else
                 {
-                    module = new Module(moduleName, List.Build(), exports, Array.Empty<Operator>());
+                    module = new Module(moduleName, List.Empty, exports, Array.Empty<Operator>());
                 }
                 currentModule = Modules[moduleName] = module;
                 var P = new Variable("P");
                 var A = new Variable("A");
-                var predicateSlashArity = new Expression(Operators.BinaryDivision, P, Maybe<Term>.Some(A)).Complex;
-                foreach (var item in exports.Head.Contents)
+                var predicateSlashArity = new Expression(Operators.BinaryDivision, P, Maybe<ITerm>.Some(A)).Complex;
+                foreach (var item in exports.Contents)
                 {
                     // make sure that 'item' is in the form 'predicate/arity', and that it is asserted
-                    if(!Substitution.TryUnify(new(predicateSlashArity, item), out var subs))
+                    if(!new Substitution(predicateSlashArity, item).TryUnify(out var subs))
                     {
-                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, Term.Explain(item));
+                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, item.Explain());
                     }
-                    var predicate = subs.Single(x => x.Lhs == P).Rhs;
-                    var arity = subs.Single(x => x.Lhs == A).Rhs;
-                    if(predicate.Type != TermType.Atom || arity.Type != TermType.Atom || ((Atom)arity).Value is not double d)
+                    var predicate = subs.Single(x => x.Lhs.Equals(P)).Rhs;
+                    var arity = subs.Single(x => x.Lhs.Equals(A)).Rhs;
+                    if(predicate is not Atom || arity is not Atom || ((Atom)arity).Value is not double d)
                     {
-                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, Term.Explain(item));
+                        throw new InterpreterException(ErrorType.ExpectedTermOfTypeAt, BuiltIn.Types.PredicateIndicator, item.Explain());
                     }
                 }
                 return true;
@@ -241,15 +241,14 @@ namespace Ergo.Lang
             {
                 var body = ((Complex)d.Body);
                 // first arg: module name
-                var moduleName = body.Arguments[0]
-                    .Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                var moduleName = (Atom)body.Arguments[0];
                 if(moduleName == currentModule.Name)
                 {
                     return false;
                 }
                 if(!Modules.ContainsKey(moduleName))
                 {
-                    Load(Atom.Explain(moduleName));
+                    Load(moduleName.Explain());
                 }
                 currentModule = Modules[currentModule.Name] = currentModule.WithImport(moduleName);
                 return true;
@@ -259,18 +258,18 @@ namespace Ergo.Lang
         public IEnumerable<Operator> GetUserDefinedOperators(Atom entryModule)
         {
             var module = EnsureModule(entryModule);
-            foreach (var import in module.Imports.Head.Contents)
+            foreach (var import in module.Imports.Contents)
             {
                 foreach (var importedOp in GetUserDefinedOperators((Atom)import))
                 {
-                    if (!Modules[(Atom)import].Exports.Head.Contents.Any(t =>
+                    if (!Modules[(Atom)import].Exports.Contents.Any(t =>
                      {
-                         var x = TermMarshall.FromTerm(t, new
+                         var x = ITermMarshall.FromITerm(t, new
                          { Predicate = default(string), Arity = default(int) },
-                             TermMarshall.MarshallingMode.Positional
+                             ITermMarshall.MarshallingMode.Positional
                          );
                          return importedOp.Synonyms.Any(s => Equals(s.Value, x.Predicate))
-                         && (x.Arity == 1 && importedOp.Affix != Operator.AffixType.Infix
+                         && (x.Arity == 1 && importedOp.Affix != OperatorAffix.Infix
                          || x.Arity == 2);
                      }))
                     {
@@ -315,15 +314,15 @@ namespace Ergo.Lang
                 MaybeClose();
                 throw new InterpreterException(ErrorType.CouldNotLoadFile);
             }
-            foreach (var item in currentModule.Imports.Head.Contents)
+            foreach (var item in currentModule.Imports.Contents)
             {
-                var import = item.Reduce(a => a, v => throw new ArgumentException(), c => throw new ArgumentException());
+                var import = (Atom)item;
                 if(!Modules.TryGetValue(import, out var module))
                 {
-                    module = Load(Atom.Explain(import), entryModule: Maybe.Some(currentModule.Name));
+                    module = Load(import.Explain(), entryModule: Maybe.Some(currentModule.Name));
                     if (module.Name != import)
                     {
-                        throw new ArgumentException(Atom.Explain(module.Name));
+                        throw new ArgumentException(module.Name.Explain());
                     }
                 }
             }

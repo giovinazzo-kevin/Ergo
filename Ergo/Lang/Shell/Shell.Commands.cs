@@ -25,10 +25,10 @@ namespace Ergo.Lang
             );
 
             Dispatcher.Add(
-                @"^\s*(?::\?|expl)\s+(?<term>[^\s].*)\s*$"
-                , m => CmdPrintPredicates(m.Groups["term"], explain: true)
-                , ":? <term>"
-                , "(alias: expl) Explains all the predicates that match the given term."
+                @"^\s*(?::\?|expl)\s+(?<ITerm>[^\s].*)\s*$"
+                , m => CmdPrintPredicates(m.Groups["ITerm"], explain: true)
+                , ":? <ITerm>"
+                , "(alias: expl) Explains all the predicates that match the given ITerm."
             );
 
             Dispatcher.Add(
@@ -39,10 +39,10 @@ namespace Ergo.Lang
             );
 
             Dispatcher.Add(
-                @"^\s*(?::#|builtin)\s+(?<term>[^\s].*)\s*$"
-                , m => CmdPrintBuiltIns(m.Groups["term"])
-                , ":# <term>"
-                , "(alias: builtin) Describes all the built-ins that match the given term."
+                @"^\s*(?::#|builtin)\s+(?<ITerm>[^\s].*)\s*$"
+                , m => CmdPrintBuiltIns(m.Groups["ITerm"])
+                , ":# <ITerm>"
+                , "(alias: builtin) Describes all the built-ins that match the given ITerm."
             );
 
             Dispatcher.Add(
@@ -54,10 +54,10 @@ namespace Ergo.Lang
 
 
             Dispatcher.Add(
-                @"^\s*(?::|desc)\s+(?<term>[^\s].*)\s*$"
-                , m => CmdPrintPredicates(m.Groups["term"], explain: false)
-                , ": <term>"
-                , "(alias: desc) Describes all the predicates that match the given term."
+                @"^\s*(?::|desc)\s+(?<ITerm>[^\s].*)\s*$"
+                , m => CmdPrintPredicates(m.Groups["ITerm"], explain: false)
+                , ": <ITerm>"
+                , "(alias: desc) Describes all the predicates that match the given ITerm."
             );
 
             Dispatcher.Add(
@@ -83,17 +83,17 @@ namespace Ergo.Lang
             );
 
             Dispatcher.Add(
-                @"^\s*(?:\*\*|retractall)\s+(?<term>[^\s].*)\s*$"
-                , m => Cmd_Retract(m.Groups["term"], all: true)
-                , "** <term>"
-                , "(alias: retractall) Retracts all predicates that match the given term from the knowledge bank."
+                @"^\s*(?:\*\*|retractall)\s+(?<ITerm>[^\s].*)\s*$"
+                , m => Cmd_Retract(m.Groups["ITerm"], all: true)
+                , "** <ITerm>"
+                , "(alias: retractall) Retracts all predicates that match the given ITerm from the knowledge bank."
             );
 
             Dispatcher.Add(
-                @"^\s*(?:\*|retract)\s+(?<term>[^\s].*)\s*$"
-                , m => Cmd_Retract(m.Groups["term"], all: false)
-                , "* <term> "
-                , "(alias: retract) Retracts the first predicate that matches the given term from the knowledge bank."
+                @"^\s*(?:\*|retract)\s+(?<ITerm>[^\s].*)\s*$"
+                , m => Cmd_Retract(m.Groups["ITerm"], all: false)
+                , "* <ITerm> "
+                , "(alias: retract) Retracts the first predicate that matches the given ITerm from the knowledge bank."
             );
 
             Dispatcher.Add(
@@ -185,10 +185,10 @@ namespace Ergo.Lang
             }
 
             var query = parsed.Reduce(some => some, () => default);
-            WriteLine(CommaExpression.Explain(new CommaExpression(query.Goals)), LogLevel.Dbg);
+            WriteLine(query.Goals.Explain(), LogLevel.Dbg);
 
-            var solutions = Interpreter.Solve(query.Goals, Maybe.Some(CurrentModule)); // Solution graph is walked lazily
-            if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single().Type == TermType.Variable) {
+            var solutions = Interpreter.Solve(query, Maybe.Some(CurrentModule)); // Solution graph is walked lazily
+            if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable) {
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
                 WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
                 No();
@@ -202,7 +202,7 @@ namespace Ergo.Lang
                     foreach (var s in solutions) {
                         any = true;
                         if(s.Substitutions.Any()) {
-                            var join = String.Join(", ", s.Simplify().Select(s => Substitution.Explain(s)));
+                            var join = String.Join(", ", s.Simplify().Select(s => s.Explain()));
                             WriteLine($"\t| {join}");
                             if (ReadChar(true) != ' ') {
                                 break;
@@ -214,14 +214,14 @@ namespace Ergo.Lang
                 else {
                     var cols = query.Goals
                         .Contents
-                        .SelectMany(t => Term.Variables(t))
+                        .SelectMany(t => t.Variables)
                         .Where(v => !v.Ignored)
                         .Select(v => v.Name)
                         .Distinct()
                         .ToArray();
                     var rows = solutions
                         .Select(s => s.Simplify()
-                            .Select(r => Term.Explain(r.Rhs))
+                            .Select(r => r.Rhs.Explain())
                             .ToArray())
                         .ToArray();
                     if (rows.Length > 0 && rows[0].Length == cols.Length) {
@@ -275,9 +275,9 @@ namespace Ergo.Lang
             WriteLine($"Asserted {Predicate.Signature(pred.Head)} at the {(start ? "beginning" : "end")} of the predicate list.", LogLevel.Inf);
         }
 
-        protected void Cmd_Retract(Group term, bool all)
+        protected void Cmd_Retract(Group ITerm, bool all)
         {
-            var parsed = new Parsed<Term>(term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
+            var parsed = new Parsed<ITerm>(ITerm.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a ITerm."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
             if (!parsed.HasValue) {
                 return;
             }
@@ -322,18 +322,18 @@ namespace Ergo.Lang
             WriteTable(new[] { "Command", "Description" }, dispatchers, ConsoleColor.DarkGreen);
         }
 
-        protected virtual void CmdPrintPredicates(Group term, bool explain)
+        protected virtual void CmdPrintPredicates(Group ITerm, bool explain)
         {
             var predicates = GetInterpreterPredicates(Maybe.Some(CurrentModule));
-            if (term?.Success ?? false) {
-                var parsed = new Parsed<CommaExpression>($"{term.Value}, true", Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
+            if (ITerm?.Success ?? false) {
+                var parsed = new Parsed<CommaSequence>($"{ITerm.Value}, true", Handler, str => throw new ShellException($"'{str}' does not resolve to a ITerm."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
                 if (!parsed.HasValue) {
                     No();
                     return;
                 }
                 if(!Handler.TryGet(() =>
                 {
-                    if (Interpreter.TryGetMatches(parsed.Reduce(some => some.Sequence.Contents.First(), () => default), CurrentModule, out var matches))
+                    if (Interpreter.TryGetMatches(parsed.Reduce(some => some.Contents.First(), () => default), CurrentModule, out var matches))
                     {
                         predicates = matches.Select(m => m.Rhs);
                         return true;
@@ -352,8 +352,8 @@ namespace Ergo.Lang
 
             var canonicals = predicates
                 .Select(r => explain 
-                    ? new[] { Predicate.Signature(r.Head), Atom.Explain(r.DeclaringModule), Predicate.Explain(r) }
-                    : new[] { Predicate.Signature(r.Head), Atom.Explain(r.DeclaringModule), r.Documentation })
+                    ? new[] { Predicate.Signature(r.Head), r.DeclaringModule.Explain(), r.Explain() }
+                    : new[] { Predicate.Signature(r.Head), r.DeclaringModule.Explain(), r.Documentation })
                 .ToArray();
             if (canonicals.Length == 0) {
                 No();
@@ -367,17 +367,17 @@ namespace Ergo.Lang
         }
 
 
-        protected virtual void CmdPrintBuiltIns(Group _term)
+        protected virtual void CmdPrintBuiltIns(Group _ITerm)
         {
             var builtins = new List<BuiltIn>();
-            if (_term?.Success ?? false) {
-                var parsed = new Parsed<Term>(_term.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
+            if (_ITerm?.Success ?? false) {
+                var parsed = new Parsed<ITerm>(_ITerm.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a ITerm."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
                 if (!parsed.HasValue) {
                     No();
                     return;
                 }
-                var term = parsed.Reduce(some => some, () => default);
-                if (Interpreter.TryGetBuiltIn(term, out var builtin)) {
+                var ITerm = parsed.Reduce(some => some, () => default);
+                if (Interpreter.TryGetBuiltIn(ITerm, out var builtin)) {
                     builtins.Add(builtin);
                 }
                 else {

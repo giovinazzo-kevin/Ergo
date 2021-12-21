@@ -4,10 +4,10 @@
     {
         public readonly struct Evaluation
         {
-            public readonly Term Result;
+            public readonly ITerm Result;
             public readonly Substitution[] Substitutions{ get; }
 
-            public Evaluation(Term result, params Substitution[] subs)
+            public Evaluation(ITerm result, params Substitution[] subs)
             {
                 Result = result;
                 Substitutions = subs;

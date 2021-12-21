@@ -83,10 +83,10 @@ namespace Ergo.Lang
             }
             var module = Interpreter.Modules[CurrentModule];
             // TODO: make it easier to save directives
-            var dirs = module.Imports.Head.Contents
+            var dirs = module.Imports.Contents
                 .Select(m => new Directive(string.Empty, new Complex(new("use_module"), m)))
                 .ToArray();
-            var text = Program.Explain(new Program(dirs, preds.ToArray()));
+            var text = new Program(dirs, preds.ToArray()).Explain();
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }

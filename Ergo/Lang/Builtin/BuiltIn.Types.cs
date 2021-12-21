@@ -5,6 +5,7 @@
         public static class Types
         {
             public const string Number = nameof(Number);
+            public const string Integer = nameof(Integer);
             public const string Boolean = nameof(Boolean);
             public const string FreeVariable = nameof(FreeVariable);
             public const string String = nameof(String);

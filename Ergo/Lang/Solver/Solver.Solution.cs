@@ -26,10 +26,10 @@ namespace Ergo.Lang
                         .ToDictionary(s => s.Lhs);
                     foreach (var ans in answers) {
                         var ret = ans;
-                        var vars = Term.Variables(ret.Rhs).ToArray();
+                        var vars = ret.Rhs.Variables.ToArray();
                         while (!ret.Rhs.IsGround) {
-                            ret = ret.WithRhs(vars.Aggregate(ret.Rhs, (a, b) => steps.ContainsKey(b) ? Term.Substitute(a, steps[b]) : a));
-                            var newVars = Term.Variables(ret.Rhs).ToArray();
+                            ret = ret.WithRhs(vars.Aggregate(ret.Rhs, (a, b) => steps.ContainsKey(b) ? a.Substitute(steps[b]) : a));
+                            var newVars = ret.Rhs.Variables.ToArray();
                             if(newVars.Where(v => vars.Contains(v)).Any()) {
                                 break;
                             }

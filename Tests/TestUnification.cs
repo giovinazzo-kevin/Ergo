@@ -23,8 +23,8 @@ namespace Tests
                     , new Atom("hey")
                 )
             );
-            Assert.IsTrue(Substitution.TryUnify(eq, out var substitutions));
-            Assert.IsTrue(Substitution.Explain(substitutions.Single()) == "X/hey");
+            Assert.IsTrue(eq.TryUnify(out var substitutions));
+            Assert.IsTrue(substitutions.Single().Explain() == "X/hey");
         }
 
         [TestMethod]
@@ -35,8 +35,8 @@ namespace Tests
             var parser = new Parser(lexer, Array.Empty<Operator>());
             Assert.IsTrue(parser.TryParsePredicate(out var Predicate));
             Assert.IsTrue(Predicate.TryUnify(new Complex(new Atom("a"), new Atom("bob")), Predicate, out var substitutions));
-            Assert.AreEqual("X/bob", String.Join(", ", substitutions.Select(s => Substitution.Explain(s))));
-            Assert.AreEqual("a(bob) :- b(bob).", Predicate.Explain(Predicate.Substitute(Predicate, substitutions)).RemoveExtraWhitespace());
+            Assert.AreEqual("X/bob", String.Join(", ", substitutions.Select(s => s.Explain())));
+            Assert.AreEqual("a(bob) :- b(bob).", Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
         }
 
         [TestMethod]
@@ -47,9 +47,9 @@ namespace Tests
             var parser = new Parser(lexer, Array.Empty<Operator>());
             Assert.IsTrue(parser.TryParsePredicate(out var Predicate));
             Assert.IsTrue(Predicate.TryUnify(new Complex(new Atom("a"), new Atom("bob"), new Atom("complex(john)")), Predicate, out var substitutions));
-            Assert.AreEqual("X/bob, Y/complex(john)", String.Join(", ", substitutions.Select(s => Substitution.Explain(s))));
-            Assert.AreEqual("a(bob, complex(john)) :- (b(bob, complex(john)), c(complex(john))).", 
-                Predicate.Explain(Predicate.Substitute(Predicate, substitutions)).RemoveExtraWhitespace());
+            Assert.AreEqual("X/bob, Y/complex(john)", String.Join(", ", substitutions.Select(s => s.Explain())));
+            Assert.AreEqual("a(bob, complex(john)) :- b(bob, complex(john)), c(complex(john)).",
+                Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
         }
 
         [TestMethod]
@@ -60,8 +60,8 @@ namespace Tests
             var parser = new Parser(lexer, Array.Empty<Operator>());
             Assert.IsTrue(parser.TryParsePredicate(out var Predicate));
             Assert.IsTrue(Predicate.TryUnify(new Complex(new Atom("a"), new Atom("bob"), new Variable("Y")), Predicate, out var substitutions));
-            Assert.AreEqual("X/bob", String.Join(", ", substitutions.Select(s => Substitution.Explain(s))));
-            Assert.AreEqual("a(bob, Y) :- (=(bob, Y), c(Y)).", Predicate.Explain(Predicate.Substitute(Predicate, substitutions)).RemoveExtraWhitespace());
+            Assert.AreEqual("X/bob", String.Join(", ", substitutions.Select(s => s.Explain())));
+            Assert.AreEqual("a(bob, Y) :- =(bob, Y), c(Y).", Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
         }
     }
 }

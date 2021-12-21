@@ -216,7 +216,7 @@ namespace Ergo.Lang
                 if (IsKeyword(str)) {
                     return Token.FromKeyword(str);
                 }
-                return Token.FromTerm(str);
+                return Token.FromITerm(str);
             }
 
             Token ReadSingleLineComment()

@@ -9,9 +9,8 @@
             , UnknownPredicate
             , UserPredicateConflictsWithBuiltIn
             , ExpectedTermOfTypeAt
-            , UninstantiatedTermAt
-            , ExpectedTermWithArity
-            , ExpectedAtomWithDomain
+            , UninstantiatedITermAt
+            , ExpectedITermWithArity
             , ModuleNameClash
             , ModuleRedefinition
             , UndefinedPredicate

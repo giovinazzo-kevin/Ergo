@@ -37,7 +37,7 @@ namespace Ergo.Lang
                 if (added.Contains(module.Name))
                     return;
                 added.Add(module.Name);
-                foreach (var subModule in module.Imports.Head.Contents.Select(c => (Atom)c))
+                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
                 {
                     if (added.Contains(subModule))
                         continue;
@@ -45,10 +45,14 @@ namespace Ergo.Lang
                 }
                 foreach (var pred in module.KnowledgeBase)
                 {
-                    var head = pred.Head.Reduce(a => a, v => throw new ArgumentException(), c => c.Functor);
-                    var predicateSlashArity = new Expression(Operators.BinaryDivision, head, Maybe<Term>.Some(new Atom((double)Predicate.Arity(pred.Head)))).Complex;
+                    var head = pred.Head;
+                    if(pred.Head is Complex c)
+                    {
+                        head = c.Functor;
+                    }
+                    var predicateSlashArity = new Expression(Operators.BinaryDivision, head, Maybe<ITerm>.Some(new Atom((double)Predicate.Arity(pred.Head)))).Complex;
                     if(module.Name == Interpreter.UserModule 
-                    || module.Exports.Head.Contents.Any(t => Substitution.TryUnify(new(t, predicateSlashArity), out _)))
+                    || module.Exports.Contents.Any(t => (new Substitution(t, predicateSlashArity).TryUnify(out _))))
                     {
                         KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
                     }
@@ -60,10 +64,13 @@ namespace Ergo.Lang
             }
         }
 
-        private Term ResolveBuiltin(Term term, Atom module, List<Substitution> subs, out string sig)
+        private ITerm ResolveBuiltin(ITerm term, Atom module, List<Substitution> subs, out string sig)
         {
             sig = Predicate.Signature(term);
-            term = term.Map(t => t, v => v, c => c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, module, subs, out _)).ToArray()));
+            if(term is Complex c)
+            {
+                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, module, subs, out _)).ToArray());
+            }
             while (BuiltIns.TryGetValue(sig, out var builtIn)) {
                 var eval = builtIn.Apply(term, module);
                 term = eval.Result;
@@ -77,9 +84,9 @@ namespace Ergo.Lang
             return term;
         }
 
-        private void LogTrace(TraceType type, Term term, int depth = 0)
+        private void LogTrace(TraceType type, ITerm term, int depth = 0)
         {
-            LogTrace(type, Term.Explain(term), depth);
+            LogTrace(type, term.Explain(), depth);
         }
 
         private void LogTrace(TraceType type, string s, int depth = 0)
@@ -87,12 +94,12 @@ namespace Ergo.Lang
             Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
         }
 
-        protected IEnumerable<Solution> Solve(Scope scope, Term goal, List<Substitution> subs = null, int depth = 0)
+        protected IEnumerable<Solution> Solve(Scope scope, ITerm goal, List<Substitution> subs = null, int depth = 0)
         {
             subs ??= new List<Substitution>();
-            // Treat comma-expression complex terms as proper expressions
-            if (CommaExpression.TryUnfold(goal, out var expr)) {
-                foreach (var s in Solve(scope, expr.Sequence, subs, depth)) {
+            // Treat comma-expression complex ITerms as proper expressions
+            if (CommaSequence.TryUnfold(goal, out var expr)) {
+                foreach (var s in Solve(scope, expr, subs, depth)) {
                     yield return s;
                 }
                 yield break;
@@ -124,17 +131,13 @@ namespace Ergo.Lang
                 }
             }
 
-            (Term Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module scope, Term goal)
+            (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module scope, ITerm goal)
             {
                 if (KnowledgeBase.TryGetMatches(goal, out var matches))
                 {
                     return (goal, matches);
                 }
-                var qualifiedGoal = goal.Reduce<Term>(
-                    a => new Atom($"{Atom.Explain(scope.Name)}:{Atom.Explain(a)}"),
-                    v => new Variable($"{Atom.Explain(scope.Name)}:{Variable.Explain(v)}"),
-                    c => new Complex(new Atom($"{Atom.Explain(scope.Name)}:{Atom.Explain(c.Functor)}"), c.Arguments)
-                );
+                var qualifiedGoal = goal.Qualify(scope.Name);
                 if (KnowledgeBase.TryGetMatches(qualifiedGoal, out matches))
                 {
                     return (qualifiedGoal, matches);
@@ -147,17 +150,14 @@ namespace Ergo.Lang
             }
         }
 
-        protected IEnumerable<Solution> Solve(Scope scope, Sequence goal, List<Substitution> subs = null, int depth = 0)
+        protected IEnumerable<Solution> Solve(Scope scope, CommaSequence query, List<Substitution> subs = null, int depth = 0)
         {
             subs ??= new List<Substitution>();
-            if (!CommaExpression.IsCommaExpression(goal)) {
-                throw new InvalidOperationException("Only CommaExpression sequences can be solved.");
-            }
-            if (goal.IsEmpty) {
+            if (query.IsEmpty) {
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            var goals = goal.Contents;
+            var goals = query.Contents;
             var subGoal = goals.First();
             goals = goals[1..];
             // Get first solution for the current subgoal
@@ -165,7 +165,7 @@ namespace Ergo.Lang
                 if(Cut.Value) {
                     yield break;
                 }
-                var rest = Sequence.Substitute(new Sequence(goal.Functor, goal.EmptyElement, goals), s.Substitutions);
+                var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
                 foreach (var ss in Solve(scope, rest, subs, depth)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
@@ -176,10 +176,10 @@ namespace Ergo.Lang
             }
         }
 
-        public IEnumerable<Solution> Solve(Sequence goal)
+        public IEnumerable<Solution> Solve(Query goal)
         {
             Cut.Value = false;
-            return Solve(new Scope(EntryModule, default, default), goal);
+            return Solve(new Scope(EntryModule, default, default), goal.Goals);
         }
     }
 }

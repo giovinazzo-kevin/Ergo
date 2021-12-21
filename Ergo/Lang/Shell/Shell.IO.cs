@@ -51,7 +51,7 @@ namespace Ergo.Lang
 
         public virtual string Prompt(string until = "\r\n")
         {
-            Write($"{Atom.Explain(CurrentModule)}> ");
+            Write($"{CurrentModule.Explain()}> ");
             return ReadLine(until);
         }
 

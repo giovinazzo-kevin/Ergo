@@ -23,7 +23,7 @@ namespace Tests
         public void ParseAtom(string atom, string normalized)
         {
             var p = new Parsed<Atom>(atom, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Atom.Explain(p.Value.Reduce(some => some, () => default)));
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
         [DataRow("X", "X")]
@@ -35,7 +35,7 @@ namespace Tests
         public void ParseVariable(string variable, string normalized)
         {
             var p = new Parsed<Variable>(variable, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Variable.Explain(p.Value.Reduce(some => some, () => default)));
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
         [DataRow("[1, 2, 3, 4]", "[1, 2, 3, 4]")]
@@ -43,14 +43,16 @@ namespace Tests
         [DataRow("[[1, 2], 3, 4]", "[[1, 2], 3, 4]")]
         [DataRow("[1, 2, 3 | [4, 5, 6]]", "[1, 2, 3|[4, 5, 6]]")]
         [DataRow("[1, 2|[]]", "[1, 2]")]
+        [DataRow("[X|Rest]", "[X|Rest]")]
         [DataTestMethod]
         public void ParseList(string toParse, string expected)
         {
             var p = new Parsed<List>(toParse, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(expected, List.Explain(p.Value.Reduce(some => some, () => default)));
+            Assert.AreEqual(expected, p.Value.Reduce(some => some, () => default).Explain());
         }
 
         [DataRow("a(X)", "a(X)")]
+        [DataRow("a([X|Rest])", "a([X|Rest])")]
         [DataRow("f(A, B, C)", "f(A, B, C)")]
         [DataRow("f(A, B, g(C, D))", "f(A, B, g(C, D))")]
         [DataRow("f(A, B, g(C, h(D, 'string', 32)))", "f(A, B, g(C, h(D, string, 32)))")]
@@ -58,7 +60,7 @@ namespace Tests
         public void ParseComplex(string complex, string normalized)
         {
             var p = new Parsed<Complex>(complex, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Complex.Explain(p.Value.Reduce(some => some, () => default)));
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
 
@@ -68,10 +70,10 @@ namespace Tests
         [DataRow("((((a + b))))", "+(a, b)")]
         [DataRow("((((-1.25))))", "-(1.25)")]
         [DataTestMethod]
-        public void ParseTerm(string exp, string normalized)
+        public void ParseITerm(string exp, string normalized)
         {
-            var p = new Parsed<Term>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Term.Explain(p.Value.Reduce(some => some, () => default)));
+            var p = new Parsed<ITerm>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
         [DataRow("-a", "-(a)")]
@@ -87,7 +89,7 @@ namespace Tests
         public void ParseExpression(string exp, string normalized)
         {
             var p = new Parsed<Expression>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Complex.Explain(p.Value.Reduce(some => some, () => default).Complex));
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Complex.Explain());
         }
 
         [DataRow("fact.", "fact.")]
@@ -95,12 +97,13 @@ namespace Tests
         [DataRow("fact :- false.", "fact :- false.")]
         [DataRow("pred :- fact.", "pred :- fact.")]
         [DataRow("pred(X) :- fact(X).", "pred(X) :- fact(X).")]
-        [DataRow("pred(X) :- fact(X), test(X).", "pred(X) :- (fact(X), test(X)).")]
+        [DataRow("pred([X|Rest]) :- fact(X), fact(Rest).", "pred([X|Rest]) :- fact(X), fact(Rest).")]
+        [DataRow("pred(X) :- fact(X), test(X).", "pred(X) :- fact(X), test(X).")]
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {
             var p = new Parsed<Predicate>(predicate, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Predicate.Explain(p.Value.Reduce(some => some, () => default)).RemoveExtraWhitespace());
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
         }
 
         [DataRow(":- module(test, []).", ":- module(test, []).")]
@@ -108,7 +111,7 @@ namespace Tests
         public void ParseDirective(string directive, string normalized)
         {
             var p = new Parsed<Directive>(directive, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, Directive.Explain(p.Value.Reduce(some => some, () => default)).RemoveExtraWhitespace());
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
         }
     }
 }

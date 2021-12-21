@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang
 {
-    public partial class TermMarshall
+    public partial class ITermMarshall
     {
         public enum MarshallingMode
         {

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Ergo.Lang
 {
-    [DebuggerDisplay("{ Explain(this) }")]
+    [DebuggerDisplay("{ Explain() }")]
     public readonly struct Module
     {
         public readonly Atom Name;
@@ -23,14 +23,14 @@ namespace Ergo.Lang
             KnowledgeBase = kb ?? new();
         }
 
-        public static string Explain(Module m)
+        public string Explain()
         {
-            var expl = $":- module({Atom.Explain(m.Name)}, {List.Explain(m.Exports)}).";
+            var expl = $":- module({Name.Explain()}, {Exports.Explain()}).";
             return expl;
         }
 
-        public Module WithImport(Atom import) => new(Name, List.Build(Imports.Head.Contents.Append(import).ToArray()), Exports, Operators, KnowledgeBase, Runtime);
-        public Module WithExports(Term[] exports) => new(Name, Imports, List.Build(exports), Operators, KnowledgeBase, Runtime);
+        public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Append(import).ToArray()), Exports, Operators, KnowledgeBase, Runtime);
+        public Module WithExports(ITerm[] exports) => new(Name, Imports, new(exports), Operators, KnowledgeBase, Runtime);
         public Module WithOperators(Operator[] operators) => new(Name, Imports, Exports, operators, KnowledgeBase, Runtime);
     }
 }

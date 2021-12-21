@@ -39,7 +39,7 @@ namespace Ergo.Lang
             }
         }
 
-        public object FromTerm(Term t)
+        public object FromITerm(ITerm t)
         {
             if (IsAtomic)
             {
@@ -53,7 +53,7 @@ namespace Ergo.Lang
                 var constructorParameters = constructor.GetParameters().ToDictionary(p => p.Name);
                 var instance = constructor.Invoke(args.Select(a =>
                 {
-                    var value = TermMarshall.FromTerm(args[a.Key], Properties[a.Key].PropertyType, TermMarshall.MarshallingMode.Named);
+                    var value = ITermMarshall.FromITerm(args[a.Key], Properties[a.Key].PropertyType, ITermMarshall.MarshallingMode.Named);
                     value = Convert.ChangeType(value, constructorParameters[a.Key].ParameterType);
                     return value;
                 }).ToArray());
@@ -65,7 +65,7 @@ namespace Ergo.Lang
                 var args = ((Complex)t).Arguments.ToDictionary(a => (string)((Complex)a).Functor.Value, a => ((Complex)a).Arguments[0]);
                 foreach (var prop in Properties.Values)
                 {
-                    var value = TermMarshall.FromTerm(args[prop.Name], prop.PropertyType, TermMarshall.MarshallingMode.Named);
+                    var value = ITermMarshall.FromITerm(args[prop.Name], prop.PropertyType, ITermMarshall.MarshallingMode.Named);
                     value = Convert.ChangeType(value, prop.PropertyType);
                     prop.SetValue(instance, value);
                 }
@@ -73,7 +73,7 @@ namespace Ergo.Lang
             }
         }
 
-        public Term ToTerm(object o)
+        public ITerm ToITerm(object o)
         {
             if (o.GetType() != Type) throw new ArgumentException(null, nameof(o));
 
@@ -81,7 +81,7 @@ namespace Ergo.Lang
             if (IsAtomic) return functor;
 
             return new Complex(functor, Properties.Values.Select(
-                v => (Term)new Complex(new(v.Name), TermMarshall.ToTerm(v.GetValue(o), TermMarshall.MarshallingMode.Named))
+                v => (ITerm)new Complex(new(v.Name), ITermMarshall.ToITerm(v.GetValue(o), ITermMarshall.MarshallingMode.Named))
             ).ToArray());
         }
     }

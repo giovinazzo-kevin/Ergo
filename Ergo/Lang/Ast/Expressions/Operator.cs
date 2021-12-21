@@ -9,10 +9,10 @@ namespace Ergo.Lang
         public readonly Atom CanonicalFunctor;
         public readonly Atom[] Synonyms;
         public readonly int Precedence;
-        public readonly AffixType Affix;
-        public readonly AssociativityType Associativity;
+        public readonly OperatorAffix Affix;
+        public readonly OperatorAssociativity Associativity;
 
-        public Operator(AffixType affix, AssociativityType assoc, int precedence, params string[] functors)
+        public Operator(OperatorAffix affix, OperatorAssociativity assoc, int precedence, params string[] functors)
         {
             Affix = affix;
             Associativity = assoc;

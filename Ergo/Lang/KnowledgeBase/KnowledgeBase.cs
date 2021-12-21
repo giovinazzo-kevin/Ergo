@@ -10,7 +10,7 @@ namespace Ergo.Lang
     public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     {
         protected readonly OrderedDictionary Predicates;
-        protected readonly Term.InstantiationContext Context;
+        protected readonly InstantiationContext Context;
 
         public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 
@@ -43,18 +43,18 @@ namespace Ergo.Lang
             return false;
         }
 
-        public bool TryGetMatches(Term goal, out IEnumerable<Match> matches)
+        public bool TryGetMatches(ITerm goal, out IEnumerable<Match> matches)
         {
             var lst = new List<Match>();
             matches = lst;
             // Instantiate goal
-            if(!Term.TryUnify(Term.Instantiate(Context, goal), goal, out var subs)) {
+            if(!new Substitution(goal.Instantiate(Context), goal).TryUnify(out var subs)) {
                 return false;
             }
-            var head = Term.Substitute(goal, subs);
+            var head = goal.Substitute(subs);
             if (TryGet(Predicate.Signature(head), out var list)) {
                 foreach (var k in list) {
-                    var ks = Predicate.Instantiate(Context, k);
+                    var ks = k.Instantiate(Context);
                     if (Predicate.TryUnify(head, ks, out var matchSubs)) {
                         ks = Predicate.Substitute(ks, matchSubs);
                         lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
@@ -75,7 +75,7 @@ namespace Ergo.Lang
             GetOrCreate(Predicate.Signature(k.Head), append: true).Add(k);
         }
 
-        public bool RetractOne(Term head)
+        public bool RetractOne(ITerm head)
         {
             if (TryGet(Predicate.Signature(head), out var matches)) {
                 for (int i = matches.Count - 1; i >= 0; i--) {
@@ -89,7 +89,7 @@ namespace Ergo.Lang
             return false;
         }
 
-        public int RetractAll(Term head)
+        public int RetractAll(ITerm head)
         {
             var retracted = 0;
             if (TryGet(Predicate.Signature(head), out var matches)) {

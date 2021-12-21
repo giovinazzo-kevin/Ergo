@@ -7,17 +7,17 @@ namespace Ergo.Lang
 {
 
 
-    [DebuggerDisplay("{ Explain(this) }")]
+    [DebuggerDisplay("{ Explain() }")]
     public readonly struct Program
     {
         public readonly Directive[] Directives;
         public readonly KnowledgeBase KnowledgeBank;
 
-        public static string Explain(Program p)
+        public string Explain()
         {
             return String.Join("\r\n\r\n",
-                p.Directives.Select(d => Directive.Explain(d)).Concat(
-                p.KnowledgeBank.Select(r => Predicate.Explain(r)))
+                Directives.Select(d => d.Explain()).Concat(
+                KnowledgeBank.Select(r => r.Explain()))
             );
         }
 

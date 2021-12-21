@@ -9,14 +9,14 @@ namespace Ergo.Lang
         public readonly string Signature;
         public readonly string Documentation;
 
-        public readonly Func<Term, Atom, Evaluation> Apply { get; }
+        public readonly Func<ITerm, Atom, Evaluation> Apply { get; }
 
-        public BuiltIn(string documentation, Atom functor, int arity, Func<Term, Atom, Evaluation> apply)
+        public BuiltIn(string documentation, Atom functor, int arity, Func<ITerm, Atom, Evaluation> apply)
         {
             Functor = functor;
             Arity = arity;
             Apply = apply;
-            Signature = $"{Atom.Explain(functor)}/{arity}";
+            Signature = $"{functor.Explain()}/{arity}";
             Documentation = documentation;
         }
 

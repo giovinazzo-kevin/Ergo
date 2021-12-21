@@ -6,57 +6,57 @@ using System.Linq;
 
 namespace Ergo.Lang
 {
-    [DebuggerDisplay("{ Explain(this) }")]
+    [DebuggerDisplay("{ Explain() }")]
     public readonly struct Substitution
     {
-        public readonly Term Lhs;
-        public readonly Term Rhs;
+        public readonly ITerm Lhs;
+        public readonly ITerm Rhs;
 
-        public Substitution(Term lhs, Term rhs)
+        public Substitution(ITerm lhs, ITerm rhs)
         {
             Lhs = lhs;
             Rhs = rhs;
         }
 
-        public Substitution WithRhs(Term newRhs)
+        public Substitution WithRhs(ITerm newRhs)
         {
             return new Substitution(Lhs, newRhs);
         }
 
-        public Substitution WithLhs(Term newLhs)
+        public Substitution WithLhs(ITerm newLhs)
         {
             return new Substitution(newLhs, Rhs);
         }
 
         public static Variable[] Variables(Substitution eq) 
         {
-            return Term.Variables(eq.Lhs).Concat(Term.Variables(eq.Rhs)).ToArray();
+            return eq.Lhs.Variables.Concat(eq.Rhs.Variables).ToArray();
         }
 
-        public void Deconstruct(out Term lhs, out Term rhs)
+        public void Deconstruct(out ITerm lhs, out ITerm rhs)
         {
             lhs = Lhs;
             rhs = Rhs;
         }
 
-        public static bool TryUnify(Substitution eq, out IEnumerable<Substitution> substitutions)
+        public bool TryUnify(out IEnumerable<Substitution> substitutions)
         {
             substitutions = default;
             // Set of equality statements
-            var E = new List<Substitution>() { eq };
+            var E = new List<Substitution>() { this };
             // Set of substitutions
             var S = new List<Substitution>();
             while (E.Count > 0) {
                 var (x, y) = E[0];
                 E.RemoveAt(0);
                 if (!x.Equals(y)) {
-                    if(y.Type == TermType.Variable) {
+                    if(y is Variable) {
                         ApplySubstitution(new Substitution(y, x));
                     }
-                    else if (x.Type == TermType.Variable) {
+                    else if (x is Variable) {
                         ApplySubstitution(new Substitution(x, y));
                     }
-                    else if (x.Type == TermType.Complex && y.Type == TermType.Complex) {
+                    else if (x is Complex && y is Complex) {
                         var cx = (Complex)x;
                         var cy = (Complex)y;
 
@@ -76,8 +76,8 @@ namespace Ergo.Lang
 
             void ApplySubstitution(Substitution s)
             {
-                E = new List<Substitution>(E.Select(eq => new Substitution(Term.Substitute(eq.Lhs, s), Term.Substitute(eq.Rhs, s))).Distinct());
-                S = new List<Substitution>(S.Select(eq => new Substitution(Term.Substitute(eq.Lhs, s), Term.Substitute(eq.Rhs, s))).Append(s).Distinct());
+                E = new List<Substitution>(E.Select(eq => new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s))).Distinct());
+                S = new List<Substitution>(S.Select(eq => new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s))).Append(s).Distinct());
             }
         }
 
@@ -96,9 +96,9 @@ namespace Ergo.Lang
             return HashCode.Combine(Lhs, Rhs);
         }
 
-        public static string Explain(Substitution s)
+        public string Explain()
         {
-            return $"{Term.Explain(s.Lhs)}/{Term.Explain(s.Rhs)}";
+            return $"{Lhs.Explain()}/{Rhs.Explain()}";
         }
     }
 }

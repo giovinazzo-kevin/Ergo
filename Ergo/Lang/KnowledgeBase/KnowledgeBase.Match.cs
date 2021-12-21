@@ -7,11 +7,11 @@ namespace Ergo.Lang
     {
         public readonly struct Match
         {
-            public readonly Term Lhs;
+            public readonly ITerm Lhs;
             public readonly Predicate Rhs;
             public readonly Substitution[] Substitutions;
 
-            public Match(Term lhs, Predicate rhs, IEnumerable<Substitution> substitutions)
+            public Match(ITerm lhs, Predicate rhs, IEnumerable<Substitution> substitutions)
             {
                 Lhs = lhs;
                 Rhs = rhs;

@@ -7,46 +7,52 @@ using System.Text.RegularExpressions;
 
 namespace Ergo.Lang
 {
-    [DebuggerDisplay("{ Explain(this) }")]
-    public readonly struct Atom : IComparable<Term>, IComparable<Complex>, IComparable<Variable>, IComparable<Atom>
+
+    [DebuggerDisplay("{ Explain() }")]
+    public readonly struct Atom : ITerm
     {
-        public static readonly char[] IdentifierPunctuation = new char[] {
-            '@', '_', '(', ')', '[', ']'
-        };
-        public static readonly char[] QuotablePunctuation = new char[] {
-            ','
-        };
+        public bool IsGround => true;
 
         public readonly object Value;
         private readonly int HashCode;
 
-        public static string Explain(Atom a)
+        public Atom(object value)
         {
-            if (a.Value is bool) {
+            Value = value;
+            HashCode = value?.GetHashCode() ?? 0;
+        }
+
+        public string Explain()
+        {
+            if (Value is bool)
+            {
                 // Boolean literals are lowercase
-                return a.Value.ToString().ToLower();
+                return Value.ToString().ToLower();
             }
-            else if (a.Value is string s) {
+            else if (Value is string s)
+            {
                 s = Escape(s);
                 // In certain cases, the quotes can be omitted
                 if (
-                    // If this == Literals.EmptyList
-                       s == "[]" 
+                       // If this == Literals.EmptyList
+                       s == "[]"
                     // Or if this == Literals.EmptyCommaExpression
-                    || s == "()" 
+                    || s == "()"
                     // Or if this is not a string that can be confused with a variable name
                     || !Char.IsUpper(s.FirstOrDefault())
                         // And if this is a string with no weird punctuation and no spaces
                         && !s.Any(c => IsQuotablePunctuation(c) || Char.IsWhiteSpace(c))
-                ) {
+                )
+                {
                     return s;
                 }
                 return $"'{s}'";
             }
-            else {
-                return a.Value.ToString();
+            else
+            {
+                return Value.ToString();
             }
-            bool IsQuotablePunctuation(char c) => !IdentifierPunctuation.Contains(c) && QuotablePunctuation.Contains(c);
+            bool IsQuotablePunctuation(char c) => !Lexemes.IdentifierPunctuation.Contains(c) && Lexemes.QuotablePunctuation.Contains(c);
             string Escape(string s) => s
                 .Replace("'", "\\'")
                 .Replace("\r", "\\r")
@@ -54,11 +60,13 @@ namespace Ergo.Lang
                 .Replace("\t", "\\t");
         }
 
-        public Atom(object value)
+        public ITerm Substitute(Substitution s)
         {
-            Value = value;
-            HashCode = value?.GetHashCode() ?? 0;
+            if (Equals(s.Lhs)) return s.Rhs;
+            return this;
         }
+
+        public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
 
         public static Atom WithValue(object newValue) => new(newValue);
 
@@ -72,38 +80,39 @@ namespace Ergo.Lang
             }
             return Equals(Value, other.Value);
         }
+        public bool Equals(ITerm obj) => Equals((object)obj);
+
 
         public override int GetHashCode()
         {
             return HashCode;
         }
 
-        public int CompareTo(Term other)
+        public int CompareTo(ITerm o)
         {
-            return other.Type switch
+            if (o is Variable) return 1;
+            if (o is Complex) return -1;
+            if (o is not Atom other) throw new InvalidCastException();
+
+            if (Value is double d && other.Value is double e)
             {
-                TermType.Atom => this.CompareTo((Atom)other)
-                , TermType.Variable => this.CompareTo((Variable)other)
-                , TermType.Complex => this.CompareTo((Complex)other)
-                , _ => throw new InvalidOperationException(other.Type.ToString())
-            };
-        }
-        public int CompareTo(Atom other)
-        {
-            if(Value is double d && other.Value is double e) {
                 return d.CompareTo(e);
             }
-            if(Value is string s && other.Value is string t) {
+            if (Value is string s && other.Value is string t)
+            {
                 return s.CompareTo(t);
             }
-            return Explain(this).CompareTo(Explain(other));
+            return Explain().CompareTo(other.Explain());
         }
-        public int CompareTo(Variable other) => 1;
-        public int CompareTo(Complex other) => -1;
 
-        public static implicit operator Term(Atom rhs)
+        public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
         {
-            return Term.FromAtom(rhs);
+            return this;
+        }
+
+        public ITerm Qualify(Atom m)
+        {
+            return new Atom($"{m.Explain()}:{Explain()}");
         }
 
         public static bool operator ==(Atom left, Atom right)

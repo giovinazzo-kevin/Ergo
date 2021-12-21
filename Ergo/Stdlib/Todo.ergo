@@ -5,13 +5,6 @@
 ]).
 :- use_module(list).
 
-:- op(1, xf, '?'). % task? = uncompleted task
-:- op(1, xf, '!'). % task! = completed task
-
-A! :- \+(A?).
-
-asd? :- fiero!.
-
 % This is a single-line comment.
 %: This is a documentation comment.
 % This is another single-line comment that isn't part of the documentation.

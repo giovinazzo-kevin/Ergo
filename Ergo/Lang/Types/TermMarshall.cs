@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Ergo.Lang
 {
-    public partial class TermMarshall
+    public partial class ITermMarshall
     {
         internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
         internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
@@ -31,25 +31,25 @@ namespace Ergo.Lang
             return resolver;
         }
 
-        public static Term ToTerm<T>(T value, MarshallingMode mode = MarshallingMode.Positional) =>
+        public static ITerm ToITerm<T>(T value, MarshallingMode mode = MarshallingMode.Positional) =>
             mode switch
             {
-                MarshallingMode.Positional => EnsurePositionalResolver(typeof(T)).ToTerm(value),
-                MarshallingMode.Named => EnsureNamedResolver(typeof(T)).ToTerm(value),
+                MarshallingMode.Positional => EnsurePositionalResolver(typeof(T)).ToITerm(value),
+                MarshallingMode.Named => EnsureNamedResolver(typeof(T)).ToITerm(value),
                 _ => throw new NotImplementedException()
             };
-        public static T FromTerm<T>(Term value, T _ = default, MarshallingMode mode = MarshallingMode.Positional) =>
+        public static T FromITerm<T>(ITerm value, T _ = default, MarshallingMode mode = MarshallingMode.Positional) =>
             mode switch
             {
-                MarshallingMode.Positional => (T)EnsurePositionalResolver(typeof(T)).FromTerm(value),
-                MarshallingMode.Named => (T)EnsureNamedResolver(typeof(T)).FromTerm(value),
+                MarshallingMode.Positional => (T)EnsurePositionalResolver(typeof(T)).FromITerm(value),
+                MarshallingMode.Named => (T)EnsureNamedResolver(typeof(T)).FromITerm(value),
                 _ => throw new NotImplementedException()
             };
-        public static object FromTerm(Term value, Type type, MarshallingMode mode = MarshallingMode.Positional) =>
+        public static object FromITerm(ITerm value, Type type, MarshallingMode mode = MarshallingMode.Positional) =>
             mode switch
             {
-                MarshallingMode.Positional => EnsurePositionalResolver(type).FromTerm(value),
-                MarshallingMode.Named => EnsureNamedResolver(type).FromTerm(value),
+                MarshallingMode.Positional => EnsurePositionalResolver(type).FromITerm(value),
+                MarshallingMode.Named => EnsureNamedResolver(type).FromITerm(value),
                 _ => throw new NotImplementedException()
             };
     }

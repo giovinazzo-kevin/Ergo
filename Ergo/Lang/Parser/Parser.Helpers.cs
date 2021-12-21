@@ -43,11 +43,11 @@ namespace Ergo.Lang
             _lexer.Seek(s);
             throw new ParserException(error, old, args);
         }
-        protected bool TryParseSequence(Atom functor, Term emptyElement, Func<(bool, Term)> tryParseElement, string openingDelim, string separator, string closingDelim, bool @throw, out Sequence seq)
+        protected bool TryParseSequence(Atom functor, ITerm emptyElement, Func<(bool, ITerm)> tryParseElement, string openingDelim, string separator, string closingDelim, bool @throw, out UntypedSequence seq)
         {
             seq = default;
             var pos = _lexer.State;
-            var args = new List<Term>();
+            var args = new List<ITerm>();
 
             if (openingDelim != null) {
                 if (!ExpectDelimiter(p => p == openingDelim, out string _)) {
@@ -55,13 +55,13 @@ namespace Ergo.Lang
                 }
                 if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out string _)) {
                     // Empty list
-                    seq = new Sequence(functor, emptyElement);
+                    seq = new UntypedSequence(functor, emptyElement);
                     return true;
                 }
             }
 
-            while (tryParseElement() is (true, var term)) {
-                args.Add(term);
+            while (tryParseElement() is (true, var ITerm)) {
+                args.Add(ITerm);
                 if (!ExpectDelimiter(p => true, out string q) || q != separator && q != closingDelim) {
                     if(@throw)
                         Throw(pos, ErrorType.ExpectedArgumentDelimiterOrClosedParens, separator, closingDelim);
@@ -73,11 +73,11 @@ namespace Ergo.Lang
             }
             // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
             if(TryGetOperatorsFromFunctor(new Atom(separator), out var ops) && ops.Contains(Operators.BinaryConjunction)
-              && args.Count == 1 && CommaExpression.TryUnfold(args.Single(), out var comma)) {
-                seq = new Sequence(functor, emptyElement, comma.Sequence.Contents);
+              && args.Count == 1 && CommaSequence.TryUnfold(args.Single(), out var comma)) {
+                seq = new UntypedSequence(functor, emptyElement, comma.Contents);
             }
             else {
-                seq = new Sequence(functor, emptyElement, args.ToArray());
+                seq = new UntypedSequence(functor, emptyElement, args.ToArray());
             }
             return true;
 

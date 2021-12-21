@@ -18,10 +18,10 @@ namespace Ergo.Lang
                     (Parser p) => p.TryParseVariable(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(Complex) => 
                     (Parser p) => p.TryParseComplex(out var x) ? Box(x) : onParseFail(data)
-                , _ when typeof(T) == typeof(Term) => 
+                , _ when typeof(T) == typeof(ITerm) => 
                     (Parser p) => p.TryParseTerm(out var x, out _) ? Box(x) : onParseFail(data)
-                , _ when typeof(T) == typeof(CommaExpression) => 
-                    (Parser p) => p.TryParseExpression(out var x) && CommaExpression.TryUnfold(x.Complex, out var expr) ? Box(expr) : onParseFail(data)
+                , _ when typeof(T) == typeof(CommaSequence) => 
+                    (Parser p) => p.TryParseExpression(out var x) && CommaSequence.TryUnfold(x.Complex, out var expr) ? Box(expr) : onParseFail(data)
                 , _ when typeof(T) == typeof(Expression) => 
                     (Parser p) => p.TryParseExpression(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(List) => 
@@ -32,11 +32,11 @@ namespace Ergo.Lang
                     (Parser p) => p.TryParseDirective(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(Query) => 
                     (Parser p) => p.TryParseExpression(out var x) 
-                        ? CommaExpression.TryUnfold(x.Complex, out var expr) 
-                            ? Box(new Query(expr.Sequence))
-                            : Box(new Query(CommaExpression.Build(x.Complex)))
+                        ? CommaSequence.TryUnfold(x.Complex, out var expr) 
+                            ? Box(new Query(expr))
+                            : Box(new Query(new(x.Complex)))
                         : p.TryParseTerm(out var t, out _)
-                            ? Box(new Query(CommaExpression.Build(t)))
+                            ? Box(new Query(new(t)))
                             : onParseFail(data)
                 , _ when typeof(T) == typeof(Program) => 
                     (Parser p) => p.TryParseProgram(out var x) ? Box(x) : onParseFail(data)

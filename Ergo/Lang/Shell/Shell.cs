@@ -10,11 +10,11 @@ namespace Ergo.Lang
 {
     public partial class Shell
     {
-        protected readonly ExceptionHandler Handler;
+        public readonly ExceptionHandler ExceptionHandler;
         public readonly Interpreter Interpreter;
         public readonly CommandDispatcher Dispatcher;
         public Func<LogLine, string> LineFormatter { get; set; }
-        public Atom CurrentModule { get; private set; }
+        public Atom CurrentModule { get; set; }
 
         private volatile bool _repl;
 
@@ -40,10 +40,16 @@ namespace Ergo.Lang
             set => _throw = value;
         }
 
-        protected IEnumerable<Predicate> GetInterpreterPredicates(Maybe<Atom> entryModule = default) => Interpreter
+        public Parsed<T> Parse<T>(string data, Func<string, T> onParseFail = null, Maybe<Atom> entryModule = default)
+        {
+            var userDefinedOps = Interpreter.GetUserDefinedOperators(entryModule.Reduce(some => some, () => CurrentModule)).ToArray();
+            return new Parsed<T>(data, ExceptionHandler, onParseFail ?? (str => throw new ShellException($"Could not parse '{data}' as {typeof(T).Name}")), userDefinedOps);
+        }
+
+        public IEnumerable<Predicate> GetInterpreterPredicates(Maybe<Atom> entryModule = default) => Interpreter
             .GetSolver(entryModule.Reduce(some => some, () => Interpreter.UserModule))
             .KnowledgeBase.AsEnumerable();
-        protected IEnumerable<Predicate> GetUserPredicates() => Interpreter.Modules[Interpreter.UserModule].KnowledgeBase.AsEnumerable();
+        public IEnumerable<Predicate> GetUserPredicates() => Interpreter.Modules[Interpreter.UserModule].KnowledgeBase.AsEnumerable();
 
         public Shell(Interpreter interpreter = null, Func<LogLine, string> formatter = null)
         {
@@ -51,19 +57,34 @@ namespace Ergo.Lang
             CurrentModule = Interpreter.UserModule;
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
             LineFormatter = formatter ?? DefaultLineFormatter;
-            Handler = new ExceptionHandler(ex => {
+            ExceptionHandler = new ExceptionHandler(ex => {
                 WriteLine(ex.Message, LogLevel.Err);
                 if (_throw && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException)) {
                     throw ex;
                 }
             });
-            InitializeCommandDispatcher();
+
+            AddReflectedCommands();
             SetConsoleOutputCP(65001);
             SetConsoleCP(65001);
             Clear();
 #if DEBUG
             ThrowUnhandledExceptions = true;
 #endif
+        }
+
+        public bool TryAddCommand(ShellCommand s) => Dispatcher.TryAdd(s);
+
+        protected void AddReflectedCommands()
+        {
+            var assembly = typeof(ShellCommands.Save).Assembly;
+            foreach (var type in assembly.GetTypes())
+            {
+                if (!type.IsAssignableTo(typeof(ShellCommand))) continue;
+                if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
+                var inst = (ShellCommand)Activator.CreateInstance(type);
+                Dispatcher.TryAdd(inst);
+            }
         }
 
         public virtual void Clear()
@@ -95,7 +116,7 @@ namespace Ergo.Lang
         {
             var preds = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             var oldPredicates = preds.Count();
-            if (Handler.Try(() => Interpreter.Parse(code, fileName)))
+            if (ExceptionHandler.Try(() => Interpreter.Parse(code, fileName)))
             {
                 var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
@@ -107,7 +128,7 @@ namespace Ergo.Lang
         {
             var preds = GetInterpreterPredicates(Maybe.Some(CurrentModule));
             var oldPredicates = preds.Count();
-            if (Handler.Try(() => Interpreter.Load(fileName)))
+            if (ExceptionHandler.Try(() => Interpreter.Load(fileName)))
             {
                 var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
@@ -126,7 +147,7 @@ namespace Ergo.Lang
 
         public bool Do(string command)
         {
-            return Handler.TryGet(() => Dispatcher.Dispatch(command), out var success) && success;
+            return ExceptionHandler.TryGet(() => Dispatcher.Dispatch(this, command), out var success) && success;
         }
 
         public virtual void ExitRepl()

@@ -390,17 +390,7 @@ namespace Ergo.Lang
             }
 
             var canonicals = builtins
-                .Select(r => new { 
-                    r.Signature, 
-                    r.Documentation,
-                    Name = r.Signature.Functor.Explain(),
-                    Arity = r.Signature.Arity.Reduce(some => some.ToString(), () => "*")
-                })
-                .GroupBy(x => x.Name)
-                .Select(g => {
-                    var (minArity, maxArity) = (g.Min(x => x.Arity), g.Max(x => x.Arity));
-                    return new[] { $"{g.Key}/{(minArity == maxArity ? $"{minArity}" : $"{minArity}..{maxArity}")}", g.First().Documentation };
-                })
+                .Select(r => new[] { r.Signature.Explain(), r.Documentation })
                 .ToArray();
 
             if (canonicals.Length == 0) {

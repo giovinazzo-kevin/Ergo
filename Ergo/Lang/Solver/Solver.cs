@@ -113,7 +113,7 @@ namespace Ergo.Lang
                 yield break;
             }
             if (goal.Equals(Literals.True)) {
-                LogTrace(TraceType.Retn, "true", depth);
+                LogTrace(TraceType.Retn, $"true {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", depth);
                 yield return new Solution(subs.ToArray());
                 yield break;
             }

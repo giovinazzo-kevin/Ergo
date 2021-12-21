@@ -371,7 +371,7 @@ namespace Ergo.Lang
         {
             var builtins = new List<BuiltIn>();
             if (_ITerm?.Success ?? false) {
-                var parsed = new Parsed<ITerm>(_ITerm.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a ITerm."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
+                var parsed = new Parsed<ITerm>(_ITerm.Value, Handler, str => throw new ShellException($"'{str}' does not resolve to a term."), Interpreter.GetUserDefinedOperators(CurrentModule).ToArray()).Value;
                 if (!parsed.HasValue) {
                     No();
                     return;

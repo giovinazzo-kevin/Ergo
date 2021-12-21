@@ -74,7 +74,7 @@ namespace Ergo.Lang
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
                 var eval = builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments));
-                LogTrace(TraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()}", depth);
+                LogTrace(TraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", depth);
                 term = eval.Result;
                 subs.AddRange(eval.Substitutions);
                 var newSig = term.GetBuiltInSignature();

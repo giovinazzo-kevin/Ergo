@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
     public readonly partial struct Operator
     {

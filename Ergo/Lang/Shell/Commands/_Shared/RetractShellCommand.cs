@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Ergo.Lang.Ast;
+using System.Text.RegularExpressions;
 
 namespace Ergo.Lang
 {

@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Ergo.Lang.Extensions;
+using Ergo.Lang.Exceptions;
 
 namespace Ergo.Lang
 {

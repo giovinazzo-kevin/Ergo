@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using System;
 
 namespace Ergo.Lang
 {
@@ -38,7 +40,7 @@ namespace Ergo.Lang
                         : p.TryParseTerm(out var t, out _)
                             ? Box(new Query(new(t)))
                             : onParseFail(data)
-                , _ when typeof(T) == typeof(Program) => 
+                , _ when typeof(T) == typeof(ErgoProgram) => 
                     (Parser p) => p.TryParseProgram(out var x) ? Box(x) : onParseFail(data)
                 , _ => 
                     throw new ArgumentException($"Parsed<T> can't handle type: {typeof(T).Name}")

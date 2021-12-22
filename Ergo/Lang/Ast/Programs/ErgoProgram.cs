@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
 
 
     [DebuggerDisplay("{ Explain() }")]
-    public readonly struct Program
+    public readonly struct ErgoProgram
     {
         public readonly Directive[] Directives;
         public readonly KnowledgeBase KnowledgeBank;
@@ -21,7 +22,7 @@ namespace Ergo.Lang
             );
         }
 
-        public Program(Directive[] directives, Predicate[] kb)
+        public ErgoProgram(Directive[] directives, Predicate[] kb)
         {
             Directives = directives;
             KnowledgeBank = new KnowledgeBase();

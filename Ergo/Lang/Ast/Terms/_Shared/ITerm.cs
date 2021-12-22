@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
     public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>
     {

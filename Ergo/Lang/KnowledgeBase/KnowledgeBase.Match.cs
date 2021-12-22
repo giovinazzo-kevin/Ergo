@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Ergo.Lang.Ast;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Ergo.Lang

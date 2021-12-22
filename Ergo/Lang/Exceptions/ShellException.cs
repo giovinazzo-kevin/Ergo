@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Exceptions
 {
     public class ShellException : Exception
     {

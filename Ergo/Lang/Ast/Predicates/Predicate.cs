@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Ergo.Lang.Extensions;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
 
     [DebuggerDisplay("{ Explain() }")]

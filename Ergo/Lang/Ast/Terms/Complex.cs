@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
     [DebuggerDisplay("{ Explain() }")]
     public readonly partial struct Complex : ITerm

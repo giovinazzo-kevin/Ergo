@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using System;
 using System.Linq;
 
 namespace Ergo.Lang

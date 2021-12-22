@@ -1,4 +1,4 @@
-﻿namespace Ergo.Lang
+﻿namespace Ergo.Lang.Ast
 {
     public static class Literals
     {

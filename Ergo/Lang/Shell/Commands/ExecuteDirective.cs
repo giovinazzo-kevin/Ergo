@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using System.Text.RegularExpressions;
 
 namespace Ergo.Lang.ShellCommands
 {

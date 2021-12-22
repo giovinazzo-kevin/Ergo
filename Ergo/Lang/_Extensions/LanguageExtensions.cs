@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using System;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Extensions
 {
     public static class LanguageExtensions
     {

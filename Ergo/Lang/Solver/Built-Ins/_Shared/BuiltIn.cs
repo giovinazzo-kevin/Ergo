@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Ergo.Lang

@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang
+﻿using Ergo.Lang.Ast;
+
+namespace Ergo.Lang
 {
 
     public partial class Solver

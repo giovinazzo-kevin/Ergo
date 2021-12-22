@@ -1,4 +1,7 @@
 ﻿using Ergo.Lang;
+using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
 using Ergo.Lang.Utils;
 using System;
 using System.Collections.Generic;

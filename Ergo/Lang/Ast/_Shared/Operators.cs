@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Reflection;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
     public static class Operators
     {

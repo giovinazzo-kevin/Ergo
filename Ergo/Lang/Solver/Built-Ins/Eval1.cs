@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.BuiltIns
+﻿using Ergo.Lang.Ast;
+
+namespace Ergo.Lang.BuiltIns
 {
     public sealed class Eval1 : MathBuiltIn
     {

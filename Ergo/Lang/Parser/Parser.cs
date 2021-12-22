@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -459,7 +462,7 @@ namespace Ergo.Lang
             }
         }
 
-        public bool TryParseProgram(out Program program)
+        public bool TryParseProgram(out ErgoProgram program)
         {
             var directives = new List<Directive>();
             var predicates = new List<Predicate>();
@@ -471,18 +474,18 @@ namespace Ergo.Lang
             {
                 predicates.Add(predicate);
             }
-            program = new Program(directives.ToArray(), predicates.ToArray());
+            program = new ErgoProgram(directives.ToArray(), predicates.ToArray());
             return true;
         }
 
-        public bool TryParseProgramDirectives(out Program program)
+        public bool TryParseProgramDirectives(out ErgoProgram program)
         {
             var directives = new List<Directive>();
             while (TryParseDirective(out var directive))
             {
                 directives.Add(directive);
             }
-            program = new Program(directives.ToArray(), Array.Empty<Predicate>());
+            program = new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>());
             return true;
         }
 

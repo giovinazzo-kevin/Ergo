@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
+using System.Linq;
 
 namespace Ergo.Lang.BuiltIns
 {

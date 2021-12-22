@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Exceptions
 {
     public readonly struct ExceptionHandler
     {

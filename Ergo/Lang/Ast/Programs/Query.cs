@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Ast
 {
     [DebuggerDisplay("{ Goals.Explain() }")]
     public readonly struct Query

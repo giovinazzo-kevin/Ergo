@@ -1,4 +1,5 @@
 using Ergo.Lang;
+using Ergo.Lang.Ast;
 using Ergo.Lang.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;

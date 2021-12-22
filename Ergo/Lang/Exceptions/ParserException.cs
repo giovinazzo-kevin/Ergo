@@ -1,7 +1,7 @@
 ﻿using Ergo.Lang.Utils;
 using System;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.Exceptions
 {
     public class ParserException : Exception
     {

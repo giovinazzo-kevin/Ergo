@@ -1,4 +1,6 @@
-﻿using Ergo.Lang.Utils;
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -107,7 +109,7 @@ namespace Ergo.Lang
             var dirs = module.Imports.Contents
                 .Select(m => new Directive(string.Empty, new Complex(new("use_module"), m)))
                 .ToArray();
-            var text = new Program(dirs, preds.ToArray()).Explain();
+            var text = new ErgoProgram(dirs, preds.ToArray()).Explain();
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }

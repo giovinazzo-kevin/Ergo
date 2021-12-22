@@ -1,4 +1,8 @@
-﻿namespace Ergo.Lang.BuiltIns
+﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
+
+namespace Ergo.Lang.BuiltIns
 {
     public sealed class CompareTerms : BuiltIn
     {

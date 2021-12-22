@@ -1,4 +1,6 @@
 ﻿using Ergo.Lang;
+using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;

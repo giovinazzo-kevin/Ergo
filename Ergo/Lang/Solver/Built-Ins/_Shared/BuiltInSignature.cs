@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast;
+using System.Diagnostics;
 
 namespace Ergo.Lang
 {

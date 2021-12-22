@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ergo.Lang.Ast;
+using System;
 using System.Linq;
 
 namespace Ergo.Lang.BuiltIns

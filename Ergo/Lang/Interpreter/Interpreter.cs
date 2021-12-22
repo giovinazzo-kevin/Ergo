@@ -12,6 +12,11 @@ using System.Threading;
 
 namespace Ergo.Lang
 {
+    public abstract class InterpreterDirective
+    {
+
+    }
+
     public partial class Interpreter
     {
         public static readonly Atom PrologueModule = new("prologue");

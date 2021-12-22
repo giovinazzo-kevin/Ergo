@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Ergo.Lang
+namespace Ergo.Lang.BuiltIns
 {
     public sealed class Unify : BuiltIn
     {

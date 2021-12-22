@@ -1,4 +1,4 @@
-﻿namespace Ergo.Lang
+﻿namespace Ergo.Lang.BuiltIns
 {
     public sealed class Cut : BuiltIn
     {

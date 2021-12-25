@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ergo.Interpreter;
+using System;
 
 namespace Ergo.Lang.Utils
 {

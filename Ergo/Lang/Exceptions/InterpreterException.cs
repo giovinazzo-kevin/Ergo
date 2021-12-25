@@ -1,4 +1,5 @@
-﻿using Ergo.Lang.Utils;
+﻿using Ergo.Interpreter;
+using Ergo.Lang.Utils;
 using System;
 
 namespace Ergo.Lang.Exceptions

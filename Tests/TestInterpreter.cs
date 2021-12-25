@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Utils;
@@ -13,9 +14,9 @@ namespace Tests
     public class TestInterpreter
     {
         private readonly ExceptionHandler Thrower = new(ex => throw ex);
-        protected static Interpreter MakeInterpreter()
+        protected static ErgoInterpreter MakeInterpreter()
         {
-            var i = new Interpreter();
+            var i = new ErgoInterpreter();
             i.Load("Test", FileStreamUtils.MemoryStream(@"
                 fact.
                 data(1).

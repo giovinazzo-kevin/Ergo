@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast;
+using Ergo.Solver.BuiltIns;
 using System;
 
 namespace Ergo.Lang.Extensions

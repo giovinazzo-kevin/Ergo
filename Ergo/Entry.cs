@@ -1,8 +1,7 @@
 ﻿using Ergo.Lang;
-using System;
-using System.Linq;
-using System.Text;
+using Ergo.Interpreter;
+using Ergo.Shell;
 
-var interpreter = new Interpreter();
-var shell = new Shell(interpreter);
+var interpreter = new ErgoInterpreter();
+var shell = new ErgoShell(interpreter);
 shell.EnterRepl();

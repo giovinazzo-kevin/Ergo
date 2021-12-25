@@ -15,4 +15,4 @@ todo('Interpreter', X) :- member(X, ['Virtualized stack', 'Basic typesystem', 'R
 todo('Modules', X) :- member(X, []).
 todo('Parser', X) :- member(X, []).
 todo('Lexer', X) :- member(X, ['Unicode']).
-todo('AST', X) :- member(X, ['Annotations', '{ Objects }']).
+todo('AST', X) :- member(X, ['Annotations', '{ Objects }', 'Codegen']).

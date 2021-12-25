@@ -1,4 +1,5 @@
-﻿using Ergo.Lang.Ast;
+﻿using Ergo.Interpreter;
+using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using System;
@@ -369,20 +370,6 @@ namespace Ergo.Lang
         {
             directive = default;
             var pos = _lexer.State;
-            if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
-            {
-                desc = desc[1..].TrimStart();
-                while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
-                {
-                    if (!String.IsNullOrEmpty(newDesc))
-                    {
-                        desc += "\n" + newDesc[1..].TrimStart();
-                    }
-                }
-            }
-            desc ??= " ";
-            if (_lexer.Eof)
-                return Fail(pos);
             if (!TryParseExpression(out var op))
             {
                 return Fail(pos);
@@ -400,13 +387,8 @@ namespace Ergo.Lang
             {
                 lhs = expr.Root;
             }
-            return MakeDirective(pos, desc, lhs, out directive);
-
-            bool MakeDirective(Lexer.StreamState pos, string desc, ITerm body, out Directive d)
-            {
-                d = new Directive(desc, body);
-                return true;
-            }
+            directive = new(lhs);
+            return true;
         }
 
         public bool TryParsePredicate(out Predicate predicate)
@@ -454,7 +436,7 @@ namespace Ergo.Lang
                 }
                 c = new Predicate(
                     desc
-                    , Interpreter.UserModule
+                    , ErgoInterpreter.UserModule
                     , head
                     , body
                 );

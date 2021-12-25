@@ -10,25 +10,14 @@ namespace Ergo.Lang.Ast
     public readonly struct Directive
     {
         public readonly ITerm Body;
-        public readonly string Documentation;
 
-        public Directive(string doc, ITerm body)
+        public Directive(ITerm body)
         {
-            Documentation = doc;
             Body = body; 
         }
 
-        public Directive WithBody(ITerm newBody) => new(Documentation, newBody);
+        public Directive WithBody(ITerm newBody) => new(newBody);
 
-        public string Explain()
-        {
-            var expl = $":- {Body.Explain()}.";
-            if (!String.IsNullOrWhiteSpace(Documentation))
-            {
-                expl = $"{String.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r))}\r\n" + expl;
-            }
-
-            return expl;
-        }
+        public string Explain() => $":- {Body.Explain()}.";
     }
 }

@@ -32,6 +32,11 @@ namespace Ergo.Lang
                 IsAtomic = true;
                 GetFunctor = o => new Atom((double)o);
             }
+            else if(Type.IsEnum)
+            {
+                IsAtomic = true;
+                GetFunctor = o => new Atom(o.ToString());
+            }
             else
             {
                 IsAtomic = false;

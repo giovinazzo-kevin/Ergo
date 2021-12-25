@@ -12,10 +12,10 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell s, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
             var cmd = m.Groups["cmd"];
-            var dispatchersQuery = s.Dispatcher.Commands;
+            var dispatchersQuery = shell.Dispatcher.Commands;
             if (cmd?.Success ?? false)
             {
                 var alias = $"alias: {cmd.Value}";
@@ -29,10 +29,10 @@ namespace Ergo.Shell.Commands
                 .ToArray();
             if (dispatchers.Length == 0)
             {
-                s.Dispatcher.Dispatch(s, cmd.Value); // Dispatches UnknownCommand
+                shell.Dispatcher.Dispatch(shell, ref scope, cmd.Value); // Dispatches UnknownCommand
                 return;
             }
-            s.WriteTable(new[] { "Command", "Priority", "Description" }, dispatchers, ConsoleColor.DarkGreen);
+            shell.WriteTable(new[] { "Command", "Priority", "Description" }, dispatchers, ConsoleColor.DarkGreen);
         }
     }
 }

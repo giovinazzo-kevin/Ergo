@@ -51,7 +51,6 @@ namespace Ergo.Shell
 
         public virtual string Prompt(string until = "\r\n")
         {
-            Write($"{CurrentModule.Explain()}> ");
             return ReadLine(until);
         }
 

@@ -26,9 +26,9 @@ namespace Ergo.Lang.Extensions
         }
 
 
-        public static BuiltInSignature GetBuiltInSignature(this ITerm term)
+        public static Signature GetSignature(this ITerm term)
         {
-            return new BuiltInSignature(
+            return new Signature(
                 term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
                 Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity))
             );

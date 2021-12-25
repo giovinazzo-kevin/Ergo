@@ -1,4 +1,5 @@
-﻿using Ergo.Lang.Ast;
+﻿using Ergo.Interpreter.Directives;
+using Ergo.Lang.Ast;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,24 +13,29 @@ namespace Ergo.Lang.Ast
     public readonly struct ErgoProgram
     {
         public readonly Directive[] Directives;
-        public readonly KnowledgeBase KnowledgeBank;
+        public readonly KnowledgeBase KnowledgeBase;
 
         public string Explain()
         {
             return String.Join("\r\n\r\n",
                 Directives.Select(d => d.Explain()).Concat(
-                KnowledgeBank.Select(r => r.Explain()))
+                KnowledgeBase.Select(r => r.Explain()))
             );
         }
 
         public ErgoProgram(Directive[] directives, Predicate[] kb)
         {
             Directives = directives;
-            KnowledgeBank = new KnowledgeBase();
+            KnowledgeBase = new KnowledgeBase();
             foreach (var k in kb) {
-                KnowledgeBank.AssertZ(k);
+                KnowledgeBase.AssertZ(k);
             }
         }
+
+        public static ErgoProgram Empty(Atom module) => new(
+            new[] { new Directive(new Complex(new DefineModule().Signature.Functor, module, Literals.EmptyList)) }, 
+            Array.Empty<Predicate>()
+        );
     }
 
 }

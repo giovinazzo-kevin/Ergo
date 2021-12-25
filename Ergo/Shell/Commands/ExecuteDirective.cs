@@ -13,15 +13,16 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell s, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
             var dir = m.Groups["dir"].Value;
-            var currentModule = s.Interpreter.Modules[ErgoInterpreter.UserModule];
-            var parsed = s.Parse<Directive>($":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
+            var interpreterScope = scope.InterpreterScope;
+            var currentModule = interpreterScope.Modules[scope.InterpreterScope.CurrentModule];
+            var parsed = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
             var directive = parsed.Reduce(some => some, () => default);
-            if (s.Interpreter.RunDirective(directive, ref currentModule, fromCli: true))
+            if (shell.Interpreter.RunDirective(ref interpreterScope, directive))
             {
-                s.CurrentModule = currentModule.Name;
+                scope = scope.WithInterpreterScope(interpreterScope.WithCurrentModule(currentModule.Name));
             }
             else throw new ShellException($"'{dir}' does not resolve to a directive.");
         }

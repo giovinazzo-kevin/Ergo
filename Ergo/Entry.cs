@@ -4,4 +4,5 @@ using Ergo.Shell;
 
 var interpreter = new ErgoInterpreter();
 var shell = new ErgoShell(interpreter);
-shell.EnterRepl();
+var scope = shell.CreateScope();
+shell.EnterRepl(scope);

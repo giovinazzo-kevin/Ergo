@@ -1,4 +1,4 @@
-﻿namespace Ergo.Lang
+﻿namespace Ergo.Interpreter
 {
     public static class Types
     {
@@ -12,6 +12,7 @@
         public const string Comparison = nameof(Comparison);
         public const string List = nameof(List);
         public const string Error = nameof(Error);
+        public const string ModuleName = nameof(ModuleName);
         public const string PredicateIndicator = nameof(PredicateIndicator);
     }
 }

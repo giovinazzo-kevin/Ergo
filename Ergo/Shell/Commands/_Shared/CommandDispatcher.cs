@@ -21,13 +21,13 @@ namespace Ergo.Shell.Commands
             DefaultDispatcher = unknownCommand;
         }
 
-        public bool Dispatch(ErgoShell s, string input)
+        public bool Dispatch(ErgoShell shell, ref ShellScope scope, string input)
         {
             foreach (var d in Commands.OrderByDescending(c => c.Priority))
             {
                 if (d.Expression.Match(input) is { Success: true } match)
                 {
-                    d.Callback(s, match);
+                    d.Callback(shell, ref scope, match);
                     return true;
                 }
             }

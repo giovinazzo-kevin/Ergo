@@ -11,304 +11,58 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Ergo.Solver;
+using System.Collections.Immutable;
+using Ergo.Interpreter.Directives;
 
 namespace Ergo.Interpreter
 {
-
     public partial class ErgoInterpreter
     {
-        public static readonly Atom PrologueModule = new("prologue");
-        public static readonly Atom UserModule = new("user");
-
         public readonly InterpreterFlags Flags;
-        public readonly Dictionary<Atom, Module> Modules;
-        public readonly Dictionary<BuiltInSignature, BuiltIn> BuiltInsDict;
-        public readonly List<string> SearchDirectories;
-
-        public IEnumerable<BuiltIn> BuiltIns => BuiltInsDict.Values;
-
         public event Action<SolverTraceType, string> Trace;
-
-        protected void InitializeModules()
-        {
-            Modules.Clear();
-            Modules[UserModule] = new Module(UserModule, List.Empty, List.Empty, Array.Empty<Operator>(), runtime: true);
-            Load(PrologueModule.Explain());
-        }
+        public readonly Dictionary<Signature, InterpreterDirective> Directives;
 
         public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         {
-            BuiltInsDict = new();
-            Modules = new();
-            SearchDirectories = new() { "", "stdlib/" };
             Flags = flags;
-            InitializeModules();
-            AddReflectedBuiltIns();
+            Directives = new();
+            AddDirectivesByReflection();
         }
 
-        public bool TryAddBuiltIn(BuiltIn b) => BuiltInsDict.TryAdd(b.Signature, b);
+        public InterpreterScope CreateScope() => new(new(Modules.User, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true));
 
-        protected void AddReflectedBuiltIns()
+        public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
+
+        protected void AddDirectivesByReflection()
         {
-            var assembly = typeof(Print).Assembly;
+            var assembly = typeof(UseModule).Assembly;
             foreach (var type in assembly.GetTypes())
             {
-                if (!type.IsAssignableTo(typeof(BuiltIn))) continue;
-                if(!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-                var inst = (BuiltIn)Activator.CreateInstance(type);
-                BuiltInsDict[inst.Signature] = inst;
+                if (!type.IsAssignableTo(typeof(InterpreterDirective))) continue;
+                if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
+                var inst = (InterpreterDirective)Activator.CreateInstance(type);
+                Directives[inst.Signature] = inst;
             }
         }
 
-        public bool TryGetMatches(ITerm head, Atom module, out IEnumerable<KnowledgeBase.Match> matches)
+        public virtual Module Load(ref InterpreterScope scope, string fileName)
         {
-            //var operators = GetUserDefinedOperators(module).ToArray();
-            //// if head is in the form predicate/arity (or its built-in equivalent),
-            //// do some syntactic de-sugaring and convert it into an actual anonymous complex
-            //if(ITerm.TryUnify(head, "/(Predicate, Arity)", out _, out var subs, operators)
-            //|| ITerm.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
-            //{
-            //    var anon = ITerm.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
-            //    try { head = BuiltIn_AnonymousComplex(anon, module).Result; } catch(Exception) { }
-            //}
-            return new ErgoSolver(module, Modules, BuiltInsDict).KnowledgeBase.TryGetMatches(head, out matches);
-        }
-        public bool TryGetBuiltIn(ITerm match, out BuiltIn builtin) => BuiltInsDict.TryGetValue(match.GetBuiltInSignature(), out builtin);
-        protected Module EnsureModule(Atom name)
-        {
-            if(!Modules.TryGetValue(name, out var module))
-            {
-                try
-                {
-                    Load(name.Explain());
-                    module = Modules[name];
-                }
-                catch(FileNotFoundException)
-                {
-                    Modules[name] = module = new(name, List.Empty, List.Empty, Array.Empty<Operator>(), runtime: true);
-                }
-            }
-            return module;
-        }
-
-        public void AssertA(Atom module, Predicate p)
-        {
-            if (TryGetBuiltIn(p.Head, out _)) {
-                throw new InterpreterException(InterpreterError.UserPredicateConflictsWithBuiltIn, Predicate.Signature(p.Head));
-            }
-            Modules[module].KnowledgeBase.AssertA(p);
-        }
-
-        public void AssertZ(Atom module, Predicate p)
-        {
-            if (TryGetBuiltIn(p.Head, out _)) {
-                throw new InterpreterException(InterpreterError.UserPredicateConflictsWithBuiltIn, Predicate.Signature(p.Head));
-            }
-            Modules[module].KnowledgeBase.AssertZ(p);
-        }
-
-        public bool RetractOne(Atom module, ITerm head)
-        {
-            if (TryGetBuiltIn(head, out _)) {
-                throw new InterpreterException(InterpreterError.UnknownPredicate, head);
-            }
-            return Modules[module].KnowledgeBase.RetractOne(head);
-        }
-
-        public int RetractAll(Atom module, ITerm head)
-        {
-            if (TryGetBuiltIn(head, out _)) {
-                throw new InterpreterException(InterpreterError.UnknownPredicate, head);
-            }
-            return Modules[module].KnowledgeBase.RetractAll(head);
-        }
-
-        public ErgoSolver GetSolver(Atom entryModule, SolverFlags flags = SolverFlags.Default) => new(entryModule, Modules, BuiltInsDict, flags);
-
-        public IEnumerable<Solution> Solve(Query goal, Maybe<Atom> entryModule = default, SolverFlags flags = SolverFlags.Default)
-        {
-            var module = entryModule.Reduce(some => some, () => UserModule);
-            var solver = GetSolver(module, flags);
-            solver.Trace += HandleTrace;
-            var solutions = solver.Solve(goal);
-            return solutions;
-
-            void HandleTrace(SolverTraceType type, string msg) => Trace?.Invoke(type, msg);
-        }
-
-        public virtual void Parse(string code, string fileName = "")
-        {
-            var fs = FileStreamUtils.MemoryStream(code);
-            Load(fileName, fs, closeStream: true);
-        }
-
-        public virtual Module Load(string fileName, Maybe<Atom> entryModule = default)
-        {
-            var dir = SearchDirectories.FirstOrDefault(
+            var dir = scope.SearchDirectories.FirstOrDefault(
                 d => File.Exists(Path.ChangeExtension(Path.Combine(d, fileName), "ergo"))
             );
-            if(dir == null)
+            if (dir == null)
             {
                 throw new FileNotFoundException(fileName);
             }
             fileName = Path.ChangeExtension(Path.Combine(dir, fileName), "ergo");
             var fs = FileStreamUtils.EncodedFileStream(File.OpenRead(fileName), closeStream: true);
-            return Load(fileName, fs, closeStream: true, entryModule);
+            return Load(ref scope, fileName, fs, closeStream: true);
         }
 
-        public virtual bool RunDirective(Directive d, ref Module currentModule, bool fromCli = false)
+        public virtual Module Load(ref InterpreterScope scope, string name, Stream file, bool closeStream = true)
         {
-            if (new Substitution(d.Body, Directives.ChooseModule.Body).TryUnify(out _))
-            {
-                return ChooseModule(ref currentModule);
-            }
-            if (new Substitution(d.Body, Directives.DefineModule.Body).TryUnify(out _))
-            {
-                return DefineModule(ref currentModule);
-            }
-            if (new Substitution(d.Body, Directives.UseModule.Body).TryUnify(out _))
-            {
-                return UseModule(ref currentModule);
-            }
-            if (new Substitution(d.Body, Directives.DefineOperator.Body).TryUnify(out _))
-            {
-                return DefineOperator(ref currentModule);
-            }
-            return false;
-
-            bool DefineOperator(ref Module currentModule)
-            {
-                // first arg: precedence; second arg: type; third arg: name
-                var op = TermMarshall.FromTerm(d.Body, new
-                    { Precedence = default(int), Type = default(string), Name = default(string) },
-                    TermMarshall.MarshallingMode.Positional
-                );
-
-                var (affix, assoc) = op.Type switch
-                {
-                    "fx" => (OperatorAffix.Prefix, OperatorAssociativity.Right),
-                    "xf" => (OperatorAffix.Postfix, OperatorAssociativity.Left),
-                    "xfx" => (OperatorAffix.Infix, OperatorAssociativity.None),
-                    "xfy" => (OperatorAffix.Infix, OperatorAssociativity.Right),
-                    "yfx" => (OperatorAffix.Infix, OperatorAssociativity.Left),
-                    _ => throw new NotSupportedException()
-                };
-
-                currentModule = Modules[currentModule.Name] = currentModule.WithOperators(currentModule.Operators
-                    .Append(new Operator(affix, assoc, op.Precedence, op.Name))
-                    .ToArray());
-
-                return true;
-            }
-
-            bool ChooseModule(ref Module currentModule)
-            {
-                var body = ((Complex)d.Body);
-                // first arg: module name; second arg: export list
-                var moduleName = (Atom)body.Arguments[0];
-                InitializeModules(); // Clear modules and re-scope into the current module
-                currentModule = EnsureModule(moduleName);
-                return true;
-            }
- 
-            bool DefineModule(ref Module currentModule)
-            {
-                var body = ((Complex)d.Body);
-                // first arg: module name; second arg: export list
-                var moduleName = (Atom)body.Arguments[0];
-                if (!fromCli && currentModule.Name != UserModule)
-                {
-                    throw new InterpreterException(InterpreterError.ModuleRedefinition, currentModule.Name.Explain(), moduleName.Explain());
-                }
-                var exports = List.Empty;
-                if(body.Arguments[1] is Complex c)
-                {
-                    List.TryUnfold(c, out exports);
-                }
-
-                if (Modules.TryGetValue(moduleName, out var module))
-                {
-                    if (!module.Runtime && !Flags.HasFlag(InterpreterFlags.AllowStaticModuleRedefinition))
-                    {
-                        throw new InterpreterException(InterpreterError.ModuleNameClash, moduleName.Explain());
-                    }
-                    module = module.WithExports(exports.Contents);
-                }
-                else
-                {
-                    module = new Module(moduleName, List.Empty, exports, Array.Empty<Operator>());
-                }
-                currentModule = Modules[moduleName] = module;
-                var P = new Variable("P");
-                var A = new Variable("A");
-                var predicateSlashArity = new Expression(Operators.BinaryDivision, P, Maybe<ITerm>.Some(A)).Complex;
-                foreach (var item in exports.Contents)
-                {
-                    // make sure that 'item' is in the form 'predicate/arity', and that it is asserted
-                    if(!new Substitution(predicateSlashArity, item).TryUnify(out var subs))
-                    {
-                        throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
-                    }
-                    var predicate = subs.Single(x => x.Lhs.Equals(P)).Rhs;
-                    var arity = subs.Single(x => x.Lhs.Equals(A)).Rhs;
-                    if(predicate is not Atom || arity is not Atom || ((Atom)arity).Value is not double d)
-                    {
-                        throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
-                    }
-                }
-                return true;
-            }
-            bool UseModule(ref Module currentModule)
-            {
-                var body = ((Complex)d.Body);
-                // first arg: module name
-                var moduleName = (Atom)body.Arguments[0];
-                if(moduleName == currentModule.Name)
-                {
-                    return false;
-                }
-                if(!Modules.ContainsKey(moduleName))
-                {
-                    Load(moduleName.Explain());
-                }
-                currentModule = Modules[currentModule.Name] = currentModule.WithImport(moduleName);
-                return true;
-            }
-        }
-
-        public IEnumerable<Operator> GetUserDefinedOperators(Atom entryModule)
-        {
-            var module = EnsureModule(entryModule);
-            foreach (var import in module.Imports.Contents)
-            {
-                foreach (var importedOp in GetUserDefinedOperators((Atom)import))
-                {
-                    if (!Modules[(Atom)import].Exports.Contents.Any(t =>
-                     {
-                         var x = TermMarshall.FromTerm(t, new
-                         { Predicate = default(string), Arity = default(int) },
-                             TermMarshall.MarshallingMode.Positional
-                         );
-                         return importedOp.Synonyms.Any(s => Equals(s.Value, x.Predicate))
-                         && (x.Arity == 1 && importedOp.Affix != OperatorAffix.Infix
-                         || x.Arity == 2);
-                     }))
-                    {
-                        continue;
-                    }
-                    yield return importedOp;
-                }
-            }
-            foreach (var op in module.Operators)
-            {
-                yield return op;
-            }
-        }
-
-        public virtual Module Load(string name, Stream file, bool closeStream = true, Maybe<Atom> entryModule = default)
-        {
-            var currentModule = Modules[entryModule.Reduce(some => some, () => UserModule)];
-            var operators = GetUserDefinedOperators(currentModule.Name).ToArray();
+            var currentModule = scope.Modules[scope.CurrentModule];
+            var operators = scope.GetUserDefinedOperators().ToArray();
             var lexer = new Lexer(file, operators, name);
             var parser = new Parser(lexer, operators);
             if (!parser.TryParseProgramDirectives(out var program))
@@ -318,9 +72,9 @@ namespace Ergo.Interpreter
             }
             foreach (var d in program.Directives)
             {
-                RunDirective(d, ref currentModule);
+                RunDirective(ref scope, d);
             }
-            var newOperators = GetUserDefinedOperators(currentModule.Name)
+            var newOperators = scope.GetUserDefinedOperators()
                 .Except(operators)
                 .ToArray();
             if (newOperators.Length > 0)
@@ -335,33 +89,81 @@ namespace Ergo.Interpreter
                 MaybeClose();
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
-            foreach (var item in currentModule.Imports.Contents)
+            currentModule = currentModule.WithProgram(program);
+            foreach (Atom import in currentModule.Imports.Contents)
             {
-                var import = (Atom)item;
-                if(!Modules.TryGetValue(import, out var module))
+                var importScope = scope.WithCurrentModule(import);
+                if (!scope.Modules.TryGetValue(import, out var module))
                 {
-                    module = Load(import.Explain(), entryModule: Maybe.Some(currentModule.Name));
+                    module = Load(ref importScope, import.Explain());
                     if (module.Name != import)
                     {
                         throw new ArgumentException(module.Name.Explain());
                     }
+                    scope = scope.WithModule(module);
                 }
             }
-            foreach (var k in program.KnowledgeBank) {
-                RetractAll(currentModule.Name, k.Head);
-            }
-            foreach (var k in program.KnowledgeBank)
-            {
-                AssertZ(currentModule.Name, k);
-            }
             MaybeClose();
+            scope = scope.WithModule(currentModule);
             return currentModule;
             void MaybeClose()
             {
-                if (closeStream) {
+                if (closeStream)
+                {
                     file.Dispose();
                 }
             }
         }
+
+        public bool TryGetMatches(InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
+        {
+            //var operators = GetUserDefinedOperators(module).ToArray();
+            //// if head is in the form predicate/arity (or its built-in equivalent),
+            //// do some syntactic de-sugaring and convert it into an actual anonymous complex
+            //if(ITerm.TryUnify(head, "/(Predicate, Arity)", out _, out var subs, operators)
+            //|| ITerm.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
+            //{
+            //    var anon = ITerm.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
+            //    try { head = BuiltIn_AnonymousComplex(anon, module).Result; } catch(Exception) { }
+            //}
+            return new ErgoSolver(scope).KnowledgeBase.TryGetMatches(head, out matches);
+        }
+
+        public Module EnsureModule(ref InterpreterScope scope, Atom name)
+        {
+            if(!scope.Modules.TryGetValue(name, out var module))
+            {
+                try
+                {
+                    scope = scope.WithModule(module = Load(ref scope, name.Explain()));
+                }
+                catch(FileNotFoundException)
+                {
+                    scope = scope.WithModule(module = new(name, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(name), runtime: true));
+                }
+            }
+            return module;
+        }
+
+        public IEnumerable<Solution> Solve(ref InterpreterScope scope, Query goal, SolverFlags flags = SolverFlags.Default)
+        {
+            var solver = new ErgoSolver(scope, flags);
+            solver.Trace += HandleTrace;
+            var solutions = solver.Solve(goal);
+            return solutions;
+
+            void HandleTrace(SolverTraceType type, string msg) => Trace?.Invoke(type, msg);
+        }
+
+        public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
+        {
+            if(Directives.TryGetValue(d.Body.GetSignature(), out var directive))
+            {
+                return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
+            }
+            // TODO: throw if flag says so
+            return false;
+        }
+
     }
 }

@@ -9,9 +9,9 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell s, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
-            s.Save(m.Groups["path"].Value);
+            shell.Save(scope, m.Groups["path"].Value);
         }
     }
 }

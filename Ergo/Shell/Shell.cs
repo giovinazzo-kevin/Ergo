@@ -4,6 +4,7 @@ using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Utils;
 using Ergo.Shell.Commands;
+using Ergo.Solver;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,14 +16,12 @@ namespace Ergo.Shell
 {
     public partial class ErgoShell
     {
-        public readonly ExceptionHandler ExceptionHandler;
         public readonly ErgoInterpreter Interpreter;
         public readonly CommandDispatcher Dispatcher;
-        public Func<LogLine, string> LineFormatter { get; set; }
-        public Atom CurrentModule { get; set; }
+        public readonly Func<LogLine, string> LineFormatter;
+        protected readonly ExceptionHandler DefaultExceptionHandler;
 
         private volatile bool _repl;
-
         private volatile bool _trace;
         public bool TraceMode {
             get => _trace;
@@ -33,7 +32,7 @@ namespace Ergo.Shell
                 else {
                     Interpreter.Trace -= HandleTrace;
                 }
-                void HandleTrace(Solver.SolverTraceType type, string trace)
+                void HandleTrace(SolverTraceType type, string trace)
                 {
                     WriteLine(trace, LogLevel.Trc, type);
                 }
@@ -45,31 +44,32 @@ namespace Ergo.Shell
             set => _throw = value;
         }
 
-        public Parsed<T> Parse<T>(string data, Func<string, T> onParseFail = null, Maybe<Atom> entryModule = default)
+        public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler);
+
+        public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, T> onParseFail = null)
         {
-            var userDefinedOps = Interpreter.GetUserDefinedOperators(entryModule.Reduce(some => some, () => CurrentModule)).ToArray();
-            return new Parsed<T>(data, ExceptionHandler, onParseFail ?? (str => throw new ShellException($"Could not parse '{data}' as {typeof(T).Name}")), userDefinedOps);
+            onParseFail ??= (str => throw new ShellException($"Could not parse '{data}' as {typeof(T).Name}"));
+            var userDefinedOps = scope.InterpreterScope.GetUserDefinedOperators().ToArray();
+            return new Parsed<T>(data, scope.ExceptionHandler, onParseFail, userDefinedOps);
         }
 
-        public IEnumerable<Predicate> GetInterpreterPredicates(Maybe<Atom> entryModule = default) => Interpreter
-            .GetSolver(entryModule.Reduce(some => some, () => ErgoInterpreter.UserModule))
-            .KnowledgeBase.AsEnumerable();
-        public IEnumerable<Predicate> GetUserPredicates() => Interpreter.Modules[ErgoInterpreter.UserModule].KnowledgeBase.AsEnumerable();
+        // TODO: Extensions
+        public IEnumerable<Predicate> GetInterpreterPredicates(ShellScope scope) => new ErgoSolver(scope.InterpreterScope).KnowledgeBase.AsEnumerable();
+        public IEnumerable<Predicate> GetUserPredicates(ShellScope scope) => scope.InterpreterScope.Modules[Modules.User].Program.KnowledgeBase.AsEnumerable();
 
         public ErgoShell(ErgoInterpreter interpreter = null, Func<LogLine, string> formatter = null)
         {
             Interpreter = interpreter ?? new();
-            CurrentModule = ErgoInterpreter.UserModule;
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
             LineFormatter = formatter ?? DefaultLineFormatter;
-            ExceptionHandler = new ExceptionHandler(ex => {
+            DefaultExceptionHandler = new ExceptionHandler(ex => {
                 WriteLine(ex.Message, LogLevel.Err);
                 if (_throw && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException)) {
                     throw ex;
                 }
             });
 
-            AddReflectedCommands();
+            AddCommandsByReflection();
             SetConsoleOutputCP(65001);
             SetConsoleCP(65001);
             Clear();
@@ -80,7 +80,7 @@ namespace Ergo.Shell
 
         public bool TryAddCommand(ShellCommand s) => Dispatcher.TryAdd(s);
 
-        protected void AddReflectedCommands()
+        protected void AddCommandsByReflection()
         {
             var assembly = typeof(Save).Assembly;
             foreach (var type in assembly.GetTypes())
@@ -99,15 +99,15 @@ namespace Ergo.Shell
             Console.Clear();
         }
 
-        public virtual void Save(string fileName, bool force = true)
+        public virtual void Save(ShellScope scope, string fileName, bool force = true)
         {
-            var preds = GetUserPredicates();
+            var preds = GetUserPredicates(scope);
             if (File.Exists(fileName) && !force)
             {
                 WriteLine($"File already exists: {fileName}", LogLevel.Err);
                 return;
             }
-            var module = Interpreter.Modules[CurrentModule];
+            var module = scope.InterpreterScope.Modules[scope.InterpreterScope.CurrentModule];
             // TODO: make it easier to save directives
             var dirs = module.Imports.Contents
                 .Select(m => new Directive(new Complex(new("use_module"), m)))
@@ -117,11 +117,12 @@ namespace Ergo.Shell
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }
 
-        public virtual void Parse(string code, string fileName = "")
+        public virtual void Load(ShellScope scope, string fileName)
         {
-            var preds = GetInterpreterPredicates(Maybe.Some(CurrentModule));
+            var preds = GetInterpreterPredicates(scope);
             var oldPredicates = preds.Count();
-            if (ExceptionHandler.Try(() => Interpreter.Parse(code, fileName)))
+            var interpreterScope = scope.InterpreterScope;
+            if (scope.ExceptionHandler.Try(() => Interpreter.Load(ref interpreterScope, fileName)))
             {
                 var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
@@ -129,30 +130,19 @@ namespace Ergo.Shell
             }
         }
 
-        public virtual void Load(string fileName)
-        {
-            var preds = GetInterpreterPredicates(Maybe.Some(CurrentModule));
-            var oldPredicates = preds.Count();
-            if (ExceptionHandler.Try(() => Interpreter.Load(fileName)))
-            {
-                var newPredicates = preds.Count();
-                var delta = newPredicates - oldPredicates;
-                WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
-            }
-        }
-
-        public virtual void EnterRepl()
+        public virtual void EnterRepl(ShellScope scope)
         {
             _repl = true;
             do {
-                Do(Prompt());
+                Write($"{scope.InterpreterScope.CurrentModule.Explain()}> ");
+                Do(scope, Prompt());
             }
             while (_repl);
         }
 
-        public bool Do(string command)
+        public bool Do(ShellScope scope, string command)
         {
-            return ExceptionHandler.TryGet(() => Dispatcher.Dispatch(this, command), out var success) && success;
+            return scope.ExceptionHandler.TryGet(() => Dispatcher.Dispatch(this, ref scope, command), out var success) && success;
         }
 
         public virtual void ExitRepl()

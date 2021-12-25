@@ -11,7 +11,7 @@ namespace Ergo.Shell.Commands
 
         public readonly int Priority;
 
-        public abstract void Callback(ErgoShell s, Match m);
+        public abstract void Callback(ErgoShell shell, ref ShellScope scope, Match match);
 
         public ShellCommand(string[] names, string desc, string regex, int priority)
         {

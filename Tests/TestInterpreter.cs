@@ -17,7 +17,8 @@ namespace Tests
         protected static ErgoInterpreter MakeInterpreter()
         {
             var i = new ErgoInterpreter();
-            i.Load("Test", FileStreamUtils.MemoryStream(@"
+            var s = i.CreateScope();
+            i.Load(ref s, "Test", FileStreamUtils.MemoryStream(@"
                 fact.
                 data(1).
                 data(2).
@@ -66,8 +67,9 @@ namespace Tests
         public void SolveSimpleQuery(string query, string expected)
         {
             var interpreter = MakeInterpreter();
+            var scope = interpreter.CreateScope();
             var Predicates = new Parsed<Query>(query, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            var ans = interpreter.Solve(Predicates.Value.Reduce(some => some, () => default));
+            var ans = interpreter.Solve(ref scope, Predicates.Value.Reduce(some => some, () => default));
             Assert.IsNotNull(ans);
             Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explain())))));
         }

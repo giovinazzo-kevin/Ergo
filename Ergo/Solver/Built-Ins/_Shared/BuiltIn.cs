@@ -8,7 +8,7 @@ namespace Ergo.Solver.BuiltIns
 
     public abstract class BuiltIn
     {
-        public readonly BuiltInSignature Signature;
+        public readonly Signature Signature;
         public readonly string Documentation;
 
         public abstract Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);

@@ -436,7 +436,7 @@ namespace Ergo.Lang
                 }
                 c = new Predicate(
                     desc
-                    , ErgoInterpreter.UserModule
+                    , Modules.User
                     , head
                     , body
                 );

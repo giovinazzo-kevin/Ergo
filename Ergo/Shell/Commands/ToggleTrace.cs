@@ -11,10 +11,10 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell s, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
-            s.TraceMode = !s.TraceMode;
-            s.WriteLine($"Trace mode {(s.TraceMode ? "enabled" : "disabled")}.", LogLevel.Inf);
+            shell.TraceMode = !shell.TraceMode;
+            shell.WriteLine($"Trace mode {(shell.TraceMode ? "enabled" : "disabled")}.", LogLevel.Inf);
         }
     }
 }

@@ -8,6 +8,8 @@ using Ergo.Lang.Extensions;
 using Ergo.Lang.Exceptions;
 using Ergo.Solver.BuiltIns;
 using Ergo.Interpreter;
+using System.IO;
+using Ergo.Lang.Utils;
 
 namespace Ergo.Solver
 {
@@ -16,66 +18,74 @@ namespace Ergo.Solver
     {
         protected readonly AsyncLocal<bool> Cut = new();
 
+        public readonly SolverFlags Flags;
         public readonly KnowledgeBase KnowledgeBase;
-        public readonly Atom EntryModule;
-
-        protected readonly IReadOnlyDictionary<Atom, Module> Modules;
-        protected readonly IReadOnlyDictionary<BuiltInSignature, BuiltIn> BuiltIns;
-        protected readonly SolverFlags Flags;
+        public readonly InterpreterScope InterpreterScope;
+        public readonly Dictionary<Signature, BuiltIn> BuiltIns;
 
         public event Action<SolverTraceType, string> Trace;
 
-        public ErgoSolver(Atom entryModule, IReadOnlyDictionary<Atom, Module> modules, IReadOnlyDictionary<BuiltInSignature, BuiltIn> builtins, SolverFlags flags = SolverFlags.Default)
+        public ErgoSolver(InterpreterScope scope, SolverFlags flags = SolverFlags.Default)
         {
-            EntryModule = entryModule;
-            Modules = modules;
+            InterpreterScope = scope;
             Flags = flags;
-            BuiltIns = builtins;
-            KnowledgeBase = new KnowledgeBase();
+            KnowledgeBase = new();
+            BuiltIns = new();
+            AddBuiltInsByReflection();
             var added = new HashSet<Atom>();
-            LoadModule(modules[entryModule], added);
-            foreach (var module in Modules.Values)
+            LoadModule(scope.Modules[scope.CurrentModule], added);
+            foreach (var module in scope.Modules.Values)
             {
                 LoadModule(module, added);
             }
-            void LoadModule(Module module, HashSet<Atom> added)
+        }
+
+        protected void LoadModule(Module module, HashSet<Atom> added)
+        {
+            if (added.Contains(module.Name))
+                return;
+            added.Add(module.Name);
+            foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
             {
-                if (added.Contains(module.Name))
-                    return;
-                added.Add(module.Name);
-                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
+                if (added.Contains(subModule))
+                    continue;
+                LoadModule(InterpreterScope.Modules[subModule], added);
+            }
+            foreach (var pred in module.Program.KnowledgeBase)
+            {
+                var sig = pred.Head.GetSignature();
+                if (module.Name == Modules.User || module.Exports.Contents.Any(t => t.GetSignature().Equals(sig)))
                 {
-                    if (added.Contains(subModule))
-                        continue;
-                    LoadModule(Modules[subModule], added);
+                    KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
                 }
-                foreach (var pred in module.KnowledgeBase)
+                else
                 {
-                    var head = pred.Head;
-                    if(pred.Head is Complex c)
-                    {
-                        head = c.Functor;
-                    }
-                    var predicateSlashArity = new Expression(Operators.BinaryDivision, head, Maybe<ITerm>.Some(new Atom((double)Predicate.Arity(pred.Head)))).Complex;
-                    if(module.Name == ErgoInterpreter.UserModule 
-                    || module.Exports.Contents.Any(t => (new Substitution(t, predicateSlashArity).TryUnify(out _))))
-                    {
-                        KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
-                    }
-                    else
-                    {
-                        KnowledgeBase.AssertZ(pred.WithModuleName(module.Name).Qualified());
-                    }
+                    KnowledgeBase.AssertZ(pred.WithModuleName(module.Name).Qualified());
                 }
             }
         }
 
-        private ITerm ResolveBuiltin(ITerm term, SolverScope scope, List<Substitution> subs, int depth, out BuiltInSignature sig)
+        public bool TryAddBuiltIn(BuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
+
+        protected void AddBuiltInsByReflection()
         {
-            sig = term.GetBuiltInSignature();
+            var assembly = typeof(Print).Assembly;
+            foreach (var type in assembly.GetTypes())
+            {
+                if (!type.IsAssignableTo(typeof(BuiltIn))) continue;
+                if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
+                var inst = (BuiltIn)Activator.CreateInstance(type);
+                BuiltIns[inst.Signature] = inst;
+            }
+        }
+
+
+        private ITerm ResolveBuiltin(SolverScope scope, ITerm term, List<Substitution> subs, int depth, out Signature sig)
+        {
+            sig = term.GetSignature();
             if (term is Complex c)
             {
-                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, scope, subs, depth, out _)).ToArray());
+                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(scope, a, subs, depth, out _)).ToArray());
             }
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
@@ -83,7 +93,7 @@ namespace Ergo.Solver
                 LogTrace(SolverTraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", depth);
                 term = eval.Result;
                 subs.AddRange(eval.Substitutions);
-                var newSig = term.GetBuiltInSignature();
+                var newSig = term.GetSignature();
                 if (sig.Equals(newSig)) {
                     break;
                 }
@@ -113,7 +123,7 @@ namespace Ergo.Solver
                 yield break;
             }
             // Transform builtins into the literal they evaluate to
-            goal = ResolveBuiltin(goal, scope, subs, depth, out var signature);
+            goal = ResolveBuiltin(scope, goal, subs, depth, out var signature);
             if (goal.Equals(Literals.False) || goal is Variable) {
                 LogTrace(SolverTraceType.Retn, "false", depth);
                 yield break;
@@ -123,7 +133,7 @@ namespace Ergo.Solver
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
-            var (qualifiedGoal, matches) = QualifyGoal(Modules[scope.Module], goal);
+            var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[scope.Module], goal);
             LogTrace(SolverTraceType.Call, qualifiedGoal, depth);
             foreach (var m in matches) {
                 var innerScope = new SolverScope(m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
@@ -152,7 +162,7 @@ namespace Ergo.Solver
                 }
                 if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                 {
-                    throw new InterpreterException(InterpreterError.UnknownPredicate, qualifiedGoal.GetBuiltInSignature().Explain());
+                    throw new InterpreterException(InterpreterError.UnknownPredicate, qualifiedGoal.GetSignature().Explain());
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
@@ -187,7 +197,7 @@ namespace Ergo.Solver
         public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default)
         {
             Cut.Value = false;
-            return Solve(scope.Reduce(some => some, () => new SolverScope(EntryModule, default, default)), goal.Goals);
+            return Solve(scope.Reduce(some => some, () => new SolverScope(InterpreterScope.CurrentModule, default, default)), goal.Goals);
         }
     }
 }

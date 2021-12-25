@@ -9,10 +9,10 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell s, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
-            s.ThrowUnhandledExceptions = !s.ThrowUnhandledExceptions;
-            s.WriteLine($"Throw mode {(s.ThrowUnhandledExceptions ? "enabled" : "disabled")}.", LogLevel.Inf);
+            shell.ThrowUnhandledExceptions = !shell.ThrowUnhandledExceptions;
+            shell.WriteLine($"Throw mode {(shell.ThrowUnhandledExceptions ? "enabled" : "disabled")}.", LogLevel.Inf);
         }
     }
 }

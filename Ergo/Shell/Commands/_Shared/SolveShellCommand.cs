@@ -27,7 +27,7 @@ namespace Ergo.Shell.Commands
             DefaultAccentColor = accentColor;
         }
 
-        public override void Callback(ErgoShell shell, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
             var userQuery = m.Groups["query"].Value;
             var accent = m.Groups["color"] is { Success: true, Value: var v } 
@@ -38,15 +38,15 @@ namespace Ergo.Shell.Commands
                 // Syntactic sugar
                 userQuery += '.';
             }
-            var parsed = shell.Parse<Query>(userQuery).Value;
+            var parsed = shell.Parse<Query>(scope, userQuery).Value;
             if (!parsed.HasValue)
             {
                 return;
             }
             var query = parsed.Reduce(some => some, () => default);
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
-
-            var solutions = shell.Interpreter.Solve(query, Maybe.Some(shell.CurrentModule)); // Solution graph is walked lazily
+            var interpreterScope = scope.InterpreterScope;
+            var solutions = shell.Interpreter.Solve(ref interpreterScope, query); // Solution graph is walked lazily
             if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
             {
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
@@ -55,7 +55,7 @@ namespace Ergo.Shell.Commands
                 return;
             }
 
-            shell.ExceptionHandler.Try(() => {
+            scope.ExceptionHandler.Try(() => {
                 if (Interactive)
                 {
                     shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);

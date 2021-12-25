@@ -16,21 +16,22 @@ namespace Ergo.Shell.Commands
             Explain = explain;
         }
 
-        public override void Callback(ErgoShell s, Match m)
+        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
             var term = m.Groups["term"];
-            var predicates = s.GetInterpreterPredicates(Maybe.Some(s.CurrentModule));
+            var predicates = shell.GetInterpreterPredicates(scope);
             if (term?.Success ?? false)
             {
-                var parsed = s.Parse<CommaSequence>($"{term.Value}, true").Value;
+                var parsed = shell.Parse<CommaSequence>(scope, $"{term.Value}, true").Value;
                 if (!parsed.HasValue)
                 {
-                    s.No();
+                    shell.No();
                     return;
                 }
-                if (!s.ExceptionHandler.TryGet(() =>
+                var interpreterScope = scope.InterpreterScope;
+                if (!scope.ExceptionHandler.TryGet(() =>
                 {
-                    if (s.Interpreter.TryGetMatches(parsed.Reduce(some => some.Contents.First(), () => default), s.CurrentModule, out var matches))
+                    if (shell.Interpreter.TryGetMatches(interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
                     {
                         predicates = matches.Select(m => m.Rhs);
                         return true;
@@ -38,7 +39,7 @@ namespace Ergo.Shell.Commands
                     return false;
                 }, out var yes) || !yes)
                 {
-                    s.No();
+                    shell.No();
                     return;
                 }
             }
@@ -55,14 +56,14 @@ namespace Ergo.Shell.Commands
                 .ToArray();
             if (canonicals.Length == 0)
             {
-                s.No();
+                shell.No();
                 return;
             }
             var cols = Explain
                 ? new[] { "Predicate", "Module", "Explanation" }
                 : new[] { "Predicate", "Module", "Documentation" }
                 ;
-            s.WriteTable(cols, canonicals, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
+            shell.WriteTable(cols, canonicals, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
         }
     }
 }

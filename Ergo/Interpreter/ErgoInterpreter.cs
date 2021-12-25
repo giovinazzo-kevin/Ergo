@@ -19,7 +19,6 @@ namespace Ergo.Interpreter
     public partial class ErgoInterpreter
     {
         public readonly InterpreterFlags Flags;
-        public event Action<SolverTraceType, string> Trace;
         public readonly Dictionary<Signature, InterpreterDirective> Directives;
 
         public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
@@ -152,16 +151,6 @@ namespace Ergo.Interpreter
                     .ToArray());
             }
             return new ErgoSolver(this, scope).KnowledgeBase.TryGetMatches(head, out matches);
-        }
-
-        public IEnumerable<Solution> Solve(ref InterpreterScope scope, Query goal, SolverFlags flags = SolverFlags.Default)
-        {
-            var solver = new ErgoSolver(this, scope, flags);
-            solver.Trace += HandleTrace;
-            var solutions = solver.Solve(goal);
-            return solutions;
-
-            void HandleTrace(SolverTraceType type, string msg) => Trace?.Invoke(type, msg);
         }
 
         public virtual bool RunDirective(ref InterpreterScope scope, Directive d)

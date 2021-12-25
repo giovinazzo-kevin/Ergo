@@ -3,6 +3,7 @@ using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Utils;
+using Ergo.Solver;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
@@ -68,7 +69,7 @@ namespace Tests
         {
             var (interpreter, scope) = MakeInterpreter();
             var Predicates = new Parsed<Query>(query, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            var ans = interpreter.Solve(ref scope, Predicates.Value.Reduce(some => some, () => default));
+            var ans = new ErgoSolver(interpreter, scope).Solve(Predicates.Value.Reduce(some => some, () => default));
             Assert.IsNotNull(ans);
             Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explain())))));
         }

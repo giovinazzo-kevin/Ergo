@@ -23,20 +23,10 @@ namespace Ergo.Shell
 
         private volatile bool _repl;
         private volatile bool _trace;
-        public bool TraceMode {
+        public bool TraceMode
+        {
             get => _trace;
-            set {
-                if (_trace = value) {
-                    Interpreter.Trace += HandleTrace;
-                }
-                else {
-                    Interpreter.Trace -= HandleTrace;
-                }
-                void HandleTrace(SolverTraceType type, string trace)
-                {
-                    WriteLine(trace, LogLevel.Trc, type);
-                }
-            }
+            set => _trace = value;
         }
         private volatile bool _throw;
         public bool ThrowUnhandledExceptions {

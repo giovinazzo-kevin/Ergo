@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Solver;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -45,8 +46,12 @@ namespace Ergo.Shell.Commands
             }
             var query = parsed.Reduce(some => some, () => default);
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
-            var interpreterScope = scope.InterpreterScope;
-            var solutions = shell.Interpreter.Solve(ref interpreterScope, query); // Solution graph is walked lazily
+            var solver = new ErgoSolver(shell.Interpreter, scope.InterpreterScope);
+            if(shell.TraceMode)
+            {
+                solver.Trace += (type, trace) => shell.WriteLine(trace, LogLevel.Trc, type);
+            }
+            var solutions = solver.Solve(query); // Solution graph is walked lazily
             if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
             {
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.

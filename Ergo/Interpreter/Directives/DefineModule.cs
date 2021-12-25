@@ -3,6 +3,7 @@ using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Ergo.Interpreter.Directives
@@ -13,7 +14,6 @@ namespace Ergo.Interpreter.Directives
             : base("", new("module"), Maybe.Some(2))
         {
         }
-
         public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
         {
             if (args[0] is not Atom moduleName)
@@ -40,18 +40,17 @@ namespace Ergo.Interpreter.Directives
             {
                 module = new Module(moduleName, List.Empty, exports, Array.Empty<Operator>(), ErgoProgram.Empty(moduleName), runtime: scope.Runtime);
             }
+            scope = scope
+                .WithModule(module)
+                .WithCurrentModule(module.Name);
             foreach (var item in exports.Contents)
             {
-                // make sure that 'item' is in the form 'predicate/arity', and that it is asserted
-                if (!item.Matches(out var match, new { Predicate = default(string), Arity = default(int) })
-                || !interpreter.TryGetMatches(scope, item, out _))
+                // make sure that 'item' is in the form 'predicate/arity'
+                if (!item.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
                 {
                     throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
                 }
             }
-            scope = scope
-                .WithModule(module)
-                .WithCurrentModule(module.Name);
             return true;
         }
     }

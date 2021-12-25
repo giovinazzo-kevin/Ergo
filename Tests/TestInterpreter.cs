@@ -14,7 +14,7 @@ namespace Tests
     public class TestInterpreter
     {
         private readonly ExceptionHandler Thrower = new(ex => throw ex);
-        protected static ErgoInterpreter MakeInterpreter()
+        protected static (ErgoInterpreter, InterpreterScope) MakeInterpreter()
         {
             var i = new ErgoInterpreter();
             var s = i.CreateScope();
@@ -49,7 +49,7 @@ namespace Tests
                 map([X|[]], [Y|[]]) :- Y is (X + 1), @cut.
                 map([X|XT], [Y|YT]) :- XT \= [], map([X], [Y]), map(XT, YT).
             "));
-            return i;
+            return (i, s);
         }
 
         [DataRow("data(X)", "X/1; X/2")]
@@ -66,8 +66,7 @@ namespace Tests
         [DataTestMethod]
         public void SolveSimpleQuery(string query, string expected)
         {
-            var interpreter = MakeInterpreter();
-            var scope = interpreter.CreateScope();
+            var (interpreter, scope) = MakeInterpreter();
             var Predicates = new Parsed<Query>(query, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             var ans = interpreter.Solve(ref scope, Predicates.Value.Reduce(some => some, () => default));
             Assert.IsNotNull(ans);

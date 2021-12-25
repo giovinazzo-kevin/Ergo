@@ -24,7 +24,7 @@ namespace Ergo.Interpreter
                 .Add(userModule.Name, userModule);
             SearchDirectories = ImmutableArray.Create<string>()
                 .Add(string.Empty)
-                .Add("/stdlib");
+                .Add("./stdlib/");
             CurrentModule = userModule.Name;
             Runtime = userModule.Runtime;
         }

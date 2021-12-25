@@ -1,6 +1,10 @@
-﻿using Ergo.Lang.Ast;
+﻿using Ergo.Interpreter;
+using Ergo.Lang.Ast;
+using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Ergo.Lang.Extensions
 {
@@ -33,5 +37,23 @@ namespace Ergo.Lang.Extensions
                 Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity))
             );
         }
+
+
+
+        public static bool TryGetMatches(this InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
+        {
+            // if head is in the form predicate/arity (or its built-in equivalent),
+            // do some syntactic de-sugaring and convert it into an actual anonymous complex
+            if (head is Complex c
+                && new Atom[] { new("/"), new("@anon") }.Contains(c.Functor)
+                && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            {
+                head = new Complex(new(match.Predicate), Enumerable.Range(0, match.Arity)
+                    .Select(i => (ITerm)new Variable($"{i}"))
+                    .ToArray());
+            }
+            return new ErgoSolver(scope).KnowledgeBase.TryGetMatches(head, out matches);
+        }
+
     }
 }

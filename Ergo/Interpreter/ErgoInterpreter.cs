@@ -29,7 +29,12 @@ namespace Ergo.Interpreter
             AddDirectivesByReflection();
         }
 
-        public InterpreterScope CreateScope() => new(new(Modules.User, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true));
+        public InterpreterScope CreateScope()
+        {
+            var scope = new InterpreterScope(new(Modules.User, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true));
+            Load(ref scope, Modules.Prologue.Explain());
+            return scope;
+        }
 
         public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
 
@@ -113,20 +118,6 @@ namespace Ergo.Interpreter
                     file.Dispose();
                 }
             }
-        }
-
-        public bool TryGetMatches(InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
-        {
-            //var operators = GetUserDefinedOperators(module).ToArray();
-            //// if head is in the form predicate/arity (or its built-in equivalent),
-            //// do some syntactic de-sugaring and convert it into an actual anonymous complex
-            //if(ITerm.TryUnify(head, "/(Predicate, Arity)", out _, out var subs, operators)
-            //|| ITerm.TryUnify(head, "@anon(Predicate, Arity)", out _, out subs, operators))
-            //{
-            //    var anon = ITerm.Substitute("@anon(Predicate, Arity)", subs, out _, operators);
-            //    try { head = BuiltIn_AnonymousComplex(anon, module).Result; } catch(Exception) { }
-            //}
-            return new ErgoSolver(scope).KnowledgeBase.TryGetMatches(head, out matches);
         }
 
         public Module EnsureModule(ref InterpreterScope scope, Atom name)

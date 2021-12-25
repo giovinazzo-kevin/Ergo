@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Extensions;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -31,7 +32,7 @@ namespace Ergo.Shell.Commands
                 var interpreterScope = scope.InterpreterScope;
                 if (!scope.ExceptionHandler.TryGet(() =>
                 {
-                    if (shell.Interpreter.TryGetMatches(interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
+                    if (interpreterScope.TryGetMatches(parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
                     {
                         predicates = matches.Select(m => m.Rhs);
                         return true;

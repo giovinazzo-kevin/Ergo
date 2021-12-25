@@ -96,7 +96,7 @@ namespace Ergo.Interpreter
                 MaybeClose();
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
-            currentModule = scope.Modules[currentModule.Name].WithProgram(program);
+            currentModule = scope.Modules[scope.CurrentModule].WithProgram(program);
             foreach (Atom import in currentModule.Imports.Contents)
             {
                 var importScope = scope.WithCurrentModule(import);

@@ -19,19 +19,19 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
             }
-            if (moduleName == scope.CurrentModule)
+            if (moduleName == scope.CurrentModule || scope.Modules[scope.CurrentModule].Imports.Contents.Contains(moduleName))
             {
                 return false;
             }
             if (!scope.Modules.TryGetValue(moduleName, out var module))
             {
-                module = interpreter.Load(ref scope, moduleName.Explain());
+                var importScope = scope;
+                module = interpreter.Load(ref importScope, moduleName.Explain());
             }
-            if (module.Imports.Contents.Contains(moduleName))
-            {
-                return false;
-            }
-            scope = scope.WithModule(module.WithImport(moduleName));
+            scope = scope
+                .WithModule(module)
+                .WithModule(scope.Modules[scope.CurrentModule]
+                    .WithImport(moduleName));
             return true;
         }
     }

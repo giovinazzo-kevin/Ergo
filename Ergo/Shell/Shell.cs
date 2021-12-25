@@ -20,6 +20,7 @@ namespace Ergo.Shell
         public readonly CommandDispatcher Dispatcher;
         public readonly Func<LogLine, string> LineFormatter;
         protected readonly ExceptionHandler DefaultExceptionHandler;
+        public readonly Action<ErgoSolver> ConfigureSolver;
 
         private volatile bool _repl;
         private volatile bool _trace;
@@ -47,9 +48,11 @@ namespace Ergo.Shell
         public IEnumerable<Predicate> GetInterpreterPredicates(ShellScope scope) => new ErgoSolver(Interpreter, scope.InterpreterScope).KnowledgeBase.AsEnumerable();
         public IEnumerable<Predicate> GetUserPredicates(ShellScope scope) => scope.InterpreterScope.Modules[Modules.User].Program.KnowledgeBase.AsEnumerable();
 
-        public ErgoShell(ErgoInterpreter interpreter = null, Func<LogLine, string> formatter = null)
+        public ErgoShell(Action<ErgoInterpreter> configureInterpreter = null, Action<ErgoSolver> configureSolver = null, Func<LogLine, string> formatter = null)
         {
-            Interpreter = interpreter ?? new();
+            Interpreter = new();
+            configureInterpreter(Interpreter);
+            ConfigureSolver = configureSolver;
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
             LineFormatter = formatter ?? DefaultLineFormatter;
             DefaultExceptionHandler = new ExceptionHandler(ex => {
@@ -66,6 +69,13 @@ namespace Ergo.Shell
 #if DEBUG
             ThrowUnhandledExceptions = true;
 #endif
+        }
+
+        public ErgoSolver CreateSolver(ShellScope scope)
+        {
+            var solver = new ErgoSolver(Interpreter, scope.InterpreterScope);
+            ConfigureSolver?.Invoke(solver);
+            return solver;
         }
 
         public bool TryAddCommand(ShellCommand s) => Dispatcher.TryAdd(s);
@@ -145,5 +155,7 @@ namespace Ergo.Shell
         {
             _repl = false;
         }
+
+
     }
 }

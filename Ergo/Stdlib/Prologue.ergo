@@ -21,6 +21,9 @@
 	nl/0
 ]).
 
+:- use_module(math).
+:- use_module(list).
+
 nl :- @print('\n').
 
 % OPERATOR DECLARATIONS

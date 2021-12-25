@@ -54,7 +54,7 @@ namespace Ergo.Shell
         }
 
         // TODO: Extensions
-        public IEnumerable<Predicate> GetInterpreterPredicates(ShellScope scope) => new ErgoSolver(scope.InterpreterScope).KnowledgeBase.AsEnumerable();
+        public IEnumerable<Predicate> GetInterpreterPredicates(ShellScope scope) => new ErgoSolver(Interpreter, scope.InterpreterScope).KnowledgeBase.AsEnumerable();
         public IEnumerable<Predicate> GetUserPredicates(ShellScope scope) => scope.InterpreterScope.Modules[Modules.User].Program.KnowledgeBase.AsEnumerable();
 
         public ErgoShell(ErgoInterpreter interpreter = null, Func<LogLine, string> formatter = null)

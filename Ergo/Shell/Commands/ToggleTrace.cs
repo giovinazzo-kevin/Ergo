@@ -7,7 +7,7 @@ namespace Ergo.Shell.Commands
     public sealed class ToggleTrace : ShellCommand
     {
         public ToggleTrace()
-            : base(new[] { "trace" }, "", @"", 10)
+            : base(new[] { "trace" }, "", @"", 20)
         {
         }
 

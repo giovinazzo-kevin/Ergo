@@ -55,7 +55,7 @@ namespace Ergo.Interpreter
             var entryModule = entry.Reduce(some => some, () => currentModule);
             if (!Modules.TryGetValue(entryModule, out var module))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.ModuleName, entryModule.Explain());
+                yield break;
             }
             foreach (var import in module.Imports.Contents)
             {

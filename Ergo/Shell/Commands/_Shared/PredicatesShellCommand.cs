@@ -12,7 +12,7 @@ namespace Ergo.Shell.Commands
         public readonly bool Explain;
 
         public PredicatesShellCommand(string[] names, string desc, bool explain)
-            : base(names, desc, @"(?<term>[^\s].*)?", 100)
+            : base(names, desc, @"(?<term>[^\s].*)?", 90)
         {
             Explain = explain;
         }
@@ -32,7 +32,7 @@ namespace Ergo.Shell.Commands
                 var interpreterScope = scope.InterpreterScope;
                 if (!scope.ExceptionHandler.TryGet(() =>
                 {
-                    if (interpreterScope.TryGetMatches(parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
+                    if (shell.Interpreter.TryGetMatches(interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
                     {
                         predicates = matches.Select(m => m.Rhs);
                         return true;

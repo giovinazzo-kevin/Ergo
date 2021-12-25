@@ -68,7 +68,6 @@ namespace Ergo.Interpreter
 
         public virtual Module Load(ref InterpreterScope scope, string name, Stream file, bool closeStream = true)
         {
-            var currentModule = scope.Modules[scope.CurrentModule];
             var operators = scope.GetUserDefinedOperators().ToArray();
             var lexer = new Lexer(file, operators, name);
             var parser = new Parser(lexer, operators);
@@ -96,7 +95,7 @@ namespace Ergo.Interpreter
                 MaybeClose();
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
-            currentModule = scope.Modules[scope.CurrentModule].WithProgram(program);
+            var currentModule = scope.Modules[scope.CurrentModule].WithProgram(program);
             foreach (Atom import in currentModule.Imports.Contents)
             {
                 var importScope = scope.WithCurrentModule(import);
@@ -140,9 +139,24 @@ namespace Ergo.Interpreter
             return module;
         }
 
+        public bool TryGetMatches(InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
+        {
+            // if head is in the form predicate/arity (or its built-in equivalent),
+            // do some syntactic de-sugaring and convert it into an actual anonymous complex
+            if (head is Complex c
+                && new Atom[] { new("/"), new("@anon") }.Contains(c.Functor)
+                && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            {
+                head = new Complex(new(match.Predicate), Enumerable.Range(0, match.Arity)
+                    .Select(i => (ITerm)new Variable($"{i}"))
+                    .ToArray());
+            }
+            return new ErgoSolver(this, scope).KnowledgeBase.TryGetMatches(head, out matches);
+        }
+
         public IEnumerable<Solution> Solve(ref InterpreterScope scope, Query goal, SolverFlags flags = SolverFlags.Default)
         {
-            var solver = new ErgoSolver(scope, flags);
+            var solver = new ErgoSolver(this, scope, flags);
             solver.Trace += HandleTrace;
             var solutions = solver.Solve(goal);
             return solutions;

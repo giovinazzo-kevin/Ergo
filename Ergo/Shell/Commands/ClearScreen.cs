@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands
     public sealed class ClearScreen : ShellCommand
     {
         public ClearScreen()
-            : base(new[] { "cls" }, "", @"", 10)
+            : base(new[] { "cls" }, "", @"", 1000)
         {
         }
 

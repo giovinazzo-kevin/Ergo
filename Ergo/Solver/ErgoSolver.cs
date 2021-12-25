@@ -25,9 +25,8 @@ namespace Ergo.Solver
 
         public event Action<SolverTraceType, string> Trace;
 
-        public ErgoSolver(InterpreterScope scope, SolverFlags flags = SolverFlags.Default)
+        public ErgoSolver(ErgoInterpreter i, InterpreterScope scope, SolverFlags flags = SolverFlags.Default)
         {
-            InterpreterScope = scope;
             Flags = flags;
             KnowledgeBase = new();
             BuiltIns = new();
@@ -38,7 +37,7 @@ namespace Ergo.Solver
             {
                 LoadModule(module, added);
             }
-
+            InterpreterScope = scope;
             void LoadModule(Module module, HashSet<Atom> added)
             {
                 if (added.Contains(module.Name))
@@ -48,7 +47,12 @@ namespace Ergo.Solver
                 {
                     if (added.Contains(subModule))
                         continue;
-                    LoadModule(InterpreterScope.Modules[subModule], added);
+                    if(!scope.Modules.TryGetValue(subModule, out var import))
+                    {
+                        var importScope = scope;
+                        scope = scope.WithModule(import = i.Load(ref importScope, subModule.Explain()));
+                    }
+                    LoadModule(import, added);
                 }
                 foreach (var pred in module.Program.KnowledgeBase)
                 {

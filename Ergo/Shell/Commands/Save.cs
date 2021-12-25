@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands
     public sealed class Save : ShellCommand
     {
         public Save()
-            : base(new[] { "save" }, "", @"(?<path>.*)", 10)
+            : base(new[] { "save" }, "", @"(?<path>.*)", 20)
         {
         }
 

@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands
     public sealed class ToggleThrow : ShellCommand
     {
         public ToggleThrow()
-            : base(new[] { "throw" }, "", @"", 10)
+            : base(new[] { "throw" }, "", @"", 20)
         {
         }
 

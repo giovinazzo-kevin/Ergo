@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -12,17 +13,17 @@ namespace Ergo.Lang.Ast
         public static readonly Atom CanonicalFunctor = new("[|]");
         public static readonly Atom EmptyLiteral = new("[]");
 
-        public static readonly List Empty = new(Array.Empty<ITerm>());
+        public static readonly List Empty = new(ImmutableArray.Create<ITerm>());
 
         public ITerm Root { get; }
         public Atom Functor { get; }
-        public ITerm[] Contents { get; }
+        public ImmutableArray<ITerm> Contents { get; }
         public ITerm EmptyElement { get; }
         public bool IsEmpty { get; }
 
         public readonly ITerm Tail;
 
-        public List(ITerm[] head, Maybe<ITerm> tail = default)
+        public List(ImmutableArray<ITerm> head, Maybe<ITerm> tail = default)
         {
             Functor = CanonicalFunctor;
             EmptyElement = EmptyLiteral;
@@ -47,18 +48,18 @@ namespace Ergo.Lang.Ast
             if (t is Complex c && CanonicalFunctor.Equals(c.Functor)) {
                 var args = new List<ITerm>() { c.Arguments[0] };
                 if (c.Arguments.Length == 1 || c.Arguments[1].Equals(EmptyLiteral)) {
-                    expr = new List(args.ToArray());
+                    expr = new List(ImmutableArray.CreateRange(args));
                     return true;
                 }
                 if (c.Arguments.Length != 2)
                     return false;
                 if (TryUnfold(c.Arguments[1], out var subExpr)) {
                     args.AddRange(subExpr.Contents);
-                    expr = new List(args.ToArray(), Maybe.Some(subExpr.Tail));
+                    expr = new List(ImmutableArray.CreateRange(args), Maybe.Some(subExpr.Tail));
                     return true;
                 }
                 else {
-                    expr = new List(args.ToArray(), Maybe.Some(c.Arguments[1]));
+                    expr = new List(ImmutableArray.CreateRange(args), Maybe.Some(c.Arguments[1]));
                     return true;
                 }
             }
@@ -78,10 +79,10 @@ namespace Ergo.Lang.Ast
         }
 
         public ISequence Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) =>
-            new List(Contents.Select(arg => arg.Instantiate(ctx, vars)).ToArray(), Maybe.Some(Tail.Instantiate(ctx, vars)));
+            new List(ImmutableArray.CreateRange(Contents.Select(arg => arg.Instantiate(ctx, vars))), Maybe.Some(Tail.Instantiate(ctx, vars)));
 
         public ISequence Substitute(IEnumerable<Substitution> subs) =>
-            new List(Contents.Select(arg => arg.Substitute(subs)).ToArray(), Maybe.Some(Tail.Substitute(subs)));
+            new List(ImmutableArray.CreateRange(Contents.Select(arg => arg.Substitute(subs))), Maybe.Some(Tail.Substitute(subs)));
     }
 
 }

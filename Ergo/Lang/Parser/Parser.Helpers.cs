@@ -2,6 +2,7 @@
 using Ergo.Lang.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -57,7 +58,7 @@ namespace Ergo.Lang
                 }
                 if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out string _)) {
                     // Empty list
-                    seq = new UntypedSequence(functor, emptyElement);
+                    seq = new UntypedSequence(functor, emptyElement, ImmutableArray<ITerm>.Empty);
                     return true;
                 }
             }
@@ -79,7 +80,7 @@ namespace Ergo.Lang
                 seq = new UntypedSequence(functor, emptyElement, comma.Contents);
             }
             else {
-                seq = new UntypedSequence(functor, emptyElement, args.ToArray());
+                seq = new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args));
             }
             return true;
 

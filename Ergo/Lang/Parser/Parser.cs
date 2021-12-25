@@ -4,6 +4,7 @@ using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -14,9 +15,9 @@ namespace Ergo.Lang
     {
         private readonly Lexer _lexer;
         private readonly InstantiationContext _discardContext;
-        private readonly Operator[] _userDefinedOperators;
+        private readonly IEnumerable<Operator> _userDefinedOperators;
 
-        public Parser(Lexer lexer, Operator[] userOperators)
+        public Parser(Lexer lexer, IEnumerable<Operator> userOperators)
         {
             _lexer = lexer;
             _discardContext = new(String.Empty);
@@ -184,14 +185,14 @@ namespace Ergo.Lang
             )) {
                 if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
                     && Operators.BinaryList.Synonyms.Contains(cplx.Functor)) {
-                    var arguments = new[] { cplx.Arguments[0] };
+                    var arguments = ImmutableArray.Create<ITerm>().Add(cplx.Arguments[0]);
                     if(CommaSequence.TryUnfold(cplx.Arguments[0], out var comma)) {
-                        arguments = comma.Contents.ToArray();
+                        arguments = comma.Contents;
                     }
                     seq = new List(arguments, Maybe.Some(cplx.Arguments[1]));
                     return true;
                 }
-                seq = new List(full.Contents.ToArray());
+                seq = new List(full.Contents);
                 return true;
             }
             return Fail(pos);
@@ -408,7 +409,7 @@ namespace Ergo.Lang
                 return Fail(pos);
             if (!TryParseExpression(out var op)) {
                 if (TryParseTerm(out var head, out _) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
-                    return MakePredicate(pos, desc, head, new(new Atom(true)), out predicate);
+                    return MakePredicate(pos, desc, head, new(ImmutableArray.Create<ITerm>().Add(new Atom(true))), out predicate);
                 }
                 Throw(pos, ErrorType.ExpectedClauseList);
             }
@@ -420,7 +421,7 @@ namespace Ergo.Lang
             }
             var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
             if (!CommaSequence.TryUnfold(rhs, out var expr)) {
-                expr = new(rhs);
+                expr = new(ImmutableArray.Create<ITerm>().Add(rhs));
             }
             return MakePredicate(pos, desc, op.Left, expr, out predicate);
 

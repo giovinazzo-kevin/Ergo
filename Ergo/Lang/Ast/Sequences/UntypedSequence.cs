@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -9,11 +10,11 @@ namespace Ergo.Lang.Ast
     {
         public ITerm Root { get; }
         public Atom Functor { get; }
-        public ITerm[] Contents { get; }
+        public ImmutableArray<ITerm> Contents { get; }
         public ITerm EmptyElement { get; }
         public bool IsEmpty { get; }
 
-        public UntypedSequence(Atom functor, ITerm empty, params ITerm[] args)
+        public UntypedSequence(Atom functor, ITerm empty, ImmutableArray<ITerm> args)
         {
             Functor = functor;
             EmptyElement = empty;
@@ -37,9 +38,9 @@ namespace Ergo.Lang.Ast
         }
 
         public ISequence Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) =>
-            new UntypedSequence(Functor, EmptyElement, Contents.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
+            new UntypedSequence(Functor, EmptyElement, ImmutableArray.CreateRange(Contents.Select(arg => arg.Instantiate(ctx, vars))));
 
         public ISequence Substitute(IEnumerable<Substitution> subs) =>
-            new UntypedSequence(Functor, EmptyElement, Contents.Select(arg => arg.Substitute(subs)).ToArray());
+            new UntypedSequence(Functor, EmptyElement, ImmutableArray.CreateRange(Contents.Select(arg => arg.Substitute(subs)).ToArray()));
     }
 }

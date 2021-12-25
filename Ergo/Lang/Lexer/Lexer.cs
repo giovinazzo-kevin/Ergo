@@ -31,7 +31,7 @@ namespace Ergo.Lang
 
         public bool Eof => _reader.Position >= _reader.Length;
 
-        public Lexer(Stream s, Operator[] userOperators, string fn = "")
+        public Lexer(Stream s, IEnumerable<Operator> userOperators, string fn = "")
         {
             Filename = fn;
             _reader = s;

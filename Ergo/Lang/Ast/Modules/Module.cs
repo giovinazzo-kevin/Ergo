@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Extensions;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -10,11 +11,11 @@ namespace Ergo.Lang.Ast
         public readonly Atom Name;
         public readonly List Exports;
         public readonly List Imports;
-        public readonly Operator[] Operators;
+        public readonly ImmutableArray<Operator> Operators;
         public readonly ErgoProgram Program;
         public readonly bool Runtime;
 
-        public Module(Atom name, List import, List export, Operator[] operators, ErgoProgram program, bool runtime = false)
+        public Module(Atom name, List import, List export, ImmutableArray<Operator> operators, ErgoProgram program, bool runtime = false)
         {
             Name = name;
             Imports = import;
@@ -30,10 +31,10 @@ namespace Ergo.Lang.Ast
             return expl;
         }
 
-        public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Append(import).ToArray()), Exports, Operators, Program, Runtime);
-        public Module WithExports(ITerm[] exports) => new(Name, Imports, new(exports), Operators, Program, Runtime);
-        public Module WithOperators(Operator[] operators) => new(Name, Imports, Exports, operators, Program, Runtime);
-        public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Append(op).ToArray(), Program, Runtime);
+        public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Program, Runtime);
+        public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Program, Runtime);
+        public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Program, Runtime);
+        public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Program, Runtime);
         public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, p, Runtime);
 
         public bool ContainsExport(Signature sig)

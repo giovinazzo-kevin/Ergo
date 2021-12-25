@@ -181,7 +181,7 @@ namespace Ergo.Solver
             }
             var goals = query.Contents;
             var subGoal = goals.First();
-            goals = goals[1..];
+            goals = goals.RemoveAt(0);
             // Get first solution for the current subgoal
             foreach (var s in Solve(scope, subGoal, subs, depth)) {
                 if(Cut.Value) {

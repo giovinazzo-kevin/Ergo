@@ -4,6 +4,7 @@ using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Ergo.Interpreter.Directives
@@ -38,7 +39,7 @@ namespace Ergo.Interpreter.Directives
             }
             else
             {
-                module = new Module(moduleName, List.Empty, exports, Array.Empty<Operator>(), ErgoProgram.Empty(moduleName), runtime: scope.Runtime);
+                module = new Module(moduleName, List.Empty, exports, ImmutableArray.Create<Operator>(), ErgoProgram.Empty(moduleName), runtime: scope.Runtime);
             }
             scope = scope
                 .WithModule(module)

@@ -1,6 +1,7 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
@@ -14,7 +15,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            if (solver.Solve(new Query(new(arguments.Single())), Maybe.Some(scope)).Any())
+            if (solver.Solve(new Query(new(ImmutableArray<ITerm>.Empty.Add(arguments.Single()))), Maybe.Some(scope)).Any())
             {
                 return new(Literals.False);
             }

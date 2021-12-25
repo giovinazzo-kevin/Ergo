@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -14,11 +15,11 @@ namespace Ergo.Lang.Ast
 
         public ITerm Root { get; }
         public Atom Functor { get; }
-        public ITerm[] Contents { get; }
+        public ImmutableArray<ITerm> Contents { get; }
         public ITerm EmptyElement { get; }
         public bool IsEmpty { get; }
 
-        public CommaSequence(params ITerm[] args) 
+        public CommaSequence(ImmutableArray<ITerm> args)
         {
             Functor = CanonicalFunctor;
             EmptyElement = EmptyLiteral;
@@ -30,30 +31,34 @@ namespace Ergo.Lang.Ast
         public static bool TryUnfold(ITerm t, out CommaSequence expr)
         {
             expr = default;
-            if(t.Equals(EmptyLiteral)) {
+            if (t.Equals(EmptyLiteral))
+            {
                 expr = new CommaSequence();
                 return true;
             }
-            if(t is Complex c && Operators.BinaryConjunction.Synonyms.Contains(c.Functor)) {
-                var args = new List<ITerm>() { c.Arguments[0] };
-                if (c.Arguments.Length == 1) {
-                    expr = new CommaSequence(args.ToArray());
+            if (t is Complex c && Operators.BinaryConjunction.Synonyms.Contains(c.Functor))
+            {
+                var args = ImmutableArray.Create<ITerm>().Add(c.Arguments[0]);
+                if (c.Arguments.Length == 1)
+                {
+                    expr = new CommaSequence(args);
                     return true;
                 }
                 if (c.Arguments.Length != 2)
                     return false;
-                if(c.Arguments[1].Equals(EmptyLiteral)) {
-                    expr = new CommaSequence(args.ToArray());
+                if (c.Arguments[1].Equals(EmptyLiteral))
+                {
+                    expr = new CommaSequence(args);
                     return true;
                 }
-                if (TryUnfold(c.Arguments[1], out var subExpr)) {
-                    args.AddRange(subExpr.Contents);
-                    expr = new CommaSequence(args.ToArray());
+                if (TryUnfold(c.Arguments[1], out var subExpr))
+                {
+                    expr = new CommaSequence(args.AddRange(subExpr.Contents));
                     return true;
                 }
-                else {
-                    args.Add(c.Arguments[1]);
-                    expr = new CommaSequence(args.ToArray());
+                else
+                {
+                    expr = new CommaSequence(args.Add(c.Arguments[1]));
                     return true;
                 }
             }
@@ -63,20 +68,22 @@ namespace Ergo.Lang.Ast
 
         public string Explain()
         {
-            if (IsEmpty) {
+            if (IsEmpty)
+            {
                 return EmptyElement.Explain();
             }
             var joined = string.Join(", ", Contents.Select(t => t.Explain()));
-            if (Contents.Length != 1) {
+            if (Contents.Length != 1)
+            {
                 return $"({joined})";
             }
             return joined;
         }
 
         public ISequence Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) =>
-            new CommaSequence(Contents.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
+            new CommaSequence(ImmutableArray.CreateRange(Contents.Select(arg => arg.Instantiate(ctx, vars))));
 
         public ISequence Substitute(IEnumerable<Substitution> subs) =>
-            new CommaSequence(Contents.Select(arg => arg.Substitute(subs)).ToArray());
+            new CommaSequence(ImmutableArray.CreateRange(Contents.Select(arg => arg.Substitute(subs)).ToArray()));
     }
 }

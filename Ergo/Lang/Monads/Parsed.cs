@@ -1,6 +1,7 @@
 ﻿using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using System;
+using System.Collections.Immutable;
 
 namespace Ergo.Lang
 {
@@ -36,9 +37,9 @@ namespace Ergo.Lang
                     (Parser p) => p.TryParseExpression(out var x) 
                         ? CommaSequence.TryUnfold(x.Complex, out var expr) 
                             ? Box(new Query(expr))
-                            : Box(new Query(new(x.Complex)))
+                            : Box(new Query(new(ImmutableArray<ITerm>.Empty.Add(x.Complex))))
                         : p.TryParseTerm(out var t, out _)
-                            ? Box(new Query(new(t)))
+                            ? Box(new Query(new(ImmutableArray<ITerm>.Empty.Add(t))))
                             : onParseFail(data)
                 , _ when typeof(T) == typeof(ErgoProgram) => 
                     (Parser p) => p.TryParseProgram(out var x) ? Box(x) : onParseFail(data)

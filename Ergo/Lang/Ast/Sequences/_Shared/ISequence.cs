@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Ergo.Lang.Ast
@@ -7,7 +8,7 @@ namespace Ergo.Lang.Ast
     {
         ITerm Root { get; }
         Atom Functor { get; }
-        ITerm[] Contents { get; }
+        ImmutableArray<ITerm> Contents { get; }
         ITerm EmptyElement { get; }
         bool IsEmpty { get; }
 
@@ -34,15 +35,16 @@ namespace Ergo.Lang.Ast
         ISequence Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
         ISequence Substitute(IEnumerable<Substitution> subs);
 
-        static ITerm Fold(Atom functor, ITerm emptyElement, params ITerm[] args)
+        static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
         {
             if (args.Length == 0)
                 return emptyElement;
             if (args.Length == 1)
                 return new Complex(functor, args[0], emptyElement);
-            var rev = new List<ITerm>(args);
-            rev.Reverse();
-            return rev.Prepend(emptyElement).Aggregate((a, b) => new Complex(functor, b, a));
+            return args
+                .Append(emptyElement)
+                .Reverse()
+                .Aggregate((a, b) => new Complex(functor, b, a));
         }
     }
 

@@ -30,9 +30,9 @@ namespace Ergo.Interpreter
 
         public InterpreterScope CreateScope()
         {
-            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.Prologue), runtime: true));
+            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, List.Empty, List.Empty, ImmutableArray.Create<Operator>(), ErgoProgram.Empty(Modules.Prologue), runtime: true));
             var prologue = Load(ref prologueScope, Modules.Prologue.Explain());
-            return new InterpreterScope(new Module(Modules.User, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true)
+            return new InterpreterScope(new Module(Modules.User, List.Empty, List.Empty, ImmutableArray.Create<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true)
                     .WithImport(Modules.Prologue))
                 .WithModule(prologue);
         }
@@ -67,7 +67,7 @@ namespace Ergo.Interpreter
 
         public virtual Module Load(ref InterpreterScope scope, string name, Stream file, bool closeStream = true)
         {
-            var operators = scope.GetUserDefinedOperators().ToArray();
+            var operators = scope.GetUserDefinedOperators();
             var lexer = new Lexer(file, operators, name);
             var parser = new Parser(lexer, operators);
             if (!parser.TryParseProgramDirectives(out var program))
@@ -131,7 +131,7 @@ namespace Ergo.Interpreter
                 }
                 catch(FileNotFoundException)
                 {
-                    scope = scope.WithModule(module = new Module(name, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(name), runtime: true)
+                    scope = scope.WithModule(module = new Module(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ErgoProgram.Empty(name), runtime: true)
                         .WithImport(Modules.Prologue));
                 }
             }

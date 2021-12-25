@@ -9,14 +9,14 @@ namespace Ergo.Lang.Utils
         {
             var msg = error switch
             {
-                Parser.ErrorType.ExpectedPredicateDelimiterOrITerminator => "Expected predicate delimter (',') or ITerminator ('.')."
+                Parser.ErrorType.ExpectedPredicateDelimiterOrITerminator => "Expected predicate delimter (',') or terminator ('.')."
                 , Parser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_')."
-                , Parser.ErrorType.ComplexHasNoArguments => "Complex ITerm has no arguments."
-                , Parser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or ITerminator ('{1}')."
+                , Parser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments."
+                , Parser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}')."
                 , Parser.ErrorType.ExpectedClauseList => "Expected clause list."
-                , Parser.ErrorType.UnITerminatedClauseList => "UnITerminated clause list."
+                , Parser.ErrorType.UnITerminatedClauseList => "Unterminated clause list."
                 , Parser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file."
-                , Parser.ErrorType.ITermHasIllegalName => "ITerm has illegal or reserved name: {0}"
+                , Parser.ErrorType.ITermHasIllegalName => "Term has illegal or reserved name: {0}"
                 , _ => error.ToString()
             };
 
@@ -47,7 +47,7 @@ namespace Ergo.Lang.Utils
             {
                 InterpreterError.UnknownPredicate => String.Format("Predicate not found: {0}", args)
                 , InterpreterError.UserPredicateConflictsWithBuiltIn => String.Format("User-defined predicate conflicts with built-in: {0}", args)
-                , InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected ITerm of type {0}, found: {1}", args)
+                , InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
                 , InterpreterError.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
                 , InterpreterError.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
                 , InterpreterError.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)

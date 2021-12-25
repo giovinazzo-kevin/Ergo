@@ -22,7 +22,8 @@ namespace Ergo.Interpreter.Directives
             var module = interpreter.EnsureModule(ref scope, moduleName);
             scope = scope
                 .WithoutModules()
-                .WithModule(module);
+                .WithModule(module)
+                .WithCurrentModule(module.Name);
             return true;
         }
     }

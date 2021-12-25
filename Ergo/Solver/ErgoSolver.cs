@@ -38,29 +38,29 @@ namespace Ergo.Solver
             {
                 LoadModule(module, added);
             }
-        }
 
-        protected void LoadModule(Module module, HashSet<Atom> added)
-        {
-            if (added.Contains(module.Name))
-                return;
-            added.Add(module.Name);
-            foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
+            void LoadModule(Module module, HashSet<Atom> added)
             {
-                if (added.Contains(subModule))
-                    continue;
-                LoadModule(InterpreterScope.Modules[subModule], added);
-            }
-            foreach (var pred in module.Program.KnowledgeBase)
-            {
-                var sig = pred.Head.GetSignature();
-                if (module.Name == Modules.User || module.Exports.Contents.Any(t => t.GetSignature().Equals(sig)))
+                if (added.Contains(module.Name))
+                    return;
+                added.Add(module.Name);
+                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
                 {
-                    KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
+                    if (added.Contains(subModule))
+                        continue;
+                    LoadModule(InterpreterScope.Modules[subModule], added);
                 }
-                else
+                foreach (var pred in module.Program.KnowledgeBase)
                 {
-                    KnowledgeBase.AssertZ(pred.WithModuleName(module.Name).Qualified());
+                    var sig = pred.Head.GetSignature();
+                    if (module.Name == scope.CurrentModule || module.ContainsExport(sig))
+                    {
+                        KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
+                    }
+                    else
+                    {
+                        KnowledgeBase.AssertZ(pred.WithModuleName(module.Name).Qualified());
+                    }
                 }
             }
         }

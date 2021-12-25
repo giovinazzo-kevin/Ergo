@@ -130,19 +130,25 @@ namespace Ergo.Shell
             }
         }
 
-        public virtual void EnterRepl(ShellScope scope)
+        public virtual void EnterRepl(ref ShellScope scope)
         {
             _repl = true;
             do {
                 Write($"{scope.InterpreterScope.CurrentModule.Explain()}> ");
-                Do(scope, Prompt());
+                Do(ref scope, Prompt());
             }
             while (_repl);
         }
 
-        public bool Do(ShellScope scope, string command)
+        public bool Do(ref ShellScope scope, string command)
         {
-            return scope.ExceptionHandler.TryGet(() => Dispatcher.Dispatch(this, ref scope, command), out var success) && success;
+            var scope_ = scope;
+            if(scope.ExceptionHandler.TryGet(() => Dispatcher.Dispatch(this, ref scope_, command), out var success) && success)
+            {
+                scope = scope_;
+                return true;
+            }
+            return false;
         }
 
         public virtual void ExitRepl()

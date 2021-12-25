@@ -31,9 +31,11 @@ namespace Ergo.Interpreter
 
         public InterpreterScope CreateScope()
         {
-            var scope = new InterpreterScope(new(Modules.User, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true));
-            Load(ref scope, Modules.Prologue.Explain());
-            return scope;
+            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.Prologue), runtime: true));
+            var prologue = Load(ref prologueScope, Modules.Prologue.Explain());
+            return new InterpreterScope(new Module(Modules.User, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true)
+                    .WithImport(Modules.Prologue))
+                .WithModule(prologue);
         }
 
         public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
@@ -94,7 +96,7 @@ namespace Ergo.Interpreter
                 MaybeClose();
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
-            currentModule = currentModule.WithProgram(program);
+            currentModule = scope.Modules[currentModule.Name].WithProgram(program);
             foreach (Atom import in currentModule.Imports.Contents)
             {
                 var importScope = scope.WithCurrentModule(import);
@@ -126,11 +128,13 @@ namespace Ergo.Interpreter
             {
                 try
                 {
-                    scope = scope.WithModule(module = Load(ref scope, name.Explain()));
+                    scope = scope.WithModule(module = Load(ref scope, name.Explain())
+                        .WithImport(Modules.Prologue));
                 }
                 catch(FileNotFoundException)
                 {
-                    scope = scope.WithModule(module = new(name, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(name), runtime: true));
+                    scope = scope.WithModule(module = new Module(name, List.Empty, List.Empty, Array.Empty<Operator>(), ErgoProgram.Empty(name), runtime: true)
+                        .WithImport(Modules.Prologue));
                 }
             }
             return module;

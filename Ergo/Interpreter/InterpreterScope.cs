@@ -41,21 +41,18 @@ namespace Ergo.Interpreter
             Runtime = runtime;
         }
 
-        public InterpreterScope WithCurrentModule(Atom a)
-        {
-            if (Modules.ContainsKey(a)) return new(a, Modules, SearchDirectories, Runtime);
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.ModuleName, a.Explain());
-        }
+        public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime);
         public InterpreterScope WithModule(Module m) => new(CurrentModule, Modules.SetItem(m.Name, m), SearchDirectories, Runtime);
         public InterpreterScope WithSearchDirectory(string s) => new(CurrentModule, Modules, SearchDirectories.Add(s), Runtime);
         public InterpreterScope WithRuntime(bool runtime) => new(CurrentModule, Modules, SearchDirectories, runtime);
 
-        public InterpreterScope WithoutModules() => new(CurrentModule, ImmutableDictionary.Create<Atom, Module>(), SearchDirectories, Runtime);
+        public InterpreterScope WithoutModules() => new(CurrentModule, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Prologue, Modules[Interpreter.Modules.Prologue]), SearchDirectories, Runtime);
         public InterpreterScope WithoutSearchDirectories() => new(CurrentModule, Modules, ImmutableArray.Create<string>(), Runtime);
 
         public IEnumerable<Operator> GetUserDefinedOperators(Maybe<Atom> entry = default)
         {
-            var entryModule = entry.Reduce(some => some, () => Interpreter.Modules.User);
+            var currentModule = CurrentModule;
+            var entryModule = entry.Reduce(some => some, () => currentModule);
             if (!Modules.TryGetValue(entryModule, out var module))
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.ModuleName, entryModule.Explain());

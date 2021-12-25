@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Extensions;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ergo.Lang.Ast
@@ -34,5 +35,12 @@ namespace Ergo.Lang.Ast
         public Module WithOperators(Operator[] operators) => new(Name, Imports, Exports, operators, Program, Runtime);
         public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Append(op).ToArray(), Program, Runtime);
         public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, p, Runtime);
+
+        public bool ContainsExport(Signature sig)
+        {
+            return Exports.Contents.Any(t => t.Matches(out var m, new { P = default(string), A = default(int) })
+                && m.P == sig.Functor.Explain()
+                && (!sig.Arity.HasValue || m.A == sig.Arity.Reduce(x => x, () => 0)));
+        }
     }
 }

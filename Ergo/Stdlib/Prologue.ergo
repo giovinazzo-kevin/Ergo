@@ -17,10 +17,12 @@
 	'?='/2,
 	';'/2,
 	'/'/2,
-
+	':'/2,
+	default/2,
 	nl/0
 ]).
 
+% OPERATOR DECLARATIONS
 :- op(30, xfy, ';').
 :- op(50, xfx, 'is').
 :- op(50, xfx, ':=').
@@ -33,12 +35,9 @@
 :- op(50, xfx, '\\=').
 :- op(50, xfx, '?=').
 :- op(30, fx, '\\+').
+:- op(1000, xfx, ':').
 
-nl :- @print('\n').
-
-% METAPREDICATES
-
-% OPERATOR DECLARATIONS
+% OPERATOR IMPLEMENTATIONS
 '\\+'(A) :- @unprovable(A), @cut.
 'is'(A, B) :- @eval(A, B).
 '='(A, B) :- @unify(A, B).
@@ -58,3 +57,6 @@ nl :- @print('\n').
 ';'(A, _) :- A.
 ';'(_, B) :- B.
 '/'(A, B) :- @anon(A, B).
+
+% MISCELLANEOUS 
+nl :- @print('\n').

@@ -3,5 +3,3 @@
 
 :- use_module(math).
 :- use_module(list).
-
-:- op(420, xfx, ':').

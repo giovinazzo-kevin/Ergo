@@ -64,5 +64,15 @@ namespace Tests
             AssertNextToken(lexer, Lexer.TokenType.Term, "X");
             AssertNextToken(lexer, Lexer.TokenType.Punctuation, ")");
         }
+
+        [TestMethod]
+        public void TestUTF8()
+        {
+            using var stream = FileStreamUtils.MemoryStream("π = 3.14159");
+            var lexer = new Lexer(stream, Array.Empty<Operator>());
+            AssertNextToken(lexer, Lexer.TokenType.Term, "π");
+            AssertNextToken(lexer, Lexer.TokenType.Operator, "=");
+            AssertNextToken(lexer, Lexer.TokenType.Number, 3.1415900000000003);
+        }
     }
 }

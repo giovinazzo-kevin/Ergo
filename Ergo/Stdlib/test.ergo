@@ -1,5 +1,4 @@
 ﻿:- module(test, [
 ]).
 
-:- use_module(math).
-:- use_module(list).
+π(3.14159).

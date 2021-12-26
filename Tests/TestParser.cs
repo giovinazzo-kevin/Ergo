@@ -82,11 +82,12 @@ namespace Tests
         [DataRow("a, b, c, d", "(a, b, c, d)")]
         [DataRow("a + b * c", "+(a, *(b, c))")]
         [DataRow("(a + b) * c", "*(+(a, b), c)")]
+        [DataRow("(a + b) * π", "*(+(a, b), π)")]
         [DataRow("a + b * c - d", "-(+(a, *(b, c)), d)")]
         [DataRow("a + b * c * d - e", "-(+(a, *(*(b, c), d)), e)")]
         [DataRow("X = a + b * c * d - e", "=(X, -(+(a, *(*(b, c), d)), e))")]
-        [DataRow("F is B * 2 ^ (1/12) ^ N", "is(F, *(B, ^(2, ^(/(1, 12), N))))")]
-        [DataRow("F is B * (2 ^ (1/12)) ^ N", "is(F, *(B, ^(^(2, /(1, 12)), N)))")]
+        [DataRow("F = B * 2 ^ (1/12) ^ N", "=(F, *(B, ^(2, ^(/(1, 12), N))))")]
+        [DataRow("F = B * (2 ^ (1/12)) ^ N", "=(F, *(B, ^(^(2, /(1, 12)), N)))")]
         [DataTestMethod]
         public void ParseExpression(string exp, string normalized)
         {

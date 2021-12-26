@@ -53,10 +53,11 @@ namespace Ergo.Shell
                     throw ex;
                 }
             });
-
             AddCommandsByReflection();
-            SetConsoleOutputCP(65001);
-            SetConsoleCP(65001);
+            Console.InputEncoding = Encoding.Unicode;
+            Console.OutputEncoding = Encoding.Unicode;
+            SetConsoleOutputCP(1200);
+            SetConsoleCP(1200);
             Clear();
         }
 

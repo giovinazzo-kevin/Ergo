@@ -88,18 +88,39 @@ namespace Ergo.Lang
             return false;
 
             // ------------------- Helpers -------------------
+            static char ReadUTF8Char(Stream s)
+            {
+                if (s.Position >= s.Length)
+                    throw new Exception("Error: Read beyond EOF");
+
+                using (BinaryReader reader = new BinaryReader(s, Encoding.Unicode, true))
+                {
+                    int numRead = Math.Min(4, (int)(s.Length - s.Position));
+                    byte[] bytes = reader.ReadBytes(numRead);
+                    char[] chars = Encoding.UTF8.GetChars(bytes);
+
+                    if (chars.Length == 0)
+                        throw new Exception("Error: Invalid UTF8 char");
+
+                    int charLen = Encoding.UTF8.GetByteCount(new char[] { chars[0] });
+
+                    s.Position += (charLen - numRead);
+
+                    return chars[0];
+                }
+            }
 
             char Peek()
             {
                 var p = State;
-                var ret = (char)_reader.ReadByte();
+                var ret = ReadUTF8Char(_reader);
                 Seek(p);
                 return ret;
             }
 
             char Read()
             {
-                var c = (char)_reader.ReadByte();
+                var c = ReadUTF8Char(_reader);
                 Context += c;
                 if (IsCarriageReturn(c)) {
                     Column = 0;
@@ -144,6 +165,7 @@ namespace Ergo.Lang
                 while (!Eof && IsSingleLineCommentStart(Peek())) {
                     var p = State;
                     Read();
+                    if (Eof) break;
                     var c = Read();
                     Seek(p);
                     if (IsDocumentationCommentStart(c)) {
@@ -165,6 +187,7 @@ namespace Ergo.Lang
                         escaping = true;
                         Read();
                     }
+                    if (Eof) break;
                     if (Peek() != delim || escaping) {
                         var escaped = $"{Read()}";
                         if(escaping) {
@@ -198,7 +221,7 @@ namespace Ergo.Lang
                         if (integralPlaces != -1) break;
                         var s = State;
                         Read();
-                        if(!IsNumberPiece(Peek())) {
+                        if(!Eof && !IsNumberPiece(Peek())) {
                             Seek(s);
                             break;
                         }
@@ -247,7 +270,7 @@ namespace Ergo.Lang
                     if (set.Count >= 1) {
                         i++;
                         if (set.Count == 1) {
-                            while (i++ < set[0].Length) Read();
+                            while (!Eof && i++ < set[0].Length) Read();
                             break;
                         }
                     }
@@ -274,7 +297,7 @@ namespace Ergo.Lang
                     if (set.Count >= 1) {
                         i++;
                         if (set.Count == 1) {
-                            while (i++ < set[0].Length) {
+                            while (!Eof && i++ < set[0].Length) {
                                 ch = Read();
                                 if(ch != set[0][i - 1]) {
                                     Seek(p);

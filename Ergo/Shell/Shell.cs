@@ -22,26 +22,18 @@ namespace Ergo.Shell
         protected readonly ExceptionHandler DefaultExceptionHandler;
         public readonly Action<ErgoSolver> ConfigureSolver;
 
-        private volatile bool _repl;
-        private volatile bool _trace;
-        public bool TraceMode
-        {
-            get => _trace;
-            set => _trace = value;
-        }
-        private volatile bool _throw;
-        public bool ThrowUnhandledExceptions {
-            get => _throw;
-            set => _throw = value;
-        }
+        public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler, false, false);
 
-        public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler);
-
-        public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, T> onParseFail = null)
+        public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
         {
-            onParseFail ??= (str => throw new ShellException($"Could not parse '{data}' as {typeof(T).Name}"));
+            onParseFail ??= (str =>
+            {
+                if (scope.ExceptionHandler.TryGet<T>(scope, () => throw new ShellException($"Could not parse '{data}' as {typeof(T).Name}"), out var ret))
+                    return Maybe.Some(ret);
+                return Maybe<T>.None;
+            });
             var userDefinedOps = scope.InterpreterScope.GetUserDefinedOperators().ToArray();
-            return new Parsed<T>(data, scope.ExceptionHandler, onParseFail, userDefinedOps);
+            return new Parsed<T>(data, onParseFail, userDefinedOps);
         }
 
         // TODO: Extensions
@@ -55,9 +47,9 @@ namespace Ergo.Shell
             ConfigureSolver = configureSolver;
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
             LineFormatter = formatter ?? DefaultLineFormatter;
-            DefaultExceptionHandler = new ExceptionHandler(ex => {
+            DefaultExceptionHandler = new ExceptionHandler((scope, ex) => {
                 WriteLine(ex.Message, LogLevel.Err);
-                if (_throw && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException)) {
+                if (scope.ExceptionThrowingEnabled && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException)) {
                     throw ex;
                 }
             });
@@ -66,9 +58,6 @@ namespace Ergo.Shell
             SetConsoleOutputCP(65001);
             SetConsoleCP(65001);
             Clear();
-#if DEBUG
-            ThrowUnhandledExceptions = true;
-#endif
         }
 
         public ErgoSolver CreateSolver(ShellScope scope)
@@ -122,7 +111,7 @@ namespace Ergo.Shell
             var preds = GetInterpreterPredicates(scope);
             var oldPredicates = preds.Count();
             var interpreterScope = scope.InterpreterScope;
-            if (scope.ExceptionHandler.Try(() => Interpreter.Load(ref interpreterScope, fileName)))
+            if (scope.ExceptionHandler.Try(scope, () => Interpreter.Load(ref interpreterScope, fileName)))
             {
                 var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
@@ -130,32 +119,25 @@ namespace Ergo.Shell
             }
         }
 
-        public virtual void EnterRepl(ref ShellScope scope)
+        public virtual void EnterRepl(ref ShellScope scope, Func<string, bool> exit = null)
         {
-            _repl = true;
-            do {
+            while(true) {
                 Write($"{scope.InterpreterScope.CurrentModule.Explain()}> ");
-                Do(ref scope, Prompt());
+                var prompt = Prompt();
+                if (exit != null && exit(prompt)) break;
+                Do(ref scope, prompt);
             }
-            while (_repl);
         }
 
         public bool Do(ref ShellScope scope, string command)
         {
             var scope_ = scope;
-            if(scope.ExceptionHandler.TryGet(() => Dispatcher.Dispatch(this, ref scope_, command), out var success) && success)
+            if(scope.ExceptionHandler.TryGet(scope, () => Dispatcher.Dispatch(this, ref scope_, command), out var success) && success)
             {
                 scope = scope_;
                 return true;
             }
             return false;
         }
-
-        public virtual void ExitRepl()
-        {
-            _repl = false;
-        }
-
-
     }
 }

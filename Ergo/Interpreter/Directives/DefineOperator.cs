@@ -3,6 +3,7 @@ using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using System;
+using System.Linq;
 
 namespace Ergo.Interpreter.Directives
 {
@@ -24,15 +25,18 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Integer, args[0].Explain());
             }
-            if (!args[0].Matches<OperatorType>(out var type))
+            if (!args[1].Matches<OperatorType>(out var type))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, "OperatorType", args[1].Explain());
             }
-            if (!args[0].Matches<string>(out var name))
+            if (!args[2].Matches<string>(out var name))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[2].Explain());
             }
-
+            if(Operators.DefinedOperators.Any(o => o.Synonyms.Contains((Atom)args[2])))
+            {
+                throw new InterpreterException(InterpreterError.OperatorClash, args[2].Explain());
+            }
             var (affix, assoc) = type switch
             {
                 OperatorType.fx => (OperatorAffix.Prefix, OperatorAssociativity.Right),

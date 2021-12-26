@@ -47,7 +47,7 @@ namespace Ergo.Shell.Commands
             var query = parsed.Reduce(some => some, () => default);
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
             var solver = shell.CreateSolver(scope);
-            if(shell.TraceMode)
+            if(scope.TraceEnabled)
             {
                 solver.Trace += (type, trace) => shell.WriteLine(trace, LogLevel.Trc, type);
             }
@@ -60,7 +60,7 @@ namespace Ergo.Shell.Commands
                 return;
             }
 
-            scope.ExceptionHandler.Try(() => {
+            scope.ExceptionHandler.Try(scope, () => {
                 if (Interactive)
                 {
                     shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);

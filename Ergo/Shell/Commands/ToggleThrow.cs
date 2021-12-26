@@ -11,8 +11,8 @@ namespace Ergo.Shell.Commands
 
         public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
-            shell.ThrowUnhandledExceptions = !shell.ThrowUnhandledExceptions;
-            shell.WriteLine($"Throw mode {(shell.ThrowUnhandledExceptions ? "enabled" : "disabled")}.", LogLevel.Inf);
+            scope = scope.WithExceptionThrowing(!scope.ExceptionThrowingEnabled);
+            shell.WriteLine($"Throw mode {(scope.ExceptionThrowingEnabled ? "enabled" : "disabled")}.", LogLevel.Inf);
         }
     }
 }

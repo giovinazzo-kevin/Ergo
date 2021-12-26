@@ -80,7 +80,7 @@ namespace Ergo.Lang
                     return Fail(pos);
                 }
                 if (term.StartsWith("__K")) {
-                    Throw(pos, ErrorType.ITermHasIllegalName, var.Name);
+                    Throw(pos, ErrorType.TermHasIllegalName, var.Name);
                 }
                 if(term.Equals(Literals.Discard.Explain())) {
                     term = $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}";
@@ -381,7 +381,7 @@ namespace Ergo.Lang
             }
             if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
             {
-                Throw(pos, ErrorType.UnITerminatedClauseList);
+                Throw(pos, ErrorType.UnterminatedClauseList);
             }
             var lhs = op.Left;
             if (CommaSequence.TryUnfold(lhs, out var expr))
@@ -414,10 +414,10 @@ namespace Ergo.Lang
                 Throw(pos, ErrorType.ExpectedClauseList);
             }
             if(!Operators.BinaryHorn.Equals(op.Operator)) {
-                Throw(pos, ErrorType.ExpectedClauseList);
+                op = new Expression(Operators.BinaryHorn, op.Complex, Maybe.Some(Literals.True));
             }
             if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
-                Throw(pos, ErrorType.UnITerminatedClauseList);
+                Throw(pos, ErrorType.UnterminatedClauseList);
             }
             var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
             if (!CommaSequence.TryUnfold(rhs, out var expr)) {
@@ -431,7 +431,8 @@ namespace Ergo.Lang
                     .Where(v => !v.Equals(Literals.Discard));
                 var bodyVars = body.Contents.SelectMany(t => t.Variables)
                     .Distinct();
-                var singletons = headVars.Where(v => !v.Ignored && !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1);
+                var singletons = headVars.Where(v => !v.Ignored && !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1)
+                    .Select(v => v.Explain());
                 if (singletons.Any()) {
                     Throw(pos, ErrorType.PredicateHasSingletonVariables, Predicate.Signature(head), String.Join(", ", singletons));
                 }

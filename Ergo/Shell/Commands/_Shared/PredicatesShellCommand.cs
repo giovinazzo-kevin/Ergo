@@ -30,7 +30,7 @@ namespace Ergo.Shell.Commands
                     return;
                 }
                 var interpreterScope = scope.InterpreterScope;
-                if (!scope.ExceptionHandler.TryGet(() =>
+                if (!scope.ExceptionHandler.TryGet(scope, () =>
                 {
                     if (shell.Interpreter.TryGetMatches(interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
                     {

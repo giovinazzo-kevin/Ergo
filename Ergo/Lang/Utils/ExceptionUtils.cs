@@ -9,14 +9,14 @@ namespace Ergo.Lang.Utils
         {
             var msg = error switch
             {
-                Parser.ErrorType.ExpectedPredicateDelimiterOrITerminator => "Expected predicate delimter (',') or terminator ('.')."
+                Parser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.')."
                 , Parser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_')."
                 , Parser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments."
                 , Parser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}')."
                 , Parser.ErrorType.ExpectedClauseList => "Expected clause list."
-                , Parser.ErrorType.UnITerminatedClauseList => "Unterminated clause list."
+                , Parser.ErrorType.UnterminatedClauseList => "Unterminated clause list."
                 , Parser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file."
-                , Parser.ErrorType.ITermHasIllegalName => "Term has illegal or reserved name: {0}"
+                , Parser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}"
                 , _ => error.ToString()
             };
 
@@ -52,6 +52,7 @@ namespace Ergo.Lang.Utils
                 , InterpreterError.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
                 , InterpreterError.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
                 , InterpreterError.ModuleNameClash => String.Format("Module {0} can't be re-declared because it is not a runtime module", args)
+                , InterpreterError.OperatorClash => String.Format("Operator {0} can't be re-declared because it would shadow a built-in operator", args)
                 , _ => error.ToString()
             };
 

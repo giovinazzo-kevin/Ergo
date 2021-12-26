@@ -21,18 +21,30 @@
 	nl/0
 ]).
 
-:- use_module(math).
-:- use_module(list).
+:- op(30, xfy, ';').
+:- op(50, xfx, 'is').
+:- op(50, xfx, ':=').
+:- op(50, xfx, '==').
+:- op(50, xfx, '\\==').
+:- op(51, xfy, '#>').
+:- op(51, xfy, '#>=').
+:- op(49, yfx, '#<').
+:- op(49, yfx, '#<=').
+:- op(50, xfx, '\\=').
+:- op(50, xfx, '?=').
+:- op(30, fx, '\\+').
 
 nl :- @print('\n').
+
+% METAPREDICATES
 
 % OPERATOR DECLARATIONS
 '\\+'(A) :- @unprovable(A), @cut.
 'is'(A, B) :- @eval(A, B).
 '='(A, B) :- @unify(A, B).
 '\\='(A, B) :- \+(A = B).
-'>'(A, B) :- @evalcmp(A > B).
-'<'(A, B) :- @evalcmp(A < B).
+'>'(A, B)  :- @evalcmp(A > B).
+'<'(A, B)  :- @evalcmp(A < B).
 '>='(A, B) :- @evalcmp(A >= B).
 '<='(A, B) :- @evalcmp(A <= B).
 '=='(A, B) :- @compare(0, A, B).

@@ -13,7 +13,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            var result = new Atom(Eval(arguments[1]));
+            var result = new Lang.Ast.Atom(Eval(arguments[1]));
             if (new Substitution(arguments[0], result).TryUnify(out var subs)) {
                 return new(Literals.True, subs.ToArray());
             }

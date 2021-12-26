@@ -31,19 +31,19 @@ namespace Ergo.Solver
             KnowledgeBase = new();
             BuiltIns = new();
             AddBuiltInsByReflection();
-            var added = new HashSet<Atom>();
+            var added = new HashSet<Lang.Ast.Atom>();
             LoadModule(scope.Modules[scope.CurrentModule], added);
             foreach (var module in scope.Modules.Values)
             {
                 LoadModule(module, added);
             }
             InterpreterScope = scope;
-            void LoadModule(Module module, HashSet<Atom> added)
+            void LoadModule(Module module, HashSet<Lang.Ast.Atom> added)
             {
                 if (added.Contains(module.Name))
                     return;
                 added.Add(module.Name);
-                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
+                foreach (var subModule in module.Imports.Contents.Select(c => (Lang.Ast.Atom)c))
                 {
                     if (added.Contains(subModule))
                         continue;

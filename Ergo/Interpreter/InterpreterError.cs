@@ -9,6 +9,7 @@
         , UninstantiatedTermAt
         , ExpectedTermWithArity
         , ModuleNameClash
+        , OperatorClash
         , ModuleRedefinition
         , UndefinedPredicate
     }

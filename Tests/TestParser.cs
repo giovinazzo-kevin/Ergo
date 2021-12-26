@@ -11,7 +11,7 @@ namespace Tests
     [TestClass]
     public class TestParser
     {
-        private readonly ExceptionHandler Thrower = new(ex => throw ex);
+        private readonly ExceptionHandler Thrower = new((scope, ex) => throw ex);
 
         [DataRow("a_simple_atom", "a_simple_atom")]
         [DataRow("'a string'", "'a string'")]
@@ -24,7 +24,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseAtom(string atom, string normalized)
         {
-            var p = new Parsed<Atom>(atom, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Atom>(atom, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
@@ -36,7 +36,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseVariable(string variable, string normalized)
         {
-            var p = new Parsed<Variable>(variable, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Variable>(variable, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
@@ -49,7 +49,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseList(string toParse, string expected)
         {
-            var p = new Parsed<List>(toParse, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<List>(toParse, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(expected, p.Value.Reduce(some => some, () => default).Explain());
         }
 
@@ -61,7 +61,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseComplex(string complex, string normalized)
         {
-            var p = new Parsed<Complex>(complex, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Complex>(complex, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
@@ -74,7 +74,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseITerm(string exp, string normalized)
         {
-            var p = new Parsed<ITerm>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<ITerm>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
         }
 
@@ -90,7 +90,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseExpression(string exp, string normalized)
         {
-            var p = new Parsed<Expression>(exp, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Expression>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Complex.Explain());
         }
 
@@ -104,7 +104,7 @@ namespace Tests
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {
-            var p = new Parsed<Predicate>(predicate, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Predicate>(predicate, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
         }
 
@@ -112,7 +112,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseDirective(string directive, string normalized)
         {
-            var p = new Parsed<Directive>(directive, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Directive>(directive, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
         }
     }

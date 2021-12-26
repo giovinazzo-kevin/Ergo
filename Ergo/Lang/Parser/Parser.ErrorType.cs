@@ -8,12 +8,12 @@
             UnexpectedEndOfFile
             , PredicateHasSingletonVariables
             , ExpectedArgumentDelimiterOrClosedParens
-            , ExpectedPredicateDelimiterOrITerminator
+            , ExpectedPredicateDelimiterOrTerminator
             , ExpectedClauseList
-            , UnITerminatedClauseList
+            , UnterminatedClauseList
             , ComplexHasNoArguments
             , OperatorDoesNotExist
-            , ITermHasIllegalName
+            , TermHasIllegalName
             , MismatchedParentheses
         }
     }

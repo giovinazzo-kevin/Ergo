@@ -3,16 +3,16 @@ using Ergo.Lang.Ast;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class Eval1 : MathBuiltIn
+    public sealed class Ground : BuiltIn
     {
-        public Eval1()
-            : base("", new("@eval"), Maybe<int>.Some(1))
+        public Ground()
+            : base("", new("@ground"), Maybe<int>.Some(1))
         {
         }
 
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            return new(new Lang.Ast.Atom(Eval(arguments[0])));
+            return new(new Lang.Ast.Atom(arguments[0].IsGround));
         }
     }
 }

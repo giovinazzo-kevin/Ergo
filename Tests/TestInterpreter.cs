@@ -14,7 +14,6 @@ namespace Tests
     [TestClass]
     public class TestInterpreter
     {
-        private readonly ExceptionHandler Thrower = new(ex => throw ex);
         protected static (ErgoInterpreter, InterpreterScope) MakeInterpreter()
         {
             var i = new ErgoInterpreter();
@@ -68,7 +67,7 @@ namespace Tests
         public void SolveSimpleQuery(string query, string expected)
         {
             var (interpreter, scope) = MakeInterpreter();
-            var Predicates = new Parsed<Query>(query, Thrower, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var Predicates = new Parsed<Query>(query, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             var ans = new ErgoSolver(interpreter, scope).Solve(Predicates.Value.Reduce(some => some, () => default));
             Assert.IsNotNull(ans);
             Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explain())))));

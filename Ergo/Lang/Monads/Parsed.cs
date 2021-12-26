@@ -7,14 +7,14 @@ namespace Ergo.Lang
 {
     public readonly struct Parsed<T>
     {
-        private static T Box(object value) => (T)value;
+        private static Maybe<T> Box(object value) => Maybe.Some((T)value);
         private readonly Lazy<Maybe<T>> _value;
         public readonly Maybe<T> Value => _value.Value;
 
-        public Parsed(string data, ExceptionHandler handler, Func<string, T> onParseFail, Operator[] userOperators)
+        public Parsed(string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
         {
             var parser = new Parser(new Lexer(Utils.FileStreamUtils.MemoryStream(data), userOperators), userOperators);
-            Func<Parser, T> parse = true switch {
+            Func<Parser, Maybe<T>> parse = true switch {
                     _ when typeof(T) == typeof(Atom) => 
                     (Parser p) => p.TryParseAtom(out var x) ? Box(x) : onParseFail(data)
                 , _ when typeof(T) == typeof(Variable) => 
@@ -47,9 +47,18 @@ namespace Ergo.Lang
                     throw new ArgumentException($"Parsed<T> can't handle type: {typeof(T).Name}")
             };
             _value = new Lazy<Maybe<T>>(() => {
-                var ret = handler.TryGet(() => parse(parser), out var parsed) ? Maybe<T>.Some(parsed) : Maybe<T>.None;
-                parser.Dispose();
-                return ret;
+                try
+                {
+                    return parse(parser);
+                }
+                catch(ParserException)
+                {
+                    return Maybe<T>.None;
+                }
+                finally
+                {
+                    parser.Dispose();
+                }
             });
         }
     }

@@ -49,6 +49,10 @@ namespace Ergo.Lang
         {
             if (IsAtomic)
             {
+                if (Type.IsEnum)
+                {
+                    return Enum.Parse(Type, ((Atom)t).Value.ToString());
+                }
                 return ((Atom)t).Value;
             }
             if(Type.Namespace == null)

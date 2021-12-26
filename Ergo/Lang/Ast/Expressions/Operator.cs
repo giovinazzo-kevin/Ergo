@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ergo.Lang.Ast
 {
+    [DebuggerDisplay("{ Explain() }")]
     public readonly partial struct Operator
     {
         public readonly Atom CanonicalFunctor;
@@ -20,6 +22,8 @@ namespace Ergo.Lang.Ast
             CanonicalFunctor = Synonyms.First();
             Precedence = precedence;
         }
+
+        public string Explain() => $":- op({Precedence}, builtin, {CanonicalFunctor.Explain()})";
     }
 
 }

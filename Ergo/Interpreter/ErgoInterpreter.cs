@@ -79,6 +79,14 @@ namespace Ergo.Interpreter
             {
                 RunDirective(ref scope, d);
             }
+            foreach (var import in scope.Modules[scope.CurrentModule].Imports.Contents)
+            {
+                if (!scope.Modules.ContainsKey((Lang.Ast.Atom)import))
+                {
+                    var importScope = scope;
+                    scope = scope.WithModule(Load(ref importScope, import.Explain()));
+                }
+            }
             var newOperators = scope.GetUserDefinedOperators()
                 .Except(operators)
                 .ToArray();
@@ -95,12 +103,12 @@ namespace Ergo.Interpreter
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
             var currentModule = scope.Modules[scope.CurrentModule].WithProgram(program);
-            foreach (Atom import in currentModule.Imports.Contents)
+            foreach (Lang.Ast.Atom import in currentModule.Imports.Contents)
             {
                 var importScope = scope.WithCurrentModule(import);
-                if (!scope.Modules.TryGetValue(import, out var module))
+                if (!scope.Modules.ContainsKey(import))
                 {
-                    module = Load(ref importScope, import.Explain());
+                    var module = Load(ref importScope, import.Explain());
                     if (module.Name != import)
                     {
                         throw new ArgumentException(module.Name.Explain());
@@ -120,7 +128,7 @@ namespace Ergo.Interpreter
             }
         }
 
-        public Module EnsureModule(ref InterpreterScope scope, Atom name)
+        public Module EnsureModule(ref InterpreterScope scope, Lang.Ast.Atom name)
         {
             if(!scope.Modules.TryGetValue(name, out var module))
             {
@@ -143,7 +151,7 @@ namespace Ergo.Interpreter
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
             if (head is Complex c
-                && new Atom[] { new("/"), new("@anon") }.Contains(c.Functor)
+                && (new Lang.Ast.Atom[] { new("/"), new("@anon") }).Contains(c.Functor)
                 && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 head = new Complex(new(match.Predicate), Enumerable.Range(0, match.Arity)

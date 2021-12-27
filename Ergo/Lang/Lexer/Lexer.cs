@@ -147,7 +147,7 @@ namespace Ergo.Lang
             bool IsDocumentationCommentStart(char c) => c == ':';
             bool IsNumberStart(char c) => IsDigit(c);
             bool IsNumberPiece(char c) => IsNumberStart(c) || IsDecimalDelimiter(c) || c == '-' || c == '+';
-            bool IsIdentifierStart(char c) => Char.IsLetter(c) || c == '@' || c == '_' || c == '!';
+            bool IsIdentifierStart(char c) => Char.IsLetter(c) || c == '@' || c == '_' || c == '!' || c == '⊤' || c == '⊥';
             bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
             bool IsKeyword(string s) => KeywordSymbols.Contains(s);
             bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);

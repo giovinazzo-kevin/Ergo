@@ -49,11 +49,11 @@ namespace Ergo.Lang
                 atom = new Atom(dec);
                 return true;
             }
-            else if (Expect(Lexer.TokenType.Keyword, kw => kw == "true" || kw == "false", out string kw)) {
-                atom = new Atom(kw == "true");
+            else if (Expect(Lexer.TokenType.Keyword, kw => Lexer.BooleanSymbols.Contains(kw), out string kw)) {
+                atom = new Atom(Lexer.TrueSymbols.Contains(kw));
                 return true;
             }
-            else if (Expect(Lexer.TokenType.Keyword, kw => kw == "!", out kw)) {
+            else if (Expect(Lexer.TokenType.Keyword, kw => Lexer.CutSymbols.Contains(kw), out kw)) {
                 atom = (Atom)Literals.Cut;
                 return true;
             }

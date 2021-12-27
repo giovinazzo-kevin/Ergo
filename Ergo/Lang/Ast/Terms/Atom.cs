@@ -24,10 +24,9 @@ namespace Ergo.Lang.Ast
 
         public string Explain()
         {
-            if (Value is bool)
+            if (Value is bool b)
             {
-                // Boolean literals are lowercase
-                return Value.ToString().ToLower();
+                return b ? "⊤" : "⊥";
             }
             else if (Value is string s)
             {

@@ -6,4 +6,4 @@ member(X, [Y|T]) :- (X = Y; member(X, T)).
 
 length([], 0).
 length([_|[]], 1) :- !.
-length([_|T], L) :- length(T, M), L is M + 1.
+length([_|T], L) :- length(T, M), L := M + 1 .

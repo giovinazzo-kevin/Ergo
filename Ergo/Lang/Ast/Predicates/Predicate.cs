@@ -21,7 +21,7 @@ namespace Ergo.Lang.Ast
                 return $"{Head.Explain()}.";
             }
 
-            var expl = $"{Head.Explain()} :- {string.Join(", ", Body.Contents.Select(x => x.Explain()))}.";
+            var expl = $"{Head.Explain()} ← {string.Join(", ", Body.Contents.Select(x => x.Explain()))}.";
             if (!String.IsNullOrWhiteSpace(Documentation)) {
                 expl = $"{String.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r))}\r\n" + expl;
             }

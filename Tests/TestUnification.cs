@@ -1,4 +1,4 @@
-using Ergo.Lang;
+﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -31,38 +31,38 @@ namespace Tests
         [TestMethod]
         public void TestUnification_2()
         {
-            using var fs = FileStreamUtils.MemoryStream("a(X) :- b(X).");
+            using var fs = FileStreamUtils.MemoryStream("a(X) ← b(X).");
             var lexer = new Lexer(fs, Array.Empty<Operator>());
             var parser = new Parser(lexer, Array.Empty<Operator>());
             Assert.IsTrue(parser.TryParsePredicate(out var Predicate));
             Assert.IsTrue(Predicate.TryUnify(new Complex(new Atom("a"), new Atom("bob")), Predicate, out var substitutions));
             Assert.AreEqual("X/bob", String.Join(", ", substitutions.Select(s => s.Explain())));
-            Assert.AreEqual("a(bob) :- b(bob).", Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
+            Assert.AreEqual("a(bob) ← b(bob).", Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
         }
 
         [TestMethod]
         public void TestUnification_3()
         {
-            using var fs = FileStreamUtils.MemoryStream("a(X, Y) :- b(X, Y), c(Y).");
+            using var fs = FileStreamUtils.MemoryStream("a(X, Y) ← b(X, Y), c(Y).");
             var lexer = new Lexer(fs, Array.Empty<Operator>());
             var parser = new Parser(lexer, Array.Empty<Operator>());
             Assert.IsTrue(parser.TryParsePredicate(out var Predicate));
             Assert.IsTrue(Predicate.TryUnify(new Complex(new Atom("a"), new Atom("bob"), new Atom("complex(john)")), Predicate, out var substitutions));
             Assert.AreEqual("X/bob, Y/complex(john)", String.Join(", ", substitutions.Select(s => s.Explain())));
-            Assert.AreEqual("a(bob, complex(john)) :- b(bob, complex(john)), c(complex(john)).",
+            Assert.AreEqual("a(bob, complex(john)) ← b(bob, complex(john)), c(complex(john)).",
                 Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
         }
 
         [TestMethod]
         public void TestUnification_4()
         {
-            using var fs = FileStreamUtils.MemoryStream("a(X, Y) :- '='(X, Y), c(Y).");
+            using var fs = FileStreamUtils.MemoryStream("a(X, Y) ← '='(X, Y), c(Y).");
             var lexer = new Lexer(fs, Array.Empty<Operator>());
             var parser = new Parser(lexer, Array.Empty<Operator>());
             Assert.IsTrue(parser.TryParsePredicate(out var Predicate));
             Assert.IsTrue(Predicate.TryUnify(new Complex(new Atom("a"), new Atom("bob"), new Variable("Y")), Predicate, out var substitutions));
             Assert.AreEqual("X/bob", String.Join(", ", substitutions.Select(s => s.Explain())));
-            Assert.AreEqual("a(bob, Y) :- =(bob, Y), c(Y).", Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
+            Assert.AreEqual("a(bob, Y) ← =(bob, Y), c(Y).", Predicate.Substitute(Predicate, substitutions).Explain().RemoveExtraWhitespace());
         }
     }
 }

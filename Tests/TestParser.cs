@@ -79,7 +79,7 @@ namespace Tests
         }
 
         [DataRow("-a", "-(a)")]
-        [DataRow("a, b, c, d", "(a, b, c, d)")]
+        [DataRow("a, b, c, d", "(a ∧ b ∧ c ∧ d)")]
         [DataRow("a + b * c", "+(a, *(b, c))")]
         [DataRow("(a + b) * c", "*(+(a, b), c)")]
         [DataRow("(a + b) * π", "*(+(a, b), π)")]
@@ -97,11 +97,11 @@ namespace Tests
 
         [DataRow("fact.", "fact.")]
         [DataRow("fact :- true.", "fact.")]
-        [DataRow("fact :- false.", "fact :- false.")]
-        [DataRow("pred :- fact.", "pred :- fact.")]
-        [DataRow("pred(X) :- fact(X).", "pred(X) :- fact(X).")]
-        [DataRow("pred([X|Rest]) :- fact(X), fact(Rest).", "pred([X|Rest]) :- fact(X), fact(Rest).")]
-        [DataRow("pred(X) :- fact(X), test(X).", "pred(X) :- fact(X), test(X).")]
+        [DataRow("fact :- false.", "fact ← ⊥.")]
+        [DataRow("pred :- fact.", "pred ← fact.")]
+        [DataRow("pred(X) :- fact(X).", "pred(X) ← fact(X).")]
+        [DataRow("pred([X|Rest]) :- fact(X), fact(Rest).", "pred([X|Rest]) ← fact(X), fact(Rest).")]
+        [DataRow("pred(X) :- fact(X), test(X).", "pred(X) ← fact(X), test(X).")]
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {
@@ -109,7 +109,7 @@ namespace Tests
             Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
         }
 
-        [DataRow(":- module(test, []).", ":- module(test, []).")]
+        [DataRow(":- module(test, []).", "← module(test, []).")]
         [DataTestMethod]
         public void ParseDirective(string directive, string normalized)
         {

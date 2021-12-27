@@ -27,7 +27,7 @@ namespace Ergo.Lang.Ast
 
         public string Explain()
         {
-            var expl = $":- module({Name.Explain()}, {Exports.Explain()}).";
+            var expl = $"← module({Name.Explain()}, {Exports.Explain()}).";
             return expl;
         }
 

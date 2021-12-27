@@ -18,6 +18,6 @@ namespace Ergo.Lang.Ast
 
         public Directive WithBody(ITerm newBody) => new(newBody);
 
-        public string Explain() => $":- {Body.Explain()}.";
+        public string Explain() => $"← {Body.Explain()}.";
     }
 }

@@ -23,7 +23,7 @@ namespace Ergo.Lang.Ast
             Precedence = precedence;
         }
 
-        public string Explain() => $":- op({Precedence}, builtin, {CanonicalFunctor.Explain()})";
+        public string Explain() => $"← op({Precedence}, builtin, {CanonicalFunctor.Explain()})";
     }
 
 }

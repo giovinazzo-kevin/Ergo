@@ -34,6 +34,11 @@ namespace Ergo.Lang.Ast
             if (List.TryUnfold(this, out var list)) {
                 return list.Explain();
             }
+            // TODO: remove this crap
+            if(Functor.Value.Equals("∨") && Arguments.Length == 2)
+            {
+                return $"{Arguments[0].Explain()} ∨ {Arguments[1].Explain()}";
+            }
             return $"{Functor.Explain()}({String.Join(", ", Arguments.Select(arg => arg.Explain()))})";
         }
 

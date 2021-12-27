@@ -9,7 +9,7 @@ namespace Ergo.Interpreter.Directives
     public class UseModule : InterpreterDirective
     {
         public UseModule()
-            : base("", new("use_module"), Maybe.Some(1))
+            : base("", new("use_module"), Maybe.Some(1), 1)
         {
         }
 

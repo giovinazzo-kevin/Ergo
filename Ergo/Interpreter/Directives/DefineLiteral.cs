@@ -9,13 +9,16 @@ namespace Ergo.Interpreter.Directives
     public class DefineLiteral : InterpreterDirective
     {
         public DefineLiteral()
-            : base("", new("lit"), Maybe.Some(2))
+            : base("", new("lit"), Maybe.Some(2), 20)
         {
         }
 
         public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
         {
-            var allLiterals = scope.Modules.Values.SelectMany(x => x.Literals)
+            var module = scope.Modules[scope.CurrentModule];
+            var allLiterals = scope.Modules.Values
+                .Where(x => module.Imports.Contents.Contains(x.Name))
+                .SelectMany(x => x.Literals)
                 .ToLookup(l => l.Key);
 
             if (!args[0].Matches<string>(out var literalName))
@@ -30,7 +33,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.LiteralClash, args[0].Explain());
             }
-            if(CircularDef(args[0], args[1]))
+            if(DefinedCircularly(args[0], args[1]))
             {
                 throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain(), args[1].Explain());
             }
@@ -38,12 +41,12 @@ namespace Ergo.Interpreter.Directives
                 .WithLiteral(new(new(literalName), args[1])));
             return true;
 
-            bool CircularDef(ITerm start, ITerm t)
+            bool DefinedCircularly(ITerm start, ITerm t)
             {
                 if (start.Equals(t)) return true;
                 if (t is not Atom a) return false;
                 foreach (var l in allLiterals[a])
-                    if (CircularDef(start, l.Value.Value)) return true;
+                    if (DefinedCircularly(start, l.Value.Value)) return true;
                 return false;
             }
         }

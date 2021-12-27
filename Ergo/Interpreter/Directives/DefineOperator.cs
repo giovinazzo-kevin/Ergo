@@ -15,7 +15,7 @@ namespace Ergo.Interpreter.Directives
         }
 
         public DefineOperator()
-            : base("", new("op"), Maybe.Some(3))
+            : base("", new("op"), Maybe.Some(3), 10)
         {
         }
 

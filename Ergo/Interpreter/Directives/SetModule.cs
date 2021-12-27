@@ -9,7 +9,7 @@ namespace Ergo.Interpreter.Directives
     public class SetModule : InterpreterDirective
     {
         public SetModule()
-            : base("", new("module"), Maybe.Some(1))
+            : base("", new("module"), Maybe.Some(1), 0)
         {
         }
 
@@ -18,6 +18,10 @@ namespace Ergo.Interpreter.Directives
             if (args[0] is not Atom moduleName)
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
+            }
+            if(!scope.Runtime)
+            {
+                return new DefineModule().Execute(interpreter, ref scope, args[0], Literals.EmptyList);
             }
             var module = interpreter.EnsureModule(ref scope, moduleName);
             scope = scope

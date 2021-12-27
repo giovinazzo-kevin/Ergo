@@ -75,9 +75,17 @@ namespace Ergo.Interpreter
                 MaybeClose();
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
-            foreach (var d in program.Directives)
+
+            var directives = program.Directives.Select(d =>
             {
-                RunDirective(ref scope, d);
+                if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
+                    return (Ast: d, Builtin: directive);
+                throw new NotSupportedException();
+            });
+
+            foreach (var d in directives.OrderBy(x => x.Builtin.Priority))
+            {
+                d.Builtin.Execute(this, ref scope, ((Complex)d.Ast.Body).Arguments);
             }
             foreach (var import in scope.Modules[scope.CurrentModule].Imports.Contents)
             {

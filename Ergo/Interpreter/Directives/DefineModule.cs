@@ -12,7 +12,7 @@ namespace Ergo.Interpreter.Directives
     public class DefineModule : InterpreterDirective
     {
         public DefineModule()
-            : base("", new("module"), Maybe.Some(2))
+            : base("", new("module"), Maybe.Some(2), 0)
         {
         }
         public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)

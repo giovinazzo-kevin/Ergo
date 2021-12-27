@@ -1,4 +1,6 @@
 ﻿:- module(test, [
-
 ]).
+:- lit('π', 3).
+
+:- use_module(math).
 

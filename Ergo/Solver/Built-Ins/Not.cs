@@ -21,7 +21,7 @@ namespace Ergo.Solver.BuiltIns
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Boolean, arg.Explain());
             }
-            return new(new Lang.Ast.Atom(!eval));
+            return new(new Atom(!eval));
         }
     }
 }

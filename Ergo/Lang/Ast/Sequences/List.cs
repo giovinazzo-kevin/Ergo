@@ -13,7 +13,7 @@ namespace Ergo.Lang.Ast
         public static readonly Atom CanonicalFunctor = new("[|]");
         public static readonly Atom EmptyLiteral = new("[]");
 
-        public static readonly List Empty = new(ImmutableArray.Create<ITerm>());
+        public static readonly List Empty = new(ImmutableArray<ITerm>.Empty);
 
         public ITerm Root { get; }
         public Atom Functor { get; }

@@ -28,23 +28,45 @@
 :- op(30, fx, ['¬', '\\+']).
 
 % OPERATOR IMPLEMENTATIONS
-'∨'(A, _) :- A.
-'∨'(_, B) :- B.
+%: Logical disjunction of A and B.
+'∨'(A, _B) :- A.
+%: Logical disjunction of A and B.
+'∨'(_A, B) :- B.
+%: Logical complement of A (negation).
+%: ⊤ iff A cannot be proven.
 '¬'(A) :- @unprovable(A), !.
+%: Assignment of A to the arithmetic evaluation of B.
 ':='(A, B) :- @eval(A, B).
+%: Equivalence of the arithmetic evaluations of A and B.
 '=:='(A, B) :- @eval(A) == @eval(B).
+%: Inequivalence of the arithmetic evaluations of A and B.
 '=\\='(A, B) :- @eval(A) \== @eval(B).
+%: Unification of A and B.
 '='(A, B) :- @unify(A, B).
+%: Negation of the unification of A and B.
 '≠'(A, B) :- \+(A = B).
+%: Arithmetic comparison (gt).
 '>'(A, B)  :- @evalcmp(A > B).
+%: Arithmetic comparison (lt).
 '<'(A, B)  :- @evalcmp(A < B).
+%: Arithmetic comparison (gte).
 '≥'(A, B) :- @evalcmp(A >= B).
+%: Arithmetic comparison (lte).
 '≤'(A, B) :- @evalcmp(A <= B).
+%: Arithmetic comparison (eq).
 '≡'(A, B) :- @compare(0, A, B).
+%: Arithmetic comparison (neq).
 '≢'(A, B) :- @not(@compare(0, A, B)).
-'#<'(A, B)  :- @compare(X, A, B), X  < 0.
-'#≤'(A, B) :- @compare(X, A, B), X <= 0.
+%: Term comparison (gt).
 '#>'(A, B)  :- @compare(X, A, B), X  > 0.
+%: Term comparison (lt).
+'#<'(A, B)  :- @compare(X, A, B), X  < 0.
+%: Term comparison (gte).
 '#≥'(A, B) :- @compare(X, A, B), X >= 0.
-'?='(A,B) :- \+@unifiable(A,B,[_|_]).
-'/'(A, B) :- @anon(A, B).
+%: Term comparison (lte).
+'#≤'(A, B) :- @compare(X, A, B), X <= 0.
+%: Synctactic equality of A and B.
+%: ⊤ iff the result of A == B will not change due to further instantiation of either term.
+'?='(A,B) :- \+@unifiable(A,B,[_H|_T]).
+%: Anonymous type declaration.
+'/'(Functor, Arity) :- @anon(Functor, Arity).

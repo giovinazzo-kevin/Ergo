@@ -39,7 +39,7 @@ namespace Ergo.Interpreter.Directives
             }
             else
             {
-                module = new Module(moduleName, List.Empty, exports, ImmutableArray.Create<Operator>(), ErgoProgram.Empty(moduleName), runtime: scope.Runtime)
+                module = new Module(moduleName, List.Empty, exports, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(moduleName), runtime: scope.Runtime)
                     .WithImport(Modules.Prologue);
             }
             scope = scope

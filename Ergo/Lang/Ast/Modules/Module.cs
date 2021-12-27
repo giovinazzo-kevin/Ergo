@@ -12,15 +12,17 @@ namespace Ergo.Lang.Ast
         public readonly List Exports;
         public readonly List Imports;
         public readonly ImmutableArray<Operator> Operators;
+        public readonly ImmutableDictionary<Atom, Literal> Literals;
         public readonly ErgoProgram Program;
         public readonly bool Runtime;
 
-        public Module(Atom name, List import, List export, ImmutableArray<Operator> operators, ErgoProgram program, bool runtime = false)
+        public Module(Atom name, List import, List export, ImmutableArray<Operator> operators, ImmutableDictionary<Atom, Literal> literals, ErgoProgram program, bool runtime = false)
         {
             Name = name;
             Imports = import;
             Exports = export;
             Operators = operators;
+            Literals = literals;
             Program = program;
             Runtime = runtime;
         }
@@ -31,11 +33,13 @@ namespace Ergo.Lang.Ast
             return expl;
         }
 
-        public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Program, Runtime);
-        public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Program, Runtime);
-        public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Program, Runtime);
-        public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Program, Runtime);
-        public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, p, Runtime);
+        public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Literals, Program, Runtime);
+        public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Literals, Program, Runtime);
+        public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Literals, Program, Runtime);
+        public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Literals, Program, Runtime);
+        public Module WithLiterals(ImmutableDictionary<Atom, Literal> literals) => new(Name, Imports, Exports, Operators, literals, Program, Runtime);
+        public Module WithLiteral(Literal literal) => new(Name, Imports, Exports, Operators, Literals.Add(literal.Key, literal), Program, Runtime);
+        public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Literals, p, Runtime);
 
         public bool ContainsExport(Signature sig)
         {

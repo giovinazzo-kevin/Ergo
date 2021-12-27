@@ -31,7 +31,7 @@ namespace Ergo.Interpreter.Directives
             }
             if (!args[2].Matches<string[]>(out var synonyms))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[2].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.List, args[2].Explain());
             }
             if(Operators.DefinedOperators.Any(o => o.Synonyms.Select(x => x.Explain()).Intersect(synonyms).Any()))
             {

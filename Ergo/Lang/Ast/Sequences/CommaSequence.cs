@@ -38,7 +38,7 @@ namespace Ergo.Lang.Ast
             }
             if (t is Complex c && Operators.BinaryConjunction.Synonyms.Contains(c.Functor))
             {
-                var args = ImmutableArray.Create<ITerm>().Add(c.Arguments[0]);
+                var args = ImmutableArray<ITerm>.Empty.Add(c.Arguments[0]);
                 if (c.Arguments.Length == 1)
                 {
                     expr = new CommaSequence(args);

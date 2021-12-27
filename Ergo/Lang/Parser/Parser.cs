@@ -181,7 +181,7 @@ namespace Ergo.Lang
             )) {
                 if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
                     && Operators.BinaryList.Synonyms.Contains(cplx.Functor)) {
-                    var arguments = ImmutableArray.Create<ITerm>().Add(cplx.Arguments[0]);
+                    var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
                     if(CommaSequence.TryUnfold(cplx.Arguments[0], out var comma)) {
                         arguments = comma.Contents;
                     }
@@ -405,7 +405,7 @@ namespace Ergo.Lang
                 return Fail(pos);
             if (!TryParseExpression(out var op)) {
                 if (TryParseTerm(out var head, out _) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
-                    return MakePredicate(pos, desc, head, new(ImmutableArray.Create<ITerm>().Add(Literals.True)), out predicate);
+                    return MakePredicate(pos, desc, head, new(ImmutableArray<ITerm>.Empty.Add(Literals.True)), out predicate);
                 }
                 Throw(pos, ErrorType.ExpectedClauseList);
             }
@@ -417,7 +417,7 @@ namespace Ergo.Lang
             }
             var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
             if (!CommaSequence.TryUnfold(rhs, out var expr)) {
-                expr = new(ImmutableArray.Create<ITerm>().Add(rhs));
+                expr = new(ImmutableArray<ITerm>.Empty.Add(rhs));
             }
             return MakePredicate(pos, desc, op.Left, expr, out predicate);
 

@@ -12,7 +12,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            return new(new Atom(Eval(arguments[0])));
+            return new(new Atom(Eval(solver, scope, arguments[0])));
         }
     }
 }

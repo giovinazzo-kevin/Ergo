@@ -28,7 +28,7 @@ namespace Ergo.Solver.BuiltIns
                 }
                 return new(Literals.False);
             }
-            return new(Literals.True, new Substitution(arguments[0], new Lang.Ast.Atom(cmp)));
+            return new(Literals.True, new Substitution(arguments[0], new Atom(cmp)));
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Ergo.Solver.BuiltIns
 
         public abstract Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);
 
-        public BuiltIn(string documentation, Lang.Ast.Atom functor, Maybe<int> arity)
+        public BuiltIn(string documentation, Atom functor, Maybe<int> arity)
         {
             Signature = new(functor, arity);
             Documentation = documentation;

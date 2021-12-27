@@ -10,9 +10,9 @@ namespace Ergo.Lang.Extensions
 {
     public static class LanguageExtensions
     {
-        public static T Reduce<T>(this ITerm t, Func<Ast.Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
+        public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
         {
-            if (t is Ast.Atom a) return ifAtom(a);
+            if (t is Atom a) return ifAtom(a);
             if (t is Variable v) return ifVariable(v);
             if (t is Complex c) return ifComplex(c);
             throw new NotSupportedException(t.GetType().Name);
@@ -33,7 +33,7 @@ namespace Ergo.Lang.Extensions
         public static Signature GetSignature(this ITerm term)
         {
             return new Signature(
-                term.Reduce(a => a, v => new Ast.Atom(v.Name), c => c.Functor),
+                term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
                 Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity))
             );
         }

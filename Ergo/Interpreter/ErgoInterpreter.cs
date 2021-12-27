@@ -30,9 +30,9 @@ namespace Ergo.Interpreter
 
         public InterpreterScope CreateScope()
         {
-            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, List.Empty, List.Empty, ImmutableArray.Create<Operator>(), ErgoProgram.Empty(Modules.Prologue), runtime: true));
+            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(Modules.Prologue), runtime: true));
             var prologue = Load(ref prologueScope, Modules.Prologue.Explain());
-            return new InterpreterScope(new Module(Modules.User, List.Empty, List.Empty, ImmutableArray.Create<Operator>(), ErgoProgram.Empty(Modules.User), runtime: true)
+            return new InterpreterScope(new Module(Modules.User, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(Modules.User), runtime: true)
                     .WithImport(Modules.Prologue))
                 .WithModule(prologue);
         }
@@ -81,7 +81,7 @@ namespace Ergo.Interpreter
             }
             foreach (var import in scope.Modules[scope.CurrentModule].Imports.Contents)
             {
-                if (!scope.Modules.ContainsKey((Lang.Ast.Atom)import))
+                if (!scope.Modules.ContainsKey((Atom)import))
                 {
                     var importScope = scope;
                     scope = scope.WithModule(Load(ref importScope, import.Explain()));
@@ -103,7 +103,7 @@ namespace Ergo.Interpreter
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
             var currentModule = scope.Modules[scope.CurrentModule].WithProgram(program);
-            foreach (Lang.Ast.Atom import in currentModule.Imports.Contents)
+            foreach (Atom import in currentModule.Imports.Contents)
             {
                 var importScope = scope.WithCurrentModule(import);
                 if (!scope.Modules.ContainsKey(import))
@@ -128,7 +128,7 @@ namespace Ergo.Interpreter
             }
         }
 
-        public Module EnsureModule(ref InterpreterScope scope, Lang.Ast.Atom name)
+        public Module EnsureModule(ref InterpreterScope scope, Atom name)
         {
             if(!scope.Modules.TryGetValue(name, out var module))
             {
@@ -139,7 +139,7 @@ namespace Ergo.Interpreter
                 }
                 catch(FileNotFoundException)
                 {
-                    scope = scope.WithModule(module = new Module(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ErgoProgram.Empty(name), runtime: true)
+                    scope = scope.WithModule(module = new Module(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(name), runtime: true)
                         .WithImport(Modules.Prologue));
                 }
             }
@@ -151,7 +151,7 @@ namespace Ergo.Interpreter
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
             if (head is Complex c
-                && (new Lang.Ast.Atom[] { new("/"), new("@anon") }).Contains(c.Functor)
+                && (new Atom[] { new("/"), new("@anon") }).Contains(c.Functor)
                 && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 head = new Complex(new(match.Predicate), Enumerable.Range(0, match.Arity)

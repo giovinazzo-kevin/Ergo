@@ -23,7 +23,7 @@ namespace Ergo.Lang
             .ToArray();
 
         public static readonly string[] PunctuationSymbols = new string[] {
-            "(", ")", "[", "]", "{", "}", "///", ",", "."
+            "(", ")", "[", "]", "{", "}", ",", "."
         };
 
         public readonly string[] OperatorSymbols;

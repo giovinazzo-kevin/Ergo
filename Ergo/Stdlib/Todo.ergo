@@ -12,7 +12,7 @@ todo('Shell Commands', X) :- member(X, ['Print operators']).
 todo('Global', X) :- member(X, ['Constraints/Attributed vars', 'Coroutining', 'Foreach/Forall', 'Try/Catch', 'Regex', 'Basic typesystem', 'Proper strings']).
 todo('C#', X) :- member(X, ['Generators', 'CLR Attributes']).
 todo('Interpreter', X) :- member(X, ['Virtualized stack', 'Recursion optimization', 'Lambdas']).
-todo('Directives', X) :- member(X, ['Define literals (like PI)']).
+todo('Directives', X) :- member(X, []).
 todo('Modules', X) :- member(X, []).
 todo('Parser', X) :- member(X, []).
 todo('Lexer', X) :- member(X, ['Fix quoting']).

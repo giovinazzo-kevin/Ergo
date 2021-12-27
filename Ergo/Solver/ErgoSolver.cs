@@ -31,19 +31,19 @@ namespace Ergo.Solver
             KnowledgeBase = new();
             BuiltIns = new();
             AddBuiltInsByReflection();
-            var added = new HashSet<Lang.Ast.Atom>();
+            var added = new HashSet<Atom>();
             LoadModule(scope.Modules[scope.CurrentModule], added);
             foreach (var module in scope.Modules.Values)
             {
                 LoadModule(module, added);
             }
             InterpreterScope = scope;
-            void LoadModule(Module module, HashSet<Lang.Ast.Atom> added)
+            void LoadModule(Module module, HashSet<Atom> added)
             {
                 if (added.Contains(module.Name))
                     return;
                 added.Add(module.Name);
-                foreach (var subModule in module.Imports.Contents.Select(c => (Lang.Ast.Atom)c))
+                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
                 {
                     if (added.Contains(subModule))
                         continue;
@@ -84,17 +84,18 @@ namespace Ergo.Solver
         }
 
 
-        private ITerm ResolveBuiltin(SolverScope scope, ITerm term, List<Substitution> subs, int depth, out Signature sig)
+        public ITerm ResolveBuiltin(ITerm term, SolverScope scope, out Signature sig, List<Substitution> subs = null)
         {
+            subs ??= new();
             sig = term.GetSignature();
             if (term is Complex c)
             {
-                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(scope, a, subs, depth, out _)).ToArray());
+                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, scope, out _, subs)).ToArray());
             }
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
                 var eval = builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments));
-                LogTrace(SolverTraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", depth);
+                LogTrace(SolverTraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
                 term = eval.Result;
                 subs.AddRange(eval.Substitutions);
                 var newSig = term.GetSignature();
@@ -116,36 +117,40 @@ namespace Ergo.Solver
             Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
         }
 
-        protected IEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, int depth = 0)
+        protected IEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null)
         {
             subs ??= new List<Substitution>();
             // Treat comma-expression complex ITerms as proper expressions
             if (CommaSequence.TryUnfold(goal, out var expr)) {
-                foreach (var s in Solve(scope, expr, subs, depth)) {
+                foreach (var s in Solve(scope, expr, subs)) {
                     yield return s;
                 }
                 yield break;
             }
             // Transform builtins into the literal they evaluate to
-            goal = ResolveBuiltin(scope, goal, subs, depth, out var signature);
+            if(InterpreterScope.TryReplaceLiterals(goal, out var goal_))
+            {
+                goal = goal_;
+            }
+            goal = ResolveBuiltin(goal, scope, out var signature, subs);
             if (goal.Equals(Literals.False) || goal is Variable) {
-                LogTrace(SolverTraceType.Retn, "⊥", depth);
+                LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
                 yield break;
             }
             if (goal.Equals(Literals.True)) {
-                LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", depth);
+                LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join(" ∨ ", subs.Select(s => s.Explain()))}}}", scope.Depth);
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
             var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[scope.Module], goal);
-            LogTrace(SolverTraceType.Call, qualifiedGoal, depth);
+            LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
             foreach (var m in matches) {
-                var innerScope = new SolverScope(m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
+                var innerScope = new SolverScope(scope.Depth + 1, m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
                 var recursiveCall = innerScope.Callee.Reduce(a => innerScope.Caller.Reduce(b =>
                         Predicate.Signature(a.Head) == Predicate.Signature(b.Head), () => false), () => false);
-                var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions), depth + 1);
+                var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions));
                 foreach (var s in solve) {
-                    LogTrace(SolverTraceType.Exit, m.Rhs.Head, depth);
+                    LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
                     yield return s;
                 }
                 if (Cut.Value) {
@@ -172,7 +177,7 @@ namespace Ergo.Solver
             }
         }
 
-        protected IEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null, int depth = 0)
+        protected IEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null)
         {
             subs ??= new List<Substitution>();
             if (query.IsEmpty) {
@@ -183,12 +188,12 @@ namespace Ergo.Solver
             var subGoal = goals.First();
             goals = goals.RemoveAt(0);
             // Get first solution for the current subgoal
-            foreach (var s in Solve(scope, subGoal, subs, depth)) {
+            foreach (var s in Solve(scope, subGoal, subs)) {
                 if(Cut.Value) {
                     yield break;
                 }
                 var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
-                foreach (var ss in Solve(scope, rest, subs, depth)) {
+                foreach (var ss in Solve(scope, rest, subs)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
                 if(subGoal.Equals(Literals.Cut)) {
@@ -201,7 +206,7 @@ namespace Ergo.Solver
         public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default)
         {
             Cut.Value = false;
-            return Solve(scope.Reduce(some => some, () => new SolverScope(InterpreterScope.CurrentModule, default, default)), goal.Goals);
+            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.CurrentModule, default, default)), goal.Goals);
         }
     }
 }

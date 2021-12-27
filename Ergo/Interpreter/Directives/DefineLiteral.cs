@@ -2,6 +2,7 @@
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
+using System.Linq;
 
 namespace Ergo.Interpreter.Directives
 {
@@ -17,6 +18,14 @@ namespace Ergo.Interpreter.Directives
             if (!args[0].Matches<string>(out var literalName))
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
+            }
+            if (Literals.DefinedLiterals.Any(l => l.Equals(args[0])))
+            {
+                throw new InterpreterException(InterpreterError.LiteralClashWithBuiltIn, args[0].Explain());
+            }
+            if (scope.Modules[scope.CurrentModule].Literals.Any(l => l.Key.Equals(args[0])))
+            {
+                throw new InterpreterException(InterpreterError.LiteralClash, args[0].Explain());
             }
             scope = scope.WithModule(scope.Modules[scope.CurrentModule]
                 .WithLiteral(new(new(literalName), args[1])));

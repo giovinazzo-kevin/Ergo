@@ -51,8 +51,10 @@ namespace Ergo.Lang.Utils
                 , InterpreterError.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
                 , InterpreterError.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
                 , InterpreterError.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
-                , InterpreterError.ModuleNameClash => String.Format("Module {0} can't be re-declared because it is not a runtime module", args)
-                , InterpreterError.OperatorClash => String.Format("Operator {0} can't be re-declared because it would shadow a built-in operator", args)
+                , InterpreterError.ModuleNameClash => String.Format("Module {0} can't be declared because it would shadow a static module", args)
+                , InterpreterError.LiteralClashWithBuiltIn => String.Format("Literal {0} can't be declared because it would shadow a built-in literal", args)
+                , InterpreterError.LiteralClash => String.Format("Literal {0} was already declared in this module", args)
+                , InterpreterError.OperatorClash => String.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
                 , _ => error.ToString()
             };
 

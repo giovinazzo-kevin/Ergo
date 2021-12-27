@@ -8,5 +8,10 @@
         public static readonly ITerm Cut = new Atom("!");
         public static readonly ITerm EmptyList = List.EmptyLiteral;
         public static readonly ITerm EmptyCommaExpression = CommaSequence.EmptyLiteral;
+
+        public static readonly ITerm[] DefinedLiterals = new[]
+        {
+            Discard, True, False, Cut, EmptyList, EmptyCommaExpression
+        };
     }
 }

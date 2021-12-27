@@ -10,7 +10,8 @@
         , ExpectedTermWithArity
         , ModuleNameClash
         , OperatorClash
-        , AmbiguousLiteral
+        , LiteralClashWithBuiltIn
+        , LiteralClash
         , ModuleRedefinition
         , UndefinedPredicate
     }

@@ -128,7 +128,7 @@ namespace Ergo.Solver
                 yield break;
             }
             // Transform builtins into the literal they evaluate to
-            if(InterpreterScope.TryReplaceLiterals(goal, out var goal_))
+            while(InterpreterScope.TryReplaceLiterals(goal, out var goal_))
             {
                 goal = goal_;
             }

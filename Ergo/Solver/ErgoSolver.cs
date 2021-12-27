@@ -146,8 +146,6 @@ namespace Ergo.Solver
             LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
             foreach (var m in matches) {
                 var innerScope = new SolverScope(scope.Depth + 1, m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
-                var recursiveCall = innerScope.Callee.Reduce(a => innerScope.Caller.Reduce(b =>
-                        Predicate.Signature(a.Head) == Predicate.Signature(b.Head), () => false), () => false);
                 var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions));
                 foreach (var s in solve) {
                     LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
@@ -164,14 +162,16 @@ namespace Ergo.Solver
                 {
                     return (goal, matches);
                 }
-                var qualifiedGoal = goal.Qualify(scope.Name);
-                if (KnowledgeBase.TryGetMatches(qualifiedGoal, out matches))
+                if(!goal.IsQualified && goal.TryQualify(scope.Name, out goal))
                 {
-                    return (qualifiedGoal, matches);
+                    if (KnowledgeBase.TryGetMatches(goal, out matches))
+                    {
+                        return (goal, matches);
+                    }
                 }
                 if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                 {
-                    throw new InterpreterException(InterpreterError.UnknownPredicate, qualifiedGoal.GetSignature().Explain());
+                    throw new InterpreterException(InterpreterError.UnknownPredicate, goal.GetSignature().Explain());
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }

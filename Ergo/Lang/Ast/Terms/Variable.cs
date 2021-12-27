@@ -9,6 +9,7 @@ namespace Ergo.Lang.Ast
     public readonly struct Variable : ITerm
     {
         public bool IsGround => false;
+        public bool IsQualified => false;
 
         public readonly string Name;
         public readonly bool Ignored;
@@ -45,10 +46,10 @@ namespace Ergo.Lang.Ast
             return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
         }
 
-        public ITerm Qualify(Atom m)
-        {
-            return new Variable($"{m.Explain()}:{Explain()}");
-        }
+        //public ITerm Qualify(Atom m)
+        //{
+        //    return new Variable($"{m.Explain()}:{Explain()}");
+        //}
 
         public override bool Equals(object obj)
         {

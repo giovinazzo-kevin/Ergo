@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast;
+using Ergo.Lang.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Ergo.Lang
             Context = new("K");
         }
 
-        private List<Predicate> GetOrCreate(string key, bool append=false)
+        private List<Predicate> GetOrCreate(Signature key, bool append=false)
         {
             if (!Predicates.Contains(key)) {
                 if(append) {
@@ -34,7 +35,7 @@ namespace Ergo.Lang
             return (List<Predicate>)Predicates[key];
         }
 
-        public bool TryGet(string key, out List<Predicate> predicates)
+        public bool TryGet(Signature key, out List<Predicate> predicates)
         {
             predicates = default;
             if (Predicates.Contains(key)) {
@@ -48,37 +49,49 @@ namespace Ergo.Lang
         {
             var lst = new List<Match>();
             matches = lst;
+
+            var module = Maybe<Atom>.None;
+            if(goal.TryGetQualification(out var qm, out var qs))
+            {
+                module = Maybe.Some(qm);
+                goal = qs;
+            }
+
             // Instantiate goal
             if(!new Substitution(goal.Instantiate(Context), goal).TryUnify(out var subs)) {
                 return false;
             }
             var head = goal.Substitute(subs);
-            if (TryGet(Predicate.Signature(head), out var list)) {
+            if (TryGet(head.GetSignature(), out var list)) {
                 foreach (var k in list) {
                     var ks = k.Instantiate(Context);
-                    if (Predicate.TryUnify(head, ks, out var matchSubs)) {
-                        ks = Predicate.Substitute(ks, matchSubs);
-                        lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
+                    if(module.Reduce(some => ks.DeclaringModule.Equals(some), () => true))
+                    {
+                        if (Predicate.TryUnify(head, ks, out var matchSubs))
+                        {
+                            ks = Predicate.Substitute(ks, matchSubs);
+                            lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
+                        }
                     }
                 }
-                return true;
+                return lst.Any();
             }
             return false;
         }
 
         public void AssertA(Predicate k)
         {
-            GetOrCreate(Predicate.Signature(k.Head), append: false).Insert(0, k);
+            GetOrCreate(k.Head.GetSignature(), append: false).Insert(0, k);
         }
 
         public void AssertZ(Predicate k)
         {
-            GetOrCreate(Predicate.Signature(k.Head), append: true).Add(k);
+            GetOrCreate(k.Head.GetSignature(), append: true).Add(k);
         }
 
         public bool RetractOne(ITerm head)
         {
-            if (TryGet(Predicate.Signature(head), out var matches)) {
+            if (TryGet(head.GetSignature(), out var matches)) {
                 for (int i = matches.Count - 1; i >= 0; i--) {
                     var predicate = matches[i];
                     if (Predicate.TryUnify(head, predicate, out _)) {
@@ -93,7 +106,7 @@ namespace Ergo.Lang
         public int RetractAll(ITerm head)
         {
             var retracted = 0;
-            if (TryGet(Predicate.Signature(head), out var matches)) {
+            if (TryGet(head.GetSignature(), out var matches)) {
                 for (int i = matches.Count - 1; i >= 0; i--) {
                     var predicate = matches[i];
                     if (Predicate.TryUnify(head, predicate, out _)) {

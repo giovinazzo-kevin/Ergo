@@ -430,7 +430,7 @@ namespace Ergo.Lang
                 var singletons = headVars.Where(v => !v.Ignored && !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1)
                     .Select(v => v.Explain());
                 if (singletons.Any()) {
-                    Throw(pos, ErrorType.PredicateHasSingletonVariables, Predicate.Signature(head), String.Join(", ", singletons));
+                    Throw(pos, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), String.Join(", ", singletons));
                 }
                 c = new Predicate(
                     desc

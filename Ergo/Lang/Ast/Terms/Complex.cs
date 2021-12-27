@@ -10,6 +10,7 @@ namespace Ergo.Lang.Ast
     public readonly partial struct Complex : ITerm
     {
         public bool IsGround => Arguments.All(arg => arg.IsGround);
+        public readonly bool IsQualified { get; }
 
         public readonly Atom Functor;
         public readonly ITerm[] Arguments;
@@ -25,7 +26,9 @@ namespace Ergo.Lang.Ast
             Functor = functor;
             Arguments = args;
             HashCode = System.HashCode.Combine(Functor, Arguments.Length);
+            IsQualified = args.Length == 2 && ":".Equals(functor.Value);
         }
+
         public string Explain()
         {
             if (CommaSequence.TryUnfold(this, out var comma)) {
@@ -110,10 +113,10 @@ namespace Ergo.Lang.Ast
             return new Complex(Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
         }
 
-        public ITerm Qualify(Atom m)
-        {
-            return new Complex(new Atom($"{m.Explain()}:{Functor.Explain()}"), Arguments);
-        }
+        //public ITerm Qualify(Atom m)
+        //{
+        //    return new Complex(new Atom($"{m.Explain()}:{Functor.Explain()}"), Arguments);
+        //}
 
         public static bool operator ==(Complex left, Complex right)
         {

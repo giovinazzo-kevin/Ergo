@@ -31,13 +31,6 @@ namespace Ergo.Lang.Ast
 
         public static int Arity(ITerm head) => head.Reduce(a => 0, v => 0, c => c.Arity);
 
-        public static string Signature(ITerm head) => head.Reduce(
-            a => $"{a.Explain()}/0",
-            v => $"{v.Explain()}/0",
-            c => $"{c.Functor.Explain()}/{c.Arity}"
-
-        );
-        
         public Predicate(string desc, Atom module, ITerm head, CommaSequence body)
         {
             Documentation = desc;
@@ -66,13 +59,22 @@ namespace Ergo.Lang.Ast
 
         public Predicate Qualified()
         {
-            return new(Documentation, DeclaringModule, Head.Qualify(DeclaringModule), Body);
+            if (Head.IsQualified || !Head.TryQualify(DeclaringModule, out var head))
+                return this;
+            return new(Documentation, DeclaringModule, head, Body);
         }
 
         public static bool TryUnify(ITerm head, Predicate predicate, out IEnumerable<Substitution> substitutions)
         {
             var S = new List<Substitution>();
-            if (new Substitution(head, predicate.Head).TryUnify(out var subs)) {
+            if(predicate.Head.TryGetQualification(out _, out var qv)
+            && new Substitution(head, qv).TryUnify(out var subs))
+            {
+                S.AddRange(subs);
+                substitutions = S;
+                return true;
+            }
+            if (new Substitution(head, predicate.Head).TryUnify(out subs)) {
                 S.AddRange(subs);
                 substitutions = S;
                 return true;

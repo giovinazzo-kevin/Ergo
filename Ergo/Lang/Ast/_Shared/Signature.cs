@@ -8,13 +8,15 @@ namespace Ergo.Lang.Ast
     [DebuggerDisplay("{ Explain() }")]
     public readonly struct Signature
     {
+        public readonly Maybe<Atom> Module;
         public readonly Atom Functor;
         public readonly Maybe<int> Arity;
 
-        public Signature(Atom a, Maybe<int> arity) => (Functor, Arity) = (a, arity);
-        public Signature WithArity(Maybe<int> arity) => new(Functor, arity);
+        public Signature(Atom a, Maybe<int> arity, Maybe<Atom> module) => (Functor, Arity, Module) = (a, arity, module);
+        public Signature WithArity(Maybe<int> arity) => new(Functor, arity, Module);
+        public Signature WithModule(Maybe<Atom> module) => new(Functor, Arity, module);
 
-        public string Explain() => $"{Functor.Explain()}/{Arity.Reduce(some => some.ToString(), () => "*")}";
+        public string Explain() => $"{Module.Reduce(some => $"{some.Explain()}:", () => "")}{Functor.Explain()}/{Arity.Reduce(some => some.ToString(), () => "*")}";
 
         public override bool Equals(object obj)
         {

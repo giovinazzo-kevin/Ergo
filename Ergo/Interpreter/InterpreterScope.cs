@@ -90,6 +90,8 @@ namespace Ergo.Interpreter
             changed = default;
             if (term is Variable) 
                 return false;
+            if (term.IsQualified && term.TryGetQualification(out var qm, out var qv))
+                return TryReplaceLiterals(qv, out changed, Maybe.Some(qm));
             added ??= new();
             var currentModule = CurrentModule;
             var entryModule = entry.Reduce(some => some, () => currentModule);
@@ -98,10 +100,13 @@ namespace Ergo.Interpreter
                 return false;
             }
             added.Add(entryModule);
-            if(term is Atom a && module.Literals.TryGetValue(a, out var literal))
+            if(term is Atom a)
             {
-                changed = literal.Value;
-                return true;
+                if(module.Literals.TryGetValue(a, out var literal))
+                {
+                    changed = literal.Value;
+                    return true;
+                }
             }
             if(term is Complex c)
             {
@@ -122,7 +127,7 @@ namespace Ergo.Interpreter
                 changed = new Complex(c.Functor, args);
                 return any;
             }
-            foreach (var import in module.Imports.Contents)
+            foreach (var import in module.Imports.Contents.Reverse())
             {
                 if(TryReplaceLiterals(term, out changed, Maybe.Some((Atom)import), added))
                     return true;

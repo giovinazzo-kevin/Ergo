@@ -32,10 +32,21 @@ namespace Ergo.Lang.Extensions
 
         public static Signature GetSignature(this ITerm term)
         {
+            if(term.TryGetQualification(out var qm, out var qv))
+            {
+                var qs = qv.GetSignature();
+                return new Signature(
+                    qs.Functor,
+                    qs.Arity,
+                    Maybe.Some(qm)
+                );
+            }
             return new Signature(
                 term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
-                Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity))
+                Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity)),
+                Maybe<Atom>.None
             );
+
         }
 
     }

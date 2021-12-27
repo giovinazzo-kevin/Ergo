@@ -11,7 +11,7 @@ namespace Ergo.Interpreter.Directives
 
         public InterpreterDirective(string desc, Atom functor, Maybe<int> arity, int weight)
         {
-            Signature = new(functor, arity);
+            Signature = new(functor, arity, Maybe<Atom>.None);
             Description = desc;
             Priority = weight;
         }

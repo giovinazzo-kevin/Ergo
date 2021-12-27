@@ -167,6 +167,7 @@ namespace Ergo.Interpreter
                     .Select(i => (ITerm)new Variable($"{i}"))
                     .ToArray());
             }
+            // todo: module desugaring
             return new ErgoSolver(this, scope).KnowledgeBase.TryGetMatches(head, out matches);
         }
 

@@ -12,6 +12,7 @@ namespace Ergo.Lang.Ast
     public readonly struct Atom : ITerm
     {
         public bool IsGround => true;
+        public bool IsQualified => false;
 
         public readonly object Value;
         private readonly int HashCode;
@@ -109,10 +110,10 @@ namespace Ergo.Lang.Ast
             return this;
         }
 
-        public ITerm Qualify(Atom m)
-        {
-            return new Atom($"{m.Explain()}:{Explain()}");
-        }
+        //public ITerm Qualify(Atom m)
+        //{
+        //    return new Atom($"{m.Explain()}:{Explain()}");
+        //}
 
         public static bool operator ==(Atom left, Atom right)
         {

@@ -47,13 +47,13 @@ namespace Ergo.Shell.Commands
 
             if (!Explain)
             {
-                predicates = predicates.DistinctBy(p => Predicate.Signature(p.Head));
+                predicates = predicates.DistinctBy(p => p.Head.GetSignature());
             }
 
             var canonicals = predicates
                 .Select(r => Explain
-                    ? new[] { Predicate.Signature(r.Head), r.DeclaringModule.Explain(), r.Explain() }
-                    : new[] { Predicate.Signature(r.Head), r.DeclaringModule.Explain(), r.Documentation })
+                    ? new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(), r.Explain() }
+                    : new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(), r.Documentation })
                 .ToArray();
             if (canonicals.Length == 0)
             {

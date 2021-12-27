@@ -29,11 +29,11 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, "OperatorType", args[1].Explain());
             }
-            if (!args[2].Matches<string>(out var name))
+            if (!args[2].Matches<string[]>(out var synonyms))
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[2].Explain());
             }
-            if(Operators.DefinedOperators.Any(o => o.Synonyms.Contains((Atom)args[2])))
+            if(Operators.DefinedOperators.Any(o => o.Synonyms.Select(x => x.Explain()).Intersect(synonyms).Any()))
             {
                 throw new InterpreterException(InterpreterError.OperatorClash, args[2].Explain());
             }
@@ -48,7 +48,7 @@ namespace Ergo.Interpreter.Directives
             };
 
             scope = scope.WithModule(scope.Modules[scope.CurrentModule]
-                .WithOperator(new(affix, assoc, precedence, name)));
+                .WithOperator(new(affix, assoc, precedence, synonyms)));
             return true;
         }
     }

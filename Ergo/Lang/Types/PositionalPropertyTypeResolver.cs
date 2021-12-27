@@ -71,15 +71,30 @@ namespace Ergo.Lang
             }
             else
             {
-                var instance = Activator.CreateInstance(Type);
-                var args = ((Complex)t).Arguments;
-                for (int i = 0; i < Properties.Length; i++)
+                if(Type.IsArray && List.TryUnfold(t, out var list))
                 {
-                    var value = TermMarshall.FromTerm(args[i], Properties[i].PropertyType, TermMarshall.MarshallingMode.Positional);
-                    value = Convert.ChangeType(value, Properties[i].PropertyType);
-                    Properties[i].SetValue(instance, value);
+                    var elemType = Type.GetElementType();
+                    var instance = Array.CreateInstance(elemType, list.Contents.Length);
+                    for (int i = 0; i < list.Contents.Length; i++)
+                    {
+                        var value = TermMarshall.FromTerm(list.Contents[i], elemType, TermMarshall.MarshallingMode.Positional);
+                        value = Convert.ChangeType(value, elemType);
+                        instance.SetValue(value, i);
+                    }
+                    return instance;
                 }
-                return instance;
+                else
+                {
+                    var instance = Activator.CreateInstance(Type);
+                    var args = ((Complex)t).Arguments;
+                    for (int i = 0; i < Properties.Length; i++)
+                    {
+                        var value = TermMarshall.FromTerm(args[i], Properties[i].PropertyType, TermMarshall.MarshallingMode.Positional);
+                        value = Convert.ChangeType(value, Properties[i].PropertyType);
+                        Properties[i].SetValue(instance, value);
+                    }
+                    return instance;
+                }
             }
         }
 

@@ -8,7 +8,7 @@ namespace Ergo.Lang.Ast
         // Unary prefix operators always associate right-to-left and unary postfix operators always associate left-to-right.
         // To prevent cases where operands would be associated with two operators, or no operator at all,
         //   operators with the same precedence must have the same associativity. 
-        public static readonly Operator BinaryConjunction = new(OperatorAffix.Infix, OperatorAssociativity.Right, 20, ",");
+        public static readonly Operator BinaryConjunction = new(OperatorAffix.Infix, OperatorAssociativity.Right, 20, ",", "∧");
         public static readonly Operator BinaryList = new(OperatorAffix.Infix, OperatorAssociativity.Right, 15, "|");
         public static readonly Operator BinaryMultiplication = new(OperatorAffix.Infix, OperatorAssociativity.Left, 600, "*");
         public static readonly Operator BinaryDivision = new(OperatorAffix.Infix, OperatorAssociativity.Left, 600, "/");

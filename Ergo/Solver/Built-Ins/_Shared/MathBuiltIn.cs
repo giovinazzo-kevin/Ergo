@@ -15,7 +15,7 @@ namespace Ergo.Solver.BuiltIns
         }
         protected static double Eval(ITerm t)
         {
-            if(t is Lang.Ast.Atom a) { return a.Value is double d ? d : Throw(a); }
+            if(t is Atom a) { return a.Value is double d ? d : Throw(a); }
             if(t is not Complex c) { Throw(t); }
             return c.Functor switch {
                 var f when c.Arguments.Length == 2 && Operators.BinaryMod.Synonyms.Contains(f) 

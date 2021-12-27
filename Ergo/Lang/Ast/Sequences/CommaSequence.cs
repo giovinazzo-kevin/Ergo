@@ -72,7 +72,7 @@ namespace Ergo.Lang.Ast
             {
                 return EmptyElement.Explain();
             }
-            var joined = string.Join(", ", Contents.Select(t => t.Explain()));
+            var joined = string.Join(" ∧ ", Contents.Select(t => t.Explain()));
             if (Contents.Length != 1)
             {
                 return $"({joined})";

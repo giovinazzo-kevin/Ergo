@@ -19,9 +19,9 @@ namespace Ergo.Lang.Ast
         public static readonly Operator BinaryMod = new(OperatorAffix.Infix, OperatorAssociativity.Left, 300, "mod");
         public static readonly Operator BinaryUnification = new(OperatorAffix.Infix, OperatorAssociativity.None, 50, "=");
         public static readonly Operator BinaryComparisonGt = new(OperatorAffix.Infix, OperatorAssociativity.Right, 51, ">");
-        public static readonly Operator BinaryComparisonGte = new(OperatorAffix.Infix, OperatorAssociativity.Right, 51, ">=");
+        public static readonly Operator BinaryComparisonGte = new(OperatorAffix.Infix, OperatorAssociativity.Right, 51, "≥", ">=");
         public static readonly Operator BinaryComparisonLt = new(OperatorAffix.Infix, OperatorAssociativity.Left, 49, "<");
-        public static readonly Operator BinaryComparisonLte = new(OperatorAffix.Infix, OperatorAssociativity.Left, 49, "<=");
+        public static readonly Operator BinaryComparisonLte = new(OperatorAffix.Infix, OperatorAssociativity.Left, 49, "≤", "<=");
         public static readonly Operator UnaryHorn = new(OperatorAffix.Prefix, OperatorAssociativity.Right, 10, "←", ":-");
         public static readonly Operator BinaryHorn = new(OperatorAffix.Infix, OperatorAssociativity.None, 10, "←", ":-");
         public static readonly Operator UnaryNegative = new(OperatorAffix.Prefix, OperatorAssociativity.Right, 5, "-");

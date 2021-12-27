@@ -1,7 +1,5 @@
 ﻿:- module(todo, [
-	todo/2,
-	'!'/1,
-	'?'/1
+	todo/2
 ]).
 :- use_module(list).
 
@@ -9,6 +7,8 @@
 %: This is a documentation comment.
 % This is another single-line comment that isn't part of the documentation.
 %: TODO: List of work to be done.
+todo('Shell', X) :- member(X, ['']).
+todo('Shell Commands', X) :- member(X, ['Print operators']).
 todo('Global', X) :- member(X, ['Constraints/Attributed vars', 'Coroutining', 'Foreach/Forall', 'Try/Catch', 'Regex', 'Basic typesystem', 'Proper strings']).
 todo('C#', X) :- member(X, ['Generators', 'CLR Attributes']).
 todo('Interpreter', X) :- member(X, ['Virtualized stack', 'Recursion optimization', 'Lambdas']).

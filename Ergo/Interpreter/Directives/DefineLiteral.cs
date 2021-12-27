@@ -30,7 +30,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.LiteralClash, args[0].Explain());
             }
-            if(DefinedCircularly(args[0], args[1]))
+            if(CircularDef(args[0], args[1]))
             {
                 throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain(), args[1].Explain());
             }
@@ -38,12 +38,12 @@ namespace Ergo.Interpreter.Directives
                 .WithLiteral(new(new(literalName), args[1])));
             return true;
 
-            bool DefinedCircularly(ITerm start, ITerm t)
+            bool CircularDef(ITerm start, ITerm t)
             {
                 if (start.Equals(t)) return true;
                 if (t is not Atom a) return false;
                 foreach (var l in allLiterals[a])
-                    if (DefinedCircularly(start, l.Value.Value)) return true;
+                    if (CircularDef(start, l.Value.Value)) return true;
                 return false;
             }
         }

@@ -17,7 +17,7 @@ namespace Ergo.Lang.Ast
 
         public string Explain()
         {
-            if(Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { new Atom(true) })) {
+            if(Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { Literals.True })) {
                 return $"{Head.Explain()}.";
             }
 

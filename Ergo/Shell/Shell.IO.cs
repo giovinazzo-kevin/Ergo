@@ -54,62 +54,78 @@ namespace Ergo.Shell
             return ReadLine(until);
         }
 
-        protected virtual void WithColors(LogLevel lvl, Solver.SolverTraceType trc, Action action)
+        protected virtual void WithColors(LogLevel lvl, Solver.SolverTraceType trc, Action action, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
         {
             var oldFg = Console.ForegroundColor;
             var oldBg = Console.BackgroundColor;
-            switch(lvl) {
-                case LogLevel.Wrn:
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.BackgroundColor = ConsoleColor.White;
-                    break;
-                case LogLevel.Err:
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.BackgroundColor = ConsoleColor.White;
-                    break;
-                case LogLevel.Inf:
-                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                    Console.BackgroundColor = ConsoleColor.White;
-                    break;
-                case LogLevel.Cmt:
-                    Console.ForegroundColor = ConsoleColor.DarkGreen;
-                    Console.BackgroundColor = ConsoleColor.White;
-                    break;
-                case LogLevel.Dbg:
-                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                    Console.BackgroundColor = ConsoleColor.White;
-                    break;
-                case LogLevel.Trc:
-                    switch(trc)
-                    {
-                        case Solver.SolverTraceType.Call:
-                            Console.ForegroundColor = ConsoleColor.DarkGray;
-                            break;
-                        case Solver.SolverTraceType.Exit:
-                            Console.ForegroundColor = ConsoleColor.Gray;
-                            break;
-                        case Solver.SolverTraceType.Retn:
-                            Console.ForegroundColor = ConsoleColor.Magenta;
-                            break;
-                        case Solver.SolverTraceType.Resv:
-                            Console.ForegroundColor = ConsoleColor.DarkGreen;
-                            break;
-                        case Solver.SolverTraceType.Fail:
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            break;
-                        default:
-                            Console.ForegroundColor = ConsoleColor.DarkGray;
-                            break;
-                    }
-                    Console.BackgroundColor = ConsoleColor.White;
-                    break;
+            if(!overrideFg.HasValue || !overrideBg.HasValue)
+            {
+                switch (lvl)
+                {
+                    case LogLevel.Wrn:
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                    case LogLevel.Err:
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                    case LogLevel.Inf:
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                    case LogLevel.Ans:
+                        Console.ForegroundColor = ConsoleColor.DarkBlue;
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                    case LogLevel.Cmt:
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                    case LogLevel.Dbg:
+                        Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                    case LogLevel.Trc:
+                        switch (trc)
+                        {
+                            case Solver.SolverTraceType.Call:
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                break;
+                            case Solver.SolverTraceType.Exit:
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                                break;
+                            case Solver.SolverTraceType.Retn:
+                                Console.ForegroundColor = ConsoleColor.Magenta;
+                                break;
+                            case Solver.SolverTraceType.Resv:
+                                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                break;
+                            case Solver.SolverTraceType.Fail:
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                break;
+                            default:
+                                Console.ForegroundColor = ConsoleColor.DarkGray;
+                                break;
+                        }
+                        Console.BackgroundColor = ConsoleColor.White;
+                        break;
+                }
+            }
+            if (overrideFg is { } fg)
+            {
+                Console.ForegroundColor = fg;
+            }
+            if (overrideBg is { } bg)
+            {
+                Console.BackgroundColor = bg;
             }
             action();
             Console.ForegroundColor = oldFg;
             Console.BackgroundColor = oldBg;
         }
 
-        public virtual void Write(string str, LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call)
+        public virtual void Write(string str, LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
         {
             var now = DateTime.Now;
             var lines = str.Replace("\r", "").Split('\n').Select(l => new LogLine(l, lvl, now)).ToArray();
@@ -119,12 +135,12 @@ namespace Ergo.Shell
                     Console.WriteLine(LineFormatter(line));
                 }
                 Console.Write(LineFormatter(lines.Last())  );
-            });
+            }, overrideFg, overrideBg);
         }
 
-        public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call)
+        public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
         {
-            Write(str, lvl, trc);
+            Write(str, lvl, trc, overrideFg, overrideBg);
             Console.WriteLine();
         }
 
@@ -142,12 +158,12 @@ namespace Ergo.Shell
 
         public virtual void Yes()
         {
-            WriteLine("Yes.", LogLevel.Inf);
+            WriteLine("\u001b[1m⊤\u001b[0m", LogLevel.Ans);
         }
 
         public virtual void No()
         {
-            WriteLine("No.", LogLevel.Inf);
+            WriteLine("\u001b[1m⊥\u001b[0m", LogLevel.Ans, overrideFg: ConsoleColor.DarkRed);
         }
 
         public virtual void WriteTable([NotNull] string[] cols, [NotNull] string[][] rows, ConsoleColor accent = ConsoleColor.Black)

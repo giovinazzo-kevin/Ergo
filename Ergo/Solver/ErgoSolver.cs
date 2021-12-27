@@ -129,11 +129,11 @@ namespace Ergo.Solver
             // Transform builtins into the literal they evaluate to
             goal = ResolveBuiltin(scope, goal, subs, depth, out var signature);
             if (goal.Equals(Literals.False) || goal is Variable) {
-                LogTrace(SolverTraceType.Retn, "false", depth);
+                LogTrace(SolverTraceType.Retn, "⊥", depth);
                 yield break;
             }
             if (goal.Equals(Literals.True)) {
-                LogTrace(SolverTraceType.Retn, $"true {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", depth);
+                LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", depth);
                 yield return new Solution(subs.ToArray());
                 yield break;
             }

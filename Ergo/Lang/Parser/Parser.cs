@@ -405,7 +405,7 @@ namespace Ergo.Lang
                 return Fail(pos);
             if (!TryParseExpression(out var op)) {
                 if (TryParseTerm(out var head, out _) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
-                    return MakePredicate(pos, desc, head, new(ImmutableArray.Create<ITerm>().Add(new Atom(true))), out predicate);
+                    return MakePredicate(pos, desc, head, new(ImmutableArray.Create<ITerm>().Add(Literals.True)), out predicate);
                 }
                 Throw(pos, ErrorType.ExpectedClauseList);
             }

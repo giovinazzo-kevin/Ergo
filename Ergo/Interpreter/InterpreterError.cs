@@ -15,5 +15,6 @@
         , LiteralCircularDefinition
         , ModuleRedefinition
         , UndefinedPredicate
+        , UndefinedDirective
     }
 }

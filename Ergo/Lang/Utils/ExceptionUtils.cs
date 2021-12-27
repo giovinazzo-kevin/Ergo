@@ -49,6 +49,7 @@ namespace Ergo.Lang.Utils
                 , InterpreterError.UserPredicateConflictsWithBuiltIn => String.Format("User-defined predicate conflicts with built-in: {0}", args)
                 , InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
                 , InterpreterError.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
+                , InterpreterError.UndefinedDirective => String.Format("Undefined directive: {0}", args)
                 , InterpreterError.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
                 , InterpreterError.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
                 , InterpreterError.ModuleNameClash => String.Format("Module {0} can't be declared because it would shadow a static module", args)

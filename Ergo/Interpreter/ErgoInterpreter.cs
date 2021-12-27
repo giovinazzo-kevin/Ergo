@@ -80,13 +80,14 @@ namespace Ergo.Interpreter
             {
                 if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
                     return (Ast: d, Builtin: directive);
-                throw new NotSupportedException();
+                throw new InterpreterException(InterpreterError.UndefinedDirective, d.Body.Explain());
             });
 
             foreach (var d in directives.OrderBy(x => x.Builtin.Priority))
             {
                 d.Builtin.Execute(this, ref scope, ((Complex)d.Ast.Body).Arguments);
             }
+
             foreach (var import in scope.Modules[scope.CurrentModule].Imports.Contents)
             {
                 if (!scope.Modules.ContainsKey((Atom)import))

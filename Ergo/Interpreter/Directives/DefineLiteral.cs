@@ -32,7 +32,7 @@ namespace Ergo.Interpreter.Directives
             }
             if(DefinedCircularly(args[0], args[1]))
             {
-                throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain());
+                throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain(), args[1].Explain());
             }
             scope = scope.WithModule(scope.Modules[scope.CurrentModule]
                 .WithLiteral(new(new(literalName), args[1])));

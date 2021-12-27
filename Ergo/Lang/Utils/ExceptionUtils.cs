@@ -54,6 +54,7 @@ namespace Ergo.Lang.Utils
                 , InterpreterError.ModuleNameClash => String.Format("Module {0} can't be declared because it would shadow a static module", args)
                 , InterpreterError.LiteralClashWithBuiltIn => String.Format("Literal {0} can't be declared because it would shadow a built-in literal", args)
                 , InterpreterError.LiteralClash => String.Format("Literal {0} was already declared in this module", args)
+                , InterpreterError.LiteralCircularDefinition => String.Format("Literal {0} can't be declared as {1} because the definition would be circular", args)
                 , InterpreterError.OperatorClash => String.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
                 , _ => error.ToString()
             };

@@ -1,10 +1,9 @@
 ﻿:- module(math, [
-	range/2, range/1,
-	'√'/1, sqrt/2
+	range/2, range/1
 ]).
 
-:- op(30, fx, ['√']).
 :- lit('π', 3.14159265359).
+:- lit('τ', 6.28318530717).
 
 % HELPERS
 
@@ -26,5 +25,3 @@ range(Min <= X < Max, step:Step) :- between('[', Min, Max, ')', Step, X).
 range(Min < X <= Max, step:Step) :- between('(', Min, Max, ']', Step, X).
 range(Min <= X <= Max, step:Step) :- between('[', Min, Max, ']', Step, X).
 range(R) :- range(R, step:1).
-
-'√'(X) :- @eval(X, X ^ 0.5).

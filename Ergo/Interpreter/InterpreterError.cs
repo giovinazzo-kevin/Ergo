@@ -12,6 +12,7 @@
         , OperatorClash
         , LiteralClashWithBuiltIn
         , LiteralClash
+        , LiteralCircularDefinition
         , ModuleRedefinition
         , UndefinedPredicate
     }

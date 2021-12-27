@@ -15,6 +15,9 @@ namespace Ergo.Interpreter.Directives
 
         public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
         {
+            var allLiterals = scope.Modules.Values.SelectMany(x => x.Literals)
+                .ToLookup(l => l.Key);
+
             if (!args[0].Matches<string>(out var literalName))
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
@@ -27,9 +30,22 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.LiteralClash, args[0].Explain());
             }
+            if(DefinedCircularly(args[0], args[1]))
+            {
+                throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain());
+            }
             scope = scope.WithModule(scope.Modules[scope.CurrentModule]
                 .WithLiteral(new(new(literalName), args[1])));
             return true;
+
+            bool DefinedCircularly(ITerm start, ITerm t)
+            {
+                if (start.Equals(t)) return true;
+                if (t is not Atom a) return false;
+                foreach (var l in allLiterals[a])
+                    if (DefinedCircularly(start, l.Value.Value)) return true;
+                return false;
+            }
         }
     }
 }

@@ -42,15 +42,7 @@ namespace Ergo.Lang
             atom = default;
             var pos = _lexer.State;
             if (Expect(Lexer.TokenType.String, out string str)) {
-                if ("true".Equals(str)) {
-                    atom = new Atom(true);
-                }
-                else if ("false".Equals(str)) {
-                    atom = new Atom(false);
-                }
-                else {
-                    atom = new Atom(str);
-                }
+                atom = new Atom(str);
                 return true;
             }
             else if (Expect(Lexer.TokenType.Number, out double dec)) {
@@ -59,6 +51,10 @@ namespace Ergo.Lang
             }
             else if (Expect(Lexer.TokenType.Keyword, kw => kw == "true" || kw == "false", out string kw)) {
                 atom = new Atom(kw == "true");
+                return true;
+            }
+            else if (Expect(Lexer.TokenType.Keyword, kw => kw == "!", out kw)) {
+                atom = (Atom)Literals.Cut;
                 return true;
             }
             if (Expect(Lexer.TokenType.Term, out string ITerm)) {

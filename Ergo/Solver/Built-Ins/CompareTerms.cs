@@ -15,7 +15,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            var cmp = (double)arguments[1].CompareTo(arguments[2]);
+            var cmp = arguments[1].CompareTo(arguments[2]);
             if (arguments[0].IsGround)
             {
                 if (!arguments[0].Matches<int>(out var result))

@@ -2,6 +2,7 @@
 using Ergo.Lang.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -146,7 +147,7 @@ namespace Ergo.Lang
             bool IsDocumentationCommentStart(char c) => c == ':';
             bool IsNumberStart(char c) => IsDigit(c);
             bool IsNumberPiece(char c) => IsNumberStart(c) || IsDecimalDelimiter(c) || c == '-' || c == '+';
-            bool IsIdentifierStart(char c) => Char.IsLetter(c) || c == '@' || c == '_';
+            bool IsIdentifierStart(char c) => Char.IsLetter(c) || c == '@' || c == '_' || c == '!';
             bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
             bool IsKeyword(string s) => KeywordSymbols.Contains(s);
             bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);

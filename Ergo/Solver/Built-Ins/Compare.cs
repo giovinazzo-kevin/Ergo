@@ -17,7 +17,7 @@ namespace Ergo.Solver.BuiltIns
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             var c = arguments[0].Reduce(a => Throw<Complex>(a), v => Throw<Complex>(v), c => c);
-            return new(new Lang.Ast.Atom(c.Functor switch {
+            return new(new Atom(c.Functor switch {
                     var f when c.Arguments.Length == 2 && Operators.BinaryComparisonGt.Synonyms.Contains(f) => Eval(c.Arguments[0]) > Eval(c.Arguments[1])
                 , var f when c.Arguments.Length == 2 && Operators.BinaryComparisonGte.Synonyms.Contains(f) => Eval(c.Arguments[0]) >= Eval(c.Arguments[1])
                 , var f when c.Arguments.Length == 2 && Operators.BinaryComparisonLt.Synonyms.Contains(f) => Eval(c.Arguments[0]) < Eval(c.Arguments[1])

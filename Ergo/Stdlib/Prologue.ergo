@@ -10,7 +10,7 @@
 	';'/2,
 	'/'/2,
 	':'/2,
-	'⊤'/0, '⊥'/0, '!'/0
+	'⊤'/0, '⊥'/0
 ]).
 
 % OPERATOR DECLARATIONS
@@ -31,7 +31,7 @@
 :- op(30, fx, ['\\+', '¬']).
 
 % OPERATOR IMPLEMENTATIONS
-'\\+'(A) :- @unprovable(A), @cut.
+'\\+'(A) :- @unprovable(A), !.
 'is'(A, B) :- @eval(A, B).
 '=:='(A, B) :- @eval(A) == @eval(B).
 '=\\='(A, B) :- @eval(A) \== @eval(B).
@@ -55,4 +55,3 @@
 
 '⊤' :- true.
 '⊥' :- false.
-'!' :- @cut.

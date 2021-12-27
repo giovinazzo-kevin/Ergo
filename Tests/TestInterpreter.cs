@@ -45,8 +45,8 @@ namespace Tests
                 yinAndYang([], []).
                 yinAndYang([yin|Tail1], [yang|Tail2]) :- yinAndYang(Tail1, Tail2).
 
-                map([], []) :- @cut.
-                map([X|[]], [Y|[]]) :- Y is (X + 1), @cut.
+                map([], []) :- !.
+                map([X|[]], [Y|[]]) :- Y is (X + 1), !.
                 map([X|XT], [Y|YT]) :- XT \= [], map([X], [Y]), map(XT, YT).
             "));
             return (i, s);

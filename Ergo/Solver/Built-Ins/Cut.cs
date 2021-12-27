@@ -6,7 +6,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class Cut : BuiltIn
     {
         public Cut()
-            : base("", new("@cut"), Maybe<int>.Some(0))
+            : base("", new("!"), Maybe<int>.Some(0))
         {
         }
 

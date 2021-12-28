@@ -13,12 +13,12 @@ namespace Ergo.Lang.Ast
         public readonly List Imports;
         public readonly ImmutableArray<Operator> Operators;
         public readonly ImmutableDictionary<Atom, Literal> Literals;
-        public readonly ImmutableDictionary<Signature, ImmutableHashSet<DynamicPredicate>> DynamicPredicates;
+        public readonly ImmutableHashSet<Signature> DynamicPredicates;
         public readonly ErgoProgram Program;
         public readonly bool Runtime;
 
         public Module(Atom name, bool runtime)
-            : this(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ImmutableDictionary<Signature, ImmutableHashSet<DynamicPredicate>>.Empty, ErgoProgram.Empty(name), runtime)
+            : this(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ImmutableHashSet<Signature>.Empty, ErgoProgram.Empty(name), runtime)
         {
 
         }
@@ -29,7 +29,7 @@ namespace Ergo.Lang.Ast
             List export, 
             ImmutableArray<Operator> operators, 
             ImmutableDictionary<Atom, Literal> literals,
-            ImmutableDictionary<Signature, ImmutableHashSet<DynamicPredicate>> dynamicPredicates,
+            ImmutableHashSet<Signature> dynamicPredicates,
             ErgoProgram program, 
             bool runtime = false
         )
@@ -56,16 +56,8 @@ namespace Ergo.Lang.Ast
         public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Literals, DynamicPredicates, Program, Runtime);
         public Module WithLiterals(ImmutableDictionary<Atom, Literal> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
         public Module WithLiteral(Literal literal) => new(Name, Imports, Exports, Operators, Literals.Add(literal.Key, literal), DynamicPredicates, Program, Runtime);
-        public Module WithDynamicPredicates(ImmutableDictionary<Signature, ImmutableHashSet<DynamicPredicate>> predicates) => new(Name, Imports, Exports, Operators, Literals, predicates, Program, Runtime);
-        public Module WithDynamicPredicate(DynamicPredicate predicate)
-        {
-            if(!DynamicPredicates.TryGetValue(predicate.Signature, out var hashSet))
-            {
-                DynamicPredicates.Add(predicate.Signature, hashSet = ImmutableHashSet<DynamicPredicate>.Empty);
-            }
-
-            return new(Name, Imports, Exports, Operators, Literals, DynamicPredicates.SetItem(predicate.Signature, hashSet.Add(predicate)), Program, Runtime); ;
-        }
+        public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Literals, predicates, Program, Runtime);
+        public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Literals, DynamicPredicates.Add(predicate), Program, Runtime);
         public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Literals, DynamicPredicates, p, Runtime);
 
         public bool ContainsExport(Signature sig)

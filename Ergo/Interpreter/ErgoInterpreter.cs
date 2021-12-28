@@ -110,7 +110,7 @@ namespace Ergo.Interpreter
                 d.Builtin.Execute(this, ref scope, ((Complex)d.Ast.Body).Arguments);
             }
 
-            foreach (var import in scope.Modules[scope.CurrentModule].Imports.Contents)
+            foreach (var import in scope.Modules[scope.Module].Imports.Contents)
             {
                 if (!scope.Modules.ContainsKey((Atom)import))
                 {
@@ -133,7 +133,7 @@ namespace Ergo.Interpreter
                 MaybeClose();
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile);
             }
-            var currentModule = scope.Modules[scope.CurrentModule].WithProgram(program);
+            var currentModule = scope.Modules[scope.Module].WithProgram(program);
             foreach (Atom import in currentModule.Imports.Contents)
             {
                 var importScope = scope.WithCurrentModule(import);

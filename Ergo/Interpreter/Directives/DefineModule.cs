@@ -21,9 +21,9 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
             }
-            if (!scope.Runtime && scope.CurrentModule != Modules.User)
+            if (!scope.Runtime && scope.Module != Modules.User)
             {
-                throw new InterpreterException(InterpreterError.ModuleRedefinition, scope.CurrentModule.Explain(), moduleName.Explain());
+                throw new InterpreterException(InterpreterError.ModuleRedefinition, scope.Module.Explain(), moduleName.Explain());
             }
             if (!List.TryUnfold(args[1], out var exports))
             {

@@ -16,7 +16,7 @@ namespace Ergo.Interpreter
         public readonly ImmutableArray<string> SearchDirectories;
         public readonly bool Runtime;
 
-        public readonly Atom CurrentModule;
+        public readonly Atom Module;
 
         public InterpreterScope(Module userModule)
         {
@@ -25,7 +25,7 @@ namespace Ergo.Interpreter
             SearchDirectories = ImmutableArray<string>.Empty
                 .Add(string.Empty)
                 .Add("./stdlib/");
-            CurrentModule = userModule.Name;
+            Module = userModule.Name;
             Runtime = userModule.Runtime;
         }
 
@@ -37,22 +37,22 @@ namespace Ergo.Interpreter
         {
             Modules = modules;
             SearchDirectories = dirs;
-            CurrentModule = currentModule;
+            Module = currentModule;
             Runtime = runtime;
         }
 
         public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime);
-        public InterpreterScope WithModule(Module m) => new(CurrentModule, Modules.SetItem(m.Name, m), SearchDirectories, Runtime);
-        public InterpreterScope WithSearchDirectory(string s) => new(CurrentModule, Modules, SearchDirectories.Add(s), Runtime);
-        public InterpreterScope WithRuntime(bool runtime) => new(CurrentModule, Modules, SearchDirectories, runtime);
+        public InterpreterScope WithModule(Module m) => new(Module, Modules.SetItem(m.Name, m), SearchDirectories, Runtime);
+        public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime);
+        public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime);
 
-        public InterpreterScope WithoutModules() => new(CurrentModule, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Prologue, Modules[Interpreter.Modules.Prologue]), SearchDirectories, Runtime);
-        public InterpreterScope WithoutSearchDirectories() => new(CurrentModule, Modules, ImmutableArray<string>.Empty, Runtime);
+        public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Prologue, Modules[Interpreter.Modules.Prologue]), SearchDirectories, Runtime);
+        public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime);
 
         public IEnumerable<Operator> GetUserDefinedOperators(Maybe<Atom> entry = default, HashSet<Atom> added = null)
         {
             added ??= new();
-            var currentModule = CurrentModule;
+            var currentModule = Module;
             var entryModule = entry.Reduce(some => some, () => currentModule);
             if (added.Contains(entryModule) || !Modules.TryGetValue(entryModule, out var module))
             {
@@ -93,7 +93,7 @@ namespace Ergo.Interpreter
             if (term.IsQualified && term.TryGetQualification(out var qm, out var qv))
                 return TryReplaceLiterals(qv, out changed, Maybe.Some(qm));
             added ??= new();
-            var currentModule = CurrentModule;
+            var currentModule = Module;
             var entryModule = entry.Reduce(some => some, () => currentModule);
             if (added.Contains(entryModule) || !Modules.TryGetValue(entryModule, out var module))
             {

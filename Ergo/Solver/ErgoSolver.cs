@@ -34,7 +34,7 @@ namespace Ergo.Solver
             BuiltIns = new();
             AddBuiltInsByReflection();
             var added = new HashSet<Atom>();
-            LoadModule(scope.Modules[scope.CurrentModule], added);
+            LoadModule(scope.Modules[scope.Module], added);
             foreach (var module in scope.Modules.Values)
             {
                 LoadModule(module, added);
@@ -59,7 +59,7 @@ namespace Ergo.Solver
                 foreach (var pred in module.Program.KnowledgeBase)
                 {
                     var sig = pred.Head.GetSignature();
-                    if (module.Name == scope.CurrentModule || module.ContainsExport(sig))
+                    if (module.Name == scope.Module || module.ContainsExport(sig))
                     {
                         KnowledgeBase.AssertZ(pred.WithModuleName(module.Name));
                     }
@@ -160,7 +160,7 @@ namespace Ergo.Solver
                     yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }
-                var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[scope.Module], resolvedGoal.Result);
+                var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
                 LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
                 foreach (var m in matches)
                 {
@@ -178,20 +178,21 @@ namespace Ergo.Solver
                 }
             }
 
-            (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module scope, ITerm goal)
+            (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module module, ITerm goal)
             {
                 if (KnowledgeBase.TryGetMatches(goal, out var matches))
                 {
                     return (goal, matches);
                 }
-                if(!goal.IsQualified && goal.TryQualify(scope.Name, out goal))
+                if(!goal.IsQualified && goal.TryQualify(module.Name, out goal))
                 {
                     if (KnowledgeBase.TryGetMatches(goal, out matches))
                     {
                         return (goal, matches);
                     }
                 }
-                if (!KnowledgeBase.TryGet(goal.GetSignature(), out _))
+                var signature = goal.GetSignature();
+                if (!KnowledgeBase.TryGet(signature, out _) && !module.DynamicPredicates.TryGetValue(signature, out _))
                 {
                     if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
@@ -231,7 +232,7 @@ namespace Ergo.Solver
         public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default)
         {
             Cut.Value = false;
-            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.CurrentModule, default, default)), goal.Goals);
+            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, default)), goal.Goals);
         }
     }
 }

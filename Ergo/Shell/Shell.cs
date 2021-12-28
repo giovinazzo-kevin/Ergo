@@ -97,7 +97,7 @@ namespace Ergo.Shell
                 WriteLine($"File already exists: {fileName}", LogLevel.Err);
                 return;
             }
-            var module = scope.InterpreterScope.Modules[scope.InterpreterScope.CurrentModule];
+            var module = scope.InterpreterScope.Modules[scope.InterpreterScope.Module];
             // TODO: make it easier to save directives
             var dirs = module.Imports.Contents
                 .Select(m => new Directive(new Complex(new("use_module"), m)))
@@ -123,7 +123,7 @@ namespace Ergo.Shell
         public virtual void EnterRepl(ref ShellScope scope, Func<string, bool> exit = null)
         {
             while(true) {
-                Write($"{scope.InterpreterScope.CurrentModule.Explain()}> ");
+                Write($"{scope.InterpreterScope.Module.Explain()}> ");
                 var prompt = Prompt();
                 if (exit != null && exit(prompt)) break;
                 Do(ref scope, prompt);

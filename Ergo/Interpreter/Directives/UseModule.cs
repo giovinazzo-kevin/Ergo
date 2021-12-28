@@ -19,7 +19,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
             }
-            if (moduleName == scope.CurrentModule || scope.Modules[scope.CurrentModule].Imports.Contents.Contains(moduleName))
+            if (moduleName == scope.Module || scope.Modules[scope.Module].Imports.Contents.Contains(moduleName))
             {
                 return false;
             }
@@ -30,7 +30,7 @@ namespace Ergo.Interpreter.Directives
             }
             scope = scope
                 .WithModule(module)
-                .WithModule(scope.Modules[scope.CurrentModule]
+                .WithModule(scope.Modules[scope.Module]
                     .WithImport(moduleName));
             return true;
         }

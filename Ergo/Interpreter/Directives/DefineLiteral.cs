@@ -15,7 +15,7 @@ namespace Ergo.Interpreter.Directives
 
         public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
         {
-            var module = scope.Modules[scope.CurrentModule];
+            var module = scope.Modules[scope.Module];
             var allLiterals = scope.Modules.Values
                 .Where(x => module.Imports.Contents.Contains(x.Name))
                 .SelectMany(x => x.Literals)
@@ -29,7 +29,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.LiteralClashWithBuiltIn, args[0].Explain());
             }
-            if (scope.Modules[scope.CurrentModule].Literals.Any(l => l.Key.Equals(args[0])))
+            if (scope.Modules[scope.Module].Literals.Any(l => l.Key.Equals(args[0])))
             {
                 throw new InterpreterException(InterpreterError.LiteralClash, args[0].Explain());
             }
@@ -37,7 +37,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain(), args[1].Explain());
             }
-            scope = scope.WithModule(scope.Modules[scope.CurrentModule]
+            scope = scope.WithModule(scope.Modules[scope.Module]
                 .WithLiteral(new(new(literalName), args[1])));
             return true;
 

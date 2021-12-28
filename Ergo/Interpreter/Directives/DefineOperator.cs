@@ -7,6 +7,7 @@ using System.Linq;
 
 namespace Ergo.Interpreter.Directives
 {
+
     public class DefineOperator : InterpreterDirective
     {
         enum OperatorType
@@ -47,7 +48,7 @@ namespace Ergo.Interpreter.Directives
                 _ => throw new NotSupportedException()
             };
 
-            scope = scope.WithModule(scope.Modules[scope.CurrentModule]
+            scope = scope.WithModule(scope.Modules[scope.Module]
                 .WithOperator(new(affix, assoc, precedence, synonyms)));
             return true;
         }

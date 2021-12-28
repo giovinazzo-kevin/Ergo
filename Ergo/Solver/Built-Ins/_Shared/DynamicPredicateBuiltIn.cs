@@ -42,9 +42,9 @@ namespace Ergo.Solver.BuiltIns
                 return false;
             foreach (var dyn in dynPreds)
             {
-                if (solver.InterpreterScope.CurrentModule != dyn.Predicate.DeclaringModule)
+                if (solver.InterpreterScope.Module != dyn.Predicate.DeclaringModule)
                 {
-                    throw new InterpreterException(InterpreterError.CannotRetractImportedPredicate, sig.Explain(), solver.InterpreterScope.CurrentModule.Explain(), dyn.Predicate.DeclaringModule.Explain());
+                    throw new InterpreterException(InterpreterError.CannotRetractImportedPredicate, sig.Explain(), solver.InterpreterScope.Module.Explain(), dyn.Predicate.DeclaringModule.Explain());
                 }
                 solver.Interpreter.TryRemoveDynamicPredicate(dyn);
                 if(!all)

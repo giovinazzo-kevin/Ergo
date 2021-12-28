@@ -1,8 +1,8 @@
 ﻿:- module(test, [
-	asd/1
+	create_game/1
 ]).
-:- lit('π', 3).
 
-:- use_module(math).
+:- dynamic(game/1).
 
-asd(X) :- X := π * 3. 
+create_game(Name) :-
+	\+game(Name), assertz(game(Name)).

@@ -1,7 +1,9 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Extensions;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Ergo.Lang.Ast
 {
@@ -40,6 +42,20 @@ namespace Ergo.Lang.Ast
         public override int GetHashCode()
         {
             return HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode());
+        }
+
+
+        public static bool TryUnfold(ITerm term, out Signature sig)
+        {
+            if (term is Complex c && Operators.BinaryDivision.Synonyms.Contains(c.Functor)
+                && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            {
+                c.Arguments[0].TryGetQualification(out var qm, out var qs);
+                sig = new((Atom)qs, Maybe.Some(match.Arity), Maybe.Some(qm));
+                return true;
+            }
+            sig = default;
+            return false;
         }
     }
 }

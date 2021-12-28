@@ -8,6 +8,7 @@ using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
+
     public abstract class MathBuiltIn : BuiltIn
     {
         protected MathBuiltIn(string documentation, Atom functor, Maybe<int> arity) 

@@ -16,5 +16,6 @@
         , ModuleRedefinition
         , UndefinedPredicate
         , UndefinedDirective
+        , CannotRetractImportedPredicate
     }
 }

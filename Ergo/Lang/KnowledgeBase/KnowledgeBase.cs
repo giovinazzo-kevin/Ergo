@@ -22,6 +22,8 @@ namespace Ergo.Lang
             Context = new("K");
         }
 
+        public void Clear() => Predicates.Clear();
+
         private List<Predicate> GetOrCreate(Signature key, bool append=false)
         {
             if (!Predicates.Contains(key)) {

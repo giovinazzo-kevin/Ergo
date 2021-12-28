@@ -39,7 +39,7 @@ namespace Ergo.Interpreter.Directives
             }
             else
             {
-                module = new Module(moduleName, List.Empty, exports, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(moduleName), runtime: scope.Runtime)
+                module = new Module(moduleName, runtime: scope.Runtime)
                     .WithImport(Modules.Prologue);
             }
             scope = scope
@@ -50,7 +50,7 @@ namespace Ergo.Interpreter.Directives
                 // make sure that 'item' is in the form 'predicate/arity'
                 if (!item.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
                 {
-                    throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.PredicateIndicator, item.Explain());
+                    throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Signature, item.Explain());
                 }
             }
             return true;

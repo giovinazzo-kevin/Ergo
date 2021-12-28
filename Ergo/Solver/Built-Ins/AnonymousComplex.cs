@@ -16,15 +16,25 @@ namespace Ergo.Solver.BuiltIns
 
         public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
-            if (!args[0].Matches<string>(out var functor))
-            {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Functor, args[0].Explain());
-            }
             if (!args[1].Matches<int>(out var arity))
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Number, args[1].Explain());
             }
-            return new(new Complex(new(functor), Enumerable.Range(0, arity)
+            if (args[0] is not Atom functor)
+            {
+                if (args[0].TryGetQualification(out var qm, out var qs) && qs is Atom functor_)
+                {
+                    var cplx = (ITerm)new Complex(functor_, Enumerable.Range(0, arity)
+                        .Select(i => (ITerm)new Variable($"{i}"))
+                        .ToArray());
+                    if (cplx.TryQualify(qm, out var qualified))
+                    {
+                        return new(qualified);
+                    }
+                }
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Functor, args[0].Explain());
+            }
+            return new(new Complex(functor, Enumerable.Range(0, arity)
                 .Select(i => (ITerm)new Variable($"{i}"))
                 .ToArray()));
         }

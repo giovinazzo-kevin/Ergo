@@ -22,11 +22,13 @@ namespace Ergo.Solver
         public readonly KnowledgeBase KnowledgeBase;
         public readonly InterpreterScope InterpreterScope;
         public readonly Dictionary<Signature, BuiltIn> BuiltIns;
+        public readonly ErgoInterpreter Interpreter;
 
         public event Action<SolverTraceType, string> Trace;
 
         public ErgoSolver(ErgoInterpreter i, InterpreterScope scope, SolverFlags flags = SolverFlags.Default)
         {
+            Interpreter = i;
             Flags = flags;
             KnowledgeBase = new();
             BuiltIns = new();
@@ -64,6 +66,20 @@ namespace Ergo.Solver
                     else
                     {
                         KnowledgeBase.AssertZ(pred.WithModuleName(module.Name).Qualified());
+                    }
+                }
+                foreach (var key in Interpreter.DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
+                {
+                    foreach (var dyn in Interpreter.DynamicPredicates[key])
+                    {
+                        if (!dyn.AssertZ)
+                        {
+                            KnowledgeBase.AssertA(dyn.Predicate);
+                        }
+                        else
+                        {
+                            KnowledgeBase.AssertZ(dyn.Predicate);
+                        }
                     }
                 }
             }

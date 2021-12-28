@@ -16,4 +16,5 @@ todo('Directives', X) :- member(X, []).
 todo('Modules', X) :- member(X, []).
 todo('Parser', X) :- member(X, []).
 todo('Lexer', X) :- member(X, ['Fix quoting']).
-todo('AST', X) :- member(X, ['Annotations', '{ Objects }', 'Codegen']).
+todo('AST', X) :- member(X, ['Annotations', '{ Objects }', 'IL Codegen']).
+todo('Tests', X) :- member(X, ['Modules', 'Sugaring/desugaring', 'Operator and literal resolution']).

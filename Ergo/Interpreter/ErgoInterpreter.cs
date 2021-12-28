@@ -20,19 +20,21 @@ namespace Ergo.Interpreter
     {
         public readonly InterpreterFlags Flags;
         public readonly Dictionary<Signature, InterpreterDirective> Directives;
+        public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates;
 
         public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         {
             Flags = flags;
             Directives = new();
+            DynamicPredicates = new();
             AddDirectivesByReflection();
         }
 
         public InterpreterScope CreateScope()
         {
-            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(Modules.Prologue), runtime: true));
+            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, runtime: true));
             var prologue = Load(ref prologueScope, Modules.Prologue.Explain());
-            return new InterpreterScope(new Module(Modules.User, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(Modules.User), runtime: true)
+            return new InterpreterScope(new Module(Modules.User, runtime: true)
                     .WithImport(Modules.Prologue))
                 .WithModule(prologue);
         }
@@ -49,6 +51,26 @@ namespace Ergo.Interpreter
                 var inst = (InterpreterDirective)Activator.CreateInstance(type);
                 Directives[inst.Signature] = inst;
             }
+        }
+
+        public bool TryAddDynamicPredicate(DynamicPredicate d)
+        {
+            if (!DynamicPredicates.TryGetValue(d.Signature, out var hashSet))
+            {
+                hashSet = DynamicPredicates[d.Signature] = new() { };
+            }
+            hashSet.Add(d);
+            return true;
+        }
+
+        public bool TryRemoveDynamicPredicate(DynamicPredicate d)
+        {
+            if (!DynamicPredicates.TryGetValue(d.Signature, out var hashSet))
+            {
+                return false;
+            }
+            hashSet.Remove(d);
+            return true;
         }
 
         public virtual Module Load(ref InterpreterScope scope, string fileName)
@@ -148,7 +170,7 @@ namespace Ergo.Interpreter
                 }
                 catch(FileNotFoundException)
                 {
-                    scope = scope.WithModule(module = new Module(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Atom, Literal>.Empty, ErgoProgram.Empty(name), runtime: true)
+                    scope = scope.WithModule(module = new Module(name, runtime: true)
                         .WithImport(Modules.Prologue));
                 }
             }

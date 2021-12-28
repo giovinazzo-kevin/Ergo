@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Ergo.Interpreter;
 using Ergo.Lang.Extensions;
 
 namespace Ergo.Lang.Ast
@@ -14,6 +16,7 @@ namespace Ergo.Lang.Ast
         public readonly ITerm Head;
         public readonly CommaSequence Body;
         public readonly string Documentation;
+        public readonly bool IsDynamic;
 
         public string Explain()
         {
@@ -31,12 +34,13 @@ namespace Ergo.Lang.Ast
 
         public static int Arity(ITerm head) => head.Reduce(a => 0, v => 0, c => c.Arity);
 
-        public Predicate(string desc, Atom module, ITerm head, CommaSequence body)
+        public Predicate(string desc, Atom module, ITerm head, CommaSequence body, bool dynamic = false)
         {
             Documentation = desc;
             DeclaringModule = module;
             Head = head;
             Body = body;
+            IsDynamic = dynamic;
         }
 
         public Predicate Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
@@ -82,5 +86,31 @@ namespace Ergo.Lang.Ast
             substitutions = default;
             return false;
         }
+
+        public static bool TryUnfold(ITerm term, Atom defaultModule, out Predicate pred)
+        {
+            if (term is Complex c && Operators.BinaryHorn.Synonyms.Contains(c.Functor))
+            {
+                var head_ = c.Arguments[0];
+                if(!CommaSequence.TryUnfold(c.Arguments[1], out var body))
+                {
+                    body = new CommaSequence(ImmutableArray<ITerm>.Empty.Add(c.Arguments[1]));
+                }
+                if(!head_.TryGetQualification(out var module_, out head_))
+                {
+                    module_ = defaultModule;
+                }
+                pred = new("(dynamic)", module_, head_, body);
+                return true;
+            }
+            if(!term.TryGetQualification(out var module, out var head))
+            {
+                module = defaultModule;
+            }
+            pred = new("(dynamic)", module, head, new CommaSequence(ImmutableArray<ITerm>.Empty.Add(Literals.True)));
+            return true;
+        }
+
+        public Predicate AsDynamic() => new(Documentation, DeclaringModule, Head, Body, true);
     }
 }

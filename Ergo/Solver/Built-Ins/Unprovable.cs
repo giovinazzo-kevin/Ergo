@@ -1,6 +1,7 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -13,13 +14,13 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             if (solver.Solve(new Query(new(ImmutableArray<ITerm>.Empty.Add(arguments.Single()))), Maybe.Some(scope)).Any())
             {
-                return new(Literals.False);
+                yield return new(Literals.False);
             }
-            return new(Literals.True);
+            else yield return new(Literals.True);
         }
     }
 }

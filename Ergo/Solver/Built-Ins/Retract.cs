@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns
 {
@@ -10,10 +11,18 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            if (Retract(solver, scope, arguments[0], all: false)) return new(Literals.True);
-            return new(Literals.False);
+            var any = false;
+            while (Retract(solver, scope, arguments[0], all: false))
+            {
+                yield return new(Literals.True);
+                any = true;
+            }
+            if(!any)
+            {
+                yield return new(Literals.False);
+            }
         }
     }
 }

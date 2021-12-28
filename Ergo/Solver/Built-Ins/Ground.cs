@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns
 {
@@ -10,9 +11,9 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            return new(new Atom(arguments[0].IsGround));
+            yield return new(new Atom(arguments[0].IsGround));
         }
     }
 }

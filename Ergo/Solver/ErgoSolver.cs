@@ -100,27 +100,26 @@ namespace Ergo.Solver
         }
 
 
-        public ITerm ResolveBuiltin(ITerm term, SolverScope scope, out Signature sig, List<Substitution> subs = null)
+        public IEnumerable<Evaluation> ResolveBuiltin(ITerm term, SolverScope scope)
         {
-            subs ??= new();
-            sig = term.GetSignature();
-            if (term is Complex c)
-            {
-                term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, scope, out _, subs)).ToArray());
-            }
+            var any = false;
+            var sig = term.GetSignature();
+            //if (term is Complex c)
+            //{
+            //    term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, scope)).ToArray());
+            //}
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
-                var eval = builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments));
-                LogTrace(SolverTraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
-                term = eval.Result;
-                subs.AddRange(eval.Substitutions);
-                var newSig = term.GetSignature();
-                if (sig.Equals(newSig)) {
-                    break;
+                foreach(var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
+                {
+                    LogTrace(SolverTraceType.Resv, $"{term.Explain()} -> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
+                    term = eval.Result;
+                    sig = term.GetSignature();
+                    yield return eval;
+                    any = true;
                 }
-                sig = newSig;
             }
-            return term;
+            if (!any) yield return new(term);
         }
 
         private void LogTrace(SolverTraceType type, ITerm term, int depth = 0)
@@ -143,32 +142,39 @@ namespace Ergo.Solver
                 }
                 yield break;
             }
-            // Transform builtins into the literal they evaluate to
-            while(InterpreterScope.TryReplaceLiterals(goal, out var goal_))
+            while (InterpreterScope.TryReplaceLiterals(goal, out var goal_))
             {
                 goal = goal_;
             }
-            goal = ResolveBuiltin(goal, scope, out var signature, subs);
-            if (goal.Equals(Literals.False) || goal is Variable) {
-                LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
-                yield break;
-            }
-            if (goal.Equals(Literals.True)) {
-                LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join(" ∨ ", subs.Select(s => s.Explain()))}}}", scope.Depth);
-                yield return new Solution(subs.ToArray());
-                yield break;
-            }
-            var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[scope.Module], goal);
-            LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
-            foreach (var m in matches) {
-                var innerScope = new SolverScope(scope.Depth + 1, m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
-                var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions));
-                foreach (var s in solve) {
-                    LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
-                    yield return s;
-                }
-                if (Cut.Value) {
+                foreach (var resolvedGoal in ResolveBuiltin(goal, scope))
+            {
+                goal = resolvedGoal.Result;
+                if (goal.Equals(Literals.False) || goal is Variable)
+                {
+                    LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
                     yield break;
+                }
+                if (goal.Equals(Literals.True))
+                {
+                    LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join(" ∨ ", subs.Select(s => s.Explain()))}}}", scope.Depth);
+                    yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
+                    continue;
+                }
+                var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[scope.Module], resolvedGoal.Result);
+                LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
+                foreach (var m in matches)
+                {
+                    var innerScope = new SolverScope(scope.Depth + 1, m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
+                    var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)));
+                    foreach (var s in solve)
+                    {
+                        LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
+                        yield return s;
+                    }
+                    if (Cut.Value)
+                    {
+                        yield break;
+                    }
                 }
             }
 
@@ -185,9 +191,12 @@ namespace Ergo.Solver
                         return (goal, matches);
                     }
                 }
-                if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                if (!KnowledgeBase.TryGet(goal.GetSignature(), out _))
                 {
-                    throw new InterpreterException(InterpreterError.UnknownPredicate, goal.GetSignature().Explain());
+                    if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                    {
+                        throw new InterpreterException(InterpreterError.UnknownPredicate, goal.GetSignature().Explain());
+                    }
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }

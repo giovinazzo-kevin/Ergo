@@ -4,6 +4,7 @@ using Ergo.Lang.Exceptions;
 using System.Linq;
 using Ergo.Lang;
 using Ergo.Interpreter;
+using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns
 {
@@ -14,14 +15,14 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             var arg = arguments.Single();
             if (!arg.Matches<bool>(out var eval))
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Boolean, arg.Explain());
             }
-            return new(new Atom(!eval));
+            yield return new(new Atom(!eval));
         }
     }
 }

@@ -3,6 +3,7 @@ using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
+using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns
 {
@@ -13,7 +14,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             var cmp = arguments[1].CompareTo(arguments[2]);
             if (arguments[0].IsGround)
@@ -24,11 +25,15 @@ namespace Ergo.Solver.BuiltIns
                 }
                 if (result.Equals(cmp))
                 {
-                    return new(Literals.True);
+                    yield return new(Literals.True);
                 }
-                return new(Literals.False);
+                else
+                {
+                    yield return new(Literals.False);
+                }
+                yield break;
             }
-            return new(Literals.True, new Substitution(arguments[0], new Atom(cmp)));
+            yield return new(Literals.True, new Substitution(arguments[0], new Atom(cmp)));
         }
     }
 }

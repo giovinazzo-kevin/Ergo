@@ -60,25 +60,48 @@ namespace Ergo.Shell.Commands
                 return;
             }
 
+            var scope_ = scope;
             scope.ExceptionHandler.Try(scope, () => {
                 if (Interactive)
                 {
                     shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);
                     var any = false;
+                    shell.Write(String.Empty, LogLevel.Ans);
                     foreach (var s in solutions)
                     {
-                        any = true;
-                        if (s.Substitutions.Any())
+                        if (any)
                         {
-                            var join = String.Join(", ", s.Simplify().Select(s => s.Explain()));
-                            shell.WriteLine($"\t| {join}");
                             if (shell.ReadChar(true) != ' ')
                             {
                                 break;
                             }
+                            if (!scope_.TraceEnabled)
+                            {
+                                shell.WriteLine(" ∨", LogLevel.Rpl);
+                                shell.Write(String.Empty, LogLevel.Ans);
+                            }
                         }
+                        if (s.Substitutions.Any())
+                        {
+                            var join = String.Join(", ", s.Simplify().Select(s => s.Explain()));
+                            if (scope_.TraceEnabled)
+                            {
+                                shell.Write(String.Empty, LogLevel.Ans);
+                            }
+                            shell.Write($"{join}", LogLevel.Rpl);
+                            if(scope_.TraceEnabled)
+                            {
+                                shell.WriteLine();
+                            }
+                        }
+                        else
+                        {
+                            shell.Yes(nl: false, LogLevel.Rpl);
+                        }
+                        any = true;
                     }
-                    if (any) shell.Yes(); else shell.No();
+                    if (!any) shell.No(nl: true, LogLevel.Rpl);
+                    shell.WriteLine();
                 }
                 else
                 {

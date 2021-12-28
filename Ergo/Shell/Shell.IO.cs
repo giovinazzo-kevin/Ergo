@@ -156,14 +156,16 @@ namespace Ergo.Shell
             WriteLine(str);
         }
 
-        public virtual void Yes()
+        public virtual void Yes(bool nl = true, LogLevel lvl = LogLevel.Ans)
         {
-            WriteLine("\u001b[1m⊤\u001b[0m", LogLevel.Ans);
+            Write("\u001b[1m⊤\u001b[0m", lvl);
+            if (nl) WriteLine();
         }
 
-        public virtual void No()
+        public virtual void No(bool nl = true, LogLevel lvl = LogLevel.Ans)
         {
-            WriteLine("\u001b[1m⊥\u001b[0m", LogLevel.Ans, overrideFg: ConsoleColor.DarkRed);
+            Write("\u001b[1m⊥\u001b[0m", lvl, overrideFg: ConsoleColor.DarkRed);
+            if (nl) WriteLine();
         }
 
         public virtual void WriteTable([NotNull] string[] cols, [NotNull] string[][] rows, ConsoleColor accent = ConsoleColor.Black)

@@ -52,7 +52,7 @@ namespace Ergo.Solver.BuiltIns
                     return true;
                 }
             }
-            return true;
+            return dynPreds.Count > 0;
         }
     }
 }

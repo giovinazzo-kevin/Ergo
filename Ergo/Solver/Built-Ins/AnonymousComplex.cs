@@ -3,6 +3,7 @@ using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
@@ -14,7 +15,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override Evaluation Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
             if (!args[1].Matches<int>(out var arity))
             {
@@ -29,12 +30,13 @@ namespace Ergo.Solver.BuiltIns
                         .ToArray());
                     if (cplx.TryQualify(qm, out var qualified))
                     {
-                        return new(qualified);
+                        yield return new(qualified);
+                        yield break;
                     }
                 }
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Functor, args[0].Explain());
             }
-            return new(new Complex(functor, Enumerable.Range(0, arity)
+            yield return new(new Complex(functor, Enumerable.Range(0, arity)
                 .Select(i => (ITerm)new Variable($"{i}"))
                 .ToArray()));
         }

@@ -80,7 +80,7 @@ namespace Ergo.Lang
             GetOrCreate(k.Head.GetSignature(), append: true).Add(k);
         }
 
-        public bool RetractOne(ITerm head)
+        public bool Retract(ITerm head)
         {
             if (TryGet(head.GetSignature(), out var matches)) {
                 for (int i = matches.Count - 1; i >= 0; i--) {

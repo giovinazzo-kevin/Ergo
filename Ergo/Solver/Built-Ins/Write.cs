@@ -6,24 +6,11 @@ using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class Write : BuiltIn
+    public sealed class Write : WriteBuiltIn
     {
         public Write()
-            : base("", new("write"), Maybe<int>.Some(1))
+            : base("", new("write"), Maybe<int>.Some(1), canon: false)
         {
-        }
-
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
-        {
-            if(CommaSequence.TryUnfold(args[0], out var comma))
-            {
-                Console.Write(String.Join(String.Empty, comma.Contents.Select(x => x.Explain())));
-            }
-            else
-            {
-                Console.Write(args[0].Explain());
-            }
-            yield return new(Literals.True);
         }
     }
 }

@@ -17,7 +17,8 @@ namespace Ergo.Lang.Ast
                 qualified = this;
                 return false;
             }
-            qualified = new Complex(new(":"), m, this);
+            qualified = new Complex(new(":"), m, this)
+                .AsOperator(OperatorAffix.Infix);
             return true;
         }
         bool TryGetQualification(out Atom module, out ITerm value)

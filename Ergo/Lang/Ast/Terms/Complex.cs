@@ -82,14 +82,14 @@ namespace Ergo.Lang.Ast
 
         public Complex WithFunctor(Atom functor)
         {
-            return new Complex(functor, Arguments);
+            return new Complex(Affix, IsParenthesized, functor, Arguments);
         }
 
         public Complex WithArguments(params ITerm[] args)
         {
             if (args.Length != Arguments.Length)
                 throw new ArgumentOutOfRangeException(nameof(args));
-            return new Complex(Functor, args);
+            return new Complex(Affix, IsParenthesized, Functor, args);
         }
 
         public bool Matches(Complex other)
@@ -129,7 +129,7 @@ namespace Ergo.Lang.Ast
 
         public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
         {
-            return new Complex(Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
+            return new Complex(Affix, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
         }
 
         public static bool operator ==(Complex left, Complex right)

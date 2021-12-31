@@ -45,7 +45,13 @@ namespace Ergo.Solver.BuiltIns
         {
             var sig = term.GetSignature();
             if (!solver.Interpreter.DynamicPredicates.TryGetValue(sig, out var dynPreds))
-                return false;
+            {
+                if(!term.IsQualified && term.TryQualify(scope.Module, out term) && !solver.Interpreter.DynamicPredicates.TryGetValue(term.GetSignature(), out dynPreds))
+                {
+                    return false;
+                }
+            }
+            var removed = 0;
             foreach (var dyn in dynPreds)
             {
                 if (solver.InterpreterScope.Module != dyn.Predicate.DeclaringModule)
@@ -53,12 +59,14 @@ namespace Ergo.Solver.BuiltIns
                     throw new SolverException(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), solver.InterpreterScope.Module.Explain(), dyn.Predicate.DeclaringModule.Explain());
                 }
                 solver.Interpreter.TryRemoveDynamicPredicate(dyn);
+                solver.KnowledgeBase.Retract(dyn.Predicate.Head);
                 if(!all)
                 {
                     return true;
                 }
+                ++removed;
             }
-            return dynPreds.Count > 0;
+            return removed > 0;
         }
     }
 }

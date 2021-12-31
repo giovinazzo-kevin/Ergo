@@ -17,7 +17,7 @@ namespace Ergo.Interpreter.Directives
         {
             if (args[0] is not Atom moduleName)
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
             }
             if (moduleName == scope.Module || scope.Modules[scope.Module].Imports.Contents.Contains(moduleName))
             {

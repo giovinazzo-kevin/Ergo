@@ -1,5 +1,8 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
 using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns

@@ -19,26 +19,22 @@ namespace Ergo.Solver.BuiltIns
         {
             if (!args[1].Matches<int>(out var arity))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Number, args[1].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Number, args[1].Explain());
             }
             if (args[0] is not Atom functor)
             {
                 if (args[0].TryGetQualification(out var qm, out var qs) && qs is Atom functor_)
                 {
-                    var cplx = (ITerm)new Complex(functor_, Enumerable.Range(0, arity)
-                        .Select(i => (ITerm)new Variable($"{i}"))
-                        .ToArray());
+                    var cplx = (ITerm)functor_.BuildAnonymousComplex(arity);
                     if (cplx.TryQualify(qm, out var qualified))
                     {
                         yield return new(qualified);
                         yield break;
                     }
                 }
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Functor, args[0].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Functor, args[0].Explain());
             }
-            yield return new(new Complex(functor, Enumerable.Range(0, arity)
-                .Select(i => (ITerm)new Variable($"{i}"))
-                .ToArray()));
+            yield return new(functor.BuildAnonymousComplex(arity));
         }
     }
 }

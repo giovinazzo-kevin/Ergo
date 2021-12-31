@@ -15,9 +15,9 @@ namespace Ergo.Lang
     {
         private readonly Lexer _lexer;
         private readonly InstantiationContext _discardContext;
-        private readonly IEnumerable<Operator> _userDefinedOperators;
+        private readonly Operator[] _userDefinedOperators;
 
-        public Parser(Lexer lexer, IEnumerable<Operator> userOperators)
+        public Parser(Lexer lexer, Operator[] userOperators)
         {
             _lexer = lexer;
             _discardContext = new(String.Empty);
@@ -240,8 +240,7 @@ namespace Ergo.Lang
                     return false;
                 var op = ops.Single(op => cplx.Arity switch {
                     1 => op.Affix != OperatorAffix.Infix
-                    ,
-                    _ => op.Affix == OperatorAffix.Infix
+                    , _ => op.Affix == OperatorAffix.Infix
                 });
                 if (cplx.Arguments.Length == 1)
                 {
@@ -261,7 +260,8 @@ namespace Ergo.Lang
         {
             expr = default; var pos = _lexer.State;
             if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
-            && TryParseTerm(out var arg, out _)) {
+            && TryParseTerm(out var arg, out var parens)
+            && (parens || !CommaSequence.TryUnfold(arg, out _))) {
                 expr = BuildExpression(op, arg);
                 return true;
             }
@@ -271,7 +271,8 @@ namespace Ergo.Lang
         public bool TryParsePostfixExpression(out Expression expr)
         {
             expr = default; var pos = _lexer.State;
-            if (TryParseTerm(out var arg, out _) 
+            if (TryParseTerm(out var arg, out var parens)
+            && (parens || !CommaSequence.TryUnfold(arg, out _))
             && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op)) {
                 expr = BuildExpression(op, arg);
                 return true;

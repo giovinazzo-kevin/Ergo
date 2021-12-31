@@ -1,8 +1,0 @@
-﻿:- module(test, [
-	create_game/1
-]).
-
-:- dynamic(game/1).
-
-create_game(Name) :-
-	\+game(Name), assertz(game(Name)).

@@ -10,6 +10,7 @@ using Ergo.Solver.BuiltIns;
 using Ergo.Interpreter;
 using System.IO;
 using Ergo.Lang.Utils;
+using System.Collections.Immutable;
 
 namespace Ergo.Solver
 {
@@ -164,7 +165,10 @@ namespace Ergo.Solver
                 LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
                 foreach (var m in matches)
                 {
-                    var innerScope = new SolverScope(scope.Depth + 1, m.Rhs.DeclaringModule, Maybe.Some(m.Rhs), scope.Callee);
+                    var innerScope = scope.WithDepth(scope.Depth + 1)
+                        .WithModule(m.Rhs.DeclaringModule)
+                        .WithCallee(scope.Callee)
+                        .WithCaller(m.Rhs);
                     var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)));
                     foreach (var s in solve)
                     {
@@ -184,19 +188,19 @@ namespace Ergo.Solver
                 {
                     return (goal, matches);
                 }
-                if(!goal.IsQualified && goal.TryQualify(module.Name, out goal))
+                if (!goal.IsQualified)
                 {
-                    if (KnowledgeBase.TryGetMatches(goal, out matches))
+                    if (goal.TryQualify(module.Name, out goal) && KnowledgeBase.TryGetMatches(goal, out matches))
                     {
                         return (goal, matches);
                     }
                 }
                 var signature = goal.GetSignature();
-                if (!KnowledgeBase.TryGet(signature, out _) && !module.DynamicPredicates.TryGetValue(signature, out _))
+                if (!KnowledgeBase.TryGet(signature, out var predicates) && !module.DynamicPredicates.Contains(signature))
                 {
                     if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
-                        throw new InterpreterException(InterpreterError.UnknownPredicate, goal.GetSignature().Explain());
+                        throw new SolverException(SolverError.UndefinedPredicate, scope, goal.GetSignature().Explain());
                     }
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
@@ -232,7 +236,7 @@ namespace Ergo.Solver
         public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default)
         {
             Cut.Value = false;
-            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, default)), goal.Goals);
+            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals);
         }
     }
 }

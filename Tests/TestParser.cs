@@ -4,6 +4,7 @@ using Ergo.Lang.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 
 namespace Tests
 {
@@ -11,7 +12,7 @@ namespace Tests
     [TestClass]
     public class TestParser
     {
-        private readonly ExceptionHandler Thrower = new((scope, ex) => throw ex);
+        private readonly ExceptionHandler Thrower = new((scope, ex) => ExceptionDispatchInfo.Capture(ex).Throw());
 
         [DataRow("a_simple_atom", "a_simple_atom")]
         [DataRow("'a string'", "'a string'")]

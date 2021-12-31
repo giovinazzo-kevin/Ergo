@@ -1,0 +1,4 @@
+﻿:- module(stdlib, []).
+:- use_module(list).
+:- use_module(math).
+:- use_module(meta).

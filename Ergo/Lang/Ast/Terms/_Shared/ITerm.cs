@@ -36,6 +36,14 @@ namespace Ergo.Lang.Ast
 
         ITerm Substitute(Substitution s);
         ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
+        ITerm Concat(params ITerm[] next)
+        {
+            if (this is Complex cplx)
+                return new Complex(cplx.Functor, cplx.Arguments.Concat(next).ToArray());
+            if (this is Atom a)
+                return new Complex(a, next);
+            return this;
+        }
 
         ITerm Substitute(IEnumerable<Substitution> subs)
         {

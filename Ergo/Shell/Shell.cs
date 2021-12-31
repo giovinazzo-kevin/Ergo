@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 
@@ -22,7 +23,7 @@ namespace Ergo.Shell
         protected readonly ExceptionHandler DefaultExceptionHandler;
         public readonly Action<ErgoSolver> ConfigureSolver;
 
-        public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler, false, false);
+        public ShellScope CreateScope() => new(Interpreter.CreateUserScope().WithRuntime(true), DefaultExceptionHandler, false, false);
 
         public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
         {
@@ -50,7 +51,7 @@ namespace Ergo.Shell
             DefaultExceptionHandler = new ExceptionHandler((scope, ex) => {
                 WriteLine(ex.Message, LogLevel.Err);
                 if (scope.ExceptionThrowingEnabled && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException)) {
-                    throw ex;
+                    ExceptionDispatchInfo.Capture(ex).Throw();
                 }
             });
             AddCommandsByReflection();

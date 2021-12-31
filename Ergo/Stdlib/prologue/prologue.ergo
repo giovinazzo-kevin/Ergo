@@ -8,12 +8,15 @@
 	'#<'/2, '#>'/2, '#≥'/2, '#≤'/2,
 	'?='/2,
 	'/'/2,
-	':'/2
+	':'/2,
+	'->'/2,
+	forall/2
 ]).
 
 % OPERATOR DECLARATIONS
 :- op(1000, xfx, [':']).
 :- op(30, xfy, ['∨', ';']).
+:- op(30, xfx, ['->']).
 :- op(50, xfx, [':=', is]).
 :- op(50, xfx, ['=:=']).
 :- op(50, xfx, ['=\\=']).
@@ -28,6 +31,9 @@
 :- op(30, fx, ['¬', '\\+']).
 
 % OPERATOR IMPLEMENTATIONS
+If -> Then; _Else :- If, !, Then.
+_If -> _Then; Else :- !, Else.
+If -> Then :- If, !, Then.
 %: Logical disjunction of A and B.
 '∨'(A, _B) :- A.
 %: Logical disjunction of A and B.

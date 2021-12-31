@@ -38,10 +38,10 @@ namespace Ergo.Lang.Ast
                 return list.Explain();
             }
             // TODO: remove this crap
-            if(Functor.Value.Equals("∨") && Arguments.Length == 2)
-            {
-                return $"{Arguments[0].Explain()} ∨ {Arguments[1].Explain()}";
-            }
+            //if(Functor.Value.Equals("∨") && Arguments.Length == 2)
+            //{
+            //    return $"{Arguments[0].Explain()} ∨ {Arguments[1].Explain()}";
+            //}
             return $"{Functor.Explain()}({String.Join(", ", Arguments.Select(arg => arg.Explain()))})";
         }
 

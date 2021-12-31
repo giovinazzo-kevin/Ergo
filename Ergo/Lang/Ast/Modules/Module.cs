@@ -57,7 +57,7 @@ namespace Ergo.Lang.Ast
         public Module WithLiterals(ImmutableDictionary<Atom, Literal> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
         public Module WithLiteral(Literal literal) => new(Name, Imports, Exports, Operators, Literals.Add(literal.Key, literal), DynamicPredicates, Program, Runtime);
         public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Literals, predicates, Program, Runtime);
-        public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Literals, DynamicPredicates.Add(predicate), Program, Runtime);
+        public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Literals, DynamicPredicates.Add(predicate.WithModule(Maybe.Some(Name))), Program, Runtime);
         public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Literals, DynamicPredicates, p, Runtime);
 
         public bool ContainsExport(Signature sig)

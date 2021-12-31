@@ -1,8 +1,11 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
@@ -11,6 +14,12 @@ namespace Ergo.Solver.BuiltIns
     {
         public readonly Signature Signature;
         public readonly string Documentation;
+
+        public Predicate GetStub(ITerm[] arguments)
+        {
+            var head = new Complex(Signature.Functor, arguments);
+            return new Predicate(Documentation, Modules.__BuiltIn, head, CommaSequence.Empty, dynamic: false);
+        }
 
         public abstract IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);
 

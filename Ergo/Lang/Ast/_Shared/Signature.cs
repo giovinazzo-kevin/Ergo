@@ -26,7 +26,7 @@ namespace Ergo.Lang.Ast
             {
                 return false;
             }
-            return Functor.Equals(other.Functor) && Arity.Equals(other.Arity);
+            return Functor.Equals(other.Functor) && Arity.Equals(other.Arity) && Module.Equals(other.Module);
         }
 
         public static bool operator ==(Signature left, Signature right)
@@ -41,7 +41,7 @@ namespace Ergo.Lang.Ast
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode());
+            return HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
         }
 
 

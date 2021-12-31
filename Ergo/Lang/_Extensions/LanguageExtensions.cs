@@ -46,8 +46,13 @@ namespace Ergo.Lang.Extensions
                 Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity)),
                 Maybe<Atom>.None
             );
-
         }
 
+        public static Complex BuildAnonymousComplex(this Atom functor, int arity)
+        {
+            return new Complex(functor, Enumerable.Range(0, arity)
+                .Select(i => (ITerm)new Variable($"__A{i}"))
+                .ToArray());
+        }
     }
 }

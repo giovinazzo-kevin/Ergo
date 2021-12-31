@@ -14,7 +14,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            var result = new Atom(Eval(arguments[1]));
+            var result = new Atom(Eval(arguments[1], solver.InterpreterScope));
             if (new Substitution(arguments[0], result).TryUnify(out var subs)) {
                 yield return new(Literals.True, subs.ToArray());
             }

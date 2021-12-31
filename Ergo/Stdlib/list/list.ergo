@@ -2,6 +2,7 @@
 	member/2, length/2
 ]).
 
+member(_, []) :- false.
 member(X, [Y|T]) :- (X = Y; member(X, T)).
 
 length([], 0).

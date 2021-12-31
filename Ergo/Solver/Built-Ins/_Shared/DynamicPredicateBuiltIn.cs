@@ -13,13 +13,19 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        protected bool Assert(ErgoSolver solver, SolverScope scope, ITerm term, bool z)
+        protected Predicate GetPredicate(ErgoSolver solver, SolverScope scope, ITerm arg)
         {
-            if (!Predicate.TryUnfold(term, scope.Module, out var pred))
+            if (!Predicate.TryUnfold(arg, scope.Module, out var pred))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Predicate, term.Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Predicate, arg.Explain());
             }
             pred = pred.Qualified().AsDynamic().WithModuleName(scope.Module);
+            return pred;
+        }
+
+        protected bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
+        {
+            var pred = GetPredicate(solver, scope, arg);
             if (!solver.Interpreter.TryAddDynamicPredicate(new(pred.Head.GetSignature(), pred, assertz: z)))
             {
                 return false;
@@ -44,7 +50,7 @@ namespace Ergo.Solver.BuiltIns
             {
                 if (solver.InterpreterScope.Module != dyn.Predicate.DeclaringModule)
                 {
-                    throw new InterpreterException(InterpreterError.CannotRetractImportedPredicate, sig.Explain(), solver.InterpreterScope.Module.Explain(), dyn.Predicate.DeclaringModule.Explain());
+                    throw new SolverException(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), solver.InterpreterScope.Module.Explain(), dyn.Predicate.DeclaringModule.Explain());
                 }
                 solver.Interpreter.TryRemoveDynamicPredicate(dyn);
                 if(!all)

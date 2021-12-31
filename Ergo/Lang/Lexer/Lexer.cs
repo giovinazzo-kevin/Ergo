@@ -286,7 +286,7 @@ namespace Ergo.Lang
 
             Token ReadOperator()
             {
-                var set = OperatorSymbols.ToList();
+                var set = OperatorSymbols.Distinct().ToList();
                 int i = 0;
                 var p = State;
                 while (!Eof && IsOperatorPiece(Peek())) {

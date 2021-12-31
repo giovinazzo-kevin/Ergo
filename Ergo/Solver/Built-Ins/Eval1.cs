@@ -13,7 +13,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            yield return new(new Atom(Eval(arguments[0])));
+            yield return new(new Atom(Eval(arguments[0], solver.InterpreterScope)));
         }
     }
 }

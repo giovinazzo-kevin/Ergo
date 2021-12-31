@@ -10,19 +10,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Stdlib\test.ergo">
+    <None Update="Stdlib\meta\meta.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Stdlib\stdlib.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Stdlib\todo.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\list.ergo">
+    <None Update="Stdlib\list\list.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\math.ergo">
+    <None Update="Stdlib\math\math.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\prologue.ergo">
+    <None Update="Stdlib\prologue\prologue.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Stdlib\User.ergoergo">

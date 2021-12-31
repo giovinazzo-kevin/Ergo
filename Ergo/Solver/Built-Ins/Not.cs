@@ -20,7 +20,7 @@ namespace Ergo.Solver.BuiltIns
             var arg = arguments.Single();
             if (!arg.Matches<bool>(out var eval))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Boolean, arg.Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Boolean, arg.Explain());
             }
             yield return new(new Atom(!eval));
         }

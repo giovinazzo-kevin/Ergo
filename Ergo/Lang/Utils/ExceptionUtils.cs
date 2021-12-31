@@ -1,5 +1,7 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Solver;
 using System;
+using System.Linq;
 
 namespace Ergo.Lang.Utils
 {
@@ -41,23 +43,18 @@ namespace Ergo.Lang.Utils
             return msg;
         }
 
-        public static string GetInterpreterError(InterpreterError error, params object[] args)
+        public static string GetInterpreterError(InterpreterError error, InterpreterScope scope, params object[] args)
         {
             var msg = error switch
             {
-                InterpreterError.UnknownPredicate => String.Format("Predicate not found: {0}", args)
-                , InterpreterError.UserPredicateConflictsWithBuiltIn => String.Format("User-defined predicate conflicts with built-in: {0}", args)
-                , InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
-                , InterpreterError.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
-                , InterpreterError.UndefinedDirective => String.Format("Undefined directive: {0}", args)
-                , InterpreterError.ExpectedTermWithArity => String.Format("Expected: {0}/{1}", args)
+                InterpreterError.UndefinedDirective => String.Format("Undefined directive: {0}", args)
                 , InterpreterError.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
                 , InterpreterError.ModuleNameClash => String.Format("Module {0} can't be declared because it would shadow a static module", args)
                 , InterpreterError.LiteralClashWithBuiltIn => String.Format("Literal {0} can't be declared because it would shadow a built-in literal", args)
                 , InterpreterError.LiteralClash => String.Format("Literal {0} was already declared in this module", args)
                 , InterpreterError.LiteralCircularDefinition => String.Format("Literal {0} can't be declared as {1} because the definition would be circular", args)
                 , InterpreterError.OperatorClash => String.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
-                , InterpreterError.CannotRetractImportedPredicate => String.Format("Can't retract {0} from module {1} because it was declared in module {2}", args)
+                , InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
                 , _ => error.ToString()
             };
 
@@ -65,6 +62,23 @@ namespace Ergo.Lang.Utils
                 msg = String.Format(msg, args);
             }
 
+            return msg;
+        }
+
+        public static string GetSolverError(SolverError error, SolverScope scope, params object[] args)
+        {
+            var msg = error switch
+            {
+                SolverError.CannotRetractImportedPredicate => String.Format("Can't retract {0} from module {1} because it was declared in module {2}", args)
+                , SolverError.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
+                , SolverError.TermNotSufficientlyInstantiated => String.Format("Term not sufficiently instantiated: {0}", args)
+                , _ => error.ToString()
+            };
+
+            if (args != null && args.Length > 0) {
+                msg = String.Format(msg, args);
+            }
+            msg = $"{msg}\r\n\r\nIn:\r\n{scope.Explain()}";
             return msg;
         }
 

@@ -1,6 +1,7 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
 
 namespace Ergo.Interpreter.Directives
 {
@@ -15,7 +16,7 @@ namespace Ergo.Interpreter.Directives
         {
             if(!Signature.TryUnfold(args[0], out var sig))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Signature, args[0].Explain());
+                sig = args[0].GetSignature();
             }
             scope = scope.WithModule(scope.Modules[scope.Module]
                 .WithDynamicPredicate(sig));

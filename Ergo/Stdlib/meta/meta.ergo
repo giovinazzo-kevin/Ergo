@@ -1,0 +1,15 @@
+﻿:- module(meta, [
+	call/1,
+	ignore/1,
+	once/1,
+	forall/2
+]).
+
+call(Goal) :- Goal.
+
+ignore(Goal) :- Goal, !.
+ignore(_).
+
+once(Goal) :- (call(Goal) -> true ; false).
+
+forall(Cond, Action) :- \+(Cond, \+Action).

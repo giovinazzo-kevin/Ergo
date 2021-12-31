@@ -17,7 +17,7 @@ namespace Tests
         protected static (ErgoInterpreter, InterpreterScope) MakeInterpreter()
         {
             var i = new ErgoInterpreter();
-            var s = i.CreateScope();
+            var s = i.CreateStdlibScope();
             i.Load(ref s, "Test", FileStreamUtils.MemoryStream(@"
                 fact.
                 data(1).

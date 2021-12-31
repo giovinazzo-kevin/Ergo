@@ -24,19 +24,19 @@ namespace Ergo.Interpreter.Directives
         {
             if (!args[0].Matches<int>(out var precedence))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.Integer, args[0].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.Integer, args[0].Explain());
             }
             if (!args[1].Matches<OperatorType>(out var type))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, "OperatorType", args[1].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, "OperatorType", args[1].Explain());
             }
             if (!args[2].Matches<string[]>(out var synonyms))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.List, args[2].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[2].Explain());
             }
             if(Operators.DefinedOperators.Any(o => o.Synonyms.Select(x => x.Explain()).Intersect(synonyms).Any()))
             {
-                throw new InterpreterException(InterpreterError.OperatorClash, args[2].Explain());
+                throw new InterpreterException(InterpreterError.OperatorClash, scope, args[2].Explain());
             }
             var (affix, assoc) = type switch
             {

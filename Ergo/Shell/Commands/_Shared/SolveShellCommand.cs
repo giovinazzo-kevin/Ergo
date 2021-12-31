@@ -66,7 +66,6 @@ namespace Ergo.Shell.Commands
                 {
                     shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);
                     var any = false;
-                    shell.Write(String.Empty, LogLevel.Ans);
                     foreach (var s in solutions)
                     {
                         if (any)
@@ -80,6 +79,11 @@ namespace Ergo.Shell.Commands
                                 shell.WriteLine(" ∨", LogLevel.Rpl);
                                 shell.Write(String.Empty, LogLevel.Ans);
                             }
+                        }
+                        else
+                        {
+                            any = true;
+                            shell.Write(String.Empty, LogLevel.Ans);
                         }
                         if (s.Substitutions.Any())
                         {
@@ -98,7 +102,6 @@ namespace Ergo.Shell.Commands
                         {
                             shell.Yes(nl: false, LogLevel.Rpl);
                         }
-                        any = true;
                     }
                     if (!any) shell.No(nl: true, LogLevel.Rpl);
                     shell.WriteLine();

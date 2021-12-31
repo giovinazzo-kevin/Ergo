@@ -51,14 +51,6 @@ namespace Ergo.Lang
         {
             var lst = new List<Match>();
             matches = lst;
-
-            var module = Maybe<Atom>.None;
-            if(goal.TryGetQualification(out var qm, out var qs))
-            {
-                module = Maybe.Some(qm);
-                goal = qs;
-            }
-
             // Instantiate goal
             if(!new Substitution(goal.Instantiate(Context), goal).TryUnify(out var subs)) {
                 return false;
@@ -67,13 +59,10 @@ namespace Ergo.Lang
             if (TryGet(head.GetSignature(), out var list)) {
                 foreach (var k in list) {
                     var ks = k.Instantiate(Context);
-                    if(module.Reduce(some => ks.DeclaringModule.Equals(some), () => true))
+                    if (Predicate.TryUnify(head, ks, out var matchSubs))
                     {
-                        if (Predicate.TryUnify(head, ks, out var matchSubs))
-                        {
-                            ks = Predicate.Substitute(ks, matchSubs);
-                            lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
-                        }
+                        ks = Predicate.Substitute(ks, matchSubs);
+                        lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
                     }
                 }
                 return lst.Any();

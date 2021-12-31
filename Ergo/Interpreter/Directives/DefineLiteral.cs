@@ -23,19 +23,19 @@ namespace Ergo.Interpreter.Directives
 
             if (!args[0].Matches<string>(out var literalName))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, Types.String, args[0].Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
             }
             if (Literals.DefinedLiterals.Any(l => l.Equals(args[0])))
             {
-                throw new InterpreterException(InterpreterError.LiteralClashWithBuiltIn, args[0].Explain());
+                throw new InterpreterException(InterpreterError.LiteralClashWithBuiltIn, scope, args[0].Explain());
             }
             if (scope.Modules[scope.Module].Literals.Any(l => l.Key.Equals(args[0])))
             {
-                throw new InterpreterException(InterpreterError.LiteralClash, args[0].Explain());
+                throw new InterpreterException(InterpreterError.LiteralClash, scope, args[0].Explain());
             }
             if(DefinedCircularly(args[0], args[1]))
             {
-                throw new InterpreterException(InterpreterError.LiteralCircularDefinition, args[0].Explain(), args[1].Explain());
+                throw new InterpreterException(InterpreterError.LiteralCircularDefinition, scope, args[0].Explain(), args[1].Explain());
             }
             scope = scope.WithModule(scope.Modules[scope.Module]
                 .WithLiteral(new(new(literalName), args[1])));

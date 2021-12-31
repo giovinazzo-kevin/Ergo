@@ -30,13 +30,28 @@ namespace Ergo.Interpreter
             AddDirectivesByReflection();
         }
 
-        public InterpreterScope CreateScope()
+        /// <summary>
+        /// The stdlib scope is the "standard" Ergo scope. It makes the prologue module available, and nothing else.
+        /// </summary>
+        public InterpreterScope CreateStdlibScope()
         {
             var prologueScope = new InterpreterScope(new Module(Modules.Prologue, runtime: true));
             var prologue = Load(ref prologueScope, Modules.Prologue.Explain());
             return new InterpreterScope(new Module(Modules.User, runtime: true)
                     .WithImport(Modules.Prologue))
                 .WithModule(prologue);
+        }
+
+        /// <summary>
+        /// The shell scope is the Ergo scope designated for end-user modules. It imports a list of standard modules besides the prologue.
+        /// </summary>
+        public InterpreterScope CreateUserScope()
+        {
+            var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));
+            var stdlib = Load(ref stdlibScope, Modules.Stdlib.Explain());
+            return new InterpreterScope(new Module(Modules.User, runtime: true)
+                    .WithImport(Modules.Stdlib))
+                .WithModule(stdlib);
         }
 
         public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
@@ -75,9 +90,9 @@ namespace Ergo.Interpreter
 
         public virtual Module Load(ref InterpreterScope scope, string fileName)
         {
-            var dir = scope.SearchDirectories.FirstOrDefault(
-                d => File.Exists(Path.ChangeExtension(Path.Combine(d, fileName), "ergo"))
-            );
+            var dir = scope.SearchDirectories
+                .Concat(scope.SearchDirectories.Select(s => s + fileName + "/")) // Allows structuring modules within folders of the same name; TODO: proper refactor
+                .FirstOrDefault(d => File.Exists(Path.ChangeExtension(Path.Combine(d, fileName), "ergo")));
             if (dir == null)
             {
                 throw new FileNotFoundException(fileName);
@@ -89,20 +104,21 @@ namespace Ergo.Interpreter
 
         public virtual Module Load(ref InterpreterScope scope, string name, Stream file, bool closeStream = true)
         {
-            var operators = scope.GetUserDefinedOperators();
+            var operators = scope.GetUserDefinedOperators().ToArray();
             var lexer = new Lexer(file, operators, name);
             var parser = new Parser(lexer, operators);
             if (!parser.TryParseProgramDirectives(out var program))
             {
                 MaybeClose();
-                throw new InterpreterException(InterpreterError.CouldNotLoadFile);
+                throw new InterpreterException(InterpreterError.CouldNotLoadFile, scope);
             }
 
+            var scope_ = scope;
             var directives = program.Directives.Select(d =>
             {
                 if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
                     return (Ast: d, Builtin: directive);
-                throw new InterpreterException(InterpreterError.UndefinedDirective, d.Body.Explain());
+                throw new InterpreterException(InterpreterError.UndefinedDirective, scope_, d.Body.Explain());
             });
 
             foreach (var d in directives.OrderBy(x => x.Builtin.Priority))
@@ -131,7 +147,7 @@ namespace Ergo.Interpreter
             if (!parser.TryParseProgram(out program))
             {
                 MaybeClose();
-                throw new InterpreterException(InterpreterError.CouldNotLoadFile);
+                throw new InterpreterException(InterpreterError.CouldNotLoadFile, scope);
             }
             var currentModule = scope.Modules[scope.Module].WithProgram(program);
             foreach (Atom import in currentModule.Imports.Contents)
@@ -185,11 +201,8 @@ namespace Ergo.Interpreter
                 && (new Atom[] { new("/"), new("@anon") }).Contains(c.Functor)
                 && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
-                head = new Complex(new(match.Predicate), Enumerable.Range(0, match.Arity)
-                    .Select(i => (ITerm)new Variable($"{i}"))
-                    .ToArray());
+                head = new Atom(match.Predicate).BuildAnonymousComplex(match.Arity);
             }
-            // todo: module desugaring
             return new ErgoSolver(this, scope).KnowledgeBase.TryGetMatches(head, out matches);
         }
 
@@ -199,7 +212,10 @@ namespace Ergo.Interpreter
             {
                 return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
             }
-            // TODO: throw if flag says so
+            if(Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
+            {
+                throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain());
+            }
             return false;
         }
 

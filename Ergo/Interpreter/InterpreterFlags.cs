@@ -5,8 +5,9 @@ namespace Ergo.Interpreter
     [Flags]
     public enum InterpreterFlags
     {
-        Default = None,
+        Default = ThrowOnDirectiveNotFound,
         None = 0,
-        AllowStaticModuleRedefinition = 1
+        // Throws an exception instead of returning false if a directive is not found either when loading a module or at runtime.
+        ThrowOnDirectiveNotFound = 1
     }
 }

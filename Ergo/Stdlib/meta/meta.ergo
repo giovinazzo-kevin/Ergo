@@ -14,12 +14,34 @@ once(Goal) :- (call(Goal) -> true ; false).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
 
-maplist(_, []).
-maplist(Pred, [L|Ls]) :- 
-	call(Pred, L), 
-	maplist(Pred, Ls).
+maplist(Goal, List) :-
+    maplist_(List, Goal).
 
-maplist(_, [], []).
-maplist(Pred, [A|As], [B|Bs]) :-
-    call(Pred, A, B),
-    maplist(Pred, As, Bs).
+maplist_([], _).
+maplist_([Elem|Tail], Goal) :-
+    call(Goal, Elem),
+    maplist_(Tail, Goal).
+
+maplist(Goal, List1, List2) :-
+    maplist_(List1, List2, Goal).
+
+maplist_([], [], _).
+maplist_([Elem1|Tail1], [Elem2|Tail2], Goal) :-
+    call(Goal, Elem1, Elem2),
+    maplist_(Tail1, Tail2, Goal).
+
+maplist(Goal, List1, List2, List3) :-
+    maplist_(List1, List2, List3, Goal).
+
+maplist_([], [], [], _).
+maplist_([Elem1|Tail1], [Elem2|Tail2], [Elem3|Tail3], Goal) :-
+    call(Goal, Elem1, Elem2, Elem3),
+    maplist_(Tail1, Tail2, Tail3, Goal).
+
+maplist(Goal, List1, List2, List3, List4) :-
+    maplist_(List1, List2, List3, List4, Goal).
+
+maplist_([], [], [], [], _).
+maplist_([Elem1|Tail1], [Elem2|Tail2], [Elem3|Tail3], [Elem4|Tail4], Goal) :-
+    call(Goal, Elem1, Elem2, Elem3, Elem4),
+    maplist_(Tail1, Tail2, Tail3, Tail4, Goal).

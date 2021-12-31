@@ -78,7 +78,11 @@ namespace Ergo.Lang.Utils
             if (args != null && args.Length > 0) {
                 msg = String.Format(msg, args);
             }
-            msg = $"{msg}\r\n\r\nIn:\r\n{scope.Explain()}";
+            var expl = scope.Explain();
+            if(!String.IsNullOrWhiteSpace(expl))
+            {
+                msg = $"{msg}\r\n\r\nIn:\r\n{expl}";
+            }
             return msg;
         }
 

@@ -190,7 +190,7 @@ namespace Ergo.Solver
                 }
                 if (goal.Equals(Literals.True))
                 {
-                    LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join(" ∨ ", subs.Select(s => s.Explain()))}}}", scope.Depth);
+                    LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", scope.Depth);
                     yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }
@@ -221,15 +221,24 @@ namespace Ergo.Solver
                 {
                     return (goal, matches);
                 }
+                var isDynamic = false;
                 if (!goal.IsQualified)
                 {
-                    if (goal.TryQualify(module.Name, out goal) && KnowledgeBase.TryGetMatches(goal, out matches))
+                    if (goal.TryQualify(module.Name, out var qualified) 
+                        && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true)
+                        && KnowledgeBase.TryGetMatches(qualified, out matches))
                     {
-                        return (goal, matches);
+                        return (qualified, matches);
+                    }
+                    if (goal.TryQualify(scope.Module, out qualified)
+                        && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true)
+                        && KnowledgeBase.TryGetMatches(qualified, out matches))
+                    {
+                        return (qualified, matches);
                     }
                 }
                 var signature = goal.GetSignature();
-                if (!KnowledgeBase.TryGet(signature, out var predicates) && !module.DynamicPredicates.Contains(signature))
+                if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= module.DynamicPredicates.Contains(goal.GetSignature())))
                 {
                     if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {

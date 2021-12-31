@@ -4,13 +4,14 @@ using System.Linq;
 
 namespace Ergo.Lang.Ast
 {
-    public interface ISequence
+    public interface ISequence : IExplainable
     {
         ITerm Root { get; }
         Atom Functor { get; }
         ImmutableArray<ITerm> Contents { get; }
         ITerm EmptyElement { get; }
         bool IsEmpty { get; }
+        public bool IsParenthesized { get; }
 
         IEnumerable<ITerm> GetContents(ITerm root, ITerm emptyElem)
         {
@@ -44,7 +45,8 @@ namespace Ergo.Lang.Ast
             return args
                 .Append(emptyElement)
                 .Reverse()
-                .Aggregate((a, b) => new Complex(functor, b, a));
+                .Aggregate((a, b) => new Complex(functor, b, a)
+                    .AsOperator(OperatorAffix.Infix));
         }
     }
 

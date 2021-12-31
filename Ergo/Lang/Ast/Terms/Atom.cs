@@ -23,7 +23,7 @@ namespace Ergo.Lang.Ast
             HashCode = value?.GetHashCode() ?? 0;
         }
 
-        public string Explain()
+        public string Explain(bool canonical = false)
         {
             if (Value is bool b)
             {
@@ -34,8 +34,9 @@ namespace Ergo.Lang.Ast
                 s = Escape(s);
                 // In certain cases, the quotes can be omitted
                 if (
-                       // If this == Literals.EmptyList
-                       s == "[]"
+                    !canonical
+                    // If this == Literals.EmptyList
+                    || s == "[]"
                     // Or if this == Literals.EmptyCommaExpression
                     || s == "()"
                     // Or if this is not a string that can be confused with a variable name

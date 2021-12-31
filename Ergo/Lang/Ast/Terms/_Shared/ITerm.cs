@@ -4,13 +4,12 @@ using System.Linq;
 
 namespace Ergo.Lang.Ast
 {
-    public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>
+    public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     {
         bool IsGround { get; }
         bool IsQualified { get; }
         IEnumerable<Variable> Variables { get; }
 
-        string Explain();
         bool TryQualify(Atom m, out ITerm qualified)
         {
             if(IsQualified)
@@ -39,7 +38,7 @@ namespace Ergo.Lang.Ast
         ITerm Concat(params ITerm[] next)
         {
             if (this is Complex cplx)
-                return new Complex(cplx.Functor, cplx.Arguments.Concat(next).ToArray());
+                return cplx.WithArguments(cplx.Arguments.Concat(next).ToArray());
             if (this is Atom a)
                 return new Complex(a, next);
             return this;

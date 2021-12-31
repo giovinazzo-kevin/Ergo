@@ -12,14 +12,14 @@ namespace Ergo.Lang.Ast
         public bool IsGround => Arguments.All(arg => arg.IsGround);
         public readonly bool IsQualified { get; }
 
+        public readonly Maybe<OperatorAffix> Affix;
+        public readonly bool IsParenthesized;
+
         public readonly Atom Functor;
         public readonly ITerm[] Arguments;
         public readonly int Arity => Arguments.Length;
 
         private readonly int HashCode;
-
-        public static Complex OfArity(Atom functor, int arity) => 
-            new(functor, Enumerable.Range(0, arity).Select(i => (ITerm)new Variable($"_{i}")).ToArray());
 
         public Complex(Atom functor, params ITerm[] args)
         {
@@ -27,22 +27,41 @@ namespace Ergo.Lang.Ast
             Arguments = args;
             HashCode = System.HashCode.Combine(Functor, Arguments.Length);
             IsQualified = args.Length == 2 && ":".Equals(functor.Value);
+            Affix = Maybe<OperatorAffix>.None;
+            IsParenthesized = false;
         }
 
-        public string Explain()
+        private Complex(Maybe<OperatorAffix> affix, bool parenthesized, Atom functor, params ITerm[] args)
+            : this(functor, args)
         {
-            if (CommaSequence.TryUnfold(this, out var comma)) {
-                return comma.Explain();
+            Affix = affix;
+            IsParenthesized = parenthesized;
+        }
+
+        public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, Arguments);
+        public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, Arguments);
+        public Complex Parenthesized(bool parens) => new(Affix, parens, Functor, Arguments);
+
+        public string Explain(bool canonical = false)
+        {
+            if(!canonical && IsParenthesized)
+            {
+                return $"({Inner(this)})";
             }
-            if (List.TryUnfold(this, out var list)) {
-                return list.Explain();
+            return Inner(this);
+
+            string Inner(Complex c)
+            {
+                return c.Affix.Reduce(some => canonical ? OperatorAffix.Prefix : some, () => OperatorAffix.Prefix) switch
+                {
+                    _ when List.TryUnfold(c, out var list) => list.Explain(canonical),
+                    _ when CommaSequence.TryUnfold(c, out var comma) => comma.Explain(canonical),
+                    OperatorAffix.Infix => $"{c.Arguments[0].Explain(canonical)} {c.Functor.Explain(canonical)} {c.Arguments[1].Explain(canonical)}",
+                    OperatorAffix.Postfix => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.Explain(canonical)}",
+                    _ when !canonical && c.Affix.HasValue => $"{c.Functor.Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
+                    _ => $"{c.Functor.Explain(canonical)}({String.Join(", ", c.Arguments.Select(arg => arg.Explain(canonical)))})",
+                };
             }
-            // TODO: remove this crap
-            //if(Functor.Value.Equals("∨") && Arguments.Length == 2)
-            //{
-            //    return $"{Arguments[0].Explain()} ∨ {Arguments[1].Explain()}";
-            //}
-            return $"{Functor.Explain()}({String.Join(", ", Arguments.Select(arg => arg.Explain()))})";
         }
 
         public ITerm Substitute(Substitution s)
@@ -112,11 +131,6 @@ namespace Ergo.Lang.Ast
         {
             return new Complex(Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
         }
-
-        //public ITerm Qualify(Atom m)
-        //{
-        //    return new Complex(new Atom($"{m.Explain()}:{Functor.Explain()}"), Arguments);
-        //}
 
         public static bool operator ==(Complex left, Complex right)
         {

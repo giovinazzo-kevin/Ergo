@@ -46,11 +46,19 @@ namespace Ergo.Lang
             _lexer.Seek(s);
             throw new ParserException(error, old, args);
         }
-        protected bool TryParseSequence(Atom functor, ITerm emptyElement, Func<(bool, ITerm)> tryParseElement, string openingDelim, string separator, string closingDelim, bool @throw, out UntypedSequence seq)
+        protected bool TryParseSequence(
+            Atom functor, 
+            ITerm emptyElement, 
+            Func<(bool, ITerm, bool)> tryParseElement, 
+            string openingDelim, 
+            string separator, 
+            string closingDelim, 
+            bool @throw, 
+            out UntypedSequence seq)
         {
             seq = default;
             var pos = _lexer.State;
-            var args = new List<ITerm>();
+            var args = new List<(ITerm Term, bool Parenthesized)>();
 
             if (openingDelim != null) {
                 if (!ExpectDelimiter(p => p == openingDelim, out string _)) {
@@ -58,13 +66,13 @@ namespace Ergo.Lang
                 }
                 if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out string _)) {
                     // Empty list
-                    seq = new UntypedSequence(functor, emptyElement, ImmutableArray<ITerm>.Empty);
+                    seq = new UntypedSequence(functor, emptyElement, ImmutableArray<ITerm>.Empty, false);
                     return true;
                 }
             }
 
-            while (tryParseElement() is (true, var ITerm)) {
-                args.Add(ITerm);
+            while (tryParseElement() is (true, var term, var parenthesized)) {
+                args.Add((term, parenthesized));
                 if (!ExpectDelimiter(p => true, out string q) || q != separator && q != closingDelim) {
                     if(@throw)
                         Throw(pos, ErrorType.ExpectedArgumentDelimiterOrClosedParens, separator, closingDelim);
@@ -76,11 +84,11 @@ namespace Ergo.Lang
             }
             // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
             if(TryGetOperatorsFromFunctor(new Atom(separator), out var ops) && ops.Contains(Operators.BinaryConjunction)
-              && args.Count == 1 && CommaSequence.TryUnfold(args.Single(), out var comma)) {
-                seq = new UntypedSequence(functor, emptyElement, comma.Contents);
+              && args.Count == 1 && args.Single() is { } arg && CommaSequence.TryUnfold(arg.Term, out var comma)) {
+                seq = new UntypedSequence(functor, emptyElement, comma.Contents, arg.Parenthesized);
             }
             else {
-                seq = new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args));
+                seq = new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args.Select(a => a.Term)), false);
             }
             return true;
 

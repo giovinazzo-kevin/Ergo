@@ -123,7 +123,7 @@ namespace Ergo.Solver
 
         protected void AddBuiltInsByReflection()
         {
-            var assembly = typeof(Print).Assembly;
+            var assembly = typeof(Write).Assembly;
             foreach (var type in assembly.GetTypes())
             {
                 if (!type.IsAssignableTo(typeof(BuiltIn))) continue;

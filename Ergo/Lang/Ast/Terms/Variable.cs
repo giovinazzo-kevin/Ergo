@@ -26,7 +26,7 @@ namespace Ergo.Lang.Ast
             HashCode = Name.GetHashCode();
         }
 
-        public string Explain() => Name;
+        public string Explain(bool _ = false) => Name;
 
         public ITerm Substitute(Substitution s)
         {

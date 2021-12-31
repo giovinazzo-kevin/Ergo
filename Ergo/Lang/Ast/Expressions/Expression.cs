@@ -10,12 +10,14 @@ namespace Ergo.Lang.Ast
         public readonly Operator Operator;
         public readonly Complex Complex;
 
-        public Expression(Operator op, ITerm left, Maybe<ITerm> right = default)
+        public Expression(Operator op, ITerm left, Maybe<ITerm> right = default, bool parenthesized = true)
         {
             Operator = op; 
             Left = left; 
             Right = right;
-            Complex = new Complex(op.CanonicalFunctor, right.Reduce(some => new[] { left, some }, () => new[] { left }));
+            Complex = new Complex(op.CanonicalFunctor, right.Reduce(some => new[] { left, some }, () => new[] { left }))
+                .AsOperator(op.Affix)
+                .Parenthesized(parenthesized);
         }
     }
 

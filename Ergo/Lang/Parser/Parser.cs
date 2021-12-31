@@ -98,37 +98,37 @@ namespace Ergo.Lang
             if (!TryParseSequence(
                   CommaSequence.CanonicalFunctor
                 , CommaSequence.EmptyLiteral
-                , () => TryParseTermOrExpression(out var t, out _) ? (true, t) : (false, default)
+                , () => TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
                 , "(", ",", ")"
                 , true
                 , out var inner
             )) {
                 return Fail(pos);
             }
-            cplx = CommaSequence.TryUnfold(inner.Root, out _)
+            cplx = !inner.IsParenthesized && CommaSequence.TryUnfold(inner.Root, out _)
                 ? new Complex(new Atom(functor), inner.Contents.ToArray())
                 : new Complex(new Atom(functor), inner.Root);
             return true;
         }
-        public bool TryParseTermOrExpression(out ITerm ITerm, out bool parenthesized)
+        public bool TryParseTermOrExpression(out ITerm term, out bool parenthesized)
         {
             var pos = _lexer.State;
-            parenthesized = false;
             if (TryParseExpression(out var expr)) {
-                ITerm = expr.Complex;
+                term = expr.Complex;
+                parenthesized = expr.Complex.IsParenthesized;
                 return true;
             }
-            if (TryParseTerm(out ITerm, out parenthesized)) {
+            if (TryParseTerm(out term, out parenthesized)) {
                 return true;
             }
-            ITerm = default;
+            term = default;
             return Fail(pos);
         }
         public bool TryParseTerm(out ITerm ITerm, out bool parenthesized)
         {
             ITerm = default; parenthesized = false;
             var pos = _lexer.State;
-            if(Parenthesized(() => TryParseExpression(out var expr) ? (true, expr) : (false, default), out var expr)) {
+            if(Parenthesized(() => TryParseExpression(out var expr, exprParenthesized: true) ? (true, expr) : (false, default), out var expr)) {
                 ITerm = expr.Complex;
                 parenthesized = true;
                 return true;
@@ -174,7 +174,7 @@ namespace Ergo.Lang
             if (TryParseSequence(
                   List.CanonicalFunctor
                 , List.EmptyLiteral
-                , () => TryParseTermOrExpression(out var t, out _) ? (true, t) : (false, default)
+                , () => TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
                 , "[", ",", "]"
                 , true
                 , out var full
@@ -206,11 +206,11 @@ namespace Ergo.Lang
             return false;
         }
 
-        public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool lhsParenthesized = false)
+        public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool lhsParenthesized = false, bool exprParenthesized = false)
         {
             return maybeRhs.Reduce(
                 rhs => Associate(lhs, rhs),
-                () => new Expression(op, lhs, Maybe<ITerm>.None)
+                () => new Expression(op, lhs, Maybe<ITerm>.None, lhsParenthesized || exprParenthesized)
             );
 
             Expression Associate(ITerm lhs, ITerm rhs)
@@ -218,20 +218,20 @@ namespace Ergo.Lang
                 // When the lhs represents an expression with the same precedence as this (and thus associativity, by design)
                 // and right associativity, we have to swap the arguments around until they look right.
                 if (!lhsParenthesized
-                && TryConvertExpression(lhs, out var lhsExpr)
+                && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized)
                 && lhsExpr.Operator.Affix == OperatorAffix.Infix
                 && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
                 && lhsExpr.Operator.Precedence == op.Precedence)
                 {
                     // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
                     var lhsRhs = lhsExpr.Right.Reduce(x => x, () => throw new InvalidOperationException());
-                    var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs));
-                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex));
+                    var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
+                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
                 }
-                return new Expression(op, lhs, Maybe.Some(rhs));
+                return new Expression(op, lhs, Maybe.Some(rhs), exprParenthesized);
             }
 
-            bool TryConvertExpression(ITerm t, out Expression expr)
+            bool TryConvertExpression(ITerm t, out Expression expr, bool exprParenthesized = false)
             {
                 expr = default;
                 if (t is not Complex cplx)
@@ -244,12 +244,12 @@ namespace Ergo.Lang
                 });
                 if (cplx.Arguments.Length == 1)
                 {
-                    expr = BuildExpression(op, cplx.Arguments[0]);
+                    expr = BuildExpression(op, cplx.Arguments[0], exprParenthesized: exprParenthesized);
                     return true;
                 }
                 if (cplx.Arguments.Length == 2)
                 {
-                    expr = BuildExpression(op, cplx.Arguments[0], Maybe.Some(cplx.Arguments[1]));
+                    expr = BuildExpression(op, cplx.Arguments[0], Maybe.Some(cplx.Arguments[1]), exprParenthesized: exprParenthesized);
                     return true;
                 }
                 return false;
@@ -262,7 +262,7 @@ namespace Ergo.Lang
             if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
             && TryParseTerm(out var arg, out var parens)
             && (parens || !CommaSequence.TryUnfold(arg, out _))) {
-                expr = BuildExpression(op, arg);
+                expr = BuildExpression(op, arg, exprParenthesized: parens);
                 return true;
             }
             return Fail(pos);
@@ -274,13 +274,13 @@ namespace Ergo.Lang
             if (TryParseTerm(out var arg, out var parens)
             && (parens || !CommaSequence.TryUnfold(arg, out _))
             && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op)) {
-                expr = BuildExpression(op, arg);
+                expr = BuildExpression(op, arg, exprParenthesized: parens);
                 return true;
             }
             return Fail(pos);
         }
 
-        public bool TryParseExpression(out Expression expr)
+        public bool TryParseExpression(out Expression expr, bool exprParenthesized = false)
         {
             expr = default; var pos = _lexer.State;
             if (TryParsePrimary(out var lhs, out var lhsParenthesized)) {
@@ -294,7 +294,7 @@ namespace Ergo.Lang
                     return Fail(pos);
                 }
                 var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
-                expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
+                expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None, exprParenthesized: exprParenthesized);
                 return true;
             }
             return Fail(pos);
@@ -315,7 +315,7 @@ namespace Ergo.Lang
                         return Fail(pos);
                     }
                     if (!TryPeekNextOperator(out lookahead)) {
-                        expr = BuildExpression(op, lhs, Maybe.Some(rhs), lhsParenthesized);
+                        expr = BuildExpression(op, lhs, Maybe.Some(rhs), lhsParenthesized, exprParenthesized);
                         break;
                     }
                     while(lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
@@ -328,7 +328,7 @@ namespace Ergo.Lang
                             break;
                         }
                     }
-                    lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
+                    lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs), exprParenthesized: exprParenthesized)).Complex;
                 }
                 return true;
             }
@@ -411,7 +411,7 @@ namespace Ergo.Lang
                 Throw(pos, ErrorType.ExpectedClauseList);
             }
             if(!Operators.BinaryHorn.Equals(op.Operator)) {
-                op = new Expression(Operators.BinaryHorn, op.Complex, Maybe.Some(Literals.True));
+                op = new Expression(Operators.BinaryHorn, op.Complex, Maybe.Some(Literals.True), false);
             }
             if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
                 Throw(pos, ErrorType.UnterminatedClauseList);

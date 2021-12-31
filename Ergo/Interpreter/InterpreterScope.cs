@@ -124,7 +124,7 @@ namespace Ergo.Interpreter
                         args[i] = c.Arguments[i];
                     }
                 }
-                changed = new Complex(c.Functor, args);
+                changed = c.WithArguments(args);
                 return any;
             }
             foreach (var import in module.Imports.Contents.Reverse())

@@ -1,4 +1,5 @@
 ﻿
+using Ergo.Lang.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -20,14 +21,17 @@ namespace Ergo.Lang.Ast
         public ImmutableArray<ITerm> Contents { get; }
         public ITerm EmptyElement { get; }
         public bool IsEmpty { get; }
+        public bool IsParenthesized { get; }
 
-        public CommaSequence(ImmutableArray<ITerm> args)
+        public CommaSequence(ImmutableArray<ITerm> args, bool parens = false)
         {
             Functor = CanonicalFunctor;
             EmptyElement = EmptyLiteral;
             Contents = args;
             IsEmpty = args.Length == 0;
-            Root = ISequence.Fold(Functor, EmptyElement, args);
+            Root = ISequence.Fold(Functor, EmptyElement, args)
+                .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
+            IsParenthesized = parens;
         }
 
         public static bool TryUnfold(ITerm t, out CommaSequence expr)
@@ -68,18 +72,22 @@ namespace Ergo.Lang.Ast
         }
 
 
-        public string Explain()
+        public string Explain(bool canonical = false)
         {
-            if (IsEmpty)
+            if(IsParenthesized)
             {
-                return EmptyElement.Explain();
+                return $"({Inner(this)})";
             }
-            var joined = string.Join(" ∧ ", Contents.Select(t => t.Explain()));
-            if (Contents.Length != 1)
+            return Inner(this);
+            string Inner(CommaSequence seq)
             {
-                return $"({joined})";
+                if (seq.IsEmpty)
+                {
+                    return seq.EmptyElement.Explain(canonical);
+                }
+                var joined = string.Join(canonical ? " ∧ " : ", ", seq.Contents.Select(t => t.Explain(canonical)));
+                return joined;
             }
-            return joined;
         }
 
         public ISequence Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) =>

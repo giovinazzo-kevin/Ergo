@@ -1,4 +1,5 @@
 ﻿
+using Ergo.Lang.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -20,22 +21,25 @@ namespace Ergo.Lang.Ast
         public ImmutableArray<ITerm> Contents { get; }
         public ITerm EmptyElement { get; }
         public bool IsEmpty { get; }
+        public bool IsParenthesized { get; }
 
         public readonly ITerm Tail;
 
-        public List(ImmutableArray<ITerm> head, Maybe<ITerm> tail = default)
+        public List(ImmutableArray<ITerm> head, Maybe<ITerm> tail = default, bool parens = false)
         {
             Functor = CanonicalFunctor;
             EmptyElement = EmptyLiteral;
             Contents = head;
             IsEmpty = head.Length == 0;
             Tail = tail.Reduce(some => some, () => EmptyLiteral);
+            IsParenthesized = parens;
             //if(!Tail.Equals(EmptyElement))
             //{
             //    Contents = Contents.Append(tail);
             //    IsEmpty &= tail.Equals(EmptyElement);
             //}
-            Root = ISequence.Fold(Functor, Tail, head);
+            Root = ISequence.Fold(Functor, Tail, head)
+                .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
         }
 
         public static bool TryUnfold(ITerm t, out List expr)
@@ -66,16 +70,26 @@ namespace Ergo.Lang.Ast
             return false;
         }
 
-        public string Explain()
+        public string Explain(bool canonical = false)
         {
-            if (IsEmpty) {
-                return Tail.Explain();
+            if (IsParenthesized)
+            {
+                return $"({Inner(this)})";
             }
-            var joined = String.Join(", ", Contents.Select(t => t.Explain()));
-            if(!Tail.Equals(EmptyElement)) {
-                return $"[{joined}|{Tail.Explain()}]";
+            return Inner(this);
+            string Inner(List seq)
+            {
+                if (seq.IsEmpty)
+                {
+                    return seq.Tail.Explain(canonical);
+                }
+                var joined = String.Join(", ", seq.Contents.Select(t => t.Explain(canonical)));
+                if (!seq.Tail.Equals(seq.EmptyElement))
+                {
+                    return $"[{joined}|{seq.Tail.Explain(canonical)}]";
+                }
+                return $"[{joined}]";
             }
-            return $"[{joined}]";
         }
 
         public ISequence Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) =>

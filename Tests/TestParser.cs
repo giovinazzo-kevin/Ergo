@@ -26,7 +26,7 @@ namespace Tests
         public void ParseAtom(string atom, string normalized)
         {
             var p = new Parsed<Atom>(atom, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain(canonical: true));
         }
 
         [DataRow("X", "X")]
@@ -55,7 +55,11 @@ namespace Tests
         }
 
         [DataRow("a(X)", "a(X)")]
+        [DataRow("a((X))", "a(X)")]
+        [DataRow("a(X, Y)", "a(X, Y)")]
+        [DataRow("a((X, Y))", "a((X, Y))")]
         [DataRow("a([X|Rest])", "a([X|Rest])")]
+        [DataRow("a([X, Y|Rest])", "a([X, Y|Rest])")]
         [DataRow("f(A, B, C)", "f(A, B, C)")]
         [DataRow("f(A, B, g(C, D))", "f(A, B, g(C, D))")]
         [DataRow("f(A, B, g(C, h(D, 'string', 32)))", "f(A, B, g(C, h(D, string, 32)))")]
@@ -76,24 +80,25 @@ namespace Tests
         public void ParseITerm(string exp, string normalized)
         {
             var p = new Parsed<ITerm>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
+            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain(canonical: true));
         }
 
         [DataRow("-a", "-(a)")]
-        [DataRow("a, b, c, d", "(a ∧ b ∧ c ∧ d)")]
+        [DataRow("a, b, c, d", "a ∧ b ∧ c ∧ d")]
         [DataRow("a + b * c", "+(a, *(b, c))")]
         [DataRow("(a + b) * c", "*(+(a, b), c)")]
         [DataRow("(a + b) * π", "*(+(a, b), π)")]
         [DataRow("a + b * c - d", "-(+(a, *(b, c)), d)")]
         [DataRow("a + b * c * d - e", "-(+(a, *(*(b, c), d)), e)")]
         [DataRow("X = a + b * c * d - e", "=(X, -(+(a, *(*(b, c), d)), e))")]
-        [DataRow("F = B * 2 ^ (1/12) ^ N", "=(F, *(B, ^(2, ^(/(1, 12), N))))")]
-        [DataRow("F = B * (2 ^ (1/12)) ^ N", "=(F, *(B, ^(^(2, /(1, 12)), N)))")]
+        [DataRow("F = B * 2 ^ (1 / 12) ^ N", "=(F, *(B, ^(2, ^(/(1, 12), N))))")]
+        [DataRow("F = B * (2 ^ (1 / 12)) ^ N", "=(F, *(B, ^(^(2, /(1, 12)), N)))")]
         [DataTestMethod]
-        public void ParseExpression(string exp, string normalized)
+        public void ParseExpression(string exp, string canonical)
         {
             var p = new Parsed<Expression>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Complex.Explain());
+            Assert.AreEqual(canonical, p.Value.Reduce(some => some, () => default).Complex.Explain(canonical: true));
+            Assert.AreEqual(exp, p.Value.Reduce(some => some, () => default).Complex.Explain(canonical: false));
         }
 
         [DataRow("fact.", "fact.")]

@@ -68,7 +68,7 @@ namespace Tests
         {
             var (interpreter, scope) = MakeInterpreter();
             var Predicates = new Parsed<Query>(query, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            var ans = new ErgoSolver(interpreter, scope).Solve(Predicates.Value.Reduce(some => some, () => default));
+            var ans = SolverBuilder.Build(interpreter, ref scope).Solve(Predicates.Value.Reduce(some => some, () => default));
             Assert.IsNotNull(ans);
             Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explain())))));
         }

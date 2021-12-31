@@ -11,12 +11,13 @@
 between_(Min, Max, _, M) :- Min <= Max, M is Min.
 between_(Min, Max, Step, M) :-
 	Min <= Max,
-	between_(@eval(Min + Step), Max, Step, M).
+	NewMin := Min + Step,
+	between_(NewMin, Max, Step, M).
 
 between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
-between('(', Min, Max, ']', Step, M) :- between_(@eval(Min + Step), Max, Step, M).
-between('[', Min, Max, ')', Step, M) :- between_(Min, @eval(Max - Step), Step, M).
-between('(', Min, Max, ')', Step, M) :- between_(@eval(Min + Step), @eval(Max - Step), Step, M).
+between('(', Min, Max, ']', Step, M) :- NewMin := Min + Step, between_(NewMin, Max, Step, M).
+between('[', Min, Max, ')', Step, M) :- NewMax := Max - Step, between_(Min, NewMax, Step, M).
+between('(', Min, Max, ')', Step, M) :- NewMin := Min + Step, NewMax := Max - Step, between_(NewMin, NewMax, Step, M).
 
 % EXPORTED
 

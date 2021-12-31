@@ -124,22 +124,22 @@ namespace Ergo.Lang
             term = default;
             return Fail(pos);
         }
-        public bool TryParseTerm(out ITerm ITerm, out bool parenthesized)
+        public bool TryParseTerm(out ITerm term, out bool parenthesized)
         {
-            ITerm = default; parenthesized = false;
+            term = default; parenthesized = false;
             var pos = _lexer.State;
-            if(Parenthesized(() => TryParseExpression(out var expr, exprParenthesized: true) ? (true, expr) : (false, default), out var expr)) {
-                ITerm = expr.Complex;
+            if (Parenthesized(() => TryParseExpression(out var expr, exprParenthesized: true) ? (true, expr) : (false, default), out var expr)) {
+                term = expr.Complex;
                 parenthesized = true;
                 return true;
             }
             if (Parenthesized(() => TryParseTerm(out var eval, out _) ? (true, eval) : (false, default), out var eval)) {
-                ITerm = eval;
+                term = eval;
                 parenthesized = true;
                 return true;
             }
             if(TryParseTermInner(out var t)) {
-                ITerm = t;
+                term = t;
                 return true;
             }
             return Fail(pos);

@@ -3,3 +3,4 @@
 :- use_module(list).
 :- use_module(math).
 :- use_module(meta).
+:- use_module(io).

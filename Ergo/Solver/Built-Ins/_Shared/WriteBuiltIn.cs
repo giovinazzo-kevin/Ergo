@@ -24,7 +24,7 @@ namespace Ergo.Solver.BuiltIns
             }
             else
             {
-                Console.Write(args[0].Explain());
+                Console.Write(args[0].Explain(Canonical));
             }
             yield return new(Literals.True);
         }

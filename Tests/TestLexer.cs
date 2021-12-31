@@ -43,11 +43,13 @@ namespace Tests
         [TestMethod]
         public void TestTokenizer_3()
         {
-            using var stream = FileStreamUtils.MemoryStream("'\"string 1\"' \"'string 2'\" \"\\\"string 3\\\"\"");
+            using var stream = FileStreamUtils.MemoryStream("'\"string 1\"' \"'string 2'\" \"\\\"string 3\\\"\" \"string\\n4\" \"string\\\\n5\"");
             var lexer = new Lexer(stream, Array.Empty<Operator>());
             AssertNextToken(lexer, Lexer.TokenType.String, "\"string 1\"");
             AssertNextToken(lexer, Lexer.TokenType.String, "'string 2'");
             AssertNextToken(lexer, Lexer.TokenType.String, "\"string 3\"");
+            AssertNextToken(lexer, Lexer.TokenType.String, "string\n4");
+            AssertNextToken(lexer, Lexer.TokenType.String, "string\\n5");
         }
 
         [TestMethod]

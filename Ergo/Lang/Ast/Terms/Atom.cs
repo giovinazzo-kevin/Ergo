@@ -31,7 +31,10 @@ namespace Ergo.Lang.Ast
             }
             else if (Value is string s)
             {
-                s = Escape(s);
+                if(canonical)
+                {
+                    s = Escape(s);
+                }
                 // In certain cases, the quotes can be omitted
                 if (
                     !canonical

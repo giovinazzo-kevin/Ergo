@@ -20,7 +20,7 @@ namespace Ergo.Shell.Commands
         {
             var match = m.Groups["term"];
             var builtins = new List<BuiltIn>();
-            var solver = new ErgoSolver(shell.Interpreter, scope.InterpreterScope);
+            var solver = SolverBuilder.Build(shell.Interpreter, ref scope);
             if (match?.Success ?? false)
             {
                 var parsed = shell.Parse<ITerm>(scope, match.Value).Value;

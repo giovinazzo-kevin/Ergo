@@ -193,7 +193,7 @@ namespace Ergo.Interpreter
             return module;
         }
 
-        public bool TryGetMatches(InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
+        public bool TryGetMatches(ref InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
         {
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
@@ -203,7 +203,7 @@ namespace Ergo.Interpreter
             {
                 head = new Atom(match.Predicate).BuildAnonymousComplex(match.Arity);
             }
-            return new ErgoSolver(this, scope).KnowledgeBase.TryGetMatches(head, out matches);
+            return SolverBuilder.Build(this, ref scope).KnowledgeBase.TryGetMatches(head, out matches);
         }
 
         public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
@@ -217,6 +217,61 @@ namespace Ergo.Interpreter
                 throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain());
             }
             return false;
+        }
+
+
+        public void LoadScope(ref InterpreterScope scope, KnowledgeBase kb)
+        {
+            kb.Clear();
+            var added = new HashSet<Atom>();
+            LoadModule(ref scope, scope.Modules[scope.Module], added);
+            foreach (var module in scope.Modules.Values)
+            {
+                LoadModule(ref scope, module, added);
+            }
+            void LoadModule(ref InterpreterScope scope, Module module, HashSet<Atom> added)
+            {
+                if (added.Contains(module.Name))
+                    return;
+                added.Add(module.Name);
+                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
+                {
+                    if (added.Contains(subModule))
+                        continue;
+                    if (!scope.Modules.TryGetValue(subModule, out var import))
+                    {
+                        var importScope = scope;
+                        scope = scope.WithModule(import = Load(ref importScope, subModule.Explain()));
+                    }
+                    LoadModule(ref scope, import, added);
+                }
+                foreach (var pred in module.Program.KnowledgeBase)
+                {
+                    var sig = pred.Head.GetSignature();
+                    if (module.Name == scope.Module || module.ContainsExport(sig))
+                    {
+                        kb.AssertZ(pred.WithModuleName(module.Name));
+                    }
+                    else
+                    {
+                        kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
+                    }
+                }
+                foreach (var key in DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
+                {
+                    foreach (var dyn in DynamicPredicates[key])
+                    {
+                        if (!dyn.AssertZ)
+                        {
+                            kb.AssertA(dyn.Predicate);
+                        }
+                        else
+                        {
+                            kb.AssertZ(dyn.Predicate);
+                        }
+                    }
+                }
+            }
         }
 
     }

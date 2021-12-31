@@ -63,24 +63,24 @@ namespace Ergo.Interpreter
             {
                 foreach (var importedOp in GetUserDefinedOperators(Maybe.Some((Atom)import), added))
                 {
-                    if (!Modules[(Atom)import].Exports.Contents.Any(t =>
-                    {
-                        var x = TermMarshall.FromTerm(t, new
-                        { Predicate = default(string), Arity = default(int) },
-                            TermMarshall.MarshallingMode.Positional
-                        );
-                        return importedOp.Synonyms.Any(s => Equals(s.Value, x.Predicate))
-                        && (x.Arity == 1 && importedOp.Affix != OperatorAffix.Infix
-                        || x.Arity == 2);
-                    }))
-                    {
-                        continue;
-                    }
                     yield return importedOp;
                 }
             }
             foreach (var op in module.Operators)
             {
+                if (!module.Exports.Contents.Any(t =>
+                {
+                    var x = TermMarshall.FromTerm(t, new
+                    { Predicate = default(string), Arity = default(int) },
+                        TermMarshall.MarshallingMode.Positional
+                    );
+                    return op.Synonyms.Any(s => Equals(s.Value, x.Predicate))
+                        && (x.Arity == 1 && op.Affix != OperatorAffix.Infix
+                        || x.Arity == 2);
+                }))
+                {
+                    continue;
+                }
                 yield return op;
             }
         }

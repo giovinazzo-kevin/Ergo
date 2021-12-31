@@ -29,20 +29,24 @@ namespace Ergo.Shell.Commands
                     shell.No();
                     return;
                 }
+                var shellScope = scope;
                 var interpreterScope = scope.InterpreterScope;
                 if (!scope.ExceptionHandler.TryGet(scope, () =>
                 {
-                    if (shell.Interpreter.TryGetMatches(interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
+                    if (shell.Interpreter.TryGetMatches(ref interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
                     {
                         predicates = matches.Select(m => m.Rhs);
+                        shellScope = shellScope.WithInterpreterScope(interpreterScope);
                         return true;
                     }
                     return false;
                 }, out var yes) || !yes)
                 {
                     shell.No();
+                    scope = shellScope;
                     return;
                 }
+                scope = shellScope;
             }
 
             if (!Explain)

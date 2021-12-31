@@ -20,7 +20,6 @@ namespace Ergo.Solver.BuiltIns
             scope = scope.WithDepth(scope.Depth + 1)
                 .WithCaller(scope.Callee)
                 .WithCallee(Maybe.Some(GetStub(args)));
-
             if (args.Length == 0)
             {
                 throw new SolverException(SolverError.UndefinedPredicate, scope, Signature.WithArity(Maybe<int>.Some(0)).Explain());

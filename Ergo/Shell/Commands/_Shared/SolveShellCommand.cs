@@ -39,6 +39,7 @@ namespace Ergo.Shell.Commands
                 // Syntactic sugar
                 userQuery += '.';
             }
+            var solver = shell.CreateSolver(ref scope);
             var parsed = shell.Parse<Query>(scope, userQuery).Value;
             if (!parsed.HasValue)
             {
@@ -46,8 +47,7 @@ namespace Ergo.Shell.Commands
             }
             var query = parsed.Reduce(some => some, () => default);
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
-            var solver = shell.CreateSolver(scope);
-            if(scope.TraceEnabled)
+            if (scope.TraceEnabled)
             {
                 solver.Trace += (type, trace) => shell.WriteLine(trace, LogLevel.Trc, type);
             }
@@ -59,7 +59,6 @@ namespace Ergo.Shell.Commands
                 shell.No();
                 return;
             }
-
             var scope_ = scope;
             scope.ExceptionHandler.Try(scope, () => {
                 if (Interactive)

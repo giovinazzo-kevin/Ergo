@@ -16,7 +16,6 @@ between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
 between('(', Min, Max, ']', Step, M) :- between_(@eval(Min + Step), Max, Step, M).
 between('[', Min, Max, ')', Step, M) :- between_(Min, @eval(Max - Step), Step, M).
 between('(', Min, Max, ')', Step, M) :- between_(@eval(Min + Step), @eval(Max - Step), Step, M).
-between(Min, Max, X) :- between('[', Min, Max, ')', 1, X).
 
 % EXPORTED
 
@@ -25,3 +24,4 @@ range(Min <= X < Max, step:Step) :- between('[', Min, Max, ')', Step, X).
 range(Min < X <= Max, step:Step) :- between('(', Min, Max, ']', Step, X).
 range(Min <= X <= Max, step:Step) :- between('[', Min, Max, ']', Step, X).
 range(R) :- range(R, step:1).
+

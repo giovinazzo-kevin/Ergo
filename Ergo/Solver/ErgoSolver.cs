@@ -143,17 +143,20 @@ namespace Ergo.Solver
                 // Try resolving the built-in's module automatically
                 foreach (var key in BuiltIns.Keys)
                 {
-                    if(key.WithModule(default).Equals(sig) && InterpreterScope.IsModuleVisible(key.Module.GetOrDefault()))
+                    if (!InterpreterScope.IsModuleVisible(key.Module.GetOrDefault()))
+                        continue;
+                    var withoutModule = key.WithModule(default);
+                    if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
                     {
                         term.TryQualify(key.Module.GetOrDefault(), out var qt);
-                        sig = qt.GetSignature();
+                        sig = key;
                         break;
                     }
                 }
             }
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
-                LogTrace(SolverTraceType.Resv, $"{term.Explain()}", scope.Depth);
+                LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {term.Explain()}", scope.Depth);
                 foreach (var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
                 {
                     LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);

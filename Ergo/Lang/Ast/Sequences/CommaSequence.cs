@@ -85,7 +85,7 @@ namespace Ergo.Lang.Ast
                 {
                     return seq.EmptyElement.Explain(canonical);
                 }
-                var joined = string.Join(canonical ? " ∧ " : ", ", seq.Contents.Select(t => t.Explain(canonical)));
+                var joined = string.Join(canonical ? "∧" : ",", seq.Contents.Select(t => t.Explain(canonical)));
                 return joined;
             }
         }

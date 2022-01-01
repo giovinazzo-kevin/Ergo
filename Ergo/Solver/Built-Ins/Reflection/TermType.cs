@@ -10,7 +10,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class TermType : BuiltIn
     {
         public TermType()
-            : base("", new("@term_type"), Maybe<int>.Some(2), Modules.Reflection)
+            : base("", new("term_type"), Maybe<int>.Some(2), Modules.Reflection)
         {
         }
 

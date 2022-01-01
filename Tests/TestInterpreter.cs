@@ -17,8 +17,10 @@ namespace Tests
         protected static (ErgoInterpreter, InterpreterScope) MakeInterpreter()
         {
             var i = new ErgoInterpreter();
-            var s = i.CreateStdlibScope();
+            var s = i.CreateScope();
             i.Load(ref s, "Test", FileStreamUtils.MemoryStream(@"
+                :- module(test, []).
+
                 fact.
                 data(1).
                 data(2).
@@ -59,10 +61,10 @@ namespace Tests
         [DataRow("dynamic(X, Y)", "X/1, Y/1; X/1, Y/2; X/2, Y/1; X/2, Y/2")]
         [DataRow("dynamic(X, Y, Z)", "X/1, Y/1, Z/1; X/1, Y/1, Z/2; X/1, Y/2, Z/1; X/1, Y/2, Z/2; X/2, Y/1, Z/1; X/2, Y/1, Z/2; X/2, Y/2, Z/1; X/2, Y/2, Z/2")]
         [DataRow("yinAndYang([yin], Y)", "Y/[yang]")]
-        [DataRow("yinAndYang([yin, yin], Y)", "Y/[yang, yang]")]
-        [DataRow("yinAndYang([yin, yin, yin], Y)", "Y/[yang, yang, yang]")]
-        [DataRow("map([1,2,3,4,5,6,7,8], X)", "X/[2, 3, 4, 5, 6, 7, 8, 9]")]
-        [DataRow("map([1,2,3], X), map(X, Y)", "X/[2, 3, 4], Y/[3, 4, 5]")]
+        [DataRow("yinAndYang([yin, yin], Y)", "Y/[yang,yang]")]
+        [DataRow("yinAndYang([yin, yin, yin], Y)", "Y/[yang,yang,yang]")]
+        [DataRow("map([1,2,3,4,5,6,7,8], X)", "X/[2,3,4,5,6,7,8,9]")]
+        [DataRow("map([1,2,3], X), map(X, Y)", "X/[2,3,4], Y/[3,4,5]")]
         [DataTestMethod]
         public void SolveSimpleQuery(string query, string expected)
         {

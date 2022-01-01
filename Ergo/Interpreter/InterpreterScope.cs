@@ -24,7 +24,8 @@ namespace Ergo.Interpreter
                 .Add(userModule.Name, userModule);
             SearchDirectories = ImmutableArray<string>.Empty
                 .Add(string.Empty)
-                .Add("./stdlib/");
+                .Add("./ergo/stdlib/")
+                .Add("./ergo/user/");
             Module = userModule.Name;
             Runtime = userModule.Runtime;
         }
@@ -46,7 +47,7 @@ namespace Ergo.Interpreter
         public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime);
         public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime);
 
-        public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Prologue, Modules[Interpreter.Modules.Prologue]), SearchDirectories, Runtime);
+        public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Stdlib, Modules[Interpreter.Modules.Stdlib]), SearchDirectories, Runtime);
         public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime);
 
         public IEnumerable<Operator> GetUserDefinedOperators(Maybe<Atom> entry = default, HashSet<Atom> added = null)

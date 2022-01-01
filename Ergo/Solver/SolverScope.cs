@@ -37,8 +37,8 @@ namespace Ergo.Solver
             var depth = Depth;
             var numCallers = Callers.Length;
             var stackTrace = Callers
-                .Select((c, i) => $"[{depth - i}] {c.Head.Explain()}");
-            stackTrace = Callee.Reduce(some => stackTrace.Append($"[{depth - numCallers}] {some.Head.Explain()}"), () => stackTrace);
+                .Select((c, i) => $"[{depth - i}] {c.Head.Explain(canonical: true)}");
+            stackTrace = Callee.Reduce(some => stackTrace.Append($"[{depth - numCallers}] {some.Head.Explain(canonical: true)}"), () => stackTrace);
             return "\t" + string.Join("\r\n\t", stackTrace);
 
         }

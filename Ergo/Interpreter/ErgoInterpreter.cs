@@ -30,22 +30,7 @@ namespace Ergo.Interpreter
             AddDirectivesByReflection();
         }
 
-        /// <summary>
-        /// The stdlib scope is the "standard" Ergo scope. It makes the prologue module available, and nothing else.
-        /// </summary>
-        public InterpreterScope CreateStdlibScope()
-        {
-            var prologueScope = new InterpreterScope(new Module(Modules.Prologue, runtime: true));
-            var prologue = Load(ref prologueScope, Modules.Prologue.Explain());
-            return new InterpreterScope(new Module(Modules.User, runtime: true)
-                    .WithImport(Modules.Prologue))
-                .WithModule(prologue);
-        }
-
-        /// <summary>
-        /// The shell scope is the Ergo scope designated for end-user modules. It imports a list of standard modules besides the prologue.
-        /// </summary>
-        public InterpreterScope CreateUserScope()
+        public InterpreterScope CreateScope()
         {
             var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));
             var stdlib = Load(ref stdlibScope, Modules.Stdlib.Explain());
@@ -125,13 +110,19 @@ namespace Ergo.Interpreter
             {
                 d.Builtin.Execute(this, ref scope, ((Complex)d.Ast.Body).Arguments);
             }
-
             foreach (var import in scope.Modules[scope.Module].Imports.Contents)
             {
-                if (!scope.Modules.ContainsKey((Atom)import))
+                scope_ = scope;
+                if (!scope.Modules.TryGetValue((Atom)import, out var importedModule) 
+                    || importedModule.Imports.Contents.Any(i => !scope_.Modules.ContainsKey((Atom)i)))
                 {
                     var importScope = scope;
-                    scope = scope.WithModule(Load(ref importScope, import.Explain()));
+                    var importModule = Load(ref importScope, import.Explain());
+                    foreach (var module in importScope.Modules.Values)
+                    {
+                        scope = scope
+                            .WithModule(module);
+                    }
                 }
             }
             var newOperators = scope.GetUserDefinedOperators()
@@ -150,19 +141,6 @@ namespace Ergo.Interpreter
                 throw new InterpreterException(InterpreterError.CouldNotLoadFile, scope);
             }
             var currentModule = scope.Modules[scope.Module].WithProgram(program);
-            foreach (Atom import in currentModule.Imports.Contents)
-            {
-                var importScope = scope.WithCurrentModule(import);
-                if (!scope.Modules.ContainsKey(import))
-                {
-                    var module = Load(ref importScope, import.Explain());
-                    if (module.Name != import)
-                    {
-                        throw new ArgumentException(module.Name.Explain());
-                    }
-                    scope = scope.WithModule(module);
-                }
-            }
             MaybeClose();
             scope = scope.WithModule(currentModule);
             return currentModule;
@@ -182,12 +160,12 @@ namespace Ergo.Interpreter
                 try
                 {
                     scope = scope.WithModule(module = Load(ref scope, name.Explain())
-                        .WithImport(Modules.Prologue));
+                        .WithImport(Modules.Stdlib));
                 }
                 catch(FileNotFoundException)
                 {
                     scope = scope.WithModule(module = new Module(name, runtime: true)
-                        .WithImport(Modules.Prologue));
+                        .WithImport(Modules.Stdlib));
                 }
             }
             return module;
@@ -198,7 +176,7 @@ namespace Ergo.Interpreter
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
             if (head is Complex c
-                && (new Atom[] { new("/"), new("@anon") }).Contains(c.Functor)
+                && c.Functor.Equals(Operators.BinaryDivision.CanonicalFunctor)
                 && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 head = new Atom(match.Predicate).BuildAnonymousComplex(match.Arity);

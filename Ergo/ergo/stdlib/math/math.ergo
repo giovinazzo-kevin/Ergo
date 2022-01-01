@@ -1,0 +1,62 @@
+﻿:- module(math, [
+	':='/2, '=:='/2, '=\\='/2,
+	'>'/2, '<'/2, '≥'/2, '≤'/2,
+	'≡'/2, '≢'/2,
+	range/2, range/1,
+	plus/3
+]).
+
+:- op(50, xfx, [':=', is]).
+:- op(50, xfx, ['=:=']).
+:- op(50, xfx, ['=\\=']).
+:- op(50, xfx, ['≡', '==']).
+:- op(50, xfx, ['≢', '\\==']).
+
+:- lit('π', 3.14159265359).
+:- lit('τ', 6.28318530717).
+
+% OPERATORS
+
+%: Assignment of A to the arithmetic evaluation of B.
+':='(A, B) :- is(A, B).
+%: Equivalence of the arithmetic evaluations of A and B.
+'=:='(A, B) :- eval(A) == eval(B).
+%: Inequivalence of the arithmetic evaluations of A and B.
+'=\\='(A, B) :- eval(A) \== eval(B).
+%: Arithmetic comparison (gt).
+'>'(A, B)  :- eval(A > B).
+%: Arithmetic comparison (lt).
+'<'(A, B)  :- eval(A < B).
+%: Arithmetic comparison (gte).
+'≥'(A, B) :- eval(A >= B).
+%: Arithmetic comparison (lte).
+'≤'(A, B) :- eval(A <= B).
+%: Arithmetic comparison (eq).
+'≡'(A, B) :- compare(0, A, B).
+%: Arithmetic comparison (neq).
+'≢'(A, B) :- not(compare(0, A, B)).
+
+% HELPERS
+
+between_(Min, Max, _, M) :- Min <= Max, M is Min.
+between_(Min, Max, Step, M) :-
+	Min <= Max,
+	NewMin := Min + Step,
+	between_(NewMin, Max, Step, M).
+
+between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
+between('(', Min, Max, ']', Step, M) :- NewMin := Min + Step, between_(NewMin, Max, Step, M).
+between('[', Min, Max, ')', Step, M) :- NewMax := Max - Step, between_(Min, NewMax, Step, M).
+between('(', Min, Max, ')', Step, M) :- NewMin := Min + Step, NewMax := Max - Step, between_(NewMin, NewMax, Step, M).
+
+% EXPORTED
+
+range(Min < X < Max, step:Step) :- between('(', Min, Max, ')', Step, X).
+range(Min <= X < Max, step:Step) :- between('[', Min, Max, ')', Step, X).
+range(Min < X <= Max, step:Step) :- between('(', Min, Max, ']', Step, X).
+range(Min <= X <= Max, step:Step) :- between('[', Min, Max, ']', Step, X).
+range(R) :- range(R, step:1).
+
+plus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A + B.
+plus(A, B, C) :- ground(A), \+ground(B), ground(C), B := C - A.
+plus(A, B, C) :- \+ground(A), ground(B), ground(C), A := C - B. 

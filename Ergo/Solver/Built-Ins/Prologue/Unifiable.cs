@@ -10,7 +10,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class Unifiable : BuiltIn
     {
         public Unifiable()
-            : base("", new("@unifiable"), Maybe<int>.Some(3), Modules.Prologue)
+            : base("", new("unifiable"), Maybe<int>.Some(3), Modules.Prologue)
         {
         }
 

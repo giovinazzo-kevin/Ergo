@@ -41,11 +41,11 @@ namespace Tests
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain());
         }
 
-        [DataRow("[1, 2, 3, 4]", "[1, 2, 3, 4]")]
-        [DataRow("[1, 2, [3, 4]]", "[1, 2, [3, 4]]")]
-        [DataRow("[[1, 2], 3, 4]", "[[1, 2], 3, 4]")]
-        [DataRow("[1, 2, 3 | [4, 5, 6]]", "[1, 2, 3|[4, 5, 6]]")]
-        [DataRow("[1, 2|[]]", "[1, 2]")]
+        [DataRow("[1, 2, 3, 4]", "[1,2,3,4]")]
+        [DataRow("[1, 2, [3, 4]]", "[1,2,[3,4]]")]
+        [DataRow("[[1, 2], 3, 4]", "[[1,2],3,4]")]
+        [DataRow("[1, 2, 3 | [4, 5, 6]]", "[1,2,3|[4,5,6]]")]
+        [DataRow("[1, 2|[]]", "[1,2]")]
         [DataRow("[X|Rest]", "[X|Rest]")]
         [DataTestMethod]
         public void ParseList(string toParse, string expected)
@@ -56,13 +56,13 @@ namespace Tests
 
         [DataRow("a(X)", "a(X)")]
         [DataRow("a((X))", "a(X)")]
-        [DataRow("a(X, Y)", "a(X, Y)")]
-        [DataRow("a((X, Y))", "a((X, Y))")]
+        [DataRow("a(X, Y)", "a(X,Y)")]
+        [DataRow("a((X, Y))", "a((X,Y))")]
         [DataRow("a([X|Rest])", "a([X|Rest])")]
-        [DataRow("a([X, Y|Rest])", "a([X, Y|Rest])")]
-        [DataRow("f(A, B, C)", "f(A, B, C)")]
-        [DataRow("f(A, B, g(C, D))", "f(A, B, g(C, D))")]
-        [DataRow("f(A, B, g(C, h(D, 'string', 32)))", "f(A, B, g(C, h(D, string, 32)))")]
+        [DataRow("a([X, Y|Rest])", "a([X,Y|Rest])")]
+        [DataRow("f(A, B, C)", "f(A,B,C)")]
+        [DataRow("f(A, B, g(C, D))", "f(A,B,g(C,D))")]
+        [DataRow("f(A, B, g(C, h(D, 'string', 32)))", "f(A,B,g(C,h(D,string,32)))")]
         [DataTestMethod]
         public void ParseComplex(string complex, string normalized)
         {
@@ -72,9 +72,9 @@ namespace Tests
 
 
 
-        [DataRow("(((((a)))) + ((((b)))))", "+(a, b)")]
+        [DataRow("(((((a)))) + ((((b)))))", "+(a,b)")]
         [DataRow("((((a))))", "a")]
-        [DataRow("((((a + b))))", "+(a, b)")]
+        [DataRow("((((a + b))))", "+(a,b)")]
         [DataRow("((((-1.25))))", "-(1.25)")]
         [DataTestMethod]
         public void ParseITerm(string exp, string normalized)
@@ -83,16 +83,17 @@ namespace Tests
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true));
         }
 
-        [DataRow("-a", "-(a)")]
-        [DataRow("a, b, c, d", "a ∧ b ∧ c ∧ d")]
-        [DataRow("a + b * c", "+(a, *(b, c))")]
-        [DataRow("(a + b) * c", "*(+(a, b), c)")]
-        [DataRow("(a + b) * π", "*(+(a, b), π)")]
-        [DataRow("a + b * c - d", "-(+(a, *(b, c)), d)")]
-        [DataRow("a + b * c * d - e", "-(+(a, *(*(b, c), d)), e)")]
-        [DataRow("X = a + b * c * d - e", "=(X, -(+(a, *(*(b, c), d)), e))")]
-        [DataRow("F = B * 2 ^ (1 / 12) ^ N", "=(F, *(B, ^(2, ^(/(1, 12), N))))")]
-        [DataRow("F = B * (2 ^ (1 / 12)) ^ N", "=(F, *(B, ^(^(2, /(1, 12)), N)))")]
+        [DataRow("-a","-(a)")]
+        [DataRow("a,b,c,d","a∧b∧c∧d")]
+        [DataRow("a+b*c","+(a,*(b,c))")]
+        [DataRow("(a+b)*c","*(+(a,b),c)")]
+        [DataRow("(a+b)*π","*(+(a,b),π)")]
+        [DataRow("a+b*c-d","-(+(a,*(b,c)),d)")]
+        [DataRow("a+b*c*d-e","-(+(a,*(*(b,c),d)),e)")]
+        [DataRow("X=a+b*c*d-e","=(X,-(+(a,*(*(b,c),d)),e))")]
+        [DataRow("F=B*2^(1/12)^N","=(F,*(B,^(2,^(/(1,12),N))))")]
+        [DataRow("F=B*(2^(1/12))^N","=(F,*(B,^(^(2,/(1,12)),N)))")]
+
         [DataTestMethod]
         public void ParseExpression(string exp, string canonical)
         {
@@ -103,11 +104,11 @@ namespace Tests
 
         [DataRow("fact.", "fact.")]
         [DataRow("fact :- true.", "fact.")]
-        [DataRow("fact :- false.", "fact ← ⊥.")]
-        [DataRow("pred :- fact.", "pred ← fact.")]
-        [DataRow("pred(X) :- fact(X).", "pred(X) ← fact(X).")]
-        [DataRow("pred([X|Rest]) :- fact(X), fact(Rest).", "pred([X|Rest]) ← fact(X), fact(Rest).")]
-        [DataRow("pred(X) :- fact(X), test(X).", "pred(X) ← fact(X), test(X).")]
+        [DataRow("fact :- false.", "fact←⊥.")]
+        [DataRow("pred :- fact.", "pred←fact.")]
+        [DataRow("pred(X) :- fact(X).", "pred(X)←fact(X).")]
+        [DataRow("pred([X|Rest]) :- fact(X), fact(Rest).", "pred([X|Rest])←fact(X),fact(Rest).")]
+        [DataRow("pred(X) :- fact(X), test(X).", "pred(X)←fact(X),test(X).")]
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {
@@ -115,7 +116,7 @@ namespace Tests
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain().RemoveExtraWhitespace());
         }
 
-        [DataRow(":- module(test, []).", "← module(test, []).")]
+        [DataRow(":- module(test, []).", "← module(test,[]).")]
         [DataTestMethod]
         public void ParseDirective(string directive, string normalized)
         {

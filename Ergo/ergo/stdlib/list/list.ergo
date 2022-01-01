@@ -2,6 +2,8 @@
 	member/2, length/2
 ]).
 
+:- use_module(math).
+
 member(_, []) :- false.
 member(X, [Y|T]) :- (X = Y; member(X, T)).
 

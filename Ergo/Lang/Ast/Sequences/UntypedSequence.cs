@@ -40,7 +40,7 @@ namespace Ergo.Lang.Ast
                 {
                     return seq.EmptyElement.Explain(canonical);
                 }
-                var joined = string.Join(", ", seq.Contents.Select(t => t.Explain(canonical)));
+                var joined = string.Join(',', seq.Contents.Select(t => t.Explain(canonical)));
                 if (seq.Contents.Length != 1)
                 {
                     return $"({joined})";

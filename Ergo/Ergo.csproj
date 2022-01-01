@@ -11,34 +11,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Stdlib\reflection\reflection.ergo">
+    <None Update="ergo\stdlib\reflection\reflection.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\io\io.ergo">
+    <None Update="ergo\stdlib\io\io.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\meta\meta.ergo">
+    <None Update="ergo\stdlib\meta\meta.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\stdlib.ergo">
+    <None Update="ergo\stdlib\stdlib.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\todo.ergo">
+    <None Update="ergo\user\Todo.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\list\list.ergo">
+    <None Update="ergo\stdlib\list\list.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\math\math.ergo">
+    <None Update="ergo\stdlib\math\math.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Stdlib\prologue\prologue.ergo">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Stdlib\User.ergoergo">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Stdlib\Prologue.ergoergo">
+    <None Update="ergo\stdlib\prologue\prologue.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

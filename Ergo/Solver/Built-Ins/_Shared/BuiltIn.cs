@@ -18,7 +18,7 @@ namespace Ergo.Solver.BuiltIns
         public Predicate GetStub(ITerm[] arguments)
         {
             var head = new Complex(Signature.Functor, arguments);
-            return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => Modules.Prologue), head, CommaSequence.Empty, dynamic: false);
+            return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => Modules.Stdlib), head, CommaSequence.Empty, dynamic: false);
         }
 
         public abstract IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);

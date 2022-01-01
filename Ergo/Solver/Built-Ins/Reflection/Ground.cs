@@ -1,19 +1,20 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class Eval1 : MathBuiltIn
+    public sealed class Ground : BuiltIn
     {
-        public Eval1()
-            : base("", new("@eval"), Maybe<int>.Some(1))
+        public Ground()
+            : base("", new("ground"), Maybe<int>.Some(1), Modules.Reflection)
         {
         }
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            yield return new(new Atom(Eval(arguments[0], solver.InterpreterScope)));
+            yield return new(new Atom(arguments[0].IsGround));
         }
     }
 }

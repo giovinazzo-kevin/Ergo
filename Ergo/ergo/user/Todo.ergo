@@ -1,7 +1,6 @@
 ﻿:- module(todo, [
 	todo/2
 ]).
-:- use_module(list).
 
 % This is a single-line comment.
 %: This is a documentation comment.

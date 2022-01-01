@@ -83,7 +83,7 @@ namespace Ergo.Lang.Ast
                 {
                     return seq.Tail.Explain(canonical);
                 }
-                var joined = String.Join(", ", seq.Contents.Select(t => t.Explain(canonical)));
+                var joined = String.Join(',', seq.Contents.Select(t => t.Explain(canonical)));
                 if (!seq.Tail.Equals(seq.EmptyElement))
                 {
                     return $"[{joined}|{seq.Tail.Explain(canonical)}]";

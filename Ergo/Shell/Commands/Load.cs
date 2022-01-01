@@ -11,7 +11,7 @@ namespace Ergo.Shell.Commands
 
         public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
-            shell.Load(scope, m.Groups["path"].Value);
+            shell.Load(ref scope, m.Groups["path"].Value);
         }
     }
 }

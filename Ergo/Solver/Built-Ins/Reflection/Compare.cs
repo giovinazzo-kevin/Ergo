@@ -7,10 +7,10 @@ using System.Collections.Generic;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class CompareTerms : BuiltIn
+    public sealed class Compare : BuiltIn
     {
-        public CompareTerms()
-            : base("", new("@compare"), Maybe<int>.Some(3), Modules.Reflection)
+        public Compare()
+            : base("", new("compare"), Maybe<int>.Some(3), Modules.Reflection)
         {
         }
 

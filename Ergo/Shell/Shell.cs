@@ -23,7 +23,7 @@ namespace Ergo.Shell
         protected readonly ExceptionHandler DefaultExceptionHandler;
         public readonly Action<ErgoSolver> ConfigureSolver;
 
-        public ShellScope CreateScope() => new(Interpreter.CreateUserScope().WithRuntime(true), DefaultExceptionHandler, false, false);
+        public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler, false, false);
 
         public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
         {
@@ -108,7 +108,7 @@ namespace Ergo.Shell
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }
 
-        public virtual void Load(ShellScope scope, string fileName)
+        public virtual void Load(ref ShellScope scope, string fileName)
         {
             var preds = GetInterpreterPredicates(scope);
             var oldPredicates = preds.Count();
@@ -118,6 +118,7 @@ namespace Ergo.Shell
                 var newPredicates = preds.Count();
                 var delta = newPredicates - oldPredicates;
                 WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
+                scope = scope.WithInterpreterScope(interpreterScope);
             }
         }
 

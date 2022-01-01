@@ -1,0 +1,26 @@
+﻿:- module(reflection, [
+	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2,
+	'?='/2
+]).
+
+
+:- op(51, xfy, ['@>']).
+:- op(51, xfy, ['@≥', '@>=']).
+:- op(49, yfx, ['@<']).
+:- op(49, yfx, ['@≤', '@<=']).
+:- op(50, xfx, ['?=']).
+
+
+%: Term comparison (gt).
+'@>'(A, B)  :- compare(X, A, B), X  > 0.
+%: Term comparison (lt).
+'@<'(A, B)  :- compare(X, A, B), X  < 0.
+%: Term comparison (gte).
+'@≥'(A, B) :- compare(X, A, B), X >= 0.
+%: Term comparison (lte).
+'@≤'(A, B) :- compare(X, A, B), X <= 0.
+%: Synctactic equality of A and B.
+%: ⊤ iff the result of A == B will not change due to further instantiation of either term.
+'?='(A,B) :- \+unifiable(A,B,[_H|_T]).
+%: Anonymous type declaration. (TODO: remove?)
+'/'(Functor, Arity) :- anon(Functor, Arity).

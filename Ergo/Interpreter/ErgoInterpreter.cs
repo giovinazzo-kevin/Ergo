@@ -192,7 +192,7 @@ namespace Ergo.Interpreter
             }
             if(Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
             {
-                throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain());
+                throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain(canonical: false));
             }
             return false;
         }

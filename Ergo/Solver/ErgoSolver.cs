@@ -243,11 +243,14 @@ namespace Ergo.Solver
                     {
                         return (qualified, matches);
                     }
-                    if (goal.TryQualify(scope.Module, out qualified)
-                        && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true)
-                        && KnowledgeBase.TryGetMatches(qualified, out matches))
+                    if(scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
                     {
-                        return (qualified, matches);
+                        if (goal.TryQualify(clause.DeclaringModule, out qualified)
+                            && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true)
+                            && KnowledgeBase.TryGetMatches(qualified, out matches))
+                        {
+                            return (qualified, matches);
+                        }
                     }
                 }
                 var signature = goal.GetSignature();

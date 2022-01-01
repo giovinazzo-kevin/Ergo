@@ -7,7 +7,7 @@ using System.Linq;
 namespace Ergo.Lang.Ast
 {
     [DebuggerDisplay("{ Explain() }")]
-    public readonly struct Directive
+    public readonly struct Directive : IExplainable
     {
         public readonly ITerm Body;
 
@@ -18,6 +18,6 @@ namespace Ergo.Lang.Ast
 
         public Directive WithBody(ITerm newBody) => new(newBody);
 
-        public string Explain() => $"← {Body.Explain()}.";
+        public string Explain(bool canonical) => $"← {Body.Explain(canonical)}.";
     }
 }

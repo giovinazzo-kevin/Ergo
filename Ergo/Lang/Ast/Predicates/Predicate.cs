@@ -10,7 +10,7 @@ namespace Ergo.Lang.Ast
 {
 
     [DebuggerDisplay("{ Explain() }")]
-    public readonly struct Predicate
+    public readonly struct Predicate : IExplainable
     {
         public readonly Atom DeclaringModule;
         public readonly ITerm Head;
@@ -18,17 +18,16 @@ namespace Ergo.Lang.Ast
         public readonly string Documentation;
         public readonly bool IsDynamic;
 
-        public string Explain()
+        public string Explain(bool canonical)
         {
             if(Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { Literals.True })) {
                 return $"{Head.Explain()}.";
             }
 
-            var expl = $"{Head.Explain()}←{string.Join(',', Body.Contents.Select(x => x.Explain()))}.";
-            if (!String.IsNullOrWhiteSpace(Documentation)) {
+            var expl = $"{Head.Explain()}{(canonical ? '←' : " ←\r\n\t")}{string.Join(canonical ? "," : ",\r\n\t", Body.Contents.Select(x => x.Explain(canonical)))}.";
+            if (!canonical && !String.IsNullOrWhiteSpace(Documentation)) {
                 expl = $"{String.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r))}\r\n" + expl;
             }
-
             return expl;
         }
 

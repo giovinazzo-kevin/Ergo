@@ -10,16 +10,16 @@ namespace Ergo.Lang.Ast
 
 
     [DebuggerDisplay("{ Explain() }")]
-    public readonly struct ErgoProgram
+    public readonly struct ErgoProgram : IExplainable
     {
         public readonly Directive[] Directives;
         public readonly KnowledgeBase KnowledgeBase;
 
-        public string Explain()
+        public string Explain(bool canonical)
         {
             return String.Join("\r\n\r\n",
-                Directives.Select(d => d.Explain()).Concat(
-                KnowledgeBase.Select(r => r.Explain()))
+                Directives.Select(d => d.Explain(canonical)).Concat(
+                KnowledgeBase.Select(r => r.Explain(canonical)))
             );
         }
 

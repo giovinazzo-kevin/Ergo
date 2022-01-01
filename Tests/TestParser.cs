@@ -113,7 +113,7 @@ namespace Tests
         public void ParsePredicate(string predicate, string normalized)
         {
             var p = new Parsed<Predicate>(predicate, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain().RemoveExtraWhitespace());
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true).RemoveExtraWhitespace());
         }
 
         [DataRow(":- module(test, []).", "← module(test,[]).")]
@@ -121,7 +121,7 @@ namespace Tests
         public void ParseDirective(string directive, string normalized)
         {
             var p = new Parsed<Directive>(directive, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain().RemoveExtraWhitespace());
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true).RemoveExtraWhitespace());
         }
     }
 }

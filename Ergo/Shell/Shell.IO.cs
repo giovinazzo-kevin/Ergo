@@ -196,8 +196,18 @@ namespace Ergo.Shell
                 for (int j = 0; j < described[i].Length; j++) {
                     AlternateColors(-1);
                     Write("\t║");
-                    AlternateColors(i);
-                    Write(" " + described[i][j] + " ");
+                    if(i == 0)
+                    {
+                        AlternateColors(i);
+                    }
+                    if(i > 0 && i < described.Length - 1 && j == described[i].Length - 1)
+                    {
+                        Write("\u001b[4m " + described[i][j] + " \u001b[0m");
+                    }
+                    else
+                    {
+                        Write(" " + described[i][j] + " ");
+                    }
                     AlternateColors(-1);
                     WriteLine("║ ");
                 }

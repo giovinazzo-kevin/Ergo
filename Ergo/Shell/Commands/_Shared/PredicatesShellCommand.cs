@@ -54,12 +54,12 @@ namespace Ergo.Shell.Commands
                 predicates = predicates.DistinctBy(p => p.Head.GetSignature());
             }
 
-            var canonicals = predicates
+            var explanations = predicates
                 .Select(r => Explain
-                    ? new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(), r.Explain() }
-                    : new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(), r.Documentation })
+                    ? new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(canonical: false), r.Explain(canonical: !Explain) }
+                    : new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(canonical: false), r.Documentation })
                 .ToArray();
-            if (canonicals.Length == 0)
+            if (explanations.Length == 0)
             {
                 shell.No();
                 return;
@@ -68,7 +68,7 @@ namespace Ergo.Shell.Commands
                 ? new[] { "Predicate", "Module", "Explanation" }
                 : new[] { "Predicate", "Module", "Documentation" }
                 ;
-            shell.WriteTable(cols, canonicals, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
+            shell.WriteTable(cols, explanations, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
         }
     }
 }

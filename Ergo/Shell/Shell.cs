@@ -103,7 +103,7 @@ namespace Ergo.Shell
             var dirs = module.Imports.Contents
                 .Select(m => new Directive(new Complex(new("use_module"), m)))
                 .ToArray();
-            var text = new ErgoProgram(dirs, preds.ToArray()).Explain();
+            var text = new ErgoProgram(dirs, preds.ToArray()).Explain(canonical: false);
             File.WriteAllText(fileName, text);
             WriteLine($"Saved: '{fileName}'.", LogLevel.Inf);
         }

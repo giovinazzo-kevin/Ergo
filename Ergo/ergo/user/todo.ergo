@@ -1,6 +1,30 @@
 ﻿:- module(todo, [
-	todo/2
+	todo/2, todo/3
 ]).
+
+:- dynamic(todo_/3).
+:- dynamic(tag/1).
+
+todo_create(Name, Desc, Tags) :-
+	todo_(Name, _, _) 
+	-> (write(('TODO ', Name, ' already exists.')), nl, false)
+	; (
+		forall(member(T, Tags), (tag(T) ; (write(('Tag ', T, ' does not exist.')), nl, false))),
+		assertz(todo_(Name, Desc, Tags))
+	).
+
+todo_destroy(Name) :-
+	todo_(Name, _, _) 
+	-> retract(todo_(Name, _, _))
+	; (write(('TODO ', Name, ' does not exist.')), nl, false).
+
+todo(Name, Desc, Tags) :- todo_(Name, Desc, Tags).
+
+init :-
+	assertz(tag(t1)),
+	assertz(tag(t2)),
+	todo_create(1, first, [t1]),
+	todo_create(2, second, [t1, t2]).
 
 % This is a single-line comment.
 %: This is a documentation comment.

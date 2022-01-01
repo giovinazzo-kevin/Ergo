@@ -32,9 +32,9 @@ namespace Ergo.Lang.Ast
             else if (Value is string s)
             {
                 // In certain cases, the quotes can be omitted
-                if (
+                if ( !canonical
                     // If this == Literals.EmptyList
-                       s == "[]"
+                    || s == "[]"
                     // Or if this == Literals.EmptyCommaExpression
                     || s == "()"
                     // Or if this is not a string that can be confused with a variable name

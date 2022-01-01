@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System.Collections.Generic;
 
@@ -7,7 +8,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class Ground : BuiltIn
     {
         public Ground()
-            : base("", new("@ground"), Maybe<int>.Some(1))
+            : base("", new("@ground"), Maybe<int>.Some(1), Modules.Reflection)
         {
         }
 

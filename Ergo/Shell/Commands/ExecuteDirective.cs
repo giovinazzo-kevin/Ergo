@@ -19,7 +19,7 @@ namespace Ergo.Shell.Commands
             var interpreterScope = scope.InterpreterScope;
             var currentModule = interpreterScope.Modules[scope.InterpreterScope.Module];
             var parsed = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
-            var directive = parsed.Reduce(some => some, () => default);
+            var directive = parsed.GetOrDefault();
             if (shell.Interpreter.RunDirective(ref interpreterScope, directive))
             {
                 scope = scope.WithInterpreterScope(interpreterScope);

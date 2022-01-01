@@ -11,7 +11,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class AnonymousComplex : BuiltIn
     {
         public AnonymousComplex()
-            : base("", new("@anon"), Maybe<int>.Some(2))
+            : base("", new("@anon"), Maybe<int>.Some(2), Modules.Prologue)
         {
         }
 

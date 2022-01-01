@@ -1,28 +1,27 @@
-﻿using Ergo.Lang.Ast;
-using Ergo.Lang.Extensions;
-using Ergo.Lang.Exceptions;
-using System.Linq;
+﻿using Ergo.Interpreter;
 using Ergo.Lang;
-using Ergo.Interpreter;
+using Ergo.Lang.Ast;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
     public sealed class Not : BuiltIn
     {
         public Not()
-            : base("", new("@not"), Maybe<int>.Some(1))
+            : base("", new("@not"), Maybe<int>.Some(1), Modules.Prologue)
         {
         }
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            var arg = arguments.Single();
-            if (!arg.Matches<bool>(out var eval))
+            if (solver.Solve(new Query(new(ImmutableArray<ITerm>.Empty.Add(arguments.Single()))), Maybe.Some(scope)).Any())
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Boolean, arg.Explain());
+                yield return new(Literals.False);
             }
-            yield return new(new Atom(!eval));
+            else yield return new(Literals.True);
         }
     }
 }

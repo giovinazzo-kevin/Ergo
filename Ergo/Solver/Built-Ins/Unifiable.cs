@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -9,7 +10,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class Unifiable : BuiltIn
     {
         public Unifiable()
-            : base("", new("@unifiable"), Maybe<int>.Some(3))
+            : base("", new("@unifiable"), Maybe<int>.Some(3), Modules.Prologue)
         {
         }
 

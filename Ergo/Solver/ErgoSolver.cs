@@ -138,10 +138,19 @@ namespace Ergo.Solver
         {
             var any = false;
             var sig = term.GetSignature();
-            //if (term is Complex c)
-            //{
-            //    term = c.WithArguments(c.Arguments.Select(a => ResolveBuiltin(a, scope)).ToArray());
-            //}
+            if(!term.TryGetQualification(out var qm, out term))
+            {
+                // Try resolving the built-in's module automatically
+                foreach (var key in BuiltIns.Keys)
+                {
+                    if(key.WithModule(default).Equals(sig) && InterpreterScope.IsModuleVisible(key.Module.GetOrDefault()))
+                    {
+                        term.TryQualify(key.Module.GetOrDefault(), out var qt);
+                        sig = qt.GetSignature();
+                        break;
+                    }
+                }
+            }
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
                 LogTrace(SolverTraceType.Resv, $"{term.Explain()}", scope.Depth);

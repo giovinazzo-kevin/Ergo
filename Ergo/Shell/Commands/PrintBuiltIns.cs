@@ -29,7 +29,7 @@ namespace Ergo.Shell.Commands
                     shell.No();
                     return;
                 }
-                var term = parsed.Reduce(some => some, () => default);
+                var term = parsed.GetOrDefault();
                 if (solver.BuiltIns.TryGetValue(term.GetSignature(), out var builtin))
                 {
                     builtins.Add(builtin);

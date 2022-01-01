@@ -9,7 +9,7 @@ namespace Ergo.Solver.BuiltIns
     public abstract class DynamicPredicateBuiltIn : BuiltIn
     {
         protected DynamicPredicateBuiltIn(string documentation, Atom functor, Maybe<int> arity)
-            : base(documentation, functor, arity)
+            : base(documentation, functor, arity, Modules.Prologue)
         {
         }
 

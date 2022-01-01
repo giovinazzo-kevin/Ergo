@@ -18,14 +18,14 @@ namespace Ergo.Solver.BuiltIns
         public Predicate GetStub(ITerm[] arguments)
         {
             var head = new Complex(Signature.Functor, arguments);
-            return new Predicate(Documentation, Modules.__BuiltIn, head, CommaSequence.Empty, dynamic: false);
+            return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => Modules.Prologue), head, CommaSequence.Empty, dynamic: false);
         }
 
         public abstract IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);
 
-        public BuiltIn(string documentation, Atom functor, Maybe<int> arity)
+        public BuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
         {
-            Signature = new(functor, arity, Maybe<Atom>.None);
+            Signature = new(functor, arity, Maybe.Some(module));
             Documentation = documentation;
         }
     }

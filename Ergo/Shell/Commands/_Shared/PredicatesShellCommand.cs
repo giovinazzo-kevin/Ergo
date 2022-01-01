@@ -33,7 +33,7 @@ namespace Ergo.Shell.Commands
                 var interpreterScope = scope.InterpreterScope;
                 if (!scope.ExceptionHandler.TryGet(scope, () =>
                 {
-                    if (shell.Interpreter.TryGetMatches(ref interpreterScope, parsed.Reduce(some => some.Contents.First(), () => default), out var matches))
+                    if (shell.Interpreter.TryGetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First(), out var matches))
                     {
                         predicates = matches.Select(m => m.Rhs);
                         shellScope = shellScope.WithInterpreterScope(interpreterScope);

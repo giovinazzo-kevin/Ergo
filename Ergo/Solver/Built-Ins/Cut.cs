@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System.Collections.Generic;
 
@@ -7,7 +8,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class Cut : BuiltIn
     {
         public Cut()
-            : base("", new("!"), Maybe<int>.Some(0))
+            : base("", new("!"), Maybe<int>.Some(0), Modules.Prologue)
         {
         }
 

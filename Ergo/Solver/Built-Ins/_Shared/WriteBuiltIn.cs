@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace Ergo.Solver.BuiltIns
         public readonly bool Canonical;
 
         protected WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon) 
-            : base(documentation, functor, arity)
+            : base(documentation, functor, arity, Modules.IO)
         {
             Canonical = canon;
         }

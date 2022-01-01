@@ -10,7 +10,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class CompareTerms : BuiltIn
     {
         public CompareTerms()
-            : base("", new("@compare"), Maybe<int>.Some(3))
+            : base("", new("@compare"), Maybe<int>.Some(3), Modules.Reflection)
         {
         }
 

@@ -12,7 +12,7 @@ namespace Ergo.Solver.BuiltIns
     public abstract class MathBuiltIn : BuiltIn
     {
         protected MathBuiltIn(string documentation, Atom functor, Maybe<int> arity) 
-            : base(documentation, functor, arity)
+            : base(documentation, functor, arity, Modules.Math)
         {
         }
         protected double Eval(ITerm t, InterpreterScope s)

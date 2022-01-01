@@ -134,5 +134,25 @@ namespace Ergo.Interpreter
             }
             return false;
         }
+        
+        public bool IsModuleVisible(Atom name, Maybe<Atom> entry = default, HashSet<Atom> added = null)
+        {
+            added ??= new();
+            var currentModule = Module;
+            var entryModule = entry.Reduce(some => some, () => currentModule);
+            if (added.Contains(entryModule) || !Modules.TryGetValue(entryModule, out var module))
+            {
+                return false;
+            }
+            added.Add(entryModule);
+            foreach (var import in module.Imports.Contents)
+            {
+                if (import.Equals(name))
+                    return true;
+                if (IsModuleVisible(name, Maybe.Some((Atom)import), added))
+                    return true;
+            }
+            return false;
+        }
     }
 }

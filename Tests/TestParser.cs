@@ -26,7 +26,7 @@ namespace Tests
         public void ParseAtom(string atom, string normalized)
         {
             var p = new Parsed<Atom>(atom, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain(canonical: true));
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true));
         }
 
         [DataRow("X", "X")]
@@ -38,7 +38,7 @@ namespace Tests
         public void ParseVariable(string variable, string normalized)
         {
             var p = new Parsed<Variable>(variable, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain());
         }
 
         [DataRow("[1, 2, 3, 4]", "[1, 2, 3, 4]")]
@@ -51,7 +51,7 @@ namespace Tests
         public void ParseList(string toParse, string expected)
         {
             var p = new Parsed<List>(toParse, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(expected, p.Value.Reduce(some => some, () => default).Explain());
+            Assert.AreEqual(expected, p.Value.GetOrDefault().Explain());
         }
 
         [DataRow("a(X)", "a(X)")]
@@ -67,7 +67,7 @@ namespace Tests
         public void ParseComplex(string complex, string normalized)
         {
             var p = new Parsed<Complex>(complex, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain());
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain());
         }
 
 
@@ -80,7 +80,7 @@ namespace Tests
         public void ParseITerm(string exp, string normalized)
         {
             var p = new Parsed<ITerm>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain(canonical: true));
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true));
         }
 
         [DataRow("-a", "-(a)")]
@@ -97,8 +97,8 @@ namespace Tests
         public void ParseExpression(string exp, string canonical)
         {
             var p = new Parsed<Expression>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(canonical, p.Value.Reduce(some => some, () => default).Complex.Explain(canonical: true));
-            Assert.AreEqual(exp, p.Value.Reduce(some => some, () => default).Complex.Explain(canonical: false));
+            Assert.AreEqual(canonical, p.Value.GetOrDefault().Complex.Explain(canonical: true));
+            Assert.AreEqual(exp, p.Value.GetOrDefault().Complex.Explain(canonical: false));
         }
 
         [DataRow("fact.", "fact.")]
@@ -112,7 +112,7 @@ namespace Tests
         public void ParsePredicate(string predicate, string normalized)
         {
             var p = new Parsed<Predicate>(predicate, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain().RemoveExtraWhitespace());
         }
 
         [DataRow(":- module(test, []).", "← module(test, []).")]
@@ -120,7 +120,7 @@ namespace Tests
         public void ParseDirective(string directive, string normalized)
         {
             var p = new Parsed<Directive>(directive, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            Assert.AreEqual(normalized, p.Value.Reduce(some => some, () => default).Explain().RemoveExtraWhitespace());
+            Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain().RemoveExtraWhitespace());
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class Call : BuiltIn
     {
         public Call()
-            : base("", new("call"), Maybe<int>.None)
+            : base("", new("call"), Maybe<int>.None, Modules.Meta)
         {
         }
 

@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace Ergo.Solver.BuiltIns
     public sealed class TermType : BuiltIn
     {
         public TermType()
-            : base("", new("@term_type"), Maybe<int>.Some(2))
+            : base("", new("@term_type"), Maybe<int>.Some(2), Modules.Reflection)
         {
         }
 

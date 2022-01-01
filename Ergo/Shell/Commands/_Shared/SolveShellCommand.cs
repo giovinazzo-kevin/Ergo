@@ -45,7 +45,7 @@ namespace Ergo.Shell.Commands
             {
                 return;
             }
-            var query = parsed.Reduce(some => some, () => default);
+            var query = parsed.GetOrDefault();
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
             if (scope.TraceEnabled)
             {

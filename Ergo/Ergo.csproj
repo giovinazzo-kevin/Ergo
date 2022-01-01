@@ -11,6 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Stdlib\reflection\reflection.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Stdlib\io\io.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

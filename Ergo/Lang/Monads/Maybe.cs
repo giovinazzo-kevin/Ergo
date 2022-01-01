@@ -32,6 +32,8 @@ namespace Ergo.Lang
             return none();
         }
 
+        public T GetOrDefault() => HasValue ? Value : default;
+
         public void Do(Action<T> some, Action none = null)
         {
             _ = Map<T>(v => { some(v); return default; }, () => { none?.Invoke(); return default; });

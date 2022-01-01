@@ -23,7 +23,7 @@
     <None Update="ergo\stdlib\stdlib.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\user\Todo.ergo">
+    <None Update="ergo\user\todo.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ergo\stdlib\list\list.ergo">

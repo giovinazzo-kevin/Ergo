@@ -12,7 +12,7 @@ namespace Ergo.Solver.BuiltIns
     {
         // TODO: Remove once Reflection module is up and running
         public AnonymousComplex()
-            : base("", new("anon"), Maybe<int>.Some(2), Modules.Prologue)
+            : base("", new("anon"), Maybe<int>.Some(2), Modules.Reflection)
         {
         }
 

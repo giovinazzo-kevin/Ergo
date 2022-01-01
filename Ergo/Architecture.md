@@ -18,10 +18,7 @@ The solver is the engine that's actually responsible for answering queries. It i
 All three layers of the architecture can be extended by implementing the corresponding Command, Directive or BuiltIn.
 
 ## Shell
-Shell commands are expressed in terms of regular expressions. Whenever a command matches, its handler is executed.
 
 ## Interpreter
-Interpreter directives are expressed in terms of predicate signatures. They receive a fixed or variadic number of ITerm arguments depending on their arity, and they execute once on module load.
 
 ##Solver
-BuiltIns are also expressed in terms of predicate signatures. Unlike directives, they are resolved recursively right before a knowledge base is queried.

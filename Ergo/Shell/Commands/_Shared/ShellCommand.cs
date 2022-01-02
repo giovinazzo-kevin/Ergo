@@ -20,7 +20,7 @@ namespace Ergo.Shell.Commands
             Priority = priority;
             if (names.Length > 0)
             {
-                Expression = new Regex(@$"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n)))})\s*{regex}\s*$");
+                Expression = new Regex(@$"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n)))})\s+{regex}\s*$");
             }
             else
             {

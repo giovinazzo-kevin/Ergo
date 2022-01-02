@@ -8,6 +8,7 @@ using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
+
     public sealed class Call : BuiltIn
     {
         public Call()

@@ -86,7 +86,7 @@ namespace Ergo.Shell.Commands
                         }
                         if (s.Substitutions.Any())
                         {
-                            var join = String.Join(", ", s.Simplify().Select(s => s.Explain()));
+                            var join = String.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
                             if (scope_.TraceEnabled)
                             {
                                 shell.Write(String.Empty, LogLevel.Ans);
@@ -116,6 +116,7 @@ namespace Ergo.Shell.Commands
                         .ToArray();
                     var rows = solutions
                         .Select(s => s.Simplify()
+                            .Substitutions
                             .Select(r => r.Rhs.Explain())
                             .ToArray())
                         .ToArray();

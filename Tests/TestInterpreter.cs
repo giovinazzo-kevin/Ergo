@@ -72,7 +72,7 @@ namespace Tests
             var Predicates = new Parsed<Query>(query, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
             var ans = SolverBuilder.Build(interpreter, ref scope).Solve(Predicates.Value.GetOrDefault());
             Assert.IsNotNull(ans);
-            Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Select(s => s.Explain())))));
+            Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Substitutions.Select(s => s.Explain())))));
         }
     }
 }

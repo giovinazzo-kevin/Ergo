@@ -11,10 +11,11 @@ namespace Ergo.Solver
         /// <summary>
         /// Applies all redundant substitutions and removes them from the set of returned substitutions.
         /// </summary>
-        public IEnumerable<Substitution> Simplify()
+        public Solution Simplify()
         {
-            return Inner(Substitutions)
+            return new(Inner(Substitutions)
                 .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
+                .ToArray())
                 ;
             IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
             {

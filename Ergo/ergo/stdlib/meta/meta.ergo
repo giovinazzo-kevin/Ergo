@@ -1,11 +1,9 @@
 ﻿:- module(meta, [
-	call/1,
 	ignore/1,
 	once/1,
 	forall/2,
 	maplist/2, maplist/3
 ]).
-call(Goal) :- Goal.
 
 ignore(Goal) :- Goal, !.
 ignore(_).

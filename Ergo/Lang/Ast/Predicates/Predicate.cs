@@ -20,7 +20,7 @@ namespace Ergo.Lang.Ast
 
         public string Explain(bool canonical)
         {
-            if(Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { Literals.True })) {
+            if(Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { WellKnown.Literals.True })) {
                 return $"{Head.Explain()}.";
             }
 
@@ -88,7 +88,7 @@ namespace Ergo.Lang.Ast
 
         public static bool TryUnfold(ITerm term, Atom defaultModule, out Predicate pred)
         {
-            if (term is Complex c && Operators.BinaryHorn.Synonyms.Contains(c.Functor))
+            if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
             {
                 var head_ = c.Arguments[0];
                 if(!CommaSequence.TryUnfold(c.Arguments[1], out var body))
@@ -106,7 +106,7 @@ namespace Ergo.Lang.Ast
             {
                 module = defaultModule;
             }
-            pred = new("(dynamic)", module, head, new CommaSequence(ImmutableArray<ITerm>.Empty.Add(Literals.True)));
+            pred = new("(dynamic)", module, head, new CommaSequence(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)));
             return true;
         }
 

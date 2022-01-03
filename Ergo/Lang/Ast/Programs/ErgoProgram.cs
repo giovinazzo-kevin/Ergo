@@ -14,6 +14,7 @@ namespace Ergo.Lang.Ast
     {
         public readonly Directive[] Directives;
         public readonly KnowledgeBase KnowledgeBase;
+        public readonly bool IsPartial;
 
         public string Explain(bool canonical)
         {
@@ -30,10 +31,20 @@ namespace Ergo.Lang.Ast
             foreach (var k in kb) {
                 KnowledgeBase.AssertZ(k);
             }
+            IsPartial = false;
         }
 
+        private ErgoProgram(Directive[] dirs, KnowledgeBase kb, bool partial)
+        {
+            Directives = dirs;
+            KnowledgeBase = kb;
+            IsPartial = partial;
+        }
+
+        public ErgoProgram AsPartial(bool partial) => new(Directives, KnowledgeBase, partial);
+
         public static ErgoProgram Empty(Atom module) => new(
-            new[] { new Directive(new Complex(new DefineModule().Signature.Functor, module, Literals.EmptyList)) }, 
+            new[] { new Directive(new Complex(new DefineModule().Signature.Functor, module, WellKnown.Literals.EmptyList)) }, 
             Array.Empty<Predicate>()
         );
     }

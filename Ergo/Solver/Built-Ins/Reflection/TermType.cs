@@ -26,13 +26,13 @@ namespace Ergo.Solver.BuiltIns
 
             if (!arguments[1].IsGround)
             {
-                yield return new(Literals.True, new Substitution(arguments[1], type));
+                yield return new(WellKnown.Literals.True, new Substitution(arguments[1], type));
             }
             else if(new Substitution(arguments[1], type).TryUnify(out var subs))
             {
-                yield return new(Literals.True, subs.ToArray());
+                yield return new(WellKnown.Literals.True, subs.ToArray());
             }
-            else yield return new(Literals.False);
+            else yield return new(WellKnown.Literals.False);
         }
     }
 }

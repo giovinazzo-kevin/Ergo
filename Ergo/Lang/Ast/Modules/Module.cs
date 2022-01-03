@@ -53,6 +53,7 @@ namespace Ergo.Lang.Ast
         public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Literals, DynamicPredicates, Program, Runtime);
         public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Literals, DynamicPredicates, Program, Runtime);
         public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Literals, DynamicPredicates, Program, Runtime);
+        public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), Literals, DynamicPredicates, Program, Runtime);
         public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Literals, DynamicPredicates, Program, Runtime);
         public Module WithLiterals(ImmutableDictionary<Atom, Literal> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
         public Module WithLiteral(Literal literal) => new(Name, Imports, Exports, Operators, Literals.Add(literal.Key, literal), DynamicPredicates, Program, Runtime);

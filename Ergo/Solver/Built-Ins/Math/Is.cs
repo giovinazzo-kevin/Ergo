@@ -16,11 +16,11 @@ namespace Ergo.Solver.BuiltIns
         {
             var result = new Atom(Evaluate(arguments[1], solver.InterpreterScope));
             if (new Substitution(arguments[0], result).TryUnify(out var subs)) {
-                yield return new(Literals.True, subs.ToArray());
+                yield return new(WellKnown.Literals.True, subs.ToArray());
             }
             else
             {
-                yield return new(Literals.False);
+                yield return new(WellKnown.Literals.False);
             }
         }
     }

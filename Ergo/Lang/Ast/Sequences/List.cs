@@ -33,11 +33,6 @@ namespace Ergo.Lang.Ast
             IsEmpty = head.Length == 0;
             Tail = tail.Reduce(some => some, () => EmptyLiteral);
             IsParenthesized = parens;
-            //if(!Tail.Equals(EmptyElement))
-            //{
-            //    Contents = Contents.Append(tail);
-            //    IsEmpty &= tail.Equals(EmptyElement);
-            //}
             Root = ISequence.Fold(Functor, Tail, head)
                 .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
         }

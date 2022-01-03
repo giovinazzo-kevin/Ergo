@@ -44,13 +44,14 @@ namespace Ergo.Interpreter
 
         public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime);
         public InterpreterScope WithModule(Module m) => new(Module, Modules.SetItem(m.Name, m), SearchDirectories, Runtime);
+        public InterpreterScope WithoutModule(Atom m) => new(Module, Modules.Remove(m), SearchDirectories, Runtime);
         public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime);
         public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime);
 
         public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Stdlib, Modules[Interpreter.Modules.Stdlib]), SearchDirectories, Runtime);
         public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime);
 
-        public IEnumerable<Operator> GetUserDefinedOperators(Maybe<Atom> entry = default, HashSet<Atom> added = null)
+        private IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)
         {
             added ??= new();
             var currentModule = Module;
@@ -60,31 +61,39 @@ namespace Ergo.Interpreter
                 yield break;
             }
             added.Add(entryModule);
-            foreach (var import in module.Imports.Contents)
+            var depth_ = depth;
+            foreach (Atom import in module.Imports.Contents)
             {
-                foreach (var importedOp in GetUserDefinedOperators(Maybe.Some((Atom)import), added))
+                foreach (var importedOp in GetOperatorsInner(Maybe.Some(import), added, ++depth_ * 1000))
                 {
                     yield return importedOp;
                 }
             }
             foreach (var op in module.Operators)
             {
-                if (!module.Exports.Contents.Any(t =>
-                {
-                    var x = TermMarshall.FromTerm(t, new
-                    { Predicate = default(string), Arity = default(int) },
-                        TermMarshall.MarshallingMode.Positional
-                    );
-                    return op.Synonyms.Any(s => Equals(s.Value, x.Predicate))
-                        && (x.Arity == 1 && op.Affix != OperatorAffix.Infix
-                        || x.Arity == 2);
-                }))
-                {
-                    continue;
-                }
-                yield return op;
+                yield return (op, depth);
+            }
+            // Add well-known operators in a way that allows for their re-definition by modules down the import chain.
+            // An example is the arity indicator (/)/2, that gets re-defined by the math module as the division operator.
+            // In practice user code will only ever see the division operator, but the arity indicator ensures proper semantics when the math module is not loaded.
+            foreach (var op in WellKnown.Operators.DefinedOperators)
+            {
+                if (op.DeclaringModule == entryModule)
+                    yield return (op, int.MaxValue);
             }
         }
+
+        public IEnumerable<Operator> GetOperators()
+        {
+            var operators = GetOperatorsInner()
+                .ToList();
+            foreach (var (op, depth) in operators)
+            {
+                if (!operators.Any(other => other.Depth < depth && other.Op.Synonyms.SequenceEqual(op.Synonyms)))
+                    yield return op;
+            }
+        }
+
 
         public bool TryReplaceLiterals(ITerm term, out ITerm changed, Maybe<Atom> entry = default, HashSet<Atom> added = null)
         {

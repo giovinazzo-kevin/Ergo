@@ -25,15 +25,15 @@ namespace Ergo.Solver.BuiltIns
                 }
                 if (result.Equals(cmp))
                 {
-                    yield return new(Literals.True);
+                    yield return new(WellKnown.Literals.True);
                 }
                 else
                 {
-                    yield return new(Literals.False);
+                    yield return new(WellKnown.Literals.False);
                 }
                 yield break;
             }
-            yield return new(Literals.True, new Substitution(arguments[0], new Atom(cmp)));
+            yield return new(WellKnown.Literals.True, new Substitution(arguments[0], new Atom(cmp)));
         }
     }
 }

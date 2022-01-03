@@ -42,7 +42,7 @@ namespace Ergo.Lang.Ast
                 expr = new CommaSequence();
                 return true;
             }
-            if (t is Complex c && Operators.BinaryConjunction.Synonyms.Contains(c.Functor))
+            if (t is Complex c && WellKnown.Functors.Conjunction.Contains(c.Functor))
             {
                 var args = ImmutableArray<ITerm>.Empty.Add(c.Arguments[0]);
                 if (c.Arguments.Length == 1)

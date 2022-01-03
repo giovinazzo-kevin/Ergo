@@ -1,5 +1,5 @@
 ﻿# Architecture
-```
+///
          			 Shell     <- [Commands]  , Shell Scope
          			   ∧							∧
          			   |							|
@@ -9,7 +9,7 @@ Lexer -> Parser -> Interpreter <- [Directives], Interpreter Scope
                        |
                        ∨
              		 Solver    <- [BuiltIns]  , Solver Scope
-```
+///
 
 The shell is the top-level interactive interface *for* the interpreter. It provides easy access to I/O and parsing, as well as debugging utilities.
 The interpreter is the fulcrum of the architecture. It is necessary in order to create a solver, but it can be used without a shell.

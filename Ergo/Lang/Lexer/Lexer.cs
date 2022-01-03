@@ -19,6 +19,8 @@ namespace Ergo.Lang
         protected string Context { get; private set; }
         protected string Filename { get; private set; }
 
+        public readonly Operator[] AvailableOperators;
+
         public StreamState State => new(Filename, Position, Line, Column, Context);
 
         public void Seek(StreamState state, SeekOrigin origin = SeekOrigin.Begin)
@@ -32,12 +34,12 @@ namespace Ergo.Lang
 
         public bool Eof => _reader.Position >= _reader.Length;
 
-        public Lexer(Stream s, IEnumerable<Operator> userOperators, string fn = "")
+        public Lexer(Stream s, string fn, IEnumerable<Operator> userOperators)
         {
             Filename = fn;
             _reader = s;
-            OperatorSymbols = Operators.DefinedOperators
-                .Concat(userOperators)
+            AvailableOperators = userOperators.ToArray();
+            OperatorSymbols = AvailableOperators
                 .SelectMany(op => op.Synonyms
                     .Select(s => (string)s.Value))
                 .ToArray();

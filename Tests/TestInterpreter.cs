@@ -18,7 +18,7 @@ namespace Tests
         {
             var i = new ErgoInterpreter();
             var s = i.CreateScope();
-            i.Load(ref s, "Test", FileStreamUtils.MemoryStream(@"
+            i.Load(ref s, FileStreamUtils.MemoryStream(@"
                 :- module(test, []).
 
                 fact.
@@ -69,8 +69,8 @@ namespace Tests
         public void SolveSimpleQuery(string query, string expected)
         {
             var (interpreter, scope) = MakeInterpreter();
-            var Predicates = new Parsed<Query>(query, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
-            var ans = SolverBuilder.Build(interpreter, ref scope).Solve(Predicates.Value.GetOrDefault());
+            var predicates = new Parsed<Query>(query, _ => throw new Exception("Parse fail."), scope.GetOperators().ToArray());
+            var ans = SolverBuilder.Build(interpreter, ref scope).Solve(predicates.Value.GetOrDefault());
             Assert.IsNotNull(ans);
             Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Substitutions.Select(s => s.Explain())))));
         }

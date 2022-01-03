@@ -10,15 +10,17 @@ namespace Ergo.Lang.Ast
     {
         public readonly Atom CanonicalFunctor;
         public readonly Atom[] Synonyms;
+        public readonly Atom DeclaringModule;
         public readonly int Precedence;
         public readonly OperatorAffix Affix;
         public readonly OperatorAssociativity Associativity;
 
-        public Operator(OperatorAffix affix, OperatorAssociativity assoc, int precedence, params string[] functors)
+        public Operator(Atom module, OperatorAffix affix, OperatorAssociativity assoc, int precedence, params Atom[] functors)
         {
+            DeclaringModule = module;
             Affix = affix;
             Associativity = assoc;
-            Synonyms = functors.Select(s => new Atom(s)).ToArray();
+            Synonyms = functors;
             CanonicalFunctor = Synonyms.First();
             Precedence = precedence;
         }

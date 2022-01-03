@@ -33,9 +33,9 @@ namespace Ergo.Lang.Ast
             {
                 // In certain cases, the quotes can be omitted
                 if ( !canonical
-                    // If this == Literals.EmptyList
+                    // If this == WellKnown.Literals.EmptyList
                     || s == "[]"
-                    // Or if this == Literals.EmptyCommaExpression
+                    // Or if this == WellKnown.Literals.EmptyCommaExpression
                     || s == "()"
                     // Or if this is not a string that can be confused with a variable name
                     || !Char.IsUpper(s.FirstOrDefault())
@@ -51,7 +51,7 @@ namespace Ergo.Lang.Ast
             {
                 return Value.ToString();
             }
-            bool IsQuotablePunctuation(char c) => !Lexemes.IdentifierPunctuation.Contains(c) && Lexemes.QuotablePunctuation.Contains(c);
+            bool IsQuotablePunctuation(char c) => !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c);
             string Escape(string s) => s
                 .Replace("'", "\\'")
                 .Replace("\r", "\\r")

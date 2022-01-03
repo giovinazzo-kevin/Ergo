@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,6 +13,8 @@ namespace Tests
     [TestClass]
     public class TestLexer
     {
+        private static Operator _unificationOp = new Operator(Modules.Prologue, OperatorAffix.Infix, OperatorAssociativity.None, 10, new Atom("="));
+
         private static void AssertNextToken(Lexer l, Lexer.TokenType expectedType, object expectedValue)
         {
             Assert.IsTrue(l.TryReadNextToken(out var token));
@@ -23,7 +26,7 @@ namespace Tests
         public void TestTokenizer_1()
         {
             using var stream = FileStreamUtils.MemoryStream("1234.56789.123");
-            var lexer = new Lexer(stream, Array.Empty<Operator>());
+            var lexer = new Lexer(stream, string.Empty, new[] { _unificationOp });
             AssertNextToken(lexer, Lexer.TokenType.Number, 1234.56789d);
             AssertNextToken(lexer, Lexer.TokenType.Punctuation, ".");
             AssertNextToken(lexer, Lexer.TokenType.Number, 123d);
@@ -33,7 +36,7 @@ namespace Tests
         public void TestTokenizer_2()
         {
             using var stream = FileStreamUtils.MemoryStream("hello = _");
-            var lexer = new Lexer(stream, Array.Empty<Operator>());
+            var lexer = new Lexer(stream, string.Empty, new[] { _unificationOp });
             AssertNextToken(lexer, Lexer.TokenType.Term, "hello");
             AssertNextToken(lexer, Lexer.TokenType.Operator, "=");
             AssertNextToken(lexer, Lexer.TokenType.Term, "_");
@@ -44,7 +47,7 @@ namespace Tests
         public void TestTokenizer_3()
         {
             using var stream = FileStreamUtils.MemoryStream("'\"string 1\"' \"'string 2'\" \"\\\"string 3\\\"\" \"string\\n4\" \"string\\\\n5\"");
-            var lexer = new Lexer(stream, Array.Empty<Operator>());
+            var lexer = new Lexer(stream, string.Empty, new[] { _unificationOp });
             AssertNextToken(lexer, Lexer.TokenType.String, "\"string 1\"");
             AssertNextToken(lexer, Lexer.TokenType.String, "'string 2'");
             AssertNextToken(lexer, Lexer.TokenType.String, "\"string 3\"");
@@ -56,13 +59,13 @@ namespace Tests
         public void TestTokenizer_4()
         {
             using var stream = FileStreamUtils.MemoryStream("Y = functor(arg_1, X)");
-            var lexer = new Lexer(stream, Array.Empty<Operator>());
+            var lexer = new Lexer(stream, string.Empty, new[] { _unificationOp });
             AssertNextToken(lexer, Lexer.TokenType.Term, "Y");
             AssertNextToken(lexer, Lexer.TokenType.Operator, "=");
             AssertNextToken(lexer, Lexer.TokenType.Term, "functor");
             AssertNextToken(lexer, Lexer.TokenType.Punctuation, "(");
             AssertNextToken(lexer, Lexer.TokenType.Term, "arg_1");
-            AssertNextToken(lexer, Lexer.TokenType.Operator, ",");
+            AssertNextToken(lexer, Lexer.TokenType.Punctuation, ",");
             AssertNextToken(lexer, Lexer.TokenType.Term, "X");
             AssertNextToken(lexer, Lexer.TokenType.Punctuation, ")");
         }
@@ -71,7 +74,7 @@ namespace Tests
         public void TestUTF8()
         {
             using var stream = FileStreamUtils.MemoryStream("π = 3.14159");
-            var lexer = new Lexer(stream, Array.Empty<Operator>());
+            var lexer = new Lexer(stream, string.Empty, new[] { _unificationOp });
             AssertNextToken(lexer, Lexer.TokenType.Term, "π");
             AssertNextToken(lexer, Lexer.TokenType.Operator, "=");
             AssertNextToken(lexer, Lexer.TokenType.Number, 3.1415900000000003);

@@ -1,4 +1,5 @@
-﻿using Ergo.Lang;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,12 +9,28 @@ using System.Runtime.ExceptionServices;
 
 namespace Tests
 {
+    public static class TestOperators
+    {
+        public static readonly Operator Comma = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Right, 20, new Atom(","));
+        public static readonly Operator List = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Right, 15, new Atom("|"));
+        public static readonly Operator Unification = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Right, 50, new Atom("="));
+        public static readonly Operator Add = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 500, new Atom("+"));
+        public static readonly Operator Plus = new(Modules.Stdlib, OperatorAffix.Prefix, OperatorAssociativity.None, 5, new Atom("+"));
+        public static readonly Operator Sub = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 500, new Atom("-"));
+        public static readonly Operator Minus = new(Modules.Stdlib, OperatorAffix.Prefix, OperatorAssociativity.None, 5, new Atom("-"));
+        public static readonly Operator Mult = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 600, new Atom("*"));
+        public static readonly Operator Div = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 600, new Atom("/"));
+        public static readonly Operator Pow = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Right, 700, new Atom("^"));
+
+        public static readonly Operator[] DefinedOperators = WellKnown.Operators.DefinedOperators
+            .Except(new[] { WellKnown.Operators.ArityIndicator }) // shadowed by Div as soon as math loads
+            .Concat(new[] { Comma, List, Unification, Add, Plus, Sub, Minus, Mult, Div, Pow })
+            .ToArray();
+    }
 
     [TestClass]
     public class TestParser
     {
-        private readonly ExceptionHandler Thrower = new((scope, ex) => ExceptionDispatchInfo.Capture(ex).Throw());
-
         [DataRow("a_simple_atom", "a_simple_atom")]
         [DataRow("'a string'", "'a string'")]
         [DataRow("\"another string\"", "'another string'")]
@@ -25,7 +42,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseAtom(string atom, string normalized)
         {
-            var p = new Parsed<Atom>(atom, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Atom>(atom, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true));
         }
 
@@ -37,7 +54,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseVariable(string variable, string normalized)
         {
-            var p = new Parsed<Variable>(variable, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Variable>(variable, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain());
         }
 
@@ -50,7 +67,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseList(string toParse, string expected)
         {
-            var p = new Parsed<List>(toParse, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<List>(toParse, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(expected, p.Value.GetOrDefault().Explain());
         }
 
@@ -66,7 +83,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseComplex(string complex, string normalized)
         {
-            var p = new Parsed<Complex>(complex, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Complex>(complex, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain());
         }
 
@@ -79,7 +96,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseITerm(string exp, string normalized)
         {
-            var p = new Parsed<ITerm>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<ITerm>(exp, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true));
         }
 
@@ -97,7 +114,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseExpression(string exp, string canonical)
         {
-            var p = new Parsed<Expression>(exp, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Expression>(exp, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(canonical, p.Value.GetOrDefault().Complex.Explain(canonical: true));
             Assert.AreEqual(exp, p.Value.GetOrDefault().Complex.Explain(canonical: false));
         }
@@ -112,7 +129,7 @@ namespace Tests
         [DataTestMethod]
         public void ParsePredicate(string predicate, string normalized)
         {
-            var p = new Parsed<Predicate>(predicate, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Predicate>(predicate, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true).RemoveExtraWhitespace());
         }
 
@@ -120,7 +137,7 @@ namespace Tests
         [DataTestMethod]
         public void ParseDirective(string directive, string normalized)
         {
-            var p = new Parsed<Directive>(directive, _ => throw new Exception("Parse fail."), Array.Empty<Operator>());
+            var p = new Parsed<Directive>(directive, _ => throw new Exception("Parse fail."), TestOperators.DefinedOperators);
             Assert.AreEqual(normalized, p.Value.GetOrDefault().Explain(canonical: true).RemoveExtraWhitespace());
         }
     }

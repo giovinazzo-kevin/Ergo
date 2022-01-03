@@ -1,17 +1,18 @@
 ﻿:- module(prologue, [
 	'¬'/1,
-	'∨'/2,
+	'∧'/2, '∨'/2,
 	'='/2, '≠'/2,
-	':'/2,
 	'->'/2
 ]).
 
 % OPERATOR DECLARATIONS
-:- op(1000, xfx, [':']).
+:- op(20, xfy, ['∧', ',']).
 :- op(30, xfy, ['∨', ';']).
-:- op(30, xfx, ['->']).
+:- op(50, xfx, ['=']).
 :- op(50, xfx, ['≠', '\\=']).
+:- op(30, xfx, ['->']).
 :- op(30, fx, ['¬', '\\+']).
+:- op(999, xfx, [':']).
 
 % OPERATOR IMPLEMENTATIONS
 

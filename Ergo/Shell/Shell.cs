@@ -33,7 +33,7 @@ namespace Ergo.Shell
                     return Maybe.Some(ret);
                 return Maybe<T>.None;
             });
-            var userDefinedOps = scope.InterpreterScope.GetUserDefinedOperators().ToArray();
+            var userDefinedOps = scope.InterpreterScope.GetOperators().ToArray();
             return new Parsed<T>(data, onParseFail, userDefinedOps);
         }
 

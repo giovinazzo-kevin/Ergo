@@ -13,8 +13,8 @@ namespace Ergo.Solver.BuiltIns
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            if (Retract(solver, scope, arguments[0], all: true)) yield return new(Literals.True);
-            else yield return new(Literals.False);
+            if (Retract(solver, scope, arguments[0], all: true)) yield return new(WellKnown.Literals.True);
+            else yield return new(WellKnown.Literals.False);
         }
     }
 }

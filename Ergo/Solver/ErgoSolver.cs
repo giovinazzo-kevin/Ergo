@@ -196,12 +196,12 @@ namespace Ergo.Solver
                 foreach (var resolvedGoal in ResolveBuiltin(goal, scope))
             {
                 goal = resolvedGoal.Result;
-                if (goal.Equals(Literals.False) || goal is Variable)
+                if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
                 {
                     LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
                     yield break;
                 }
-                if (goal.Equals(Literals.True))
+                if (goal.Equals(WellKnown.Literals.True))
                 {
                     LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", scope.Depth);
                     yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
@@ -284,7 +284,7 @@ namespace Ergo.Solver
                 foreach (var ss in Solve(scope, rest, subs)) {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
-                if(subGoal.Equals(Literals.Cut)) {
+                if(subGoal.Equals(WellKnown.Literals.Cut)) {
                     Cut.Value = true;
                     yield break;
                 }

@@ -26,7 +26,7 @@ namespace Ergo.Interpreter.Directives
             if (!scope.Modules.TryGetValue(moduleName, out var module))
             {
                 var importScope = scope;
-                module = interpreter.Load(ref importScope, moduleName.Explain());
+                module = ModuleLoader.LoadDirectives(interpreter, ref importScope, moduleName.Explain());
             }
             scope = scope
                 .WithModule(module)

@@ -17,9 +17,9 @@ namespace Ergo.Solver.BuiltIns
         {
             if (new Substitution(arguments[0], arguments[1]).TryUnify(out var subs))
             {
-                yield return new(Literals.True, subs.ToArray());
+                yield return new(WellKnown.Literals.True, subs.ToArray());
             }
-            else yield return new(Literals.False);
+            else yield return new(WellKnown.Literals.False);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Ergo.Lang
 
         public Parsed(string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
         {
-            var parser = new Parser(new Lexer(Utils.FileStreamUtils.MemoryStream(data), userOperators), userOperators);
+            var parser = new Parser(new Lexer(Utils.FileStreamUtils.MemoryStream(data), string.Empty, userOperators));
             Func<Parser, Maybe<T>> parse = true switch {
                     _ when typeof(T) == typeof(Atom) => 
                     (Parser p) => p.TryParseAtom(out var x) ? Box(x) : onParseFail(data)

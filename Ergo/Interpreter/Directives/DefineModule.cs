@@ -40,8 +40,8 @@ namespace Ergo.Interpreter.Directives
             else
             {
                 module = new Module(moduleName, runtime: scope.Runtime)
-                    .WithImport(Modules.Stdlib)
-                    .WithExports(exports.Contents);
+                    .WithExports(exports.Contents)
+                    .WithImport(Modules.Stdlib);
             }
             scope = scope
                 .WithModule(module)

@@ -15,19 +15,17 @@ namespace Ergo.Lang
     {
         private readonly Lexer _lexer;
         private readonly InstantiationContext _discardContext;
-        private readonly Operator[] _userDefinedOperators;
 
-        public Parser(Lexer lexer, Operator[] userOperators)
+        public Parser(Lexer lexer)
         {
             _lexer = lexer;
             _discardContext = new(String.Empty);
-            _userDefinedOperators = userOperators;
         }
 
         public bool TryGetOperatorsFromFunctor(Atom functor, out IEnumerable<Operator> ops)
         {
             ops = default;
-            var match = Operators.DefinedOperators.Concat(_userDefinedOperators)
+            var match = _lexer.AvailableOperators
                 .Where(op => op.Synonyms.Any(s => functor.Equals(s)));
             if (!match.Any())
             {
@@ -54,7 +52,7 @@ namespace Ergo.Lang
                 return true;
             }
             else if (Expect(Lexer.TokenType.Keyword, kw => Lexer.CutSymbols.Contains(kw), out kw)) {
-                atom = (Atom)Literals.Cut;
+                atom = (Atom)WellKnown.Literals.Cut;
                 return true;
             }
             if (Expect(Lexer.TokenType.Term, out string ITerm)) {
@@ -78,7 +76,7 @@ namespace Ergo.Lang
                 if (term.StartsWith("__K")) {
                     Throw(pos, ErrorType.TermHasIllegalName, var.Name);
                 }
-                if(term.Equals(Literals.Discard.Explain())) {
+                if(term.Equals(WellKnown.Literals.Discard.Explain())) {
                     term = $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}";
                 }
                 var = new Variable(term);
@@ -180,7 +178,7 @@ namespace Ergo.Lang
                 , out var full
             )) {
                 if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                    && Operators.BinaryList.Synonyms.Contains(cplx.Functor)) {
+                    && WellKnown.Functors.List.Contains(cplx.Functor)) {
                     var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
                     if(CommaSequence.TryUnfold(cplx.Arguments[0], out var comma)) {
                         arguments = comma.Contents;
@@ -372,7 +370,7 @@ namespace Ergo.Lang
             {
                 return Fail(pos);
             }
-            if (!Operators.UnaryHorn.Equals(op.Operator))
+            if (!WellKnown.Operators.UnaryHorn.Equals(op.Operator))
             {
                 return Fail(pos);
             }
@@ -406,12 +404,12 @@ namespace Ergo.Lang
                 return Fail(pos);
             if (!TryParseExpression(out var op)) {
                 if (TryParseTerm(out var head, out _) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
-                    return MakePredicate(pos, desc, head, new(ImmutableArray<ITerm>.Empty.Add(Literals.True)), out predicate);
+                    return MakePredicate(pos, desc, head, new(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)), out predicate);
                 }
                 Throw(pos, ErrorType.ExpectedClauseList);
             }
-            if(!Operators.BinaryHorn.Equals(op.Operator)) {
-                op = new Expression(Operators.BinaryHorn, op.Complex, Maybe.Some(Literals.True), false);
+            if(!WellKnown.Operators.BinaryHorn.Equals(op.Operator)) {
+                op = new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some(WellKnown.Literals.True), false);
             }
             if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
                 Throw(pos, ErrorType.UnterminatedClauseList);
@@ -425,7 +423,7 @@ namespace Ergo.Lang
             bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaSequence body, out Predicate c)
             {
                 var headVars = head.Variables
-                    .Where(v => !v.Equals(Literals.Discard));
+                    .Where(v => !v.Equals(WellKnown.Literals.Discard));
                 var bodyVars = body.Contents.SelectMany(t => t.Variables)
                     .Distinct();
                 var singletons = headVars.Where(v => !v.Ignored && !bodyVars.Contains(v) && headVars.Count(x => x.Name == v.Name) == 1)
@@ -455,18 +453,27 @@ namespace Ergo.Lang
             {
                 predicates.Add(predicate);
             }
-            program = new ErgoProgram(directives.ToArray(), predicates.ToArray());
+            program = new ErgoProgram(directives.ToArray(), predicates.ToArray())
+                .AsPartial(false);
             return true;
         }
 
         public bool TryParseProgramDirectives(out ErgoProgram program)
         {
             var directives = new List<Directive>();
-            while (TryParseDirective(out var directive))
+            try
             {
-                directives.Add(directive);
+                while (TryParseDirective(out var directive))
+                {
+                    directives.Add(directive);
+                }
             }
-            program = new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>());
+            catch(LexerException le) when (le.ErrorType == Lexer.ErrorType.UnrecognizedOperator)
+            {
+                // The parser reached a point where a newly-declared operator was used. Probably.
+            }
+            program = new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>())
+                .AsPartial(true);
             return true;
         }
 

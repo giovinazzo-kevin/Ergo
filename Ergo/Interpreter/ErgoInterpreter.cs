@@ -22,21 +22,28 @@ namespace Ergo.Interpreter
         public readonly Dictionary<Signature, InterpreterDirective> Directives;
         public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates;
 
+        public readonly InterpreterScope StdlibScope;
+
         public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         {
             Flags = flags;
             Directives = new();
             DynamicPredicates = new();
             AddDirectivesByReflection();
+
+            var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));
+            Load(ref stdlibScope, Modules.Stdlib.Explain());
+            StdlibScope = stdlibScope
+                .WithCurrentModule(Modules.Stdlib)
+                .WithRuntime(false);
         }
 
         public InterpreterScope CreateScope()
         {
-            var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));
-            var stdlib = Load(ref stdlibScope, Modules.Stdlib.Explain());
-            return new InterpreterScope(new Module(Modules.User, runtime: true)
+            return StdlibScope
+                .WithModule(new Module(Modules.User, runtime: true)
                     .WithImport(Modules.Stdlib))
-                .WithModule(stdlib);
+                .WithCurrentModule(Modules.User);
         }
 
         public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
@@ -73,85 +80,8 @@ namespace Ergo.Interpreter
             return true;
         }
 
-        public virtual Module Load(ref InterpreterScope scope, string fileName)
-        {
-            var dir = scope.SearchDirectories
-                .Concat(scope.SearchDirectories.Select(s => s + fileName + "/")) // Allows structuring modules within folders of the same name; TODO: proper refactor
-                .FirstOrDefault(d => File.Exists(Path.ChangeExtension(Path.Combine(d, fileName), "ergo")));
-            if (dir == null)
-            {
-                throw new FileNotFoundException(fileName);
-            }
-            fileName = Path.ChangeExtension(Path.Combine(dir, fileName), "ergo");
-            var fs = FileStreamUtils.EncodedFileStream(File.OpenRead(fileName), closeStream: true);
-            return Load(ref scope, fileName, fs, closeStream: true);
-        }
-
-        public virtual Module Load(ref InterpreterScope scope, string name, Stream file, bool closeStream = true)
-        {
-            var operators = scope.GetUserDefinedOperators().ToArray();
-            var lexer = new Lexer(file, operators, name);
-            var parser = new Parser(lexer, operators);
-            if (!parser.TryParseProgramDirectives(out var program))
-            {
-                MaybeClose();
-                throw new InterpreterException(InterpreterError.CouldNotLoadFile, scope);
-            }
-
-            var scope_ = scope;
-            var directives = program.Directives.Select(d =>
-            {
-                if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
-                    return (Ast: d, Builtin: directive);
-                throw new InterpreterException(InterpreterError.UndefinedDirective, scope_, d.Body.Explain());
-            });
-
-            foreach (var d in directives.OrderBy(x => x.Builtin.Priority))
-            {
-                d.Builtin.Execute(this, ref scope, ((Complex)d.Ast.Body).Arguments);
-            }
-            foreach (var import in scope.Modules[scope.Module].Imports.Contents)
-            {
-                scope_ = scope;
-                if (!scope.Modules.TryGetValue((Atom)import, out var importedModule) 
-                    || importedModule.Imports.Contents.Any(i => !scope_.Modules.ContainsKey((Atom)i)))
-                {
-                    var importScope = scope;
-                    var importModule = Load(ref importScope, import.Explain());
-                    foreach (var module in importScope.Modules.Values)
-                    {
-                        scope = scope
-                            .WithModule(module);
-                    }
-                }
-            }
-            var newOperators = scope.GetUserDefinedOperators()
-                .Except(operators)
-                .ToArray();
-            if (newOperators.Length > 0)
-            {
-                operators = operators.Concat(newOperators).ToArray();
-                file.Seek(0, SeekOrigin.Begin);
-                lexer = new Lexer(file, operators, name);
-                parser = new Parser(lexer, operators);
-            }
-            if (!parser.TryParseProgram(out program))
-            {
-                MaybeClose();
-                throw new InterpreterException(InterpreterError.CouldNotLoadFile, scope);
-            }
-            var currentModule = scope.Modules[scope.Module].WithProgram(program);
-            MaybeClose();
-            scope = scope.WithModule(currentModule);
-            return currentModule;
-            void MaybeClose()
-            {
-                if (closeStream)
-                {
-                    file.Dispose();
-                }
-            }
-        }
+        public Module Load(ref InterpreterScope scope, string name) => ModuleLoader.Load(this, ref scope, name);
+        public Module Load(ref InterpreterScope scope, Stream stream, string fn = "") => ModuleLoader.Load(this, ref scope, fn, stream);
 
         public Module EnsureModule(ref InterpreterScope scope, Atom name)
         {
@@ -159,12 +89,14 @@ namespace Ergo.Interpreter
             {
                 try
                 {
-                    scope = scope.WithModule(module = Load(ref scope, name.Explain())
+                    scope = scope
+                        .WithModule(module = Load(ref scope, name.Explain())
                         .WithImport(Modules.Stdlib));
                 }
                 catch(FileNotFoundException)
                 {
-                    scope = scope.WithModule(module = new Module(name, runtime: true)
+                    scope = scope
+                        .WithModule(module = new Module(name, runtime: true)
                         .WithImport(Modules.Stdlib));
                 }
             }
@@ -176,7 +108,7 @@ namespace Ergo.Interpreter
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
             if (head is Complex c
-                && c.Functor.Equals(Operators.BinaryDivision.CanonicalFunctor)
+                && WellKnown.Functors.Division.Contains(c.Functor)
                 && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 head = new Atom(match.Predicate).BuildAnonymousComplex(match.Arity);

@@ -25,7 +25,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
             }
-            if (Literals.DefinedLiterals.Any(l => l.Equals(args[0])))
+            if (WellKnown.Literals.DefinedLiterals.Any(l => l.Equals(args[0])))
             {
                 throw new InterpreterException(InterpreterError.LiteralClashWithBuiltIn, scope, args[0].Explain());
             }

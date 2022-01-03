@@ -37,12 +37,12 @@ namespace Ergo.Solver.BuiltIns
             var any = false;
             foreach (var solution in solver.Solve(new(comma), Maybe.Some(scope)))
             {
-                yield return new Evaluation(Literals.True, solution.Substitutions);
+                yield return new Evaluation(WellKnown.Literals.True, solution.Substitutions);
                 any = true;
             }
             if(!any)
             {
-                yield return new Evaluation(Literals.False);
+                yield return new Evaluation(WellKnown.Literals.False);
             }
         }
     }

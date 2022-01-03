@@ -16,12 +16,12 @@ namespace Ergo.Solver.BuiltIns
             var any = false;
             while (Retract(solver, scope, arguments[0], all: false))
             {
-                yield return new(Literals.True);
+                yield return new(WellKnown.Literals.True);
                 any = true;
             }
             if(!any)
             {
-                yield return new(Literals.False);
+                yield return new(WellKnown.Literals.False);
             }
         }
     }

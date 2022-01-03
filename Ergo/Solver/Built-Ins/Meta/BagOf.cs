@@ -1,38 +1,65 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
+using Ergo.Lang.Extensions;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class FindAll : BuiltIn
+    public sealed class BagOf : BuiltIn
     {
-        public FindAll()
-            : base("", new("findall"), Maybe.Some(3), Modules.Meta)
+        private readonly Atom ExistentialQualifier = new("^");
+
+        public BagOf()
+            : base("", new("bagof"), Maybe.Some(3), Modules.Meta)
         {
         }
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
+            var (template, goal, instances) = (args[0], args[1], args[2]);
             scope = scope.WithDepth(scope.Depth + 1)
                 .WithCaller(scope.Callee)
                 .WithCallee(Maybe.Some(GetStub(args)));
-            if (!CommaSequence.TryUnfold(args[1], out var comma))
+            if (goal is Variable)
             {
-                comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
+                throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
             }
-            var solutions = solver.Solve(new(comma), Maybe.Some(scope))
+            if (instances is not Variable && !List.TryUnfold(instances, out _))
+            {
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, instances.Explain());
+            }
+
+            var templateVars = Enumerable.Empty<Variable>();
+            while(goal is Complex c && c.Functor == ExistentialQualifier)
+            {
+                templateVars = templateVars.Concat(c.Arguments[0].Variables);
+                goal = c.Arguments[1];
+            }
+            templateVars = templateVars.Concat(template.Variables)
+                .ToHashSet();
+
+            var variable = new Variable("__B");
+            var freeVars = new List(ImmutableArray.CreateRange(
+                goal.Variables.Where(v => !templateVars.Contains(v)).Cast<ITerm>())
+            );
+
+            var goalClauses = new CommaSequence(ImmutableArray<ITerm>.Empty
+                .Add(goal));
+
+            var solutions = solver.Solve(new(goalClauses), Maybe.Some(scope))
                 .Select(s => s.Simplify())
                 .ToArray();
             if (solutions.Length == 0)
             {
-                if(args[2].IsGround && args[2] == WellKnown.Literals.EmptyList)
+                if (instances.IsGround && args[2] == WellKnown.Literals.EmptyList)
                 {
                     yield return new Evaluation(WellKnown.Literals.True);
                 }
-                else if(!args[2].IsGround)
+                else if (!args[2].IsGround)
                 {
                     yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], WellKnown.Literals.EmptyList));
                 }

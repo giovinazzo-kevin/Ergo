@@ -14,7 +14,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            yield return new(Literals.True);
+            yield return new(WellKnown.Literals.True);
         }
     }
 }

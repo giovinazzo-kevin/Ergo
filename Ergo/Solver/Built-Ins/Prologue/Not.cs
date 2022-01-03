@@ -19,9 +19,9 @@ namespace Ergo.Solver.BuiltIns
         {
             if (solver.Solve(new Query(new(ImmutableArray<ITerm>.Empty.Add(arguments.Single()))), Maybe.Some(scope)).Any())
             {
-                yield return new(Literals.False);
+                yield return new(WellKnown.Literals.False);
             }
-            else yield return new(Literals.True);
+            else yield return new(WellKnown.Literals.True);
         }
     }
 }

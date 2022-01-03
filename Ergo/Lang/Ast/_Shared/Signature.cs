@@ -47,7 +47,7 @@ namespace Ergo.Lang.Ast
 
         public static bool TryUnfold(ITerm term, out Signature sig)
         {
-            if (term is Complex c && Operators.BinaryDivision.Synonyms.Contains(c.Functor)
+            if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
                 && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 c.Arguments[0].TryGetQualification(out var qm, out var qs);

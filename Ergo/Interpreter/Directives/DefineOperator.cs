@@ -34,10 +34,6 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[2].Explain());
             }
-            if(Operators.DefinedOperators.Any(o => o.Synonyms.Select(x => x.Explain()).Intersect(synonyms).Any()))
-            {
-                throw new InterpreterException(InterpreterError.OperatorClash, scope, args[2].Explain());
-            }
             var (affix, assoc) = type switch
             {
                 OperatorType.fx => (OperatorAffix.Prefix, OperatorAssociativity.Right),
@@ -47,9 +43,22 @@ namespace Ergo.Interpreter.Directives
                 OperatorType.yfx => (OperatorAffix.Infix, OperatorAssociativity.Left),
                 _ => throw new NotSupportedException()
             };
-
+            var existingOperators = scope.GetOperators();
+            foreach (var op in existingOperators.Where(x => x.Affix == affix))
+            {
+                var intersectingSynonyms = op.Synonyms.Select(x => x.Explain()).Intersect(synonyms);
+                // Operators can be re-defined, but only if the new definition covers all synonyms.
+                if (intersectingSynonyms.Any())
+                {
+                    if(intersectingSynonyms.Count() != op.Synonyms.Length)
+                    {
+                        throw new InterpreterException(InterpreterError.OperatorClash, scope, args[2].Explain());
+                    }
+                }
+            }
+            var synonymAtoms = synonyms.Select(x => new Atom(x)).ToArray();
             scope = scope.WithModule(scope.Modules[scope.Module]
-                .WithOperator(new(affix, assoc, precedence, synonyms)));
+                .WithOperator(new(scope.Module, affix, assoc, precedence, synonymAtoms)));
             return true;
         }
     }

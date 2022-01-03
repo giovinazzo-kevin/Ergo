@@ -18,11 +18,11 @@ namespace Ergo.Solver.BuiltIns
         {
             if (Assert(solver, scope, arguments[0], z: true))
             {
-                yield return new(Literals.True);
+                yield return new(WellKnown.Literals.True);
             }
             else
             {
-                yield return new(Literals.False);
+                yield return new(WellKnown.Literals.False);
             }
         }
     }

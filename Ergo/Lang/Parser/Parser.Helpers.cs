@@ -59,6 +59,7 @@ namespace Ergo.Lang
             seq = default;
             var pos = _lexer.State;
             var args = new List<(ITerm Term, bool Parenthesized)>();
+            var isSeparatorComma = WellKnown.Functors.Conjunction.Contains(new Atom(separator));
 
             if (openingDelim != null) {
                 if (!ExpectDelimiter(p => p == openingDelim, out string _)) {
@@ -83,8 +84,7 @@ namespace Ergo.Lang
                 }
             }
             // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
-            if(TryGetOperatorsFromFunctor(new Atom(separator), out var ops) && ops.Contains(Operators.BinaryConjunction)
-              && args.Count == 1 && args.Single() is { } arg && CommaSequence.TryUnfold(arg.Term, out var comma)) {
+            if(isSeparatorComma && args.Count == 1 && args.Single() is { } arg && CommaSequence.TryUnfold(arg.Term, out var comma)) {
                 seq = new UntypedSequence(functor, emptyElement, comma.Contents, arg.Parenthesized);
             }
             else {

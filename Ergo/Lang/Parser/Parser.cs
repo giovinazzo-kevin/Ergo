@@ -204,18 +204,18 @@ namespace Ergo.Lang
             return false;
         }
 
-        public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool lhsParenthesized = false, bool exprParenthesized = false)
+        public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool exprParenthesized = false)
         {
             return maybeRhs.Reduce(
                 rhs => Associate(lhs, rhs),
-                () => new Expression(op, lhs, Maybe<ITerm>.None, lhsParenthesized || exprParenthesized)
+                () => new Expression(op, lhs, Maybe<ITerm>.None, lhs.IsParenthesized || exprParenthesized)
             );
 
             Expression Associate(ITerm lhs, ITerm rhs)
             {
                 // When the lhs represents an expression with the same precedence as this (and thus associativity, by design)
                 // and right associativity, we have to swap the arguments around until they look right.
-                if (!lhsParenthesized
+                if (!lhs.IsParenthesized
                 && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized)
                 && lhsExpr.Operator.Affix == OperatorAffix.Infix
                 && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
@@ -313,7 +313,7 @@ namespace Ergo.Lang
                         return Fail(pos);
                     }
                     if (!TryPeekNextOperator(out lookahead)) {
-                        expr = BuildExpression(op, lhs, Maybe.Some(rhs), lhsParenthesized, exprParenthesized);
+                        expr = BuildExpression(op, lhs, Maybe.Some(rhs), exprParenthesized);
                         break;
                     }
                     while(lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence

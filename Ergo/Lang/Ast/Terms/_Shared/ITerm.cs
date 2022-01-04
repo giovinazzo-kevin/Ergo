@@ -8,6 +8,7 @@ namespace Ergo.Lang.Ast
     {
         bool IsGround { get; }
         bool IsQualified { get; }
+        bool IsParenthesized { get; }
         IEnumerable<Variable> Variables { get; }
 
         bool TryQualify(Atom m, out ITerm qualified)

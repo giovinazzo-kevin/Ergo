@@ -31,7 +31,7 @@ namespace Ergo.Solver
 
         public static ErgoSolver Build(ErgoInterpreter i, ref InterpreterScope scope)
         {
-            if(!_scopeCache.TryGetValue(scope, out var kb) || kb.Value == null)
+            if (!_scopeCache.TryGetValue(scope, out var kb) || kb.Value == null)
             {
                 kb ??= new();
                 kb.Value = new();
@@ -40,7 +40,7 @@ namespace Ergo.Solver
                 {
                     LoadModule(ref scope, kb.Value, module, added);
                 }
-                if(!_scopeCache.TryAdd(scope, kb))
+                if (!_scopeCache.TryAdd(scope, kb))
                 {
                     kb = _scopeCache[scope];
                 }
@@ -134,11 +134,11 @@ namespace Ergo.Solver
         }
 
 
-        public IEnumerable<Evaluation> ResolveBuiltin(ITerm term, SolverScope scope)
+        public IEnumerable<Evaluation> ResolveGoal(ITerm term, SolverScope scope)
         {
             var any = false;
             var sig = term.GetSignature();
-            if(!term.TryGetQualification(out var qm, out term))
+            if (!term.TryGetQualification(out var qm, out term))
             {
                 // Try resolving the built-in's module automatically
                 foreach (var key in BuiltIns.Keys)
@@ -155,7 +155,8 @@ namespace Ergo.Solver
                 }
             }
             while (BuiltIns.TryGetValue(sig, out var builtIn)
-            || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn)) {
+            || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
+            {
                 LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {term.Explain()}", scope.Depth);
                 foreach (var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
                 {
@@ -183,17 +184,19 @@ namespace Ergo.Solver
         {
             subs ??= new List<Substitution>();
             // Treat comma-expression complex ITerms as proper expressions
-            if (CommaSequence.TryUnfold(goal, out var expr)) {
-                foreach (var s in Solve(scope, expr, subs)) {
+            if (CommaSequence.TryUnfold(goal, out var expr))
+            {
+                foreach (var s in Solve(scope, expr, subs))
+                {
                     yield return s;
                 }
                 yield break;
             }
-            while (InterpreterScope.TryReplaceLiterals(goal, out var goal_))
-            {
-                goal = goal_;
-            }
-                foreach (var resolvedGoal in ResolveBuiltin(goal, scope))
+            // Cyclic literal definitions throw an error, so this replacement loop always terminates
+            while (InterpreterScope.TryReplaceLiterals(goal, out goal)) ;
+            // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
+            // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
+            foreach (var resolvedGoal in ResolveGoal(goal, scope))
             {
                 goal = resolvedGoal.Result;
                 if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
@@ -207,6 +210,7 @@ namespace Ergo.Solver
                     yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }
+                // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
                 LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
                 foreach (var m in matches)
@@ -237,13 +241,13 @@ namespace Ergo.Solver
                 var isDynamic = false;
                 if (!goal.IsQualified)
                 {
-                    if (goal.TryQualify(module.Name, out var qualified) 
+                    if (goal.TryQualify(module.Name, out var qualified)
                         && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true)
                         && KnowledgeBase.TryGetMatches(qualified, out matches))
                     {
                         return (qualified, matches);
                     }
-                    if(scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
+                    if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
                     {
                         if (goal.TryQualify(clause.DeclaringModule, out qualified)
                             && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true)
@@ -256,7 +260,7 @@ namespace Ergo.Solver
                 var signature = goal.GetSignature();
                 if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= module.DynamicPredicates.Contains(goal.GetSignature())))
                 {
-                    if(Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                    if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
                         throw new SolverException(SolverError.UndefinedPredicate, scope, goal.GetSignature().Explain());
                     }
@@ -268,7 +272,8 @@ namespace Ergo.Solver
         protected IEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null)
         {
             subs ??= new List<Substitution>();
-            if (query.IsEmpty) {
+            if (query.IsEmpty)
+            {
                 yield return new Solution(subs.ToArray());
                 yield break;
             }
@@ -276,15 +281,19 @@ namespace Ergo.Solver
             var subGoal = goals.First();
             goals = goals.RemoveAt(0);
             // Get first solution for the current subgoal
-            foreach (var s in Solve(scope, subGoal, subs)) {
-                if(Cut.Value) {
+            foreach (var s in Solve(scope, subGoal, subs))
+            {
+                if (Cut.Value)
+                {
                     yield break;
                 }
                 var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
-                foreach (var ss in Solve(scope, rest, subs)) {
+                foreach (var ss in Solve(scope, rest, subs))
+                {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
-                if(subGoal.Equals(WellKnown.Literals.Cut)) {
+                if (subGoal.Equals(WellKnown.Literals.Cut))
+                {
                     Cut.Value = true;
                     yield break;
                 }

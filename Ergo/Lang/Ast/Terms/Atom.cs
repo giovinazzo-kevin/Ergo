@@ -13,6 +13,7 @@ namespace Ergo.Lang.Ast
     {
         public bool IsGround => true;
         public bool IsQualified => false;
+        public bool IsParenthesized => false;
 
         public readonly object Value;
         private readonly int HashCode;

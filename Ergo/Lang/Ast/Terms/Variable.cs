@@ -10,6 +10,7 @@ namespace Ergo.Lang.Ast
     {
         public bool IsGround => false;
         public bool IsQualified => false;
+        public bool IsParenthesized => false;
 
         public readonly string Name;
         public readonly bool Ignored;

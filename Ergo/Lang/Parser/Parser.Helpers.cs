@@ -49,56 +49,65 @@ namespace Ergo.Lang
         protected bool TryParseSequence(
             Atom functor, 
             ITerm emptyElement, 
-            Func<(bool, ITerm, bool)> tryParseElement, 
+            Func<(bool, ITerm, bool parens)> tryParseElement, 
             string openingDelim, 
             string separator, 
             string closingDelim, 
-            bool @throw, 
+            bool @throw,
             out UntypedSequence seq)
         {
             seq = default;
             var pos = _lexer.State;
-            var args = new List<(ITerm Term, bool Parenthesized)>();
+            var args = new List<(ITerm Term, bool Parens)>();
             var isSeparatorComma = WellKnown.Functors.Conjunction.Contains(new Atom(separator));
-
-            if (openingDelim != null) {
-                if (!ExpectDelimiter(p => p == openingDelim, out string _)) {
+            if (openingDelim != null)
+            {
+                if (!ExpectDelimiter(p => p == openingDelim, out string _))
+                {
                     return Fail(pos);
                 }
-                if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out string _)) {
+                if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out string _))
+                {
                     // Empty list
                     seq = new UntypedSequence(functor, emptyElement, ImmutableArray<ITerm>.Empty, false);
                     return true;
                 }
             }
 
-            while (tryParseElement() is (true, var term, var parenthesized)) {
-                args.Add((term, parenthesized));
-                if (!ExpectDelimiter(p => true, out string q) || q != separator && q != closingDelim) {
-                    if(@throw)
+            while (tryParseElement() is (true, var term, var parens))
+            {
+                args.Add((term, parens));
+                if (!ExpectDelimiter(p => true, out string q) || q != separator && q != closingDelim)
+                {
+                    if (@throw)
                         Throw(pos, ErrorType.ExpectedArgumentDelimiterOrClosedParens, separator, closingDelim);
                     return Fail(pos);
                 }
-                if (closingDelim != null && q == closingDelim) {
+                if (closingDelim != null && q == closingDelim)
+                {
                     break;
                 }
             }
-            // Special case: when the delimiter is a comma, we need to unfold the underlying comma expression
-            if(isSeparatorComma && args.Count == 1 && args.Single() is { } arg && CommaSequence.TryUnfold(arg.Term, out var comma)) {
-                seq = new UntypedSequence(functor, emptyElement, comma.Contents, arg.Parenthesized);
+            // Special case: when the delimiter is a comma, and the expression is not parenthesized, we need to unfold the underlying expression
+            if (isSeparatorComma && args.Count == 1 && args.Single() is { } arg && !arg.Parens && CommaSequence.TryUnfold(arg.Term, out var comma))
+            {
+                seq = new UntypedSequence(functor, emptyElement, comma.Contents, false);
             }
-            else {
+            else
+            {
                 seq = new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args.Select(a => a.Term)), false);
             }
             return true;
 
-            bool ExpectDelimiter(Func<string,bool> condition, out string d)
+            bool ExpectDelimiter(Func<string, bool> condition, out string d)
             {
                 var pos = _lexer.State;
-                if (Expect(Lexer.TokenType.Punctuation, condition, out d)) {
+                if (Expect(Lexer.TokenType.Punctuation, condition, out d))
+                {
                     return true;
                 }
-                if (Expect(Lexer.TokenType.Operator, condition, out d)) {
+                if (Expect(Lexer.TokenType.Operator, condition, out d))
+                {
                     return true;
                 }
                 return Fail(pos);

@@ -8,7 +8,7 @@
         , OperatorClash
         , LiteralClashWithBuiltIn
         , LiteralClash
-        , LiteralCircularDefinition
+        , LiteralCyclicDefinition
         , ModuleRedefinition
         , UndefinedDirective
     }

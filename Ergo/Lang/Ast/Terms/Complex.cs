@@ -13,7 +13,7 @@ namespace Ergo.Lang.Ast
         public readonly bool IsQualified { get; }
 
         public readonly Maybe<OperatorAffix> Affix;
-        public readonly bool IsParenthesized;
+        public readonly bool IsParenthesized { get; }
 
         public readonly Atom Functor;
         public readonly ITerm[] Arguments;

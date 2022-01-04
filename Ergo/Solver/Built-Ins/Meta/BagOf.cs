@@ -47,42 +47,27 @@ namespace Ergo.Solver.BuiltIns
                 goal.Variables.Where(v => !templateVars.Contains(v)).Cast<ITerm>())
             );
 
-            var goalClauses = new CommaSequence(ImmutableArray<ITerm>.Empty
-                .Add(goal));
+            var goalClauses = new CommaSequence(
+                goal,
+                new Complex(WellKnown.Functors.Unification.First(), 
+                    variable, 
+                    new CommaSequence(freeVars.Root, template).Root)
+            );
 
             var solutions = solver.Solve(new(goalClauses), Maybe.Some(scope))
                 .Select(s => s.Simplify())
                 .ToArray();
-            if (solutions.Length == 0)
+
+            if(!solutions.Any())
             {
-                if (instances.IsGround && args[2] == WellKnown.Literals.EmptyList)
-                {
-                    yield return new Evaluation(WellKnown.Literals.True);
-                }
-                else if (!args[2].IsGround)
-                {
-                    yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], WellKnown.Literals.EmptyList));
-                }
-                else
-                {
-                    yield return new Evaluation(WellKnown.Literals.False);
-                }
+                yield return new(WellKnown.Literals.False);
+                yield break;
             }
-            else
+
+            foreach (var sol in solutions)
             {
-                var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))));
-                if (args[2].IsGround && args[2] == list.Root)
-                {
-                    yield return new Evaluation(WellKnown.Literals.True);
-                }
-                else if (!args[2].IsGround)
-                {
-                    yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], list.Root));
-                }
-                else
-                {
-                    yield return new Evaluation(WellKnown.Literals.False);
-                }
+                var instance = template.Substitute(sol.Substitutions);
+
             }
         }
     }

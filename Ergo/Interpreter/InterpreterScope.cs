@@ -97,7 +97,7 @@ namespace Ergo.Interpreter
 
         public bool TryReplaceLiterals(ITerm term, out ITerm changed, Maybe<Atom> entry = default, HashSet<Atom> added = null)
         {
-            changed = default;
+            changed = term;
             if (term is Variable) 
                 return false;
             if (term.IsQualified && term.TryGetQualification(out var qm, out var qv))

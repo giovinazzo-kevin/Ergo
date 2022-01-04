@@ -75,6 +75,8 @@ namespace Tests
         [DataRow("a((X))", "a(X)")]
         [DataRow("a(X, Y)", "a(X,Y)")]
         [DataRow("a((X, Y))", "a((X,Y))")]
+        [DataRow("a((X, Y), b(A, B),Z)", "a((X,Y),b(A,B),Z)")]
+        [DataRow("a(((X, Y)), b(A, B),Z)", "a((X,Y),b(A,B),Z)")]
         [DataRow("a([X|Rest])", "a([X|Rest])")]
         [DataRow("a([X, Y|Rest])", "a([X,Y|Rest])")]
         [DataRow("f(A, B, C)", "f(A,B,C)")]

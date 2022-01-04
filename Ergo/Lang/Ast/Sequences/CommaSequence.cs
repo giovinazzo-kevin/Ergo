@@ -33,6 +33,7 @@ namespace Ergo.Lang.Ast
                 .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
             IsParenthesized = parens;
         }
+        public CommaSequence(params ITerm[] args) : this(ImmutableArray.CreateRange(args), false) { }
 
         public static bool TryUnfold(ITerm t, out CommaSequence expr)
         {

@@ -90,14 +90,12 @@ namespace Ergo.Interpreter
                 try
                 {
                     scope = scope
-                        .WithModule(module = Load(ref scope, name.Explain())
-                        .WithImport(Modules.Stdlib));
+                        .WithModule(module = Load(ref scope, name.Explain()));
                 }
                 catch(FileNotFoundException)
                 {
                     scope = scope
-                        .WithModule(module = new Module(name, runtime: true)
-                        .WithImport(Modules.Stdlib));
+                        .WithModule(module = new Module(name, runtime: true));
                 }
             }
             return module;

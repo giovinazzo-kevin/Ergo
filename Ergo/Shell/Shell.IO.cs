@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Ergo.Lang;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -8,7 +10,18 @@ using System.Text;
 
 namespace Ergo.Shell
 {
+    internal class TreeNode<T>
+    {
+        public readonly T Value;
+        public Maybe<TreeNode<T>> Parent { get; set; }
+        public TreeNode<T>[] Children { get; set; }
 
+        public TreeNode(T val, params TreeNode<T>[] children)
+        {
+            Children = children;
+            Value = val;
+        }
+    }
 
     public partial class ErgoShell
     {
@@ -166,6 +179,74 @@ namespace Ergo.Shell
         {
             Write("\u001b[1m⊥\u001b[0m", lvl, overrideFg: ConsoleColor.DarkRed);
             if (nl) WriteLine();
+        }
+
+        public virtual void WriteTree<T, K>(T value, Func<T, K> getKey, Func<T, IEnumerable<T>> getChildren, Func<T, string> toString)
+        {
+            var seen = new HashSet<K>();
+            var tree = BuildTree(value);
+            WriteLine(toString(value));
+            for (int i = 0; i < tree.Children.Length; i++)
+            {
+                WriteNode(tree, tree.Children[i], 0, i == tree.Children.Length - 1);
+            }
+            void WriteNode(TreeNode<T> parent, TreeNode<T> node, int indent = 0, bool last = false)
+            {
+                var key = getKey(node.Value);
+                var spaces = String.Join("", Enumerable.Range(0, indent).Select(_ => "   "));
+                var connector = new string('─', 2);
+                Write(spaces);
+                Write(last ? "└" : "├");
+                Write(connector);
+                Write(toString(node.Value));
+                if (seen.Contains(key))
+                {
+                    WriteLine("...");
+                    return;
+                }
+                WriteLine();
+                seen.Add(key);
+                for (int i = 0; i < node.Children.Length; i++)
+                {
+                    WriteNode(node, node.Children[i], indent + 1, i == node.Children.Length - 1);
+                }
+            }
+
+            bool IsPathCyclic(TreeNode<T> parent, TreeNode<T> current, out ImmutableArray<TreeNode<T>> cycle, ImmutableArray<TreeNode<T>> seen)
+            {
+                cycle = ImmutableArray<TreeNode<T>>.Empty;
+                if (parent == current || seen.Contains(current))
+                {
+                    cycle = ImmutableArray.CreateRange(seen.Skip(seen.LastIndexOf(current)));
+                    return true;
+                }
+                seen = seen.Add(current);
+                foreach (var child in current.Children)
+                {
+                    if (IsPathCyclic(current, child, out cycle, seen))
+                        return true;
+                }
+                return false;
+            }
+
+            TreeNode<T> BuildTree(T value, Dictionary<K, TreeNode<T>> dict = null)
+            {
+                dict ??= new();
+                var key = getKey(value);
+                if (dict.TryGetValue(key, out var node))
+                    return node;
+                var ret = dict[key] = new(value);
+                var children = getChildren(value)
+                    .Select(child => BuildTree(child, dict))
+                    .ToArray();
+                foreach (var c in children)
+                {
+                    c.Parent = Maybe.Some(ret);
+                }
+                ret.Children = children;
+                return ret;
+            }
+
         }
 
         public virtual void WriteTable([NotNull] string[] cols, [NotNull] string[][] rows, ConsoleColor accent = ConsoleColor.Black)

@@ -4,11 +4,10 @@ using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands
 {
-
     public sealed class PrintHelp : ShellCommand
     {
         public PrintHelp()
-            : base(new[] { "?", "help" }, "Displays help about all commands that start with the given string", @"(?<cmd>[^\s].*)?", 100)
+            : base(new[] { "?", "help" }, "Displays help about all commands that start with the given string", @"(?<cmd>[^\s].*)?", true, 100)
         {
         }
 

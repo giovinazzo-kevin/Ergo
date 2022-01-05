@@ -9,7 +9,7 @@ namespace Ergo.Shell.Commands
     public sealed class ExecuteDirective : ShellCommand
     {
         public ExecuteDirective()
-            : base(new[] { ":-", "←" }, "", @"(?<dir>.*)", 15)
+            : base(new[] { ":-", "←" }, "", @"(?<dir>.*)", true, 15)
         {
         }
 

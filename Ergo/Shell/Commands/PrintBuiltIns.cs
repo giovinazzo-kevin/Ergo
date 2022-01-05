@@ -12,7 +12,7 @@ namespace Ergo.Shell.Commands
     public sealed class PrintBuiltIns : ShellCommand
     {
         public PrintBuiltIns()
-            : base(new[] { ":@", "builtins" }, "Displays help about all built-ins that start with the given string", @"(?<term>[^\s].*)?", 80)
+            : base(new[] { ":b", "builtins" }, "Displays help about all built-ins that start with the given string", @"(?<term>[^\s].*)?", true, 80)
         {
         }
 

@@ -23,6 +23,9 @@
     <None Update="ergo\stdlib\stdlib.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ergo\stdlib\tree\tree.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\user\todo.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

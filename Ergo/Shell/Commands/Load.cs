@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands
     public sealed class Load : ShellCommand
     {
         public Load()
-            : base(new[] { "load" }, "", @"(?<path>.*)", 20)
+            : base(new[] { "load" }, "", @"(?<path>.*)", false, 20)
         {
         }
 

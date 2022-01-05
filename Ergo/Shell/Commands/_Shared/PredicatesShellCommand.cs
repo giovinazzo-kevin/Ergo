@@ -12,7 +12,7 @@ namespace Ergo.Shell.Commands
         public readonly bool Explain;
 
         public PredicatesShellCommand(string[] names, string desc, bool explain)
-            : base(names, desc, @"(?<term>[^\s].*)?", 90)
+            : base(names, desc, @"(?<term>[^\s].*)?", true, 90)
         {
             Explain = explain;
         }
@@ -20,7 +20,10 @@ namespace Ergo.Shell.Commands
         public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
             var term = m.Groups["term"];
-            var predicates = shell.GetInterpreterPredicates(scope);
+            var shellScope = scope;
+            var interpreterScope = scope.InterpreterScope;
+            var predicates = shell.GetInterpreterPredicates(scope)
+                .Where(p => !p.Head.IsQualified);
             if (term?.Success ?? false)
             {
                 var parsed = shell.Parse<CommaSequence>(scope, $"{term.Value}, true").Value;
@@ -29,8 +32,6 @@ namespace Ergo.Shell.Commands
                     shell.No();
                     return;
                 }
-                var shellScope = scope;
-                var interpreterScope = scope.InterpreterScope;
                 if (!scope.ExceptionHandler.TryGet(scope, () =>
                 {
                     if (shell.Interpreter.TryGetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First(), out var matches))

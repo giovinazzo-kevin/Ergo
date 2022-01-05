@@ -134,7 +134,7 @@ namespace Ergo.Solver
         }
 
 
-        public IEnumerable<Evaluation> ResolveGoal(ITerm term, SolverScope scope)
+        public IEnumerable<Evaluation> ResolveGoal(ITerm term, SolverScope scope, CancellationToken ct = default)
         {
             var any = false;
             var sig = term.GetSignature();
@@ -158,9 +158,11 @@ namespace Ergo.Solver
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
             {
                 LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {term.Explain()}", scope.Depth);
+                ct.ThrowIfCancellationRequested();
                 foreach (var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
                 {
                     LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
+                    ct.ThrowIfCancellationRequested();
                     term = eval.Result;
                     sig = term.GetSignature();
                     yield return eval;
@@ -180,24 +182,28 @@ namespace Ergo.Solver
             Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
         }
 
-        protected IEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null)
+        protected IEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, CancellationToken ct = default)
         {
+            ct.ThrowIfCancellationRequested();
+
             subs ??= new List<Substitution>();
             // Treat comma-expression complex ITerms as proper expressions
             if (CommaSequence.TryUnfold(goal, out var expr))
             {
-                foreach (var s in Solve(scope, expr, subs))
+                foreach (var s in Solve(scope, expr, subs, ct: ct))
                 {
                     yield return s;
+                    ct.ThrowIfCancellationRequested();
                 }
                 yield break;
             }
             // Cyclic literal definitions throw an error, so this replacement loop always terminates
-            while (InterpreterScope.TryReplaceLiterals(goal, out goal)) ;
+            while (InterpreterScope.TryReplaceLiterals(goal, out goal)) { ct.ThrowIfCancellationRequested(); }
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-            foreach (var resolvedGoal in ResolveGoal(goal, scope))
+            foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
             {
+                ct.ThrowIfCancellationRequested();
                 goal = resolvedGoal.Result;
                 if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
                 {
@@ -219,11 +225,12 @@ namespace Ergo.Solver
                         .WithModule(m.Rhs.DeclaringModule)
                         .WithCallee(scope.Callee)
                         .WithCaller(m.Rhs);
-                    var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)));
+                    var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                     foreach (var s in solve)
                     {
                         LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
                         yield return s;
+                        ct.ThrowIfCancellationRequested();
                     }
                     if (Cut.Value)
                     {
@@ -269,7 +276,7 @@ namespace Ergo.Solver
             }
         }
 
-        protected IEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null)
+        protected IEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null, CancellationToken ct = default)
         {
             subs ??= new List<Substitution>();
             if (query.IsEmpty)
@@ -281,14 +288,14 @@ namespace Ergo.Solver
             var subGoal = goals.First();
             goals = goals.RemoveAt(0);
             // Get first solution for the current subgoal
-            foreach (var s in Solve(scope, subGoal, subs))
+            foreach (var s in Solve(scope, subGoal, subs, ct: ct))
             {
                 if (Cut.Value)
                 {
                     yield break;
                 }
                 var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
-                foreach (var ss in Solve(scope, rest, subs))
+                foreach (var ss in Solve(scope, rest, subs, ct: ct))
                 {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 }
@@ -300,10 +307,10 @@ namespace Ergo.Solver
             }
         }
 
-        public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default)
+        public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
         {
             Cut.Value = false;
-            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals);
+            return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
         }
     }
 }

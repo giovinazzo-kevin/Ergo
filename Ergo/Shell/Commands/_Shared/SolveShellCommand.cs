@@ -1,9 +1,12 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Exceptions;
 using Ergo.Solver;
 using System;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Ergo.Shell.Commands
 {
@@ -22,7 +25,7 @@ namespace Ergo.Shell.Commands
         }
 
         protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor) 
-            : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", priority)
+            : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority)
         {
             Interactive = interactive;
             DefaultAccentColor = accentColor;
@@ -30,6 +33,8 @@ namespace Ergo.Shell.Commands
 
         public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
         {
+            var requestCancel = new CancellationTokenSource();
+            Console.CancelKeyPress += RequestCancel;
             var userQuery = m.Groups["query"].Value;
             var accent = m.Groups["color"] is { Success: true, Value: var v } 
                 ? Enum.Parse<ConsoleColor>(v, true)
@@ -51,7 +56,7 @@ namespace Ergo.Shell.Commands
             {
                 solver.Trace += (type, trace) => shell.WriteLine(trace, LogLevel.Trc, type);
             }
-            var solutions = solver.Solve(query); // Solution graph is walked lazily
+            var solutions = solver.Solve(query, ct: requestCancel.Token); // Solution graph is walked lazily
             if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
             {
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
@@ -131,6 +136,13 @@ namespace Ergo.Shell.Commands
                     }
                 }
             });
+            Console.CancelKeyPress -= RequestCancel;
+
+            void RequestCancel(object _, ConsoleCancelEventArgs args)
+            {
+                requestCancel.Cancel();
+                args.Cancel = true;
+            }
         }
     }
 }

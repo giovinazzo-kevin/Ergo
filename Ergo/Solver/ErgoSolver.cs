@@ -193,7 +193,6 @@ namespace Ergo.Solver
                 foreach (var s in Solve(scope, expr, subs, ct: ct))
                 {
                     yield return s;
-                    ct.ThrowIfCancellationRequested();
                 }
                 yield break;
             }

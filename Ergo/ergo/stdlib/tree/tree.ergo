@@ -3,5 +3,5 @@
 ]).
 
 tree(void).
-tree(node(_Element,Left,Right)) :-
+tree((_Element,Left,Right)) :-
   tree(Left), tree(Right).

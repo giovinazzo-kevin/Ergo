@@ -23,7 +23,7 @@ namespace Ergo.Lang.Ast
             Contents = args;
             IsEmpty = args.Length == 0;
             Root = ISequence.Fold(Functor, EmptyElement, args)
-                .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
+                .Reduce<ITerm>(a => a, v => v, c => c.AsParenthesized(parens));
             IsParenthesized = parens;
         }
 

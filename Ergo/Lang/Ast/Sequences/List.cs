@@ -34,7 +34,7 @@ namespace Ergo.Lang.Ast
             Tail = tail.Reduce(some => some, () => EmptyLiteral);
             IsParenthesized = parens;
             Root = ISequence.Fold(Functor, Tail, head)
-                .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
+                .Reduce<ITerm>(a => a, v => v, c => c.AsParenthesized(parens));
         }
         public List(params ITerm[] args) : this(ImmutableArray.CreateRange(args), default, false) { }
         public List(IEnumerable<ITerm> args) : this(ImmutableArray.CreateRange(args), default, false) { }

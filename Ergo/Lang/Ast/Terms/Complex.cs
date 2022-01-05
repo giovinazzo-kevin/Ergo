@@ -40,7 +40,7 @@ namespace Ergo.Lang.Ast
 
         public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, Arguments);
         public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, Arguments);
-        public Complex Parenthesized(bool parens) => new(Affix, parens, Functor, Arguments);
+        public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, Arguments);
 
         public string Explain(bool canonical = false)
         {

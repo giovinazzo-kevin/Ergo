@@ -17,7 +17,7 @@ namespace Ergo.Lang.Ast
             Right = right;
             Complex = new Complex(op.CanonicalFunctor, right.Reduce(some => new[] { left, some }, () => new[] { left }))
                 .AsOperator(op.Affix)
-                .Parenthesized(parenthesized);
+                .AsParenthesized(parenthesized);
         }
     }
 

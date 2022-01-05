@@ -126,8 +126,8 @@ namespace Ergo.Lang
         {
             term = default; parenthesized = false;
             var pos = _lexer.State;
-            if (Parenthesized(() => TryParseExpression(out var expr, exprParenthesized: true) ? (true, expr) : (false, default), out var expr)) {
-                term = expr.Complex;
+            if (Parenthesized(() => TryParseExpression(out var expr) ? (true, expr) : (false, default), out var expr)) {
+                term = expr.Complex.AsParenthesized(true);
                 parenthesized = true;
                 return true;
             }
@@ -278,7 +278,7 @@ namespace Ergo.Lang
             return Fail(pos);
         }
 
-        public bool TryParseExpression(out Expression expr, bool exprParenthesized = false)
+        public bool TryParseExpression(out Expression expr)
         {
             expr = default; var pos = _lexer.State;
             if (TryParsePrimary(out var lhs, out var lhsParenthesized)) {
@@ -292,7 +292,7 @@ namespace Ergo.Lang
                     return Fail(pos);
                 }
                 var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
-                expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None, exprParenthesized: exprParenthesized);
+                expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
                 return true;
             }
             return Fail(pos);
@@ -313,7 +313,7 @@ namespace Ergo.Lang
                         return Fail(pos);
                     }
                     if (!TryPeekNextOperator(out lookahead)) {
-                        expr = BuildExpression(op, lhs, Maybe.Some(rhs), exprParenthesized);
+                        expr = BuildExpression(op, lhs, Maybe.Some(rhs));
                         break;
                     }
                     while(lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
@@ -326,7 +326,7 @@ namespace Ergo.Lang
                             break;
                         }
                     }
-                    lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs), exprParenthesized: exprParenthesized)).Complex;
+                    lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
                 }
                 return true;
             }

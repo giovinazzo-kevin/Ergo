@@ -36,6 +36,8 @@ namespace Ergo.Lang.Ast
             Root = ISequence.Fold(Functor, Tail, head)
                 .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
         }
+        public List(params ITerm[] args) : this(ImmutableArray.CreateRange(args), default, false) { }
+        public List(IEnumerable<ITerm> args) : this(ImmutableArray.CreateRange(args), default, false) { }
 
         public static bool TryUnfold(ITerm t, out List expr)
         {

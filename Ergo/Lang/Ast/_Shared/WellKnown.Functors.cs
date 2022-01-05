@@ -22,6 +22,7 @@
             public static readonly Atom[] Lt = new Atom[] { new("<") };
             public static readonly Atom[] Lte = new Atom[] { new("≤"), new("<=") };
             public static readonly Atom[] Horn = new Atom[] { new("←"), new(":-") };
+            public static readonly Atom[] ExistentialQualifier = new Atom[] { new("^") };
         }
     }
 

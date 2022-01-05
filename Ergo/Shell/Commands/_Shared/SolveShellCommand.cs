@@ -103,7 +103,7 @@ namespace Ergo.Shell.Commands
                         }
                     }
                     if (!any) shell.No(nl: true, LogLevel.Rpl);
-                    shell.WriteLine();
+                    shell.WriteLine(".");
                 }
                 else
                 {

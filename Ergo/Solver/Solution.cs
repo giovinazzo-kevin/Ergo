@@ -1,6 +1,7 @@
 ﻿using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Ergo.Solver
@@ -8,6 +9,8 @@ namespace Ergo.Solver
     public readonly struct Solution
     {
         public readonly Substitution[] Substitutions;
+        public readonly ImmutableDictionary<ITerm, ITerm> Links;
+
         /// <summary>
         /// Applies all redundant substitutions and removes them from the set of returned substitutions.
         /// </summary>
@@ -45,6 +48,8 @@ namespace Ergo.Solver
         public Solution(params Substitution[] subs)
         {
             Substitutions = subs;
+            Links = ImmutableDictionary<ITerm, ITerm>.Empty
+                .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs)));
         }
     }
 }

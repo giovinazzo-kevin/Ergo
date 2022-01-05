@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -44,6 +45,18 @@ namespace Ergo.Lang.Ast
                 return new Complex(functor, args[0], emptyElement);
             return args
                 .Append(emptyElement)
+                .Reverse()
+                .Aggregate((a, b) => new Complex(functor, b, a)
+                    .AsOperator(OperatorAffix.Infix));
+        }
+
+        static ITerm Fold(Atom functor, ImmutableArray<ITerm> args)
+        {
+            if (args.Length == 0)
+                return functor;
+            if (args.Length == 1)
+                return new Complex(functor, args[0]);
+            return args
                 .Reverse()
                 .Aggregate((a, b) => new Complex(functor, b, a)
                     .AsOperator(OperatorAffix.Infix));

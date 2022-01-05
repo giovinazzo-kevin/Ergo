@@ -29,11 +29,12 @@ namespace Ergo.Lang.Ast
             EmptyElement = EmptyLiteral;
             Contents = args;
             IsEmpty = args.Length == 0;
-            Root = ISequence.Fold(Functor, EmptyElement, args)
+            Root = ISequence.Fold(Functor, args)
                 .Reduce<ITerm>(a => a, v => v, c => c.Parenthesized(parens));
             IsParenthesized = parens;
         }
         public CommaSequence(params ITerm[] args) : this(ImmutableArray.CreateRange(args), false) { }
+        public CommaSequence AsParenthesized(bool parens) => new(Contents, parens);
 
         public static bool TryUnfold(ITerm t, out CommaSequence expr)
         {

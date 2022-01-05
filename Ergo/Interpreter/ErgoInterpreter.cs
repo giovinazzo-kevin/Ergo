@@ -1,6 +1,5 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
-using Ergo.Solver.BuiltIns;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using Ergo.Lang.Utils;

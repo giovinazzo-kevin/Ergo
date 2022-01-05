@@ -83,6 +83,7 @@ namespace Tests
         [DataRow("f(A, B, g(C, D))", "f(A,B,g(C,D))")]
         [DataRow("f(A, B, g(C, h(D, 'string', 32)))", "f(A,B,g(C,h(D,string,32)))")]
         [DataRow("f((_E,L,R))", "f((_E,L,R))")]
+        [DataRow("f(A,a,(_E,L,R))", "f(A,a,(_E,L,R))")]
         [DataTestMethod]
         public void ParseComplex(string complex, string normalized)
         {

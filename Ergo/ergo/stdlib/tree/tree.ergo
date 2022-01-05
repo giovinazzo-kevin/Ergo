@@ -1,7 +1,0 @@
-﻿:- module(tree, [
-	tree/1
-]).
-
-tree(void).
-tree((_Element,Left,Right)) :-
-  tree(Left), tree(Right).

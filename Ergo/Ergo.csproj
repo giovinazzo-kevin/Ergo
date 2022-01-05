@@ -11,6 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\user\option\option.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\stdlib\reflection\reflection.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -23,7 +26,7 @@
     <None Update="ergo\stdlib\stdlib.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\stdlib\tree\tree.ergo">
+    <None Update="ergo\user\tree\tree.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ergo\user\todo.ergo">

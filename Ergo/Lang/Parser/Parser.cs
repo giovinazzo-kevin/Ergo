@@ -281,8 +281,8 @@ namespace Ergo.Lang
         public bool TryParseExpression(out Expression expr)
         {
             expr = default; var pos = _lexer.State;
-            if (TryParsePrimary(out var lhs, out var lhsParenthesized)) {
-                if(WithMinPrecedence(lhs, lhsParenthesized, 0, out expr)) {
+            if (TryParsePrimary(out var lhs, out _)) {
+                if(WithMinPrecedence(lhs, 0, out expr)) {
                     return true;
                 }
                 // Special case for unary expressions
@@ -297,7 +297,7 @@ namespace Ergo.Lang
             }
             return Fail(pos);
 
-            bool WithMinPrecedence(ITerm lhs, bool lhsParenthesized, int minPrecedence, out Expression expr)
+            bool WithMinPrecedence(ITerm lhs, int minPrecedence, out Expression expr)
             {
                 expr = default; var pos = _lexer.State;
                 if (!TryPeekNextOperator(out var lookahead)) { 
@@ -309,7 +309,7 @@ namespace Ergo.Lang
                 while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence) {
                     _lexer.TryReadNextToken(out _);
                     var op = lookahead;
-                    if(!TryParsePrimary(out var rhs, out var rhsParenthesized)) {
+                    if(!TryParsePrimary(out var rhs, out _)) {
                         return Fail(pos);
                     }
                     if (!TryPeekNextOperator(out lookahead)) {
@@ -318,7 +318,7 @@ namespace Ergo.Lang
                     }
                     while(lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
                         || lookahead.Associativity == OperatorAssociativity.Right && lookahead.Precedence == op.Precedence) {
-                        if(!WithMinPrecedence(rhs, rhsParenthesized, op.Precedence + 1, out var newRhs)) {
+                        if(!WithMinPrecedence(rhs, op.Precedence + 1, out var newRhs)) {
                             break;
                         }
                         rhs = newRhs.Complex;

@@ -59,7 +59,7 @@ namespace Ergo.Lang.Ast
                     expr = new CommaSequence(args);
                     return true;
                 }
-                if (TryUnfold(c.Arguments[1], out var subExpr))
+                if (!c.Arguments[1].IsParenthesized && TryUnfold(c.Arguments[1], out var subExpr))
                 {
                     expr = new CommaSequence(args.AddRange(subExpr.Contents));
                     return true;

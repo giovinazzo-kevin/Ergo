@@ -1,7 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang.Ast;
 using Ergo.Solver;
-using Ergo.Solver.BuiltIns;
 using System;
 using System.Collections.Generic;
 using System.Linq;

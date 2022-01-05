@@ -18,19 +18,19 @@ namespace Ergo.Lang.Ast
                 qualified = this;
                 return false;
             }
-            qualified = new Complex(new(":"), m, this)
+            qualified = new Complex(WellKnown.Functors.Module.First(), m, this)
                 .AsOperator(OperatorAffix.Infix);
             return true;
         }
         bool TryGetQualification(out Atom module, out ITerm value)
         {
-            if(!IsQualified || this is not Complex cplx)
+            if(!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module_)
             {
                 module = default;
                 value = this;
                 return false;
             }
-            module = (Atom)cplx.Arguments[0];
+            module = module_;
             value = cplx.Arguments[1];
             return true;
         }

@@ -26,7 +26,7 @@ namespace Ergo.Lang.Ast
             Functor = functor;
             Arguments = args;
             HashCode = System.HashCode.Combine(Functor, Arguments.Length);
-            IsQualified = args.Length == 2 && ":".Equals(functor.Value);
+            IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
             Affix = Maybe<OperatorAffix>.None;
             IsParenthesized = false;
         }

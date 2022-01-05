@@ -1,17 +1,15 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
-using Ergo.Lang.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
-
-    public sealed class BagOf : SolutionAggregationBuiltIn
+    public sealed class SetOf : SolutionAggregationBuiltIn
     {
-        public BagOf()
-            : base("", new("bagof"), Maybe.Some(3), Modules.Meta)
+        public SetOf()
+               : base("", new("setof"), Maybe.Some(3), Modules.Meta)
         {
         }
 
@@ -20,8 +18,12 @@ namespace Ergo.Solver.BuiltIns
             var any = false;
             foreach (var (ArgVars, ListTemplate) in AggregateSolutions(solver, scope, args, out var listVars))
             {
-                if(!new Substitution(listVars.Root, ArgVars).TryUnify(out var listSubs)
-                || !new Substitution(args[2], ListTemplate.Root).TryUnify(out var instSubs))
+                var setTemplate = new List(ListTemplate.Contents
+                    .Distinct()
+                    .OrderBy(x => x));
+
+                if (!new Substitution(listVars.Root, ArgVars).TryUnify(out var listSubs)
+                || !new Substitution(args[2], setTemplate.Root).TryUnify(out var instSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;
@@ -29,7 +31,7 @@ namespace Ergo.Solver.BuiltIns
                 yield return new(WellKnown.Literals.True, listSubs.Concat(instSubs).ToArray());
                 any = true;
             }
-            if(!any)
+            if (!any)
             {
                 yield return new(WellKnown.Literals.False);
             }

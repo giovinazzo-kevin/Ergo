@@ -1,4 +1,4 @@
-﻿:- module(stdlib, [p/3]).
+﻿:- module(stdlib, [p/3, happy/1, rich/1]).
 :- use_module(prologue).
 :- use_module(list).
 :- use_module(math).
@@ -11,3 +11,8 @@ p(2,4,1).
 p(3,5,2).
 p(4,3,1).
 p(5,2,4).
+
+happy(fido).
+happy(harry).
+happy(X) :- rich(X).
+rich(harry).

@@ -52,10 +52,12 @@ namespace Ergo.Lang.Ast
 
             string Inner(Complex c)
             {
+                if (List.TryUnfold(c, out var list))
+                    return list.Explain(canonical);
+                if (CommaSequence.TryUnfold(c, out var comma))
+                    return comma.Explain(canonical);
                 return c.Affix.Reduce(some => canonical ? OperatorAffix.Prefix : some, () => OperatorAffix.Prefix) switch
                 {
-                    _ when List.TryUnfold(c, out var list) => list.Explain(canonical),
-                    _ when CommaSequence.TryUnfold(c, out var comma) => comma.Explain(canonical),
                     OperatorAffix.Infix => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",
                     OperatorAffix.Postfix => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.Explain(canonical)}",
                     _ when !canonical && c.Affix.HasValue => $"{c.Functor.Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",

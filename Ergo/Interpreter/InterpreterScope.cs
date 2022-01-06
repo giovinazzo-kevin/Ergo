@@ -7,6 +7,7 @@ using Ergo.Lang.Exceptions;
 using Ergo.Solver;
 using System.Linq;
 using Ergo.Lang;
+using System;
 
 namespace Ergo.Interpreter
 {
@@ -15,19 +16,21 @@ namespace Ergo.Interpreter
         public readonly ImmutableDictionary<Atom, Module> Modules;
         public readonly ImmutableArray<string> SearchDirectories;
         public readonly bool Runtime;
+        public readonly Lazy<Operator[]> Operators;
 
         public readonly Atom Module;
 
         public InterpreterScope(Module userModule)
         {
-            Modules = ImmutableDictionary.Create<Atom, Module>()
+            var module = Module = userModule.Name;
+            var modules = Modules = ImmutableDictionary.Create<Atom, Module>()
                 .Add(userModule.Name, userModule);
             SearchDirectories = ImmutableArray<string>.Empty
                 .Add(string.Empty)
                 .Add("./ergo/stdlib/")
                 .Add("./ergo/user/");
-            Module = userModule.Name;
             Runtime = userModule.Runtime;
+            Operators = new(() => GetOperators(module, modules).ToArray(), true);
         }
 
         private InterpreterScope(
@@ -40,6 +43,7 @@ namespace Ergo.Interpreter
             SearchDirectories = dirs;
             Module = currentModule;
             Runtime = runtime;
+            Operators = new(() => GetOperators(currentModule, modules).ToArray());
         }
 
         public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime);
@@ -51,12 +55,12 @@ namespace Ergo.Interpreter
         public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Stdlib, Modules[Interpreter.Modules.Stdlib]), SearchDirectories, Runtime);
         public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime);
 
-        private IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)
+        private static IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Atom defaultModule, ImmutableDictionary<Atom, Module> modules, Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)
         {
             added ??= new();
-            var currentModule = Module;
+            var currentModule = defaultModule;
             var entryModule = entry.Reduce(some => some, () => currentModule);
-            if (added.Contains(entryModule) || !Modules.TryGetValue(entryModule, out var module))
+            if (added.Contains(entryModule) || !modules.TryGetValue(entryModule, out var module))
             {
                 yield break;
             }
@@ -64,7 +68,7 @@ namespace Ergo.Interpreter
             var depth_ = depth;
             foreach (Atom import in module.Imports.Contents)
             {
-                foreach (var importedOp in GetOperatorsInner(Maybe.Some(import), added, ++depth_ * 1000))
+                foreach (var importedOp in GetOperatorsInner(defaultModule, modules, Maybe.Some(import), added, ++depth_ * 1000))
                 {
                     yield return importedOp;
                 }
@@ -83,9 +87,9 @@ namespace Ergo.Interpreter
             }
         }
 
-        public IEnumerable<Operator> GetOperators()
+        private static IEnumerable<Operator> GetOperators(Atom defaultModule, ImmutableDictionary<Atom, Module> modules)
         {
-            var operators = GetOperatorsInner()
+            var operators = GetOperatorsInner(defaultModule, modules)
                 .ToList();
             foreach (var (op, depth) in operators)
             {

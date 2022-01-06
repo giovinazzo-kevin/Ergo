@@ -4,14 +4,14 @@
     {
         public static class Literals
         {
-            public static readonly ITerm Discard = new Variable("_");
-            public static readonly ITerm True = new Atom(true);
-            public static readonly ITerm False = new Atom(false);
-            public static readonly ITerm Cut = new Atom("!");
-            public static readonly ITerm EmptyList = List.EmptyLiteral;
-            public static readonly ITerm EmptyCommaExpression = CommaSequence.EmptyLiteral;
+            public static readonly Variable Discard = new Variable("_");
+            public static readonly Atom True = new Atom(true);
+            public static readonly Atom False = new Atom(false);
+            public static readonly Atom Cut = new Atom("!");
+            public static readonly Atom EmptyList = List.EmptyLiteral;
+            public static readonly Atom EmptyCommaExpression = CommaSequence.EmptyLiteral;
 
-            public static readonly ITerm[] DefinedLiterals = new[]
+            public static readonly ITerm[] DefinedLiterals = new ITerm[]
             {
             Discard, True, False, Cut, EmptyList, EmptyCommaExpression
         };

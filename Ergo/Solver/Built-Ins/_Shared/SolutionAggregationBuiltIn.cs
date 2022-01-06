@@ -57,14 +57,14 @@ namespace Ergo.Solver.BuiltIns
             var sols = solutions
                 .Select(sol =>
                 {
-                    var arg = (Complex)sol.Links[variable];
+                    var arg = (Complex)sol.Links.Value[variable];
 
                     var argVars = arg.Arguments[0];
                     var argTmpl = arg.Arguments[1];
                     var varTmpl = argTmpl.Variables
                         .ToHashSet();
 
-                    var subTmpl = sol.Links
+                    var subTmpl = sol.Links.Value
                         .Where(kv => kv.Key is Variable && kv.Value is Variable)
                         .Select(kv => (Key: (Variable)kv.Key, Value: (Variable)kv.Value))
                         .Where(kv => varTmpl.Contains(kv.Value) && !templateVars.Contains(kv.Key) && !freeVars.Contains(kv.Key))

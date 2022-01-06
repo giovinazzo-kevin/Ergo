@@ -409,7 +409,7 @@ namespace Ergo.Lang
                 Throw(pos, ErrorType.ExpectedClauseList);
             }
             if(!WellKnown.Operators.BinaryHorn.Equals(op.Operator)) {
-                op = new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some(WellKnown.Literals.True), false);
+                op = new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some<ITerm>(WellKnown.Literals.True), false);
             }
             if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _)) {
                 Throw(pos, ErrorType.UnterminatedClauseList);

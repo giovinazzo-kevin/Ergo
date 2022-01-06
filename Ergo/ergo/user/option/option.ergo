@@ -8,6 +8,5 @@
 named_arg(Name:Arg, Name, Arg) :- ground(Name).
 named_arg(Arg, _, Arg) :- Arg \= _:_.
 
-named_tuple(T, Name, Tuple) :- complex(Name, Args, T), 
-    comma_list(Tuple, Args).
-named_tuple(Tuple, _, Tuple) :- complex(',', _, Tuple), comma_list(Tuple, _).
+named_tuple(T, Name, Tuple) :- term(Name, Args, T), comma_list(Tuple, Args).
+named_tuple(Tuple, _, Tuple) :- seq_type(comma, Tuple).

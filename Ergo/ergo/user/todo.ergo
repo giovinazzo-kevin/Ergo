@@ -2,9 +2,6 @@
 	init/0, tag/2, subtag/2, todo/3, todo_create/3, todo_destroy/1, todo_find/2
 ]).
 
-:- dynamic(todo_/3).
-:- dynamic(tag/2).
-
 tag(global, '*').
 
 tag(shell, global).
@@ -20,38 +17,24 @@ tag(libraries, modules).
 
 tag(tests, global).
 
-todo_create(Name, Desc, Tags) :-
-	(\+ground(Name) -> (todo_(X, _, _) -> Name is X + 1 ; Name = 0)),
-	todo_(Name, _, _)
-	-> (write(('TODO ', Name, ' already exists.')), nl, false)
-	; (
-		forall(member(T, Tags), (tag(T, _) ; (write(('Tag ', T, ' does not exist.')), nl, false))),
-		asserta(todo_(Name, Desc, Tags))
-	).
+% ----
 
-todo_destroy(Name) :-
-	todo_(Name, _, _) 
-	-> retract(todo_(Name, _, _))
-	; (write(('TODO ', Name, ' does not exist.')), nl, false).
-
-todo_find(Tag, Name) :- todo_(Name, _, Tags), member(T, Tags), (Tag = T ; subtag(T, Tag)).
-
-todo(Name, Desc, Tags) :- todo_(Name, Desc, Tags).
+todo_find(Tag, todo(Name, Tags)) :- todo(Name, Tags), member(T, Tags), (Tag = T ; subtag(T, Tag)).
 
 subtag(Tag, Parent) :- tag(Tag, Parent).
 subtag(Tag, Parent) :- tag(Tag, P), subtag(P, Parent).
 
-init :-
-	todo_create(_, 'Attributed variables', [global]),
-	todo_create(_, 'Coroutining/Async', [global]),
-	todo_create(_, 'Exception handling', [global]),
-	todo_create(_, 'Strings/Regex', [global]),
-	todo_create(_, 'Typesystem', [global]),
-	todo_create(_, 'List available operators', [commands]),
-	todo_create(_, 'Stack/Recursion optimizations', [interpreter]),
-	todo_create(_, 'Lambdas', [libraries]),
-	todo_create(_, 'C#-interoperable objects', [ast]),
-	todo_create(_, 'IL codegen', [ast]),
-	todo_create(_, 'Modules', [tests]),
-	todo_create(_, 'Sugaring/Desugaring rules', [tests]),
-	todo_create(_, 'Operator and literal resolution', [tests]).
+todo('Attributed variables', [global]).
+todo('Coroutining/Async', [global]).
+todo('Exception handling', [global]).
+todo('Strings/Regex', [global]).
+todo('Typesystem', [global]).
+todo('Lambdas/Higher order predicates', [global]).
+todo('Stack/Recursion optimizations', [interpreter]).
+todo('C#-interoperable objects', [ast]).
+todo('IL codegen', [ast]).
+todo('Modules', [tests]).
+todo('Sugaring/Desugaring rules', [tests]).
+todo('List available operators', [commands]).
+todo('Describe current module', [commands]).
+todo('Operator and literal resolution', [tests]).

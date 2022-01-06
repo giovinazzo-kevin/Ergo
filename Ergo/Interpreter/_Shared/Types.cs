@@ -10,6 +10,7 @@
         public const string Atom = nameof(Atom);
         public const string Functor = nameof(Functor);
         public const string Complex = nameof(Complex);
+        public const string Sequence = nameof(Sequence);
         public const string Comparison = nameof(Comparison);
         public const string CommaSequence = nameof(CommaSequence);
         public const string List = nameof(List);

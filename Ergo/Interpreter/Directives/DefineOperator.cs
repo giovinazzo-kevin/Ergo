@@ -43,7 +43,7 @@ namespace Ergo.Interpreter.Directives
                 OperatorType.yfx => (OperatorAffix.Infix, OperatorAssociativity.Left),
                 _ => throw new NotSupportedException()
             };
-            var existingOperators = scope.GetOperators();
+            var existingOperators = scope.Operators.Value;
             foreach (var op in existingOperators.Where(x => x.Affix == affix))
             {
                 var intersectingSynonyms = op.Synonyms.Select(x => x.Explain()).Intersect(synonyms);

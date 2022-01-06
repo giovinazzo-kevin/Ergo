@@ -28,7 +28,7 @@ namespace Ergo.Solver.BuiltIns
                 .ToArray();
             if (solutions.Length == 0)
             {
-                if(args[2].IsGround && args[2] == WellKnown.Literals.EmptyList)
+                if(args[2].IsGround && args[2].Equals(WellKnown.Literals.EmptyList))
                 {
                     yield return new Evaluation(WellKnown.Literals.True);
                 }

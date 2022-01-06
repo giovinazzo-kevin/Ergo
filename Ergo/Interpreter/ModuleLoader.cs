@@ -71,8 +71,8 @@ namespace Ergo.Interpreter
 
         public virtual Module LoadDirectives()
         {
-            var operators = Scope.GetOperators();
-            var lexer = new Lexer(_fs, _fn, Scope.GetOperators());
+            var operators = Scope.Operators.Value;
+            var lexer = new Lexer(_fs, _fn, Scope.Operators.Value);
             var parser = new Parser(lexer);
             if (!parser.TryParseProgramDirectives(out var program))
             {
@@ -131,7 +131,7 @@ namespace Ergo.Interpreter
                     Scope = Scope.WithModule(importModule);
                 }
             }
-            var lexer = new Lexer(_fs, _fn, Scope.GetOperators());
+            var lexer = new Lexer(_fs, _fn, Scope.Operators.Value);
             var parser = new Parser(lexer);
             if (!parser.TryParseProgram(out var program))
             {

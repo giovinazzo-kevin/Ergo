@@ -5,5 +5,3 @@
 :- use_module(meta).
 :- use_module(io).
 :- use_module(reflection).
-:- use_module(tree).
-:- use_module(option).

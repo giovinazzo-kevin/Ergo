@@ -28,7 +28,6 @@ namespace Ergo.Lang.Extensions
             catch (Exception) { return false; }
         }
 
-
         public static Signature GetSignature(this ITerm term)
         {
             if(term.TryGetQualification(out var qm, out var qv))

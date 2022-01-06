@@ -17,11 +17,22 @@ namespace Ergo.Lang.Ast
 
         public readonly object Value;
         private readonly int HashCode;
+        public readonly bool IsQuoted;
 
-        public Atom(object value)
+        public Atom(object value, Maybe<bool> quoted = default)
         {
             Value = value;
             HashCode = value?.GetHashCode() ?? 0;
+            IsQuoted = quoted.Reduce(some => some, () => value is string s
+                && s != (string)WellKnown.Literals.EmptyList.Value
+                && s != (string)WellKnown.Literals.EmptyCommaExpression.Value
+                && (
+                    // And if this is not a string that can be confused with a variable name
+                    Char.IsUpper(s.FirstOrDefault())
+                    // Or if this is a string that contains spaces or weird punctuation
+                    || s.Any(c => Char.IsWhiteSpace(c) 
+                        || !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c))
+                ));
         }
 
         public string Explain(bool canonical = false)
@@ -33,16 +44,7 @@ namespace Ergo.Lang.Ast
             else if (Value is string s)
             {
                 // In certain cases, the quotes can be omitted
-                if ( !canonical
-                    // If this == WellKnown.Literals.EmptyList
-                    || s == "[]"
-                    // Or if this == WellKnown.Literals.EmptyCommaExpression
-                    || s == "()"
-                    // Or if this is not a string that can be confused with a variable name
-                    || !Char.IsUpper(s.FirstOrDefault())
-                        // And if this is a string with no weird punctuation and no spaces
-                        && !s.Any(c => IsQuotablePunctuation(c) || Char.IsWhiteSpace(c))
-                )
+                if (!IsQuoted)
                 {
                     return s;
                 }
@@ -52,8 +54,7 @@ namespace Ergo.Lang.Ast
             {
                 return Value.ToString();
             }
-            bool IsQuotablePunctuation(char c) => !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c);
-            string Escape(string s) => s
+            static string Escape(string s) => s
                 .Replace("'", "\\'")
                 .Replace("\r", "\\r")
                 .Replace("\n", "\\n")
@@ -67,8 +68,7 @@ namespace Ergo.Lang.Ast
         }
 
         public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
-
-        public static Atom WithValue(object newValue) => new(newValue);
+        public Atom AsQuoted(bool quoted) => new(Value, Maybe.Some(quoted));
 
         public override bool Equals(object obj)
         {
@@ -109,11 +109,6 @@ namespace Ergo.Lang.Ast
         {
             return this;
         }
-
-        //public ITerm Qualify(Atom m)
-        //{
-        //    return new Atom($"{m.Explain()}:{Explain()}");
-        //}
 
         public static bool operator ==(Atom left, Atom right)
         {

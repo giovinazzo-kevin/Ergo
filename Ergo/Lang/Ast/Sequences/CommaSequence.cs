@@ -11,7 +11,7 @@ namespace Ergo.Lang.Ast
     [DebuggerDisplay("{ Explain() }")]
     public readonly struct CommaSequence : ISequence
     {
-        public static readonly Atom CanonicalFunctor = new(",");
+        public static readonly Atom CanonicalFunctor = WellKnown.Functors.Conjunction.First();
         public static readonly Atom EmptyLiteral = new("()");
 
         public static readonly CommaSequence Empty = new(ImmutableArray<ITerm>.Empty);

@@ -1,0 +1,4 @@
+﻿:- module(info, [
+]).
+
+fact('It is sunny outside')

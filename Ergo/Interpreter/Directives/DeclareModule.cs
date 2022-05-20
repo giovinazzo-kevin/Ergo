@@ -9,9 +9,9 @@ using System.Linq;
 
 namespace Ergo.Interpreter.Directives
 {
-    public class DefineModule : InterpreterDirective
+    public class DeclareModule : InterpreterDirective
     {
-        public DefineModule()
+        public DeclareModule()
             : base("", new("module"), Maybe.Some(2), 0)
         {
         }

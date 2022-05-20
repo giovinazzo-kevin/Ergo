@@ -8,14 +8,14 @@ using System.Linq;
 namespace Ergo.Interpreter.Directives
 {
 
-    public class DefineOperator : InterpreterDirective
+    public class DeclareOperator : InterpreterDirective
     {
         enum OperatorType
         {
             fx, xf, xfx, xfy, yfx
         }
 
-        public DefineOperator()
+        public DeclareOperator()
             : base("", new("op"), Maybe.Some(3), 10)
         {
         }

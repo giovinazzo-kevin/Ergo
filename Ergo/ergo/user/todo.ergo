@@ -1,21 +1,6 @@
 ﻿:- module(todo, [
-	init/0, tag/2, subtag/2, todo/3, todo_create/3, todo_destroy/1, todo_find/2
+	tag/2, subtag/2, todo/3, todo_find/2
 ]).
-
-tag(global, '*').
-
-tag(shell, global).
-tag(commands, shell).
-
-tag(interpreter, global).
-tag(directives, interpreter).
-
-tag(ast, global).
-
-tag(modules, interpreter).
-tag(libraries, modules).
-
-tag(tests, global).
 
 % ----
 
@@ -24,17 +9,32 @@ todo_find(Tag, todo(Name, Tags)) :- todo(Name, Tags), member(T, Tags), (Tag = T 
 subtag(Tag, Parent) :- tag(Tag, Parent).
 subtag(Tag, Parent) :- tag(Tag, P), subtag(P, Parent).
 
+% ----
+
+tag(global, '*').
+tag(shell, global).
+tag(commands, shell).
+tag(interpreter, global).
+tag(directives, interpreter).
+tag(ast, global).
+tag(modules, interpreter).
+tag(libraries, modules).
+tag(tests, global).
+
 todo('Attributed variables', [global]).
 todo('Coroutining/Async', [global]).
 todo('Exception handling', [global]).
 todo('Strings/Regex', [global]).
+todo('Tabling/memoization', [global]).
 todo('Typesystem', [global]).
 todo('Lambdas/Higher order predicates', [global]).
+todo('Libraries', [modules]).
+todo('Term/Goal expansions', [interpreter]).
 todo('Stack/Recursion optimizations', [interpreter]).
 todo('C#-interoperable objects', [ast]).
 todo('IL codegen', [ast]).
 todo('Modules', [tests]).
 todo('Sugaring/Desugaring rules', [tests]).
+todo('Operator and literal resolution', [tests]).
 todo('List available operators', [commands]).
 todo('Describe current module', [commands]).
-todo('Operator and literal resolution', [tests]).

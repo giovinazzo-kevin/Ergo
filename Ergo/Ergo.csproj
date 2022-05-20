@@ -11,6 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\user\info\info.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\user\option\option.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

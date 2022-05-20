@@ -3,6 +3,7 @@
 	'>'/2, '<'/2, '≥'/2, '≤'/2,
 	'≡'/2, '≢'/2, 
 	range/2, range/1,
+	between/3, between/6,
 	plus/3
 ]).
 
@@ -64,13 +65,15 @@ between('(', Min, Max, ']', Step, M) :- NewMin := Min + Step, between_(NewMin, M
 between('[', Min, Max, ')', Step, M) :- NewMax := Max - Step, between_(Min, NewMax, Step, M).
 between('(', Min, Max, ')', Step, M) :- NewMin := Min + Step, NewMax := Max - Step, between_(NewMin, NewMax, Step, M).
 
+between(Min, Max, M) :- between('(', Min, Max, ']', 1, M).
+
 % EXPORTED
 
-range(Min < X < Max, step:Step) :- between('(', Min, Max, ')', Step, X).
-range(Min <= X < Max, step:Step) :- between('[', Min, Max, ')', Step, X).
-range(Min < X <= Max, step:Step) :- between('(', Min, Max, ']', Step, X).
-range(Min <= X <= Max, step:Step) :- between('[', Min, Max, ']', Step, X).
-range(R) :- range(R, step:1).
+range(Min < X < Max, Step)   :- ground(Step), between('(', Min, Max, ')', Step, X).
+range(Min <= X < Max, Step)  :- ground(Step), between('[', Min, Max, ')', Step, X).
+range(Min < X <= Max, Step)  :- ground(Step), between('(', Min, Max, ']', Step, X).
+range(Min <= X <= Max, Step) :- ground(Step), between('[', Min, Max, ']', Step, X).
+range(R) :- range(R, 1).
 
 plus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A + B.
 plus(A, B, C) :- ground(A), \+ground(B), ground(C), B := C - A.

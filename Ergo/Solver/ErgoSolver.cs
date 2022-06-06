@@ -134,11 +134,11 @@ namespace Ergo.Solver
         }
 
 
-        public IEnumerable<Evaluation> ResolveGoal(ITerm term, SolverScope scope, CancellationToken ct = default)
+        protected IEnumerable<Evaluation> ResolveGoal(ITerm qt, SolverScope scope, CancellationToken ct = default)
         {
             var any = false;
-            var sig = term.GetSignature();
-            if (!term.TryGetQualification(out var qm, out term))
+            var sig = qt.GetSignature();
+            if (!qt.TryGetQualification(out var qm, out var term))
             {
                 // Try resolving the built-in's module automatically
                 foreach (var key in BuiltIns.Keys)
@@ -148,7 +148,7 @@ namespace Ergo.Solver
                     var withoutModule = key.WithModule(default);
                     if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
                     {
-                        term.TryQualify(key.Module.GetOrDefault(), out var qt);
+                        term.TryQualify(key.Module.GetOrDefault(), out qt);
                         sig = key;
                         break;
                     }
@@ -157,19 +157,19 @@ namespace Ergo.Solver
             while (BuiltIns.TryGetValue(sig, out var builtIn)
             || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
             {
-                LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {term.Explain()}", scope.Depth);
+                LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
                 ct.ThrowIfCancellationRequested();
                 foreach (var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
                 {
                     LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
                     ct.ThrowIfCancellationRequested();
-                    term = eval.Result;
-                    sig = term.GetSignature();
+                    qt = eval.Result;
+                    sig = qt.GetSignature();
                     yield return eval;
                     any = true;
                 }
             }
-            if (!any) yield return new(term);
+            if (!any) yield return new(qt);
         }
 
         private void LogTrace(SolverTraceType type, ITerm term, int depth = 0)
@@ -204,6 +204,11 @@ namespace Ergo.Solver
             {
                 ct.ThrowIfCancellationRequested();
                 goal = resolvedGoal.Result;
+                if (Cut.Value)
+                {
+                    Cut.Value = false;
+                    yield break;
+                }
                 if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
                 {
                     LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
@@ -231,10 +236,6 @@ namespace Ergo.Solver
                         yield return s;
                         ct.ThrowIfCancellationRequested();
                     }
-                    if (Cut.Value)
-                    {
-                        yield break;
-                    }
                 }
             }
 
@@ -247,7 +248,7 @@ namespace Ergo.Solver
                 var isDynamic = false;
                 if (!goal.IsQualified)
                 {
-                    if (goal.TryQualify(module.Name, out var qualified)
+                    if (goal.TryQualify(scope.Module, out var qualified)
                         && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true)
                         && KnowledgeBase.TryGetMatches(qualified, out matches))
                     {
@@ -264,11 +265,12 @@ namespace Ergo.Solver
                     }
                 }
                 var signature = goal.GetSignature();
-                if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= module.DynamicPredicates.Contains(goal.GetSignature())))
+                var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
+                if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules[dynModule].DynamicPredicates.Contains(signature)))
                 {
                     if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
-                        throw new SolverException(SolverError.UndefinedPredicate, scope, goal.GetSignature().Explain());
+                        throw new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain());
                     }
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
@@ -289,10 +291,6 @@ namespace Ergo.Solver
             // Get first solution for the current subgoal
             foreach (var s in Solve(scope, subGoal, subs, ct: ct))
             {
-                if (Cut.Value)
-                {
-                    yield break;
-                }
                 var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
                 foreach (var ss in Solve(scope, rest, subs, ct: ct))
                 {

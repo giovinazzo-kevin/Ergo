@@ -52,7 +52,7 @@ namespace Ergo.Lang.Ast
             }
             else
             {
-                return Value.ToString();
+                 return Value.ToString();
             }
             static string Escape(string s) => s
                 .Replace("'", "\\'")

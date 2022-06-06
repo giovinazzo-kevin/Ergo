@@ -16,13 +16,28 @@ namespace Ergo.Lang.Extensions
             if (t is Complex c) return ifComplex(c);
             throw new NotSupportedException(t.GetType().Name);
         }
+        public static bool Is<T>(this ITerm t, out T match, Func<T, bool> filter = null)
+        {
+            if(t is Atom a && a.Value is T value && (filter?.Invoke(value) ?? true))
+            {
+                match = value;
+                return true;
+            }
+            match = default;
+            return false;
+        }
 
-        public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, TermMarshall.MarshallingMode marshalling = TermMarshall.MarshallingMode.Positional)
+        public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, TermMarshall.MarshallingMode mode = TermMarshall.MarshallingMode.Positional, bool matchFunctor = false)
         {
             match = default;
             try
             {
-                match = TermMarshall.FromTerm(t, shape, marshalling);
+                match = TermMarshall.FromTerm(t, shape, mode);
+                if(matchFunctor)
+                {
+                    if (t is Complex cplx && !cplx.Functor.Equals(new Atom(typeof(T).Name.ToLower())))
+                        return false;
+                }
                 return filter?.Invoke(match) ?? true;
             }
             catch (Exception) { return false; }

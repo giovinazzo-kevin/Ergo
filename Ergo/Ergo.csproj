@@ -11,6 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\stdlib\string\string.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\user\info\info.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

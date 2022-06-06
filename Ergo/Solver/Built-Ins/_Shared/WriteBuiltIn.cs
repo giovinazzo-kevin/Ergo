@@ -37,7 +37,6 @@ namespace Ergo.Solver.BuiltIns
         {
             if (CommaSequence.TryUnfold(args[0], out var comma))
             {
-
                 Console.Write(String.Join(String.Empty, comma.Contents.Select(x => 
                     AsQuoted(x, Quoted).Explain(canonical: Canonical))));
             }

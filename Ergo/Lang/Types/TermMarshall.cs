@@ -39,6 +39,13 @@ namespace Ergo.Lang
                 MarshallingMode.Named => EnsureNamedResolver(typeof(T)).ToTerm(value),
                 _ => throw new NotImplementedException()
             };
+        public static ITerm ToTerm(object value, Type type, MarshallingMode mode = MarshallingMode.Positional) =>
+            mode switch
+            {
+                MarshallingMode.Positional => EnsurePositionalResolver(type).ToTerm(value),
+                MarshallingMode.Named => EnsureNamedResolver(type).ToTerm(value),
+                _ => throw new NotImplementedException()
+            };
         public static T FromTerm<T>(ITerm value, T _ = default, MarshallingMode mode = MarshallingMode.Positional) =>
             mode switch
             {

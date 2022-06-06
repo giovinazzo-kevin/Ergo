@@ -33,6 +33,7 @@ namespace Ergo.Lang
         }
 
         public T GetOrDefault() => HasValue ? Value : default;
+        public T GetOrThrow(string msg = null) => HasValue ? Value : throw new ArgumentException(msg ?? "Value was None");
 
         public void Do(Action<T> some, Action none = null)
         {

@@ -16,6 +16,7 @@
             public static readonly Atom[] Subtraction = new Atom[] { new("-") };
             public static readonly Atom[] Minus = Subtraction;
             public static readonly Atom[] Power = new Atom[] { new("^") };
+            public static readonly Atom[] SquareRoot = new Atom[] { new("√"), new("sqrt") };
             public static readonly Atom[] Modulo = new Atom[] { new("mod") };
             public static readonly Atom[] Unification = new Atom[] { new("=") };
             public static readonly Atom[] Gt = new Atom[] { new(">") };

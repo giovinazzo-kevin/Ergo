@@ -31,7 +31,7 @@ namespace Ergo.Lang
             else if (Type.IsPrimitive)
             {
                 IsAtomic = true;
-                GetFunctor = o => new Atom((double)o);
+                GetFunctor = o => new Atom(Convert.ChangeType(o, typeof(double)));
             }
             else if (Type.IsEnum)
             {
@@ -103,7 +103,7 @@ namespace Ergo.Lang
             if (IsAtomic) return functor;
 
             return new Complex(functor, Properties.Values.Select(
-                v => (ITerm)new Complex(new(v.Name), TermMarshall.ToTerm(v.GetValue(o), TermMarshall.MarshallingMode.Named))
+                v => (ITerm)new Complex(new(v.Name.ToLower()), TermMarshall.ToTerm(v.GetValue(o), v.PropertyType, TermMarshall.MarshallingMode.Named))
             ).ToArray());
         }
     }

@@ -104,8 +104,6 @@ namespace Ergo.Interpreter
             changed = term;
             if (term is Variable) 
                 return false;
-            if (term.IsQualified && term.TryGetQualification(out var qm, out var qv))
-                return TryReplaceLiterals(qv, out changed, Maybe.Some(qm));
             added ??= new();
             var currentModule = Module;
             var entryModule = entry.Reduce(some => some, () => currentModule);
@@ -141,9 +139,9 @@ namespace Ergo.Interpreter
                 changed = c.WithArguments(args);
                 return any;
             }
-            foreach (var import in module.Imports.Contents.Reverse())
+            foreach (Atom import in module.Imports.Contents.Reverse())
             {
-                if(TryReplaceLiterals(term, out changed, Maybe.Some((Atom)import), added))
+                if (TryReplaceLiterals(term, out changed, Maybe.Some(import), added))
                     return true;
             }
             return false;

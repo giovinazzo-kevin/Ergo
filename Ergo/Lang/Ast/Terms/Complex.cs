@@ -89,8 +89,8 @@ namespace Ergo.Lang.Ast
 
         public Complex WithArguments(params ITerm[] args)
         {
-            if (args.Length != Arguments.Length)
-                throw new ArgumentOutOfRangeException(nameof(args));
+            //if (args.Length != Arguments.Length)
+            //    throw new ArgumentOutOfRangeException(nameof(args));
             return new Complex(Affix, IsParenthesized, Functor, args);
         }
 

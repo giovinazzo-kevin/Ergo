@@ -16,9 +16,11 @@ namespace Ergo.Lang.Ast
             public static readonly Operator BinaryHorn = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.None, 10, Functors.Horn);
             // The arity indicator is a bootstrapping operator that's used while parsing directives; the real definition is the division operator in the math module.
             public static readonly Operator ArityIndicator = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 500, Functors.Arity);
+            // The module qualifier is used to reference and resolve predicates from other modules
+            public static readonly Operator ModuleQualifier = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 5, Functors.Module);
 
             public static readonly Operator[] DefinedOperators = new[] { 
-                UnaryHorn, BinaryHorn, ArityIndicator
+                UnaryHorn, BinaryHorn, ArityIndicator, ModuleQualifier
             };
         }
     }

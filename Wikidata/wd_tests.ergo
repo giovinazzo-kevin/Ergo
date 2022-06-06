@@ -1,0 +1,9 @@
+﻿:- module(wd_tests, []).
+:- use_module(wikidata).
+
+:- lit(p_instance_of, 'P31').
+:- lit(q_human, 'Q5').
+
+is_human(E) :-
+	entity_claim(E, C),
+	claim_property_value(C, p_instance_of, q_human).

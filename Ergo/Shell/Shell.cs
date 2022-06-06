@@ -44,7 +44,7 @@ namespace Ergo.Shell
         public ErgoShell(Action<ErgoInterpreter> configureInterpreter = null, Action<ErgoSolver> configureSolver = null, Func<LogLine, string> formatter = null)
         {
             Interpreter = new();
-            configureInterpreter(Interpreter);
+            configureInterpreter?.Invoke(Interpreter);
             ConfigureSolver = configureSolver;
             Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
             LineFormatter = formatter ?? DefaultLineFormatter;

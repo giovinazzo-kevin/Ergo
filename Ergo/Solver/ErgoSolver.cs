@@ -202,13 +202,13 @@ namespace Ergo.Solver
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
             foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
             {
-                ct.ThrowIfCancellationRequested();
-                goal = resolvedGoal.Result;
                 if (Cut.Value)
                 {
                     Cut.Value = false;
                     yield break;
                 }
+                ct.ThrowIfCancellationRequested();
+                goal = resolvedGoal.Result;
                 if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
                 {
                     LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);

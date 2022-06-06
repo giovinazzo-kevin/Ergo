@@ -1,4 +1,7 @@
-﻿using Ergo.Shell;
+﻿using Ergo.CSharp;
+using Ergo.Lang;
+using Ergo.Shell;
+
 
 var shell = new ErgoShell(interpreter =>
 {
@@ -11,3 +14,9 @@ var shell = new ErgoShell(interpreter =>
 
 var scope = shell.CreateScope();
 shell.EnterRepl(ref scope);
+
+
+[Term(Marshalling = TermMarshalling.Positional, Module = "geometry")]
+public readonly record struct Point(int X, int Y);
+[Term(Marshalling = TermMarshalling.Positional, Module = "geometry")]
+public readonly record struct Line(Point Start, Point End);

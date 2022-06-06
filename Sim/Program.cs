@@ -9,6 +9,7 @@ using Color = Raylib_cs.Color;
 var uiModule = new Atom("ui");
 
 var shell = new ErgoShell(configureSolver: solver => {
+    solver.TryAddBuiltIn(new fps());
     solver.TryAddBuiltIn(new blit());
     solver.TryAddBuiltIn(new canvas());
     solver.TryAddBuiltIn(new origin());
@@ -19,10 +20,12 @@ var shell = new ErgoShell(configureSolver: solver => {
 });
 var scope = shell.CreateScope();
 shell.Load(ref scope, "example");
+
 scope = scope.WithInterpreterScope(scope.InterpreterScope
     .WithModule(scope.InterpreterScope.Modules[uiModule]
         .WithDynamicPredicate(new Complex(new Atom("draw"), new Variable("_")).GetSignature())
         .WithDynamicPredicate(new Atom("init").GetSignature())));
+
 var uiThread = new Thread(() =>
 {
     var uiScope = scope
@@ -31,6 +34,7 @@ var uiThread = new Thread(() =>
     var query = new Query(new(new Atom("init")));
     foreach (var sol in solver.Solve(query)) ;
     Raylib.InitWindow(canvas.Value.Width, canvas.Value.Height, "Hello World");
+    Raylib.SetTargetFPS(fps.Value);
     while (!Raylib.WindowShouldClose())
     {
         Raylib.BeginDrawing();
@@ -48,10 +52,10 @@ var uiThread = new Thread(() =>
     }
     Raylib.CloseWindow();
 });
+
 uiThread.Start();
+shell.EnterRepl(ref scope, str => Raylib.WindowShouldClose() || str.Trim().Equals("exit"));
 uiThread.Join();
-
-
 
 public static class Render
 {

@@ -27,7 +27,7 @@ namespace Ergo.Lang.Extensions
             return false;
         }
 
-        public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, TermMarshall.MarshallingMode mode = TermMarshall.MarshallingMode.Positional, bool matchFunctor = false)
+        public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, TermMarshalling mode = TermMarshalling.Positional, bool matchFunctor = false)
         {
             match = default;
             try

@@ -1,7 +1,7 @@
 ﻿:- module(example, []).
 :- use_module(ui).
 
-init :- canvas(size(500, 500)).
+init :- canvas(size(500, 500)), fps(144).
 
 draw(time(_T)) :- (
 	mouse(point(X, Y)),

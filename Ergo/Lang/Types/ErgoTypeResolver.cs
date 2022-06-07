@@ -66,9 +66,10 @@ namespace Ergo.Lang
             // Check if the [Term] attribute is applied at the type level,
             // If so, assume that's what we want unless overrideFunctor is not None.
             var attr = Type.GetCustomAttribute<TermAttribute>();
-            var functor = overrideFunctor.Reduce(some => some, () => !Type.IsArray && attr?.Functor is { } f
-                ? new Atom(f)
-                : GetFunctor(o));
+            var functor = overrideFunctor.Reduce(
+                some => !Type.IsArray ? some : GetFunctor(o), 
+                () => !Type.IsArray && attr?.Functor is { } f ? new Atom(f) : GetFunctor(o)
+            );
             var marshalling = overrideMarshalling.Reduce(some => some, () => Marshalling);
 
             if (IsAtomic.Value) return functor;

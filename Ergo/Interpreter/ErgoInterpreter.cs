@@ -65,7 +65,6 @@ namespace Ergo.Interpreter
             hashSet.Add(data.Select(obj => TermMarshall.ToTerm(obj)));
 
             var head = signature.Functor.BuildAnonymousTerm(signature.Arity.Reduce(x => x, () => throw new NotSupportedException()));
-            // head.TryQualify(module, out head);
             var predicate = new Predicate(description ?? $"Data Source <{typeof(T).Name}>", Modules.CSharp, head, new CommaSequence(WellKnown.Literals.False), dynamic: true);
             TryAddDynamicPredicate(new(signature, predicate, assertz: true));
         }

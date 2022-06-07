@@ -82,11 +82,10 @@ namespace Ergo.Lang
             {
                 foreach (var item in sources.SelectMany(i => i))
                 {
-
                     var predicate = new Predicate(
                         "data source",
                         Modules.CSharp,
-                        item,
+                        item.WithFunctor(signature.Functor),
                         CommaSequence.Empty,
                         dynamic: true
                     ).Instantiate(Context);

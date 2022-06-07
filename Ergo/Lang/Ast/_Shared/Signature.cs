@@ -15,6 +15,7 @@ namespace Ergo.Lang.Ast
         public readonly Maybe<int> Arity;
 
         public Signature(Atom a, Maybe<int> arity, Maybe<Atom> module) => (Functor, Arity, Module) = (a, arity, module);
+        public Signature WithFunctor(Atom functor) => new(functor, Arity, Module);
         public Signature WithArity(Maybe<int> arity) => new(Functor, arity, Module);
         public Signature WithModule(Maybe<Atom> module) => new(Functor, Arity, module);
 

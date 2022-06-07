@@ -28,13 +28,12 @@ namespace Ergo.Solver
             return solver;
         }
 
-
         public static ErgoSolver Build(ErgoInterpreter i, ref InterpreterScope scope)
         {
             if (!_scopeCache.TryGetValue(scope, out var kb) || kb.Value == null)
             {
                 kb ??= new();
-                kb.Value = new();
+                kb.Value = new(i.DataSources);
                 var added = LoadModule(ref scope, kb.Value, scope.Modules[scope.Module]);
                 foreach (var module in scope.Modules.Values)
                 {

@@ -13,9 +13,9 @@ namespace Ergo.Interpreter
 {
     public readonly struct InterpreterScope
     {
+        public readonly bool Runtime;
         public readonly ImmutableDictionary<Atom, Module> Modules;
         public readonly ImmutableArray<string> SearchDirectories;
-        public readonly bool Runtime;
         public readonly Lazy<Operator[]> Operators;
 
         public readonly Atom Module;

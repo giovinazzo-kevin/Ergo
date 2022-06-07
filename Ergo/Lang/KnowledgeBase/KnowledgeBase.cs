@@ -1,4 +1,5 @@
-﻿using Ergo.Lang.Ast;
+﻿using Ergo.Interpreter;
+using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
 using System;
 using System.Collections;
@@ -11,13 +12,15 @@ namespace Ergo.Lang
 {
     public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     {
+        protected readonly ImmutableDictionary<Signature, HashSet<IEnumerable<ITerm>>> DataSources;
         protected readonly OrderedDictionary Predicates;
         protected readonly InstantiationContext Context;
 
         public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 
-        public KnowledgeBase()
+        public KnowledgeBase(Dictionary<Signature, HashSet<IEnumerable<ITerm>>> dataSources = null)
         {
+            DataSources = ImmutableDictionary.CreateRange(dataSources ?? Enumerable.Empty<KeyValuePair<Signature, HashSet<IEnumerable<ITerm>>>>());
             Predicates = new OrderedDictionary();
             Context = new("K");
         }
@@ -56,18 +59,38 @@ namespace Ergo.Lang
                 return false;
             }
             var head = goal.Substitute(subs);
-            if (TryGet(head.GetSignature(), out var list)) {
+            var signature = head.GetSignature();
+            // Return predicate matches
+            if (TryGet(signature, out var list)) {
                 foreach (var k in list) {
-                    var ks = k.Instantiate(Context);
-                    if (Predicate.TryUnify(head, ks, out var matchSubs))
+                    var predicate = k.Instantiate(Context);
+                    if (Predicate.TryUnify(head, predicate, out var matchSubs))
                     {
-                        ks = Predicate.Substitute(ks, matchSubs);
-                        lst.Add(new Match(goal, ks, matchSubs.Concat(subs)));
+                        predicate = Predicate.Substitute(predicate, matchSubs);
+                        lst.Add(new Match(goal, predicate, matchSubs.Concat(subs)));
                     }
                 }
-                return lst.Any();
             }
-            return false;
+            // Return results from data sources 
+            if(DataSources.TryGetValue(signature, out var sources))
+            {
+                foreach (var item in sources.SelectMany(i => i))
+                {
+                    var predicate = new Predicate(
+                        "data source",
+                        signature.Module.Reduce(some => some, () => Modules.User),
+                        item,
+                        CommaSequence.Empty,
+                        dynamic: true
+                    ).Instantiate(Context);
+                    if (Predicate.TryUnify(head, predicate, out var matchSubs))
+                    {
+                        predicate = Predicate.Substitute(predicate, matchSubs);
+                        lst.Add(new Match(goal, predicate, matchSubs.Concat(subs)));
+                    }
+                }
+            }
+            return lst.Any();
         }
 
         public void AssertA(Predicate k)

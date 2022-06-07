@@ -18,16 +18,15 @@ namespace Ergo.Interpreter
     public partial class ErgoInterpreter
     {
         public readonly InterpreterFlags Flags;
-        public readonly Dictionary<Signature, InterpreterDirective> Directives;
-        public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates;
+        public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
+        public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates = new();
+        public readonly Dictionary<Signature, HashSet<IEnumerable<ITerm>>> DataSources = new();
 
         public readonly InterpreterScope StdlibScope;
 
         public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         {
             Flags = flags;
-            Directives = new();
-            DynamicPredicates = new();
             AddDirectivesByReflection();
 
             var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));
@@ -43,6 +42,39 @@ namespace Ergo.Interpreter
                 .WithModule(new Module(Modules.User, runtime: true)
                     .WithImport(Modules.Stdlib))
                 .WithCurrentModule(Modules.User);
+        }
+
+        protected Signature GetSignature<T>(Maybe<Atom> functor, Maybe<Atom> module)
+            where T : new()
+        {
+            var signature = TermMarshall.ToTerm(new T()).GetSignature();
+            signature = functor.Reduce(some => signature.WithFunctor(some), () => signature)
+                .WithModule(module);
+            return signature;
+        }
+
+        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor, Maybe<Atom> module)
+            where T : new()
+        {
+            var signature = GetSignature<T>(functor, module);
+            if (!DataSources.TryGetValue(signature, out var hashSet))
+            {
+                DataSources[signature] = hashSet = new();
+            }
+            hashSet.Add(data.Select(obj => TermMarshall.ToTerm(obj)));
+        }
+        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor) where T : new() => AddDataSource<T>(data, functor, Maybe<Atom>.None);
+        public void AddDataSource<T>(IEnumerable<T> data) where T : new() => AddDataSource<T>(data, Maybe<Atom>.None, Maybe<Atom>.None);
+
+        public void RemoveDataSources<T>(Maybe<Atom> functor, Maybe<Atom> module)
+            where T : new()
+        {
+            var signature = GetSignature<T>(functor, module);
+            if (DataSources.TryGetValue(signature, out var hashSet))
+            {
+                hashSet.Clear();
+                DataSources.Remove(signature);
+            }
         }
 
         public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
@@ -110,6 +142,7 @@ namespace Ergo.Interpreter
             {
                 head = new Atom(match.Predicate).BuildAnonymousComplex(match.Arity);
             }
+            // if head matches the signature of any data source, 
             return SolverBuilder.Build(this, ref scope).KnowledgeBase.TryGetMatches(head, out matches);
         }
 

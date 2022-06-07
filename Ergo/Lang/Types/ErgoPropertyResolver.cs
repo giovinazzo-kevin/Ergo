@@ -16,10 +16,6 @@ namespace Ergo.Lang
             Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToArray();
             PropertiesByName = new(Properties.ToDictionary(p => p.Name));
         }
-        protected override Type GetMemberType(string name) => PropertiesByName[name].PropertyType;
-        protected override object GetMemberValue(string name, object instance) => PropertiesByName[name].GetValue(instance);
-        protected override void SetMemberValue(string name, object instance, object value) => PropertiesByName[name].SetValue(instance, value);
-        protected override TermAttribute GetMemberAttribute(string name) => PropertiesByName[name].GetCustomAttribute<TermAttribute>();
         protected override ITerm TransformTerm(Atom functor, ITerm[] args) => new Complex(functor, args);
     }
 }

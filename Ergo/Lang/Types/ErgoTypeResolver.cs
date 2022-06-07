@@ -54,6 +54,7 @@ namespace Ergo.Lang
         protected abstract ITerm GetArgument(string name, Complex value);
         protected abstract ITerm TransformMember(string name, ITerm value);
         protected abstract ITerm TransformTerm(Atom functor, ITerm[] args);
+        protected abstract Type GetParameterType(string name, ConstructorInfo info);
 
         public virtual ITerm ToTerm(object o)
         {
@@ -89,12 +90,11 @@ namespace Ergo.Lang
                 // anonymous type
                 var args = GetArguments((Complex)t);
                 var constructor = Type.GetConstructors().Single();
-                var constructorParameters = constructor.GetParameters().ToDictionary(p => p.Name);
                 var instance = constructor.Invoke(args.Select(name =>
                 {
                     var arg = GetArgument(name, (Complex)t);
                     var value = TermMarshall.FromTerm(arg, GetMemberType(name), Marshalling);
-                    value = Convert.ChangeType(value, constructorParameters[name].ParameterType);
+                    value = Convert.ChangeType(value, GetParameterType(name, constructor));
                     return value;
                 }).ToArray());
                 return instance;
@@ -103,10 +103,11 @@ namespace Ergo.Lang
             {
                 if (Type.IsArray && List.TryUnfold(t, out var list))
                 {
-                    var instance = Array.CreateInstance(Type, list.Contents.Length);
+                    var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                     for (int i = 0; i < list.Contents.Length; i++)
                     {
-                        instance.SetValue(list.Contents[i], i);
+                        var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Marshalling);
+                        instance.SetValue(obj, i);
                     }
                     return instance;
                 }

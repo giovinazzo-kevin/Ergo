@@ -74,12 +74,15 @@ namespace Ergo.Lang
             // Return results from data sources 
             if(DataSources.TryGetValue(signature, out var sources))
             {
+                var module = signature.Module.GetOrThrow();
                 foreach (var item in sources.SelectMany(i => i))
                 {
+                    item.TryQualify(module, out var qualified);
+
                     var predicate = new Predicate(
                         "data source",
-                        signature.Module.Reduce(some => some, () => Modules.User),
-                        item,
+                        module,
+                        qualified,
                         CommaSequence.Empty,
                         dynamic: true
                     ).Instantiate(Context);

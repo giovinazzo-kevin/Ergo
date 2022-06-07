@@ -53,18 +53,18 @@ namespace Ergo.Interpreter
             return signature;
         }
 
-        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor, Maybe<Atom> module)
+        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor, Atom module)
             where T : new()
         {
-            var signature = GetSignature<T>(functor, module);
+            var signature = GetSignature<T>(functor, Maybe.Some(module));
             if (!DataSources.TryGetValue(signature, out var hashSet))
             {
                 DataSources[signature] = hashSet = new();
             }
             hashSet.Add(data.Select(obj => TermMarshall.ToTerm(obj)));
         }
-        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor) where T : new() => AddDataSource<T>(data, functor, Maybe<Atom>.None);
-        public void AddDataSource<T>(IEnumerable<T> data) where T : new() => AddDataSource<T>(data, Maybe<Atom>.None, Maybe<Atom>.None);
+        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor) where T : new() => AddDataSource(data, functor, Modules.User);
+        public void AddDataSource<T>(IEnumerable<T> data) where T : new() => AddDataSource<T>(data, Maybe<Atom>.None, Modules.User);
 
         public void RemoveDataSources<T>(Maybe<Atom> functor, Maybe<Atom> module)
             where T : new()

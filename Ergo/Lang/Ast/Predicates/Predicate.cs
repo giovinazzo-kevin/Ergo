@@ -71,7 +71,8 @@ namespace Ergo.Lang.Ast
         {
             var S = new List<Substitution>();
             if(predicate.Head.TryGetQualification(out _, out var qv)
-            && new Substitution(head, qv).TryUnify(out var subs))
+            && head.TryGetQualification(out _, out var hv)
+            && new Substitution(hv, qv).TryUnify(out var subs))
             {
                 S.AddRange(subs);
                 substitutions = S;

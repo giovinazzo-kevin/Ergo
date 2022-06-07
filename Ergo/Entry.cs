@@ -13,6 +13,12 @@ var shell = new ErgoShell(interpreter =>
         new Line(new(-1, 1), new(1, -1)),
         new()
     });
+    interpreter.AddDataSource(new[]
+    {
+        new Polygon(new[]{new Line(new(3, 5), new(12, 6)),
+        new Line(new(-1, 1), new(1, -1)),
+        new() })
+    });
 }, solver =>
 {
     // solver.TryAddBuiltIn lets you write built-in predicates in C#
@@ -26,4 +32,6 @@ shell.EnterRepl(ref scope);
 [Term(Functor = ",", Marshalling = TermMarshalling.Positional)]
 public readonly record struct Point(int X, int Y);
 [Term(Functor = "-", Marshalling = TermMarshalling.Positional)]
-public readonly record struct Line(Point Start, Point End);
+public readonly record struct Line([property: Term(Functor = "s", Marshalling = TermMarshalling.Positional)] Point Start, Point End);
+[Term(Functor = "polygon", Marshalling = TermMarshalling.Positional)]
+public readonly record struct Polygon([property:Term(Functor = "l", Marshalling = TermMarshalling.Named)] Line[] Segments);

@@ -13,7 +13,7 @@ namespace Ergo.Lang
         protected readonly PropertyInfo[] Properties;
         public ErgoPropertyResolver()
         {
-            Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToArray();
+            Properties = (Type.IsArray ? Type.GetElementType() : Type).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToArray();
             PropertiesByName = new(Properties.ToDictionary(p => p.Name));
         }
     }

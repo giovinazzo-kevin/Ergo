@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang.Ast;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -20,28 +21,32 @@ namespace Ergo.Lang
             if (Type == typeof(char) || Type == typeof(string))
             {
                 IsAtomic = true;
-                GetFunctor = o => new Atom(o.ToString());
+                GetFunctor = o => new Atom(o.ToString() ?? String.Empty);
             }
             else if (Type == typeof(bool))
             {
                 IsAtomic = true;
-                GetFunctor = o => new Atom(o);
+                GetFunctor = o => new Atom(o ?? false);
             }
             else if (Type.IsPrimitive)
             {
                 IsAtomic = true;
-                GetFunctor = o => new Atom(Convert.ChangeType(o, typeof(double)));
+                GetFunctor = o => new Atom(Convert.ChangeType(o ?? 0, typeof(double)));
             }
             else if (Type.IsEnum)
             {
                 IsAtomic = true;
-                GetFunctor = o => new Atom(o.ToString());
+                GetFunctor = o => new Atom(o?.ToString() ?? Enum.GetNames(Type).First());
+            }
+            else if(Type.IsArray)
+            {
+                IsAtomic = false;
+                GetFunctor = o => WellKnown.Functors.List.First();
             }
             else
             {
-                var attr = Type.GetCustomAttribute<TermAttribute>();
                 IsAtomic = false;
-                GetFunctor = o => new Atom(attr?.Functor ?? Type.Name.ToLower());
+                GetFunctor = o => new Atom(Type.Name.ToLower());
             }
         }
 
@@ -53,25 +58,65 @@ namespace Ergo.Lang
         protected abstract IEnumerable<string> GetArguments(Complex value);
         protected abstract ITerm GetArgument(string name, Complex value);
         protected abstract ITerm TransformMember(string name, ITerm value);
-        protected abstract ITerm TransformTerm(Atom functor, ITerm[] args);
         protected abstract Type GetParameterType(string name, ConstructorInfo info);
 
-        public virtual ITerm ToTerm(object o)
+        public virtual ITerm ToTerm(object o, Maybe<Atom> overrideFunctor = default, Maybe<TermMarshalling> overrideMarshalling = default)
         {
-            if (o.GetType() != Type) throw new ArgumentException(null, nameof(o));
+            if (o != null && o.GetType() != Type) throw new ArgumentException(null, o.ToString());
+            // Check if the [Term] attribute is applied at the type level,
+            // If so, assume that's what we want unless overrideFunctor is not None.
+            var attr = Type.GetCustomAttribute<TermAttribute>();
+            var functor = overrideFunctor.Reduce(some => some, () => !Type.IsArray && attr?.Functor is { } f
+                ? new Atom(f)
+                : GetFunctor(o));
+            var marshalling = overrideMarshalling.Reduce(some => some, () => Marshalling);
 
-            var functor = GetFunctor(o);
             if (IsAtomic) return functor;
 
-            var args = GetMembers().Select(
-                m =>
-                {
-                    var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
-                    return TransformMember(m, TermMarshall.ToTerm(GetMemberValue(m, o), GetMemberType(m), attr?.Marshalling ?? Marshalling));
-                }
-            ).ToArray();
-
+            ITerm[] args;
+            if(Type.IsArray)
+            {
+                // Collections are handled recursively
+                args = o == null ? Array.Empty<ITerm>() : ((IEnumerable)o).Cast<object>()
+                    .Select(x => TermMarshall.ToTerm(x, Type.GetElementType(), overrideFunctor, Maybe.Some(marshalling)))
+                    .ToArray();
+            }
+            else
+            {
+                args = GetMembers().Select(
+                    m =>
+                    {
+                        var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
+                        var overrideMemberFunctor = attr is null ? Maybe<Atom>.None : Maybe.Some(new Atom(attr.Functor));
+                        var overrideMemberMarshalling = attr is null ? Maybe.Some(marshalling) : Maybe.Some(attr.Marshalling);
+                        var memberValue = o == null ? null : GetMemberValue(m, o);
+                        var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling);
+                        var member = TransformMember(m, term);
+                        if (List.TryUnfold(member, out var list))
+                        {
+                            member = new List(list.Contents.Select(x =>
+                            {
+                                if (x is Complex cplx)
+                                    return cplx.WithFunctor(new(attr?.Functor ?? cplx.Functor.Value));
+                                return x;
+                            }).ToArray()).Root;
+                        }
+                        return member;
+                    }
+                ).ToArray();
+            }
             return TransformTerm(functor, args);
+
+            ITerm TransformTerm(Atom functor, ITerm[] args)
+            {
+                if (WellKnown.Functors.List.Contains(functor))
+                {
+                    return new List(args).Root;
+                }
+                return new Complex(functor, args)
+                    .AsParenthesized(WellKnown.Functors.Conjunction.Contains(functor));
+            }
+
         }
 
 
@@ -93,7 +138,7 @@ namespace Ergo.Lang
                 var instance = constructor.Invoke(args.Select(name =>
                 {
                     var arg = GetArgument(name, (Complex)t);
-                    var value = TermMarshall.FromTerm(arg, GetMemberType(name), Marshalling);
+                    var value = TermMarshall.FromTerm(arg, GetMemberType(name), Maybe.Some(Marshalling));
                     value = Convert.ChangeType(value, GetParameterType(name, constructor));
                     return value;
                 }).ToArray());
@@ -106,7 +151,7 @@ namespace Ergo.Lang
                     var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                     for (int i = 0; i < list.Contents.Length; i++)
                     {
-                        var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Marshalling);
+                        var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Maybe.Some(Marshalling));
                         instance.SetValue(obj, i);
                     }
                     return instance;
@@ -118,7 +163,7 @@ namespace Ergo.Lang
                     foreach (var name in args)
                     {
                         var arg = GetArgument(name, (Complex)t);
-                        var value = TermMarshall.FromTerm(arg, GetMemberType(name), Marshalling);
+                        var value = TermMarshall.FromTerm(arg, GetMemberType(name), Maybe.Some(Marshalling));
                         value = Convert.ChangeType(value, GetMemberType(name));
                         SetMemberValue(name, instance, value);
                     }

@@ -11,6 +11,14 @@ namespace Ergo.Lang.Ast
         bool IsParenthesized { get; }
         IEnumerable<Variable> Variables { get; }
 
+        ITerm WithFunctor(Atom newFunctor) => this switch
+        {
+            Atom => newFunctor,
+            Variable v => v,
+            Complex c => c.WithFunctor(newFunctor),
+            var x => x
+        };
+
         bool TryQualify(Atom m, out ITerm qualified)
         {
             if(IsQualified)

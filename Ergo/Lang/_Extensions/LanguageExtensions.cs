@@ -32,7 +32,7 @@ namespace Ergo.Lang.Extensions
             match = default;
             try
             {
-                match = TermMarshall.FromTerm(t, shape, mode);
+                match = TermMarshall.FromTerm(t, shape, Maybe.Some(mode));
                 if(matchFunctor)
                 {
                     if (t is Complex cplx && !cplx.Functor.Equals(new Atom(typeof(T).Name.ToLower())))

@@ -33,30 +33,31 @@ namespace Ergo.Lang
             return resolver;
         }
 
-        private static TermMarshalling GetMode(Type type, TermMarshalling? mode = null) => (mode ?? type.GetCustomAttribute<TermAttribute>()?.Marshalling ?? TermMarshalling.Positional);
+        private static TermMarshalling GetMode(Type type, Maybe<TermMarshalling> mode = default) => mode
+            .Reduce(some => some, () => type.GetCustomAttribute<TermAttribute>()?.Marshalling ?? TermMarshalling.Positional);
 
-        public static ITerm ToTerm<T>(T value, TermMarshalling? mode = null) =>
+        public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default) =>
             GetMode(typeof(T), mode) switch
             {
-                TermMarshalling.Positional => EnsurePositionalResolver(typeof(T)).ToTerm(value),
-                TermMarshalling.Named => EnsureNamedResolver(typeof(T)).ToTerm(value),
+                TermMarshalling.Positional => EnsurePositionalResolver(typeof(T)).ToTerm(value, functor),
+                TermMarshalling.Named => EnsureNamedResolver(typeof(T)).ToTerm(value, functor),
                 _ => throw new NotImplementedException()
             };
-        public static ITerm ToTerm(object value, Type type, TermMarshalling? mode = null) =>
+        public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default) =>
             GetMode(type, mode) switch
             {
-                TermMarshalling.Positional => EnsurePositionalResolver(type).ToTerm(value),
-                TermMarshalling.Named => EnsureNamedResolver(type).ToTerm(value),
+                TermMarshalling.Positional => EnsurePositionalResolver(type).ToTerm(value, functor),
+                TermMarshalling.Named => EnsureNamedResolver(type).ToTerm(value, functor),
                 _ => throw new NotImplementedException()
             };
-        public static T FromTerm<T>(ITerm value, T _ = default, TermMarshalling? mode = null) =>
+        public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default) =>
             GetMode(typeof(T), mode) switch
             {
                 TermMarshalling.Positional => (T)Convert.ChangeType(EnsurePositionalResolver(typeof(T)).FromTerm(value), typeof(T)),
                 TermMarshalling.Named => (T)Convert.ChangeType(EnsureNamedResolver(typeof(T)).FromTerm(value), typeof(T)),
                 _ => throw new NotImplementedException()
             };
-        public static object FromTerm(ITerm value, Type type, TermMarshalling? mode = null) =>
+        public static object FromTerm(ITerm value, Type type, Maybe<TermMarshalling> mode = default) =>
             GetMode(type, mode) switch
             {
                 TermMarshalling.Positional => EnsurePositionalResolver(type).FromTerm(value),

@@ -8,7 +8,7 @@ namespace Ergo.Lang
     {
         Type Type { get; }
         TermMarshalling Marshalling { get; }
-        ITerm ToTerm(object o);
+        ITerm ToTerm(object o, Maybe<Atom> overrideFunctor = default, Maybe<TermMarshalling> overrideMarshalling = default);
         object FromTerm(ITerm t);
     }
 }

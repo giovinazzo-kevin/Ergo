@@ -22,7 +22,7 @@ var scope = shell.CreateScope();
 shell.EnterRepl(ref scope);
 
 
-[Term(Marshalling = TermMarshalling.Positional)]
+[Term(Functor = ",", Marshalling = TermMarshalling.Positional)]
 public readonly record struct Point(int X, int Y);
-[Term(Marshalling = TermMarshalling.Positional)]
+[Term(Functor = "-", Marshalling = TermMarshalling.Positional)]
 public readonly record struct Line(Point Start, Point End);

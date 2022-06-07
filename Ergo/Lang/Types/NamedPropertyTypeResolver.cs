@@ -12,6 +12,7 @@ namespace Ergo.Lang
         public override TermMarshalling Marshalling => TermMarshalling.Named;
         protected override IEnumerable<string> GetMembers() => PropertiesByName.Keys;
         protected override ITerm TransformMember(string name, ITerm value) => new Complex(new(name.ToLower()), value);
+        protected override ITerm TransformTerm(Atom functor, ITerm[] args) => new Complex(functor, args).AsParenthesized(WellKnown.Functors.Conjunction.Contains(functor));
         protected override IEnumerable<string> GetArguments(Complex value) => value.Arguments.Select(a => (string)((Complex)a).Functor.Value);
         protected override ITerm GetArgument(string name, Complex value) => value.Arguments.Single(a => name.Equals((string)((Complex)a).Functor.Value));
         protected override Type GetMemberType(string name) => PropertiesByName[name].PropertyType;

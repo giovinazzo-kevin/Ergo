@@ -16,6 +16,5 @@ namespace Ergo.Lang
             Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToArray();
             PropertiesByName = new(Properties.ToDictionary(p => p.Name));
         }
-        protected override ITerm TransformTerm(Atom functor, ITerm[] args) => new Complex(functor, args);
     }
 }

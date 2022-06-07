@@ -14,38 +14,38 @@ namespace Ergo.Lang
         public abstract TermMarshalling Marshalling { get; }
 
         protected readonly Func<object, Atom> GetFunctor;
-        protected readonly bool IsAtomic;
+        protected readonly Lazy<bool> IsAtomic;
 
         public ErgoTypeResolver()
         {
             if (Type == typeof(char) || Type == typeof(string))
             {
-                IsAtomic = true;
+                IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(o.ToString() ?? String.Empty);
             }
             else if (Type == typeof(bool))
             {
-                IsAtomic = true;
+                IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(o ?? false);
             }
             else if (Type.IsPrimitive)
             {
-                IsAtomic = true;
+                IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(Convert.ChangeType(o ?? 0, typeof(double)));
             }
             else if (Type.IsEnum)
             {
-                IsAtomic = true;
+                IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(o?.ToString() ?? Enum.GetNames(Type).First());
             }
             else if(Type.IsArray)
             {
-                IsAtomic = false;
+                IsAtomic = new(() => false);
                 GetFunctor = o => WellKnown.Functors.List.First();
             }
             else
             {
-                IsAtomic = false;
+                IsAtomic = new(() => GetMembers().Count() == 0);
                 GetFunctor = o => new Atom(Type.Name.ToLower());
             }
         }
@@ -71,7 +71,7 @@ namespace Ergo.Lang
                 : GetFunctor(o));
             var marshalling = overrideMarshalling.Reduce(some => some, () => Marshalling);
 
-            if (IsAtomic) return functor;
+            if (IsAtomic.Value) return functor;
 
             ITerm[] args;
             if(Type.IsArray)
@@ -109,10 +109,12 @@ namespace Ergo.Lang
 
             ITerm TransformTerm(Atom functor, ITerm[] args)
             {
+                if (args.Length == 0)
+                    return new Atom(functor);
+
                 if (WellKnown.Functors.List.Contains(functor))
-                {
                     return new List(args).Root;
-                }
+
                 return new Complex(functor, args)
                     .AsParenthesized(WellKnown.Functors.Conjunction.Contains(functor));
             }
@@ -122,7 +124,7 @@ namespace Ergo.Lang
 
         public virtual object FromTerm(ITerm t)
         {
-            if (IsAtomic)
+            if (IsAtomic.Value)
             {
                 if (Type.IsEnum)
                 {

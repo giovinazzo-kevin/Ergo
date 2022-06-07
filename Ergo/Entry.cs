@@ -8,10 +8,7 @@ var shell = new ErgoShell(interpreter =>
     // interpreter.AddDataSource lets you work on C# enumerables by implicitly handling all marshalling (TODO: AddDataSink)
     interpreter.AddDataSource(new[]
     {
-        new Line(new(0, 0), new(10, 10)),
-        new Line(new(3, 5), new(12, 6)),
-        new Line(new(-1, 1), new(1, -1)),
-        new()
+        new X(), new X(), new X()
     });
     interpreter.AddDataSource(new[]
     {
@@ -29,6 +26,8 @@ var scope = shell.CreateScope();
 shell.EnterRepl(ref scope);
 
 
+[Term(Functor = "x", Marshalling = TermMarshalling.Positional)]
+public readonly record struct X();
 [Term(Functor = ",", Marshalling = TermMarshalling.Positional)]
 public readonly record struct Point(int X, int Y);
 [Term(Functor = "-", Marshalling = TermMarshalling.Positional)]

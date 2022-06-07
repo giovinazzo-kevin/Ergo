@@ -9,7 +9,7 @@ using Ergo.Lang.Extensions;
 namespace Ergo.Lang.Ast
 {
 
-    [DebuggerDisplay("{ Explain() }")]
+    [DebuggerDisplay("{ Explain(true) }")]
     public readonly struct Predicate : IExplainable
     {
         public readonly Atom DeclaringModule;
@@ -70,15 +70,10 @@ namespace Ergo.Lang.Ast
         public static bool TryUnify(ITerm head, Predicate predicate, out IEnumerable<Substitution> substitutions)
         {
             var S = new List<Substitution>();
-            if(predicate.Head.TryGetQualification(out _, out var qv)
-            && head.TryGetQualification(out _, out var hv)
-            && new Substitution(hv, qv).TryUnify(out var subs))
+            predicate.Head.TryGetQualification(out _, out var qv);
+            head.TryGetQualification(out _, out var hv);
+            if (new Substitution(hv, qv).TryUnify(out var subs))
             {
-                S.AddRange(subs);
-                substitutions = S;
-                return true;
-            }
-            if (new Substitution(head, predicate.Head).TryUnify(out subs)) {
                 S.AddRange(subs);
                 substitutions = S;
                 return true;

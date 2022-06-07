@@ -61,8 +61,10 @@ namespace Ergo.Lang.Extensions
             );
         }
 
-        public static Complex BuildAnonymousComplex(this Atom functor, int arity)
+        public static ITerm BuildAnonymousTerm(this Atom functor, int arity)
         {
+            if (arity == 0)
+                return functor;
             return new Complex(functor, Enumerable.Range(0, arity)
                 .Select(i => (ITerm)new Variable($"__A{i}"))
                 .ToArray());

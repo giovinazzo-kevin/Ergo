@@ -47,6 +47,12 @@ namespace Ergo.Lang
                 predicates = (List<Predicate>)Predicates[key];
                 return true;
             }
+            var looseKey = key.WithModule(Maybe<Atom>.None);
+            if (key.Module.HasValue && Predicates.Contains(looseKey))
+            {
+                predicates = (List<Predicate>)Predicates[looseKey];
+                return predicates.All(p => p.DeclaringModule.Equals(key.Module.GetOrThrow()));
+            }
             return false;
         }
 
@@ -72,17 +78,15 @@ namespace Ergo.Lang
                 }
             }
             // Return results from data sources 
-            if(DataSources.TryGetValue(signature, out var sources))
+            if(DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
             {
-                var module = signature.Module.GetOrThrow();
                 foreach (var item in sources.SelectMany(i => i))
                 {
-                    item.TryQualify(module, out var qualified);
 
                     var predicate = new Predicate(
                         "data source",
-                        module,
-                        qualified,
+                        Modules.CSharp,
+                        item,
                         CommaSequence.Empty,
                         dynamic: true
                     ).Instantiate(Context);

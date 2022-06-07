@@ -11,6 +11,7 @@ namespace Ergo.Interpreter
         public static readonly Atom IO = new("io");
         public static readonly Atom Reflection = new("reflection");
         public static readonly Atom String = new("string");
+        public static readonly Atom CSharp = new("csharp");
 
 
         public static readonly Atom Stdlib = new("stdlib");

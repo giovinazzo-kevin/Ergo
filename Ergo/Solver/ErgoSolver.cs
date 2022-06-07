@@ -65,13 +65,10 @@ namespace Ergo.Solver
                 foreach (var pred in module.Program.KnowledgeBase)
                 {
                     var sig = pred.Head.GetSignature();
+                    kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
                     if (module.Name == scope.Module || module.ContainsExport(sig))
                     {
                         kb.AssertZ(pred.WithModuleName(module.Name));
-                    }
-                    else
-                    {
-                        kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
                     }
                 }
                 foreach (var key in i.DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))

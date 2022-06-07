@@ -38,38 +38,43 @@ namespace Ergo.Interpreter
 
         public InterpreterScope CreateScope()
         {
-            return StdlibScope
+            var scope = StdlibScope
+                .WithModule(new Module(Modules.CSharp, runtime: true))
                 .WithModule(new Module(Modules.User, runtime: true)
                     .WithImport(Modules.Stdlib))
                 .WithCurrentModule(Modules.User);
+            return scope;
         }
 
-        protected Signature GetSignature<T>(Maybe<Atom> functor, Maybe<Atom> module)
+        protected Signature GetSignature<T>(Maybe<Atom> functor)
             where T : new()
         {
             var signature = TermMarshall.ToTerm(new T()).GetSignature();
-            signature = functor.Reduce(some => signature.WithFunctor(some), () => signature)
-                .WithModule(module);
+            signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
             return signature;
         }
 
-        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor, Atom module)
+        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor, string description = null)
             where T : new()
         {
-            var signature = GetSignature<T>(functor, Maybe.Some(module));
+            var signature = GetSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
             if (!DataSources.TryGetValue(signature, out var hashSet))
             {
                 DataSources[signature] = hashSet = new();
             }
             hashSet.Add(data.Select(obj => TermMarshall.ToTerm(obj)));
-        }
-        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor) where T : new() => AddDataSource(data, functor, Modules.User);
-        public void AddDataSource<T>(IEnumerable<T> data) where T : new() => AddDataSource<T>(data, Maybe<Atom>.None, Modules.User);
 
-        public void RemoveDataSources<T>(Maybe<Atom> functor, Maybe<Atom> module)
+            var head = signature.Functor.BuildAnonymousTerm(signature.Arity.Reduce(x => x, () => throw new NotSupportedException()));
+            // head.TryQualify(module, out head);
+            var predicate = new Predicate(description ?? $"Data Source <{typeof(T).Name}>", Modules.CSharp, head, new CommaSequence(WellKnown.Literals.False), dynamic: true);
+            TryAddDynamicPredicate(new(signature, predicate, assertz: true));
+        }
+        public void AddDataSource<T>(IEnumerable<T> data, string description = null) where T : new() => AddDataSource<T>(data, Maybe<Atom>.None, description);
+
+        public void RemoveDataSources<T>(Maybe<Atom> functor)
             where T : new()
         {
-            var signature = GetSignature<T>(functor, module);
+            var signature = GetSignature<T>(functor);
             if (DataSources.TryGetValue(signature, out var hashSet))
             {
                 hashSet.Clear();
@@ -140,7 +145,7 @@ namespace Ergo.Interpreter
                 && WellKnown.Functors.Division.Contains(c.Functor)
                 && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
-                head = new Atom(match.Predicate).BuildAnonymousComplex(match.Arity);
+                head = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
             }
             // if head matches the signature of any data source, 
             return SolverBuilder.Build(this, ref scope).KnowledgeBase.TryGetMatches(head, out matches);

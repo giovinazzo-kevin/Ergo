@@ -5,6 +5,7 @@ using Ergo.Shell;
 var shell = new ErgoShell(interpreter =>
 {
     // interpreter.TryAddDirective lets you extend the interpreter
+    // interpreter.AddDataSource lets you work on C# enumerables by implicitly handling all marshalling (TODO: AddDataSink)
     interpreter.AddDataSource(new[]
     {
         new Line(new(0, 0), new(10, 10)),

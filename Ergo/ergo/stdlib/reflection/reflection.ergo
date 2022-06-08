@@ -1,6 +1,8 @@
 ﻿:- module(reflection, [
 	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2,
-	'?='/2, '/'/2
+	'?='/2, '/'/2, '=..'/2,
+
+	functor/3, arg/3
 ]).
 
 :- op(51, xfy, ['@>']).
@@ -8,8 +10,11 @@
 :- op(49, yfx, ['@<']).
 :- op(49, yfx, ['@≤', '@<=']).
 :- op(50, xfx, ['?=']).
+:- op(50, xfx, ['=..']).
 
 
+%: Term comparison (gt).
+'=..'(Term, [Functor|Args]) :- term(Functor, Args, Term).
 %: Term comparison (gt).
 '@>'(A, B)  :- compare(X, A, B), X  > 0.
 %: Term comparison (lt).
@@ -23,3 +28,13 @@
 '?='(A,B) :- \+unifiable(A,B,[_H|_T]).
 %: Anonymous type declaration. (TODO: remove?)
 '/'(Functor, Arity) :- anon(Functor, Arity).
+
+%: True when Term is a term with functor Name/Arity.
+functor(Term, Name, Arity) :-
+	Term =.. [Name|Args],
+	length(Args, Arity).
+
+%: True when Term is a term with functor Name/Arity.
+arg(Arg, Term, Value) :-
+	Term =.. [_|Args],
+	nth1(Arg, Args, Value).

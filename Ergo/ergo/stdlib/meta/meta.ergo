@@ -1,6 +1,6 @@
 ﻿:- module(meta, [
 	ignore/1,
-	once/1,
+	once/1, repeat/2,
 	forall/2,
 	maplist/2, maplist/3
 ]).
@@ -9,6 +9,7 @@ ignore(Goal) :- Goal, !.
 ignore(_).
 
 once(Goal) :- (call(Goal) -> true ; false).
+repeat(Times, Goal) :- range(0<=X<Times), once(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
 

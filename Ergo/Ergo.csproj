@@ -58,7 +58,6 @@
 
   <ItemGroup>
     <Folder Include="CSharp\" />
-    <Folder Include="Solver\Built-Ins\List\" />
   </ItemGroup>
 
 </Project>

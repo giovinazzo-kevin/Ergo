@@ -12,8 +12,7 @@ var shell = new ErgoShell(interpreter =>
 {
     // interpreter.TryAddDirective lets you extend the interpreter
     // interpreter.TryAddDynamicPredicate lets you add native Ergo predicates to the interpreter programmatically
-    // interpreter.AddDataSource automatically handles marshalling from C# to Ergo objects, and creates helpful dynamic predicate stubs for debugging
-
+    // interpreter.AddDataSource lets you bind a C# IEnumerable/IAsyncEnumerable to a virtual Ergo predicate
     interpreter.AddDataSource(new DataSource<Person>(new PersonGenerator().Generate()), Maybe<Atom>.None);
 
 }, solver =>
@@ -25,7 +24,7 @@ var shell = new ErgoShell(interpreter =>
 var scope = shell.CreateScope();
 await foreach (var _ in shell.EnterRepl(scope)) ;
 
-[Term]
+[Term(Functor = "employee", Marshalling = TermMarshalling.Named)]
 public readonly record struct Person(string FirstName, string LastName, string Email, string Phone, string Birthday, string Gender);
 
 public sealed class PersonGenerator

@@ -141,7 +141,7 @@ namespace Ergo.Lang
                 next = ReadIdentifier();
                 return true;
             }
-            if (IsOperatorPiece(ch)) {
+            if (IsOperatorPiece(ch, 0)) {
                 next = ReadOperator();
                 return true;
             }
@@ -218,7 +218,7 @@ namespace Ergo.Lang
             bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
             bool IsKeyword(string s) => KeywordSymbols.Contains(s);
             bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);
-            bool IsOperatorPiece(char c) => OperatorSymbols.SelectMany(o => o).Contains(c) || c == '\\';
+            bool IsOperatorPiece(char c, int index) => OperatorSymbols.Select(o => o.ElementAtOrDefault(index)).Where(x => x != default(char)).Contains(c) || c == '\\';
 
 
             void SkipWhitespace()
@@ -355,7 +355,7 @@ namespace Ergo.Lang
                 var set = OperatorSymbols.Distinct().ToList();
                 int i = 0;
                 var p = State;
-                while (!Eof && IsOperatorPiece(Peek())) {
+                while (!Eof && IsOperatorPiece(Peek(), i)) {
                     var ch = Read();
                     for (int o = set.Count - 1; o >= 0; o--) {
                         if (set[o].Length <= i || set[o][i] != ch)

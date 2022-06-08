@@ -26,7 +26,7 @@ namespace Ergo.Solver.BuiltIns
             {
                 if (args[0].TryGetQualification(out var qm, out var qs) && qs is Atom functor_)
                 {
-                    var cplx = (ITerm)functor_.BuildAnonymousTerm(arity);
+                    var cplx = functor_.BuildAnonymousTerm(arity);
                     if (cplx.TryQualify(qm, out var qualified))
                     {
                         yield return new(qualified);

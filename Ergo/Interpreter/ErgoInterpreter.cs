@@ -146,7 +146,8 @@ namespace Ergo.Interpreter
                 head = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
             }
             // if head matches the signature of any data source, 
-            return SolverBuilder.Build(this, ref scope).KnowledgeBase.GetMatches(head);
+            return SolverBuilder.Build(this, ref scope).KnowledgeBase
+                .GetMatches(head);
         }
 
         public virtual bool RunDirective(ref InterpreterScope scope, Directive d)

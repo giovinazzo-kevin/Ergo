@@ -30,24 +30,9 @@ public readonly record struct Person(string FirstName, string LastName, string E
 
 public sealed class PersonGenerator
 {
-    public int ItemsPerBatch { get; set; }
-
-    public PersonGenerator(int itemsPerBatch = 10)
-    {
-        ItemsPerBatch = itemsPerBatch;
-    }
-
     public async IAsyncEnumerable<Person> Generate()
     {
-        if (ItemsPerBatch <= 0)
-            yield break;
-        for (int i = 0; i < ItemsPerBatch; i++)
-        {
-            yield return new Person("Test", "Last", "test@test.com", "1234567890", "2022-02-02", "male");
-        }
-        await foreach (var p in Generate())
-        {
-            yield return p;
-        }
+        yield return new Person("Test", "Last", "test@test.com", "1234567890", "2022-02-02", "male");
+        await foreach (var p in Generate()) { yield return p; }
     }
 }

@@ -38,7 +38,8 @@ namespace Ergo.Shell.Commands
                     var matches = shell.Interpreter.GetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First());
                     if (matches.Any())
                     {
-                        predicates = matches.Select(m => m.Rhs);
+                        predicates = predicates.Where(p => 
+                            matches.Select(m => m.Rhs).Any(m => new Substitution(m.Head, p.Head).TryUnify(out _)));
                         shellScope = shellScope.WithInterpreterScope(interpreterScope);
                         return true;
                     }
@@ -58,9 +59,9 @@ namespace Ergo.Shell.Commands
             }
 
             var explanations = predicates
-                .Select(r => Explain
-                    ? new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(canonical: false), r.Explain(canonical: !Explain) }
-                    : new[] { r.Head.GetSignature().Explain(), r.DeclaringModule.Explain(canonical: false), r.Documentation })
+                .Select(p => Explain
+                    ? new[] { p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Explain(canonical: !Explain) }
+                    : new[] { p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Documentation })
                 .ToArray();
             if (explanations.Length == 0)
             {

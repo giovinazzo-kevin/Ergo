@@ -198,29 +198,24 @@ namespace Ergo.Solver
             // Cyclic literal definitions throw an error, so this replacement loop always terminates
             while (InterpreterScope.TryReplaceLiterals(goal, out goal)) { ct.ThrowIfCancellationRequested(); }
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-            var cut = false;
-            if (goal.Equals(WellKnown.Literals.Cut))
-            {
-                cut = true;
-            }
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
             await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
             {
                 ct.ThrowIfCancellationRequested();
-                goal = resolvedGoal.Result;
-                if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
+                if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
                     LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
                     yield break;
                 }
-                if (goal.Equals(WellKnown.Literals.True))
+                if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
                 {
                     LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", scope.Depth);
-                    if (cut)
+                    yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
+                    if (goal.Equals(WellKnown.Literals.Cut))
                     {
                         Cut = true;
+                        yield break;
                     }
-                    yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
@@ -237,7 +232,10 @@ namespace Ergo.Solver
                     {
                         LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
                         yield return s;
-                        ct.ThrowIfCancellationRequested();
+                    }
+                    if (Cut)
+                    {
+                        yield break;
                     }
                 }
             }
@@ -304,6 +302,7 @@ namespace Ergo.Solver
             var goals = query.Contents;
             var subGoal = goals.First();
             goals = goals.RemoveAt(0);
+            Cut = false;
             // Get first solution for the current subgoal
             await foreach (var s in Solve(scope, subGoal, subs, ct: ct))
             {
@@ -311,22 +310,16 @@ namespace Ergo.Solver
                 await foreach (var ss in Solve(scope, rest, subs, ct: ct))
                 {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                    if (Cut)
-                    {
-                        break;
-                    }
                 }
                 if (Cut)
                 {
-                    Cut = false;
-                    continue;
+                    yield break;
                 }
             }
         }
 
         public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
         {
-            Cut = false;
             return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
         }
     }

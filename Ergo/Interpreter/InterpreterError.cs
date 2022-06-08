@@ -4,6 +4,7 @@
     {
         CouldNotLoadFile
         , ExpectedTermOfTypeAt
+        , ModuleAlreadyImported
         , ModuleNameClash
         , OperatorClash
         , LiteralClashWithBuiltIn

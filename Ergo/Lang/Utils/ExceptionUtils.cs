@@ -55,6 +55,7 @@ namespace Ergo.Lang.Utils
                 , InterpreterError.LiteralCyclicDefinition => String.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args)
                 , InterpreterError.OperatorClash => String.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
                 , InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
+                , InterpreterError.ModuleAlreadyImported => String.Format("Module already imported: {0}", args)
                 , _ => error.ToString()
             };
 

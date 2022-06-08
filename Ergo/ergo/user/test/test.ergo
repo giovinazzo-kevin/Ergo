@@ -2,6 +2,9 @@
 	teaches/2, studies/2
 ]).
 
+max1(X, Y, X) :- X > Y, !.
+max1(_X, Y, Y).
+
 teaches(dr_fred, history).
 teaches(dr_fred, english).
 teaches(dr_fred, drama).

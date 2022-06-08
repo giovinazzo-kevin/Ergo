@@ -3,10 +3,12 @@ using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Solver;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -31,7 +33,7 @@ namespace Ergo.Shell.Commands
             DefaultAccentColor = accentColor;
         }
 
-        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
+        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var requestCancel = new CancellationTokenSource();
             Console.CancelKeyPress += RequestCancel;
@@ -48,7 +50,7 @@ namespace Ergo.Shell.Commands
             var parsed = shell.Parse<Query>(scope, userQuery).Value;
             if (!parsed.HasValue)
             {
-                return;
+                return scope;
             }
             var query = parsed.GetOrDefault();
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
@@ -62,15 +64,15 @@ namespace Ergo.Shell.Commands
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
                 shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
                 shell.No();
-                return;
+                return scope;
             }
             var scope_ = scope;
-            scope.ExceptionHandler.Try(scope, () => {
+            await scope.ExceptionHandler.TryAsync(scope, async () => {
                 if (Interactive)
                 {
                     shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);
                     var any = false;
-                    foreach (var s in solutions)
+                    await foreach (var s in solutions)
                     {
                         if (any)
                         {
@@ -119,12 +121,14 @@ namespace Ergo.Shell.Commands
                         .Select(v => v.Name)
                         .Distinct()
                         .ToArray();
-                    var rows = solutions
+
+                    var rows = (await solutions.CollectAsync())
                         .Select(s => s.Simplify()
                             .Substitutions
                             .Select(r => r.Rhs.Explain())
                             .ToArray())
                         .ToArray();
+
                     if (rows.Length > 0 && rows[0].Length == cols.Length)
                     {
                         shell.WriteTable(cols, rows, accent);
@@ -137,7 +141,7 @@ namespace Ergo.Shell.Commands
                 }
             });
             Console.CancelKeyPress -= RequestCancel;
-
+            return scope;
             void RequestCancel(object _, ConsoleCancelEventArgs args)
             {
                 requestCancel.Cancel();

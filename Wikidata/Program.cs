@@ -48,7 +48,7 @@ var scope = shell.CreateScope();
 //    .WithCurrentModule(module.Name)
 //    .WithRuntime(true));
 shell.Load(ref scope, "wd_tests");
-shell.EnterRepl(ref scope);
+await foreach(var _ in shell.EnterRepl(scope));
 
 public static class SnakExtensions
 {
@@ -75,7 +75,7 @@ public class ClaimPropertyValueBuiltIn : BuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         if (args[0].Is<Claim>(out var claim))
         {
@@ -145,7 +145,7 @@ public class ClaimQualifierBuiltIn : BuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         if (args[0].Is<Claim>(out var claim))
         {
@@ -198,7 +198,7 @@ public class EntityClaimBuiltIn : BuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         if(args[0].Is<Entity>(out var entity))
         {
@@ -270,7 +270,7 @@ public class EntityBuiltIn : BuiltIn
         return entity;
     }
 
-    private IEnumerable<Evaluation> ApplyInternal(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    private async IAsyncEnumerable<Evaluation> ApplyInternal(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         if (args[0].Matches<string>(out var wdString) && wdString.StartsWith('Q') && int.TryParse(wdString[1..], out var wd))
         {
@@ -300,7 +300,7 @@ public class EntityBuiltIn : BuiltIn
             if (!args[1].IsGround)
             {
                 foreach (var (ans, i) in Enumerable.Range(1, int.MaxValue)
-                    .SelectMany(i => ApplyInternal(solver, scope, new[] { new Atom($"Q{i}"), args[1] }))
+                    .SelectMany(i => ApplyInternal(solver, scope, new[] { new Atom($"Q{i}"), args[1] }).CollectAsync().GetAwaiter().GetResult())
                         .Select((ans, i) => (ans, i)))
                 {
                     yield return new Evaluation(Literals.True, ans.Substitutions.Append(new Substitution(args[0], new Atom($"Q{i + 1}"))).ToArray());
@@ -321,10 +321,10 @@ public class EntityBuiltIn : BuiltIn
         }
     }
 
-    public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         var any = false;
-        foreach (var ans in ApplyInternal(solver, scope, args))
+        await foreach (var ans in ApplyInternal(solver, scope, args))
         {
             // Skip answers where the entity doesn't exist
             if (!ans.Substitutions.Any(sub => sub.Rhs.Is<Entity>(out var entity, e => !e.Exists)))
@@ -383,7 +383,7 @@ public class PropertyBuiltIn : BuiltIn
         return entity;
     }
 
-    private IEnumerable<Evaluation> ApplyInternal(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    private async IAsyncEnumerable<Evaluation> ApplyInternal(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         if (args[0].Matches<string>(out var wdString) && wdString.StartsWith('P') && int.TryParse(wdString[1..], out var wd))
         {
@@ -413,7 +413,7 @@ public class PropertyBuiltIn : BuiltIn
             if (!args[1].IsGround)
             {
                 foreach (var (ans, i) in Enumerable.Range(1, int.MaxValue)
-                    .SelectMany(i => ApplyInternal(solver, scope, new[] { new Atom($"P{i}"), args[1] }))
+                    .SelectMany(i => ApplyInternal(solver, scope, new[] { new Atom($"Q{i}"), args[1] }).CollectAsync().GetAwaiter().GetResult())
                         .Select((ans, i) => (ans, i)))
                 {
                     yield return new Evaluation(Literals.True, ans.Substitutions.Append(new Substitution(args[0], new Atom($"P{i + 1}"))).ToArray());
@@ -434,10 +434,10 @@ public class PropertyBuiltIn : BuiltIn
         }
     }
 
-    public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         var any = false;
-        foreach (var ans in ApplyInternal(solver, scope, args))
+        await foreach (var ans in ApplyInternal(solver, scope, args))
         {
             // Skip answers where the entity doesn't exist
             if (!ans.Substitutions.Any(sub => sub.Rhs.Is<Entity>(out var entity, e => !e.Exists)))

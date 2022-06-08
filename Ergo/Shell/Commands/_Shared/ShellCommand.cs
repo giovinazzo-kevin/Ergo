@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -11,7 +12,7 @@ namespace Ergo.Shell.Commands
 
         public readonly int Priority;
 
-        public abstract void Callback(ErgoShell shell, ref ShellScope scope, Match match);
+        public abstract Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match);
 
         public ShellCommand(string[] names, string desc, string regex, bool optionalRegex, int priority)
         {

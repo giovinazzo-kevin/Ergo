@@ -15,9 +15,10 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            if (solver.Solve(new Query(new(ImmutableArray<ITerm>.Empty.Add(arguments.Single()))), Maybe.Some(scope)).Any())
+            var solutions = await solver.Solve(new Query(new(ImmutableArray<ITerm>.Empty.Add(arguments.Single()))), Maybe.Some(scope)).CollectAsync();
+            if (solutions.Any())
             {
                 yield return new(WellKnown.Literals.False);
             }

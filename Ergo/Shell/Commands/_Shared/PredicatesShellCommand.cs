@@ -4,6 +4,7 @@ using Ergo.Lang.Extensions;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -17,7 +18,7 @@ namespace Ergo.Shell.Commands
             Explain = explain;
         }
 
-        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
+        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var term = m.Groups["term"];
             var shellScope = scope;
@@ -30,11 +31,12 @@ namespace Ergo.Shell.Commands
                 if (!parsed.HasValue)
                 {
                     shell.No();
-                    return;
+                    return scope;
                 }
                 if (!scope.ExceptionHandler.TryGet(scope, () =>
                 {
-                    if (shell.Interpreter.TryGetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First(), out var matches))
+                    var matches = shell.Interpreter.GetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First());
+                    if (matches.Any())
                     {
                         predicates = matches.Select(m => m.Rhs);
                         shellScope = shellScope.WithInterpreterScope(interpreterScope);
@@ -45,7 +47,7 @@ namespace Ergo.Shell.Commands
                 {
                     shell.No();
                     scope = shellScope;
-                    return;
+                    return scope;
                 }
                 scope = shellScope;
             }
@@ -63,13 +65,14 @@ namespace Ergo.Shell.Commands
             if (explanations.Length == 0)
             {
                 shell.No();
-                return;
+                return scope;
             }
             var cols = Explain
                 ? new[] { "Predicate", "Module", "Explanation" }
                 : new[] { "Predicate", "Module", "Documentation" }
                 ;
             shell.WriteTable(cols, explanations, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
+            return scope;
         }
     }
 }

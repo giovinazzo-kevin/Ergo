@@ -21,7 +21,7 @@ namespace Ergo.Lang
             if (Type == typeof(char) || Type == typeof(string))
             {
                 IsAtomic = new(() => true);
-                GetFunctor = o => new Atom(o.ToString() ?? String.Empty);
+                GetFunctor = o => new Atom(o?.ToString() ?? String.Empty);
             }
             else if (Type == typeof(bool))
             {
@@ -50,15 +50,15 @@ namespace Ergo.Lang
             }
         }
 
-        protected abstract Type GetMemberType(string name);
-        protected abstract TermAttribute GetMemberAttribute(string name);
-        protected abstract object GetMemberValue(string name, object instance);
-        protected abstract void SetMemberValue(string name, object instance, object value);
-        protected abstract IEnumerable<string> GetMembers();
-        protected abstract IEnumerable<string> GetArguments(Complex value);
-        protected abstract ITerm GetArgument(string name, Complex value);
-        protected abstract ITerm TransformMember(string name, ITerm value);
-        protected abstract Type GetParameterType(string name, ConstructorInfo info);
+        public abstract Type GetMemberType(string name);
+        public abstract TermAttribute GetMemberAttribute(string name);
+        public abstract object GetMemberValue(string name, object instance);
+        public abstract void SetMemberValue(string name, object instance, object value);
+        public abstract IEnumerable<string> GetMembers();
+        public abstract IEnumerable<string> GetArguments(Complex value);
+        public abstract ITerm GetArgument(string name, Complex value);
+        public abstract ITerm TransformMember(string name, ITerm value);
+        public abstract Type GetParameterType(string name, ConstructorInfo info);
 
         public virtual ITerm ToTerm(object o, Maybe<Atom> overrideFunctor = default, Maybe<TermMarshalling> overrideMarshalling = default)
         {

@@ -21,7 +21,7 @@ namespace Ergo.Solver.BuiltIns
             return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => Modules.Stdlib), head, CommaSequence.Empty, dynamic: false);
         }
 
-        public abstract IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);
+        public abstract IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);
 
         public BuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
         {

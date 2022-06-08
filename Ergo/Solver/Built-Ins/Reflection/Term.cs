@@ -14,7 +14,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
             if(termArg is not Variable)

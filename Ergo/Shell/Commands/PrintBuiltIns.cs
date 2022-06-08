@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -16,7 +17,7 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
+        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var match = m.Groups["term"];
             var builtins = new List<BuiltIn>();
@@ -27,7 +28,7 @@ namespace Ergo.Shell.Commands
                 if (!parsed.HasValue)
                 {
                     shell.No();
-                    return;
+                    return scope;
                 }
                 var term = parsed.GetOrDefault();
                 if (solver.BuiltIns.TryGetValue(term.GetSignature(), out var builtin))
@@ -37,7 +38,7 @@ namespace Ergo.Shell.Commands
                 else
                 {
                     shell.No();
-                    return;
+                    return scope;
                 }
             }
             else
@@ -52,10 +53,11 @@ namespace Ergo.Shell.Commands
             if (canonicals.Length == 0)
             {
                 shell.No();
-                return;
+                return scope;
             }
 
             shell.WriteTable(new[] { "Built-In", "Documentation" }, canonicals, ConsoleColor.DarkRed);
+            return scope;
         }
     }
 }

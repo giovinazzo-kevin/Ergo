@@ -17,7 +17,7 @@ namespace Builtins
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
             if (args[0].Matches<int>(out var newValue))
             {

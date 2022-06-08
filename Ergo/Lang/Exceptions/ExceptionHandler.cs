@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Threading.Tasks;
 
 namespace Ergo.Lang.Exceptions
 {
@@ -20,14 +21,37 @@ namespace Ergo.Lang.Exceptions
         {
             Contract.Requires(action is { });
 
-            try {
+            try
+            {
                 action();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Catch?.Invoke(scope, e);
                 return false;
             }
-            finally {
+            finally
+            {
+                Finally?.Invoke();
+            }
+            return true;
+        }
+
+        public async Task<bool> TryAsync(ShellScope scope, [NotNull] Func<Task> action)
+        {
+            Contract.Requires(action is { });
+
+            try
+            {
+                await action();
+            }
+            catch (Exception e)
+            {
+                Catch?.Invoke(scope, e);
+                return false;
+            }
+            finally
+            {
                 Finally?.Invoke();
             }
             return true;
@@ -36,18 +60,39 @@ namespace Ergo.Lang.Exceptions
         public bool TryGet<T>(ShellScope scope, [NotNull] Func<T> func, out T value)
         {
             Contract.Requires(func is { });
-            try {
+            try
+            {
                 value = func();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Catch?.Invoke(scope, e);
                 value = default;
                 return false;
             }
-            finally {
+            finally
+            {
                 Finally?.Invoke();
             }
             return true;
+        }
+
+        public async Task<Maybe<T>> TryGetAsync<T>(ShellScope scope, [NotNull] Func<Task<T>> func)
+        {
+            Contract.Requires(func is { });
+            try
+            {
+                return Maybe.Some(await func());
+            }
+            catch (Exception e)
+            {
+                Catch?.Invoke(scope, e);
+                return Maybe.None<T>();
+            }
+            finally
+            {
+                Finally?.Invoke();
+            }
         }
     }
 

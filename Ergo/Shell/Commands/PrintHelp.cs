@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -11,7 +12,7 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
+        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var cmd = m.Groups["cmd"];
             var dispatchersQuery = shell.Dispatcher.Commands;
@@ -28,10 +29,11 @@ namespace Ergo.Shell.Commands
                 .ToArray();
             if (dispatchers.Length == 0)
             {
-                shell.Dispatcher.Dispatch(shell, ref scope, cmd.Value); // Dispatches UnknownCommand
-                return;
+                var result = await shell.Dispatcher.Dispatch(shell, scope, cmd.Value); // Dispatches UnknownCommand
+                return result.Reduce(some => some, () => scope);
             }
             shell.WriteTable(new[] { "Command", "Priority", "Description" }, dispatchers, ConsoleColor.DarkGreen);
+            return scope;
         }
     }
 }

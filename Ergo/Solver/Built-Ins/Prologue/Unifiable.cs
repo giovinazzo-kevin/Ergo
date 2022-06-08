@@ -14,7 +14,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             if (new Substitution(arguments[0], arguments[1]).TryUnify(out var subs)) {
                 var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Functors.Unification.First(), s.Lhs, s.Rhs).AsOperator(OperatorAffix.Infix));

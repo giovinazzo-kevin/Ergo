@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -12,7 +13,7 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell shell, ref ShellScope scope, Match match)
+        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match)
         {
             var modules = scope.InterpreterScope.Modules;
             var currentModule = scope.InterpreterScope.Modules[scope.InterpreterScope.Module];
@@ -21,6 +22,7 @@ namespace Ergo.Shell.Commands
                 x => x.Imports.Contents.Select(i => modules[(Atom)i]),
                 x => x.Name.Explain()
             );
+            return scope;
         }
     }
 }

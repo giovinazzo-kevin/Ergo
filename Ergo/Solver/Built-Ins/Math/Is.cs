@@ -12,7 +12,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
             var result = new Atom(Evaluate(arguments[1], solver.InterpreterScope));
             if (new Substitution(arguments[0], result).TryUnify(out var subs))

@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -9,9 +10,10 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override void Callback(ErgoShell shell, ref ShellScope scope, Match m)
+        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             shell.Load(ref scope, m.Groups["path"].Value);
+            return scope;
         }
     }
 }

@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Ergo.Lang;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell.Commands
 {
@@ -21,18 +23,18 @@ namespace Ergo.Shell.Commands
             DefaultDispatcher = unknownCommand;
         }
 
-        public bool Dispatch(ErgoShell shell, ref ShellScope scope, string input)
+        public async Task<Maybe<ShellScope>> Dispatch(ErgoShell shell, ShellScope scope, string input)
         {
             foreach (var d in Commands.OrderByDescending(c => c.Priority))
             {
                 if (d.Expression.Match(input) is { Success: true } match)
                 {
-                    d.Callback(shell, ref scope, match);
-                    return true;
+                    scope = await d.Callback(shell, scope, match);
+                    return Maybe.Some(scope);
                 }
             }
             DefaultDispatcher(input);
-            return false;
+            return Maybe<ShellScope>.None;
         }
 
         public bool TryAdd(ShellCommand cmd)

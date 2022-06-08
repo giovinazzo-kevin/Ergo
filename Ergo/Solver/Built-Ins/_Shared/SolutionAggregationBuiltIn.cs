@@ -15,7 +15,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        protected IEnumerable<(ITerm ArgVars, List ListTemplate)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args, out List listVars)
+        protected async IAsyncEnumerable<(ITerm ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
             var (template, goal, instances) = (args[0], args[1], args[2]);
             scope = scope.WithDepth(scope.Depth + 1)
@@ -43,7 +43,7 @@ namespace Ergo.Solver.BuiltIns
             var variable = new Variable("TMP_BAGOF__"); // TODO: something akin to thread.next_free_variable() from TauProlog
             var freeVars = goal.Variables.Where(v => !templateVars.Contains(v))
                 .ToHashSet();
-            listVars = new List(freeVars.Cast<ITerm>());
+            var listVars = new List(freeVars.Cast<ITerm>());
 
             var goalClauses = new CommaSequence(
                 goal,
@@ -52,9 +52,9 @@ namespace Ergo.Solver.BuiltIns
                     new CommaSequence(listVars.Root, template).AsParenthesized(true).Root)
                 .AsOperator(OperatorAffix.Infix)
             );
-            var solutions = solver.Solve(new(goalClauses), Maybe.Some(scope))
+            var solutions = (await solver.Solve(new(goalClauses), Maybe.Some(scope)).CollectAsync())
                 .Select(s => s.Simplify());
-            var sols = solutions
+            foreach(var sol in solutions
                 .Select(sol =>
                 {
                     var arg = (Complex)sol.Links.Value[variable];
@@ -75,8 +75,10 @@ namespace Ergo.Solver.BuiltIns
                     return (argVars, argTmpl);
                 })
                 .ToLookup(sol => sol.argVars, sol => sol.argTmpl)
-                .Select(kv => (kv.Key, new List(kv)));
-            return sols;
+                .Select(kv => (kv.Key, new List(kv), listVars)))
+            {
+                yield return sol;
+            }
         }
     }
 }

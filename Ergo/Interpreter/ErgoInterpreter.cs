@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using Ergo.Solver;
 using System.Collections.Immutable;
 using Ergo.Interpreter.Directives;
@@ -20,7 +19,7 @@ namespace Ergo.Interpreter
         public readonly InterpreterFlags Flags;
         public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
         public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates = new();
-        public readonly Dictionary<Signature, HashSet<IEnumerable<ITerm>>> DataSources = new();
+        public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
         public readonly InterpreterScope StdlibScope;
 
@@ -54,7 +53,7 @@ namespace Ergo.Interpreter
             return signature;
         }
 
-        public void AddDataSource<T>(IEnumerable<T> data, Maybe<Atom> functor, string description = null)
+        public void AddDataSource<T>(DataSource<T> data, Maybe<Atom> functor, string description = null)
             where T : new()
         {
             var signature = GetSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
@@ -62,13 +61,13 @@ namespace Ergo.Interpreter
             {
                 DataSources[signature] = hashSet = new();
             }
-            hashSet.Add(data.Select(obj => TermMarshall.ToTerm(obj)));
+            hashSet.Add(data.Source);
 
-            var head = signature.Functor.BuildAnonymousTerm(signature.Arity.Reduce(x => x, () => throw new NotSupportedException()));
+            var variableNames = new NamedPropertyTypeResolver<T>().GetMembers();
+            var head = new Complex(signature.Functor, variableNames.Select(v => (ITerm)new Variable(v)).ToArray());
             var predicate = new Predicate(description ?? $"Data Source <{typeof(T).Name}>", Modules.CSharp, head, new CommaSequence(WellKnown.Literals.False), dynamic: true);
             TryAddDynamicPredicate(new(signature, predicate, assertz: true));
         }
-        public void AddDataSource<T>(IEnumerable<T> data, string description = null) where T : new() => AddDataSource<T>(data, Maybe<Atom>.None, description);
 
         public void RemoveDataSources<T>(Maybe<Atom> functor)
             where T : new()
@@ -136,7 +135,7 @@ namespace Ergo.Interpreter
             return module;
         }
 
-        public bool TryGetMatches(ref InterpreterScope scope, ITerm head, out IEnumerable<KnowledgeBase.Match> matches)
+        public IEnumerable<KnowledgeBase.Match> GetMatches(ref InterpreterScope scope, ITerm head)
         {
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
@@ -147,7 +146,7 @@ namespace Ergo.Interpreter
                 head = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
             }
             // if head matches the signature of any data source, 
-            return SolverBuilder.Build(this, ref scope).KnowledgeBase.TryGetMatches(head, out matches);
+            return SolverBuilder.Build(this, ref scope).KnowledgeBase.GetMatches(head);
         }
 
         public virtual bool RunDirective(ref InterpreterScope scope, Directive d)

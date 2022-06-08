@@ -33,7 +33,7 @@ namespace Ergo.Solver.BuiltIns
             );
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
             if (CommaSequence.TryUnfold(args[0], out var comma))
             {

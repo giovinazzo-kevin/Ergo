@@ -12,15 +12,15 @@ namespace Ergo.Lang
 {
     public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     {
-        protected readonly ImmutableDictionary<Signature, HashSet<IEnumerable<ITerm>>> DataSources;
+        protected readonly ImmutableDictionary<Signature, HashSet<DataSource>> DataSources;
         protected readonly OrderedDictionary Predicates;
         protected readonly InstantiationContext Context;
 
         public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 
-        public KnowledgeBase(Dictionary<Signature, HashSet<IEnumerable<ITerm>>> dataSources = null)
+        public KnowledgeBase(Dictionary<Signature, HashSet<DataSource>> dataSources = null)
         {
-            DataSources = ImmutableDictionary.CreateRange(dataSources ?? Enumerable.Empty<KeyValuePair<Signature, HashSet<IEnumerable<ITerm>>>>());
+            DataSources = ImmutableDictionary.CreateRange(dataSources ?? Enumerable.Empty<KeyValuePair<Signature, HashSet<DataSource>>>());
             Predicates = new OrderedDictionary();
             Context = new("K");
         }
@@ -56,13 +56,44 @@ namespace Ergo.Lang
             return false;
         }
 
-        public bool TryGetMatches(ITerm goal, out IEnumerable<Match> matches)
+        public async IAsyncEnumerable<Match> GetDataSourceMatches(ITerm goal)
         {
-            var lst = new List<Match>();
-            matches = lst;
+            // Instantiate goal
+            if (!new Substitution(goal.Instantiate(Context), goal).TryUnify(out var subs))
+            {
+                yield break;
+            }
+            var head = goal.Substitute(subs);
+            var signature = head.GetSignature();
+            // Return results from data sources 
+            if (DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
+            {
+                foreach (var source in sources)
+                {
+                    await foreach (var item in source)
+                    {
+                        var predicate = new Predicate(
+                            "data source",
+                            Modules.CSharp,
+                            item.WithFunctor(signature.Functor),
+                            CommaSequence.Empty,
+                            dynamic: true
+                        ).Instantiate(Context);
+                        if (Predicate.TryUnify(head, predicate, out var matchSubs))
+                        {
+                            predicate = Predicate.Substitute(predicate, matchSubs);
+                            yield return new Match(goal, predicate, matchSubs.Concat(subs));
+                        }
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<Match> GetMatches(ITerm goal)
+        {
             // Instantiate goal
             if(!new Substitution(goal.Instantiate(Context), goal).TryUnify(out var subs)) {
-                return false;
+                yield break;
             }
             var head = goal.Substitute(subs);
             var signature = head.GetSignature();
@@ -73,30 +104,22 @@ namespace Ergo.Lang
                     if (Predicate.TryUnify(head, predicate, out var matchSubs))
                     {
                         predicate = Predicate.Substitute(predicate, matchSubs);
-                        lst.Add(new Match(goal, predicate, matchSubs.Concat(subs)));
+                        yield return new Match(goal, predicate, matchSubs.Concat(subs));
                     }
                 }
             }
-            // Return results from data sources 
-            if(DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
+        }
+
+        public async IAsyncEnumerable<Match> GetMatchesAndDataSourceMatches(ITerm goal)
+        {
+            foreach (var match in GetMatches(goal))
             {
-                foreach (var item in sources.SelectMany(i => i))
-                {
-                    var predicate = new Predicate(
-                        "data source",
-                        Modules.CSharp,
-                        item.WithFunctor(signature.Functor),
-                        CommaSequence.Empty,
-                        dynamic: true
-                    ).Instantiate(Context);
-                    if (Predicate.TryUnify(head, predicate, out var matchSubs))
-                    {
-                        predicate = Predicate.Substitute(predicate, matchSubs);
-                        lst.Add(new Match(goal, predicate, matchSubs.Concat(subs)));
-                    }
-                }
+                yield return match;
             }
-            return lst.Any();
+            await foreach(var match in GetDataSourceMatches(goal))
+            {
+                yield return match;
+            }
         }
 
         public void AssertA(Predicate k)

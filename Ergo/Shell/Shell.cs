@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ergo.Shell
 {
@@ -122,25 +123,21 @@ namespace Ergo.Shell
             }
         }
 
-        public virtual void EnterRepl(ref ShellScope scope, Func<string, bool> exit = null)
+        public virtual async IAsyncEnumerable<ShellScope> EnterRepl(ShellScope scope, Func<string, bool> exit = null)
         {
             while(true) {
                 Write($"{scope.InterpreterScope.Module.Explain()}> ");
                 var prompt = Prompt();
                 if (exit != null && exit(prompt)) break;
-                Do(ref scope, prompt);
+                scope = await DoAsync(scope, prompt);
+                yield return scope;
             }
         }
 
-        public bool Do(ref ShellScope scope, string command)
+        public async Task<ShellScope> DoAsync(ShellScope scope, string command)
         {
-            var scope_ = scope;
-            if(scope.ExceptionHandler.TryGet(scope, () => Dispatcher.Dispatch(this, ref scope_, command), out var success) && success)
-            {
-                scope = scope_;
-                return true;
-            }
-            return false;
+            var result = await scope.ExceptionHandler.TryGetAsync(scope, () => Dispatcher.Dispatch(this, scope, command));
+            return result.Reduce(some => some.Reduce(newScope => newScope, () => scope), () => scope);
         }
     }
 }

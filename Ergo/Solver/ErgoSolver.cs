@@ -13,6 +13,9 @@ using Ergo.Lang.Utils;
 using System.Collections.Immutable;
 using System.Collections.Concurrent;
 using Ergo.Shell;
+using System.Runtime.CompilerServices;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
 
 namespace Ergo.Solver
 {
@@ -95,7 +98,7 @@ namespace Ergo.Solver
 
     public partial class ErgoSolver
     {
-        protected readonly AsyncLocal<bool> Cut = new();
+        protected volatile bool Cut = false;
 
         public readonly SolverFlags Flags;
         public readonly KnowledgeBase KnowledgeBase;
@@ -130,7 +133,7 @@ namespace Ergo.Solver
         }
 
 
-        protected IEnumerable<Evaluation> ResolveGoal(ITerm qt, SolverScope scope, CancellationToken ct = default)
+        protected async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm qt, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
         {
             var any = false;
             var sig = qt.GetSignature();
@@ -155,7 +158,7 @@ namespace Ergo.Solver
             {
                 LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
                 ct.ThrowIfCancellationRequested();
-                foreach (var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
+                await foreach(var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
                 {
                     LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
                     ct.ThrowIfCancellationRequested();
@@ -178,7 +181,7 @@ namespace Ergo.Solver
             Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
         }
 
-        protected IEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, CancellationToken ct = default)
+        protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -186,7 +189,7 @@ namespace Ergo.Solver
             // Treat comma-expression complex ITerms as proper expressions
             if (CommaSequence.TryUnfold(goal, out var expr))
             {
-                foreach (var s in Solve(scope, expr, subs, ct: ct))
+                await foreach (var s in Solve(scope, expr, subs, ct: ct))
                 {
                     yield return s;
                 }
@@ -195,14 +198,14 @@ namespace Ergo.Solver
             // Cyclic literal definitions throw an error, so this replacement loop always terminates
             while (InterpreterScope.TryReplaceLiterals(goal, out goal)) { ct.ThrowIfCancellationRequested(); }
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-            // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-            foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
+            var cut = false;
+            if (goal.Equals(WellKnown.Literals.Cut))
             {
-                if (Cut.Value)
-                {
-                    Cut.Value = false;
-                    yield break;
-                }
+                cut = true;
+            }
+            // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
+            await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
+            {
                 ct.ThrowIfCancellationRequested();
                 goal = resolvedGoal.Result;
                 if (goal.Equals(WellKnown.Literals.False) || goal is Variable)
@@ -213,20 +216,24 @@ namespace Ergo.Solver
                 if (goal.Equals(WellKnown.Literals.True))
                 {
                     LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", scope.Depth);
+                    if (cut)
+                    {
+                        Cut = true;
+                    }
                     yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-                var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
+                var (qualifiedGoal, matches) = await QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
                 LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
-                foreach (var m in matches)
+                await foreach (var m in matches)
                 {
                     var innerScope = scope.WithDepth(scope.Depth + 1)
                         .WithModule(m.Rhs.DeclaringModule)
                         .WithCallee(scope.Callee)
                         .WithCaller(m.Rhs);
                     var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                    foreach (var s in solve)
+                    await foreach (var s in solve)
                     {
                         LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
                         yield return s;
@@ -235,9 +242,10 @@ namespace Ergo.Solver
                 }
             }
 
-            (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module module, ITerm goal)
+            async Task<(ITerm Qualified, IAsyncEnumerable<KnowledgeBase.Match> Matches)> QualifyGoal(Module module, ITerm goal)
             {
-                if (KnowledgeBase.TryGetMatches(goal, out var matches))
+                var matches = KnowledgeBase.GetMatchesAndDataSourceMatches(goal);
+                if (await matches.AnyAsync())
                 {
                     return (goal, matches);
                 }
@@ -245,18 +253,24 @@ namespace Ergo.Solver
                 if (!goal.IsQualified)
                 {
                     if (goal.TryQualify(scope.Module, out var qualified)
-                        && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true)
-                        && KnowledgeBase.TryGetMatches(qualified, out matches))
+                        && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true))
                     {
-                        return (qualified, matches);
+                        matches = KnowledgeBase.GetMatchesAndDataSourceMatches(qualified);
+                        if(await matches.AnyAsync())
+                        {
+                            return (qualified, matches);
+                        }
                     }
                     if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
                     {
                         if (goal.TryQualify(clause.DeclaringModule, out qualified)
-                            && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true)
-                            && KnowledgeBase.TryGetMatches(qualified, out matches))
+                            && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
                         {
-                            return (qualified, matches);
+                            matches = KnowledgeBase.GetMatchesAndDataSourceMatches(qualified);
+                            if (await matches.AnyAsync())
+                            {
+                                return (qualified, matches);
+                            }
                         }
                     }
                 }
@@ -269,11 +283,17 @@ namespace Ergo.Solver
                         throw new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain());
                     }
                 }
-                return (goal, Enumerable.Empty<KnowledgeBase.Match>());
+                return (goal, Empty());
+            }
+
+            async IAsyncEnumerable<KnowledgeBase.Match> Empty()
+            {
+                yield break;
             }
         }
 
-        protected IEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null, CancellationToken ct = default)
+        // TODO: Figure out cuts once and for all
+        protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
         {
             subs ??= new List<Substitution>();
             if (query.IsEmpty)
@@ -285,24 +305,28 @@ namespace Ergo.Solver
             var subGoal = goals.First();
             goals = goals.RemoveAt(0);
             // Get first solution for the current subgoal
-            foreach (var s in Solve(scope, subGoal, subs, ct: ct))
+            await foreach (var s in Solve(scope, subGoal, subs, ct: ct))
             {
                 var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
-                foreach (var ss in Solve(scope, rest, subs, ct: ct))
+                await foreach (var ss in Solve(scope, rest, subs, ct: ct))
                 {
                     yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                    if (Cut)
+                    {
+                        break;
+                    }
                 }
-                if (subGoal.Equals(WellKnown.Literals.Cut))
+                if (Cut)
                 {
-                    Cut.Value = true;
-                    yield break;
+                    Cut = false;
+                    continue;
                 }
             }
         }
 
-        public IEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
+        public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
         {
-            Cut.Value = false;
+            Cut = false;
             return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
         }
     }

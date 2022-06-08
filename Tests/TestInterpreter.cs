@@ -70,7 +70,7 @@ namespace Tests
         {
             var (interpreter, scope) = MakeInterpreter();
             var predicates = new Parsed<Query>(query, _ => throw new Exception("Parse fail."), scope.Operators.Value);
-            var ans = SolverBuilder.Build(interpreter, ref scope).Solve(predicates.Value.GetOrDefault());
+            var ans = SolverBuilder.Build(interpreter, ref scope).Solve(predicates.Value.GetOrDefault()).CollectAsync().GetAwaiter().GetResult();
             Assert.IsNotNull(ans);
             Assert.AreEqual(expected, String.Join("; ", ans.Select(e => String.Join(", ", e.Simplify().Substitutions.Select(s => s.Explain())))));
         }

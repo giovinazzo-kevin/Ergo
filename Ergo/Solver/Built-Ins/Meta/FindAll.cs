@@ -14,7 +14,7 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
             scope = scope.WithDepth(scope.Depth + 1)
                 .WithCaller(scope.Callee)
@@ -23,7 +23,7 @@ namespace Ergo.Solver.BuiltIns
             {
                 comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
             }
-            var solutions = solver.Solve(new(comma), Maybe.Some(scope))
+            var solutions = (await solver.Solve(new(comma), Maybe.Some(scope)).CollectAsync())
                 .Select(s => s.Simplify())
                 .ToArray();
             if (solutions.Length == 0)

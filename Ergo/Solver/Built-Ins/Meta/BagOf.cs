@@ -4,6 +4,7 @@ using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Ergo.Solver.BuiltIns
 {
@@ -15,12 +16,12 @@ namespace Ergo.Solver.BuiltIns
         {
         }
 
-        public override IEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
             var any = false;
-            foreach (var (ArgVars, ListTemplate) in AggregateSolutions(solver, scope, args, out var listVars))
+            await foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(solver, scope, args))
             {
-                if(!new Substitution(listVars.Root, ArgVars).TryUnify(out var listSubs)
+                if(!new Substitution(ListVars.Root, ArgVars).TryUnify(out var listSubs)
                 || !new Substitution(args[2], ListTemplate.Root).TryUnify(out var instSubs))
                 {
                     yield return new(WellKnown.Literals.False);

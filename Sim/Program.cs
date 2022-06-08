@@ -26,13 +26,13 @@ scope = scope.WithInterpreterScope(scope.InterpreterScope
         .WithDynamicPredicate(new Complex(new Atom("draw"), new Variable("_")).GetSignature())
         .WithDynamicPredicate(new Atom("init").GetSignature())));
 
-var uiThread = new Thread(() =>
+var uiThread = new Thread(async () =>
 {
     var uiScope = scope
         .WithExceptionThrowing(true);
     var solver = shell.CreateSolver(ref uiScope);
     var query = new Query(new(new Atom("init")));
-    foreach (var sol in solver.Solve(query)) ;
+    await foreach (var sol in solver.Solve(query)) ;
     Raylib.InitWindow(canvas.Value.Width, canvas.Value.Height, "Hello World");
     Raylib.SetTargetFPS(fps.Value);
     while (!Raylib.WindowShouldClose())
@@ -40,7 +40,7 @@ var uiThread = new Thread(() =>
         Raylib.BeginDrawing();
         Raylib.ClearBackground(Color.WHITE);
         query = new(new(new Complex(new("draw"), new Complex(new("time"), new Atom(Raylib.GetTime())))));
-        foreach(var sol in solver.Solve(query))
+        await foreach(var sol in solver.Solve(query))
         {
             foreach (var call in Render.Calls)
             {
@@ -54,7 +54,7 @@ var uiThread = new Thread(() =>
 });
 
 uiThread.Start();
-shell.EnterRepl(ref scope, str => Raylib.WindowShouldClose() || str.Trim().Equals("exit"));
+await foreach(var _ in shell.EnterRepl(scope, str => Raylib.WindowShouldClose() || str.Trim().Equals("exit")));
 uiThread.Join();
 
 public static class Render

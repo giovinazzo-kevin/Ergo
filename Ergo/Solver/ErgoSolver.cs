@@ -193,6 +193,7 @@ namespace Ergo.Solver
                 {
                     yield return s;
                 }
+                Cut = false;
                 yield break;
             }
             // Cyclic literal definitions throw an error, so this replacement loop always terminates
@@ -235,6 +236,7 @@ namespace Ergo.Solver
                     }
                     if (Cut)
                     {
+                        Cut = false;
                         yield break;
                     }
                 }

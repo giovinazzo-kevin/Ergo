@@ -24,6 +24,7 @@ namespace Ergo.Solver.BuiltIns
             if (!format.Matches<string>(out var formatStr))
             {
                 solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain()));
+                yield return new(WellKnown.Literals.False);
                 yield break;
             }
             if (!List.TryUnfold(args, out var items))
@@ -35,6 +36,7 @@ namespace Ergo.Solver.BuiltIns
                 if(result.IsGround)
                 {
                     solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain()));
+                    yield return new(WellKnown.Literals.False);
                     yield break;
                 }
                 else

@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Solver;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,7 +9,9 @@ using System.Threading.Tasks;
 namespace Ergo.Interpreter
 {
     public sealed class DataSource<T> : IAsyncEnumerable<ITerm>
+        where T : new()
     {
+        public readonly Atom Functor;
         public readonly DataSource Source;
         public event Action<DataSource<T>, T, ITerm> ItemYielded;
 
@@ -39,13 +42,15 @@ namespace Ergo.Interpreter
             return ((IAsyncEnumerable<ITerm>)Source).GetAsyncEnumerator(cancellationToken);
         }
 
-        public DataSource(Func<IEnumerable<T>> source)
+            public DataSource(Func<IEnumerable<T>> source, Maybe<Atom> functor = default)
         {
+            Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
             Source = new(() => FromEnumerable(source));
         }
 
-        public DataSource(Func<IAsyncEnumerable<T>> source)
+        public DataSource(Func<IAsyncEnumerable<T>> source, Maybe<Atom> functor = default)
         {
+            Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
             Source = new(() => FromAsyncEnumerable(source));
         }
     }

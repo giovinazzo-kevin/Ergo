@@ -30,13 +30,13 @@ namespace Ergo.Interpreter
             RegenerateBuffer();
         }
 
-        public void Connect(ErgoSolver solver)
+        internal void Connect(ErgoSolver solver)
         {
             solver.DataPushed += OnDataPushed;
             _solvers.Add(solver);
         }
 
-        public void Disconnect(ErgoSolver solver)
+        internal void Disconnect(ErgoSolver solver)
         {
             solver.DataPushed -= OnDataPushed;
             _solvers.Remove(solver);

@@ -45,11 +45,13 @@ namespace Ergo.Solver.BuiltIns
             if (functorArg is Variable)
             {
                 solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, functorArg.Explain()));
+                yield return new(WellKnown.Literals.False);
                 yield break;
             }
             if (functorArg is not Atom functor)
             {
                 solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Atom, functorArg.Explain()));
+                yield return new(WellKnown.Literals.False);
                 yield break;
             }
             if (!List.TryUnfold(args, out var argsList) || argsList.Contents.Length == 0)
@@ -57,6 +59,7 @@ namespace Ergo.Solver.BuiltIns
                 if(args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
                 {
                     solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, args.Explain()));
+                    yield return new(WellKnown.Literals.False);
                     yield break;
                 }
                 if (!new Substitution(termArg, functor).TryUnify(out var subs)

@@ -9,7 +9,10 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 
-using var sink = new DataSink<Person>();
+using var consoleSink = new DataSink<Person>();
+using var feedbackSink = new DataSink<Person>();
+var personGenSource = new DataSource<Person>(() => new PersonGenerator().Generate(), Maybe.Some(new Atom("person_generator")));
+var feedbackSource = new DataSource<Person>(() => feedbackSink.Pull(), Maybe.Some(new Atom("person")));
 var shell = new ErgoShell(interpreter =>
 {
     // interpreter.TryAddDirective lets you extend the interpreter
@@ -18,23 +21,26 @@ var shell = new ErgoShell(interpreter =>
 }, solver =>
 {
     // solver.TryAddBuiltIn lets you extend the solver
-    // solver.BindDataSource lets you pull objects from a C# IEnumerable/IAsyncEnumerable to Ergo
-    solver.BindDataSource(new DataSource<Person>(() => new PersonGenerator().Generate()));
     // solver.BindDataSink lets you push terms from Ergo to a C# IAsyncEnumerable/Event
-    solver.BindDataSink(sink);
+    solver.BindDataSink(consoleSink);
+    solver.BindDataSink(feedbackSink);
+    // solver.BindDataSource lets you pull objects from a C# IEnumerable/IAsyncEnumerable to Ergo
+    solver.BindDataSource(personGenSource);
+    // You can also use a sink as a data source in order to share messages between application and language domains
+    solver.BindDataSource(feedbackSource);
 });
 // shell.TryAddCommand lets you extend the shell
 
 var scope = shell.CreateScope();
-await foreach (var newScope in shell.Repl(scope))
+await foreach (var _ in shell.Repl(scope))
 {
-    await foreach(var person in sink.Pull())
+    await foreach(var person in consoleSink.Pull())
     {
         Console.WriteLine($"\r\n\tReceived:{person}");
     }
 }
 
-[Term(Functor = "employee", Marshalling = TermMarshalling.Positional)]
+[Term(Functor = "employee", Marshalling = TermMarshalling.Named)]
 public readonly record struct Person(string FirstName, string LastName, string Email, string Phone, string Birthday, string Gender);
 
 public sealed class PersonGenerator

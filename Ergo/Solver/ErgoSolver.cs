@@ -57,10 +57,10 @@ namespace Ergo.Solver
             return signature;
         }
 
-        public void BindDataSource<T>(DataSource<T> data, Maybe<Atom> functor = default)
+        public void BindDataSource<T>(DataSource<T> data)
             where T : new()
         {
-            var signature = GetDataSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
+            var signature = GetDataSignature<T>(Maybe.Some(data.Functor)).WithModule(Maybe.Some(Modules.CSharp));
             if (!DataSources.TryGetValue(signature, out var hashSet))
             {
                 DataSources[signature] = hashSet = new();
@@ -117,15 +117,14 @@ namespace Ergo.Solver
                     var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOrThrow());
                     if(!new Substitution(head, anon).TryUnify(out var subs))
                     {
-                        throw new InvalidOperationException();
+                        continue;
                     }
-                    head = anon.Substitute(subs);
-                    await foreach(var item in GetDataSourceMatches(head))
+                    await foreach(var item in GetDataSourceMatches(anon.Substitute(subs)))
                     {
                         yield return item;
                     }
-                    yield break;
                 }
+                yield break;
             }
             var signature = head.GetSignature();
             // Return results from data sources 
@@ -146,6 +145,11 @@ namespace Ergo.Solver
                         {
                             predicate = Predicate.Substitute(predicate, matchSubs);
                             yield return new KnowledgeBase.Match(head, predicate, matchSubs);
+                        }
+                        else
+                        {
+                            source.Recycle(item);
+                            break;
                         }
                     }
                 }
@@ -300,6 +304,7 @@ namespace Ergo.Solver
                     if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
                         Throw(new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain()));
+                        return (goal, Enumerable.Empty<KnowledgeBase.Match>());
                     }
                 }
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());

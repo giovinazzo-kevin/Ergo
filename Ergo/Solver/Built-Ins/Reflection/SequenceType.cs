@@ -20,6 +20,7 @@ namespace Ergo.Solver.BuiltIns
             if (seq is Variable)
             {
                 solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, seq.Explain()));
+                yield return new(WellKnown.Literals.False);
                 yield break;
             }
             if (List.TryUnfold(seq, out _))

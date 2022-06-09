@@ -16,6 +16,12 @@ namespace Ergo.Solver.BuiltIns
 
         public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
         {
+            if(!args[0].IsGround)
+            {
+                solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, args[0].Explain(true)));
+                yield return new(WellKnown.Literals.False);
+                yield break;
+            }
             solver.PushData(args[0]);
             yield return new(WellKnown.Literals.True);
         }

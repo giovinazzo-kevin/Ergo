@@ -9,7 +9,7 @@ ignore(Goal) :- Goal, !.
 ignore(_).
 
 once(Goal) :- (call(Goal) -> true ; false).
-repeat(Times, Goal) :- range(0<=_<Times), once(Goal).
+repeat(Times, Goal) :- range(0<=X<Times), once(Goal).
 forever(Goal) :- once(Goal) ; forever(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).

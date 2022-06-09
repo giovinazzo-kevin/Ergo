@@ -22,6 +22,7 @@ namespace Ergo.Solver.BuiltIns
                 if (!arguments[0].Matches<int>(out var result))
                 {
                     solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Number, arguments[0].Explain()));
+                    yield return new(WellKnown.Literals.False);
                     yield break;
                 }
                 if (result.Equals(cmp))

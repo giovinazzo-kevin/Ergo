@@ -22,6 +22,7 @@ namespace Ergo.Solver.BuiltIns
                 if(!List.TryUnfold(listArg, out var list))
                 {
                     solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, listArg.Explain()));
+                yield return new(WellKnown.Literals.False);
                     yield break;
                 }
                 var comma = new CommaSequence(list.Contents);
@@ -38,6 +39,7 @@ namespace Ergo.Solver.BuiltIns
                 if (!CommaSequence.TryUnfold(commaArg, out var comma))
                 {
                     solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaSequence, commaArg.Explain()));
+                yield return new(WellKnown.Literals.False);
                     yield break;
                 }
                 var list = new List(comma.Contents);
@@ -50,6 +52,7 @@ namespace Ergo.Solver.BuiltIns
                 yield break;
             }
             solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, commaArg.Explain()));
+            yield return new(WellKnown.Literals.False);
         }
     }
 }

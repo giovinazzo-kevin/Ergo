@@ -15,14 +15,15 @@ namespace Ergo.Shell.Commands
 
         public abstract IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match);
 
-        public ShellCommand(string[] names, string desc, string regex, bool optionalRegex, int priority)
+        public ShellCommand(string[] names, string desc, string regex, bool optionalRegex, int priority, bool caseInsensitive = false)
         {
             Names = names;
             Description = desc;
             Priority = priority;
             if (names.Length > 0)
             {
-                Expression = new Regex(@$"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n)))}){(optionalRegex ? "\\s*" : "\\s+")}{regex}\s*$");
+                Expression = new Regex(@$"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n)))}){(optionalRegex ? "\\s*" : "\\s+")}{regex}\s*$",
+                    (caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.Compiled) | RegexOptions.Compiled);
 
                 if (optionalRegex)
                 {

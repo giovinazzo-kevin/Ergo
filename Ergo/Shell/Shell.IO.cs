@@ -100,7 +100,7 @@ namespace Ergo.Shell
                             return (ConsoleColor.DarkGray, ConsoleColor.White);
                     }
             }
-            return (ConsoleColor.Black, ConsoleColor.White);
+            return (Console.ForegroundColor, Console.BackgroundColor);
         }
 
         protected virtual void WithColors(Action action, (ConsoleColor Foreground, ConsoleColor Background) colors)
@@ -158,7 +158,13 @@ namespace Ergo.Shell
             if (nl) WriteLine();
         }
 
-        public virtual void WriteTree<T, K>(T value, Func<T, K> getKey, Func<T, IEnumerable<T>> getChildren, Func<T, string> toString, Func<T, bool> shouldPrintCyclicTerm)
+        public virtual void WriteTree<T, K>(
+            T value, 
+            Func<T, K> getKey, 
+            Func<T, IEnumerable<T>> getChildren, 
+            Func<T, string> toString, 
+            Func<T, bool> shouldPrintCyclicTerm,
+            ConsoleColor? overrideFg = null)
         {
             var seen = new HashSet<K>();
             var tree = BuildTree(value);
@@ -204,7 +210,7 @@ namespace Ergo.Shell
                 }
                 else
                 {
-                    Write(toString(node.Value), overrideFg: ConsoleColor.Black);
+                    Write(toString(node.Value), overrideFg: overrideFg ?? ConsoleColor.Black);
                 }
                 WriteLine();
                 seen.Add(key);

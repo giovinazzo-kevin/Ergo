@@ -27,7 +27,7 @@ namespace Ergo.Shell.Commands
         }
 
         protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor) 
-            : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority)
+            : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority, caseInsensitive: true)
         {
             Interactive = interactive;
             DefaultAccentColor = accentColor;
@@ -62,7 +62,6 @@ namespace Ergo.Shell.Commands
             var solutions = solver.Solve(query, ct: requestCancel.Token); // Solution graph is walked lazily
             if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
             {
-                // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
                 shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
                 shell.No();
                 yield return scope;

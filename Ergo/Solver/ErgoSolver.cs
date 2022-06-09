@@ -49,7 +49,7 @@ namespace Ergo.Solver
             ShellScope.ExceptionHandler.Throw(ShellScope, e);
         }
         
-        protected Signature GetDataSignature<T>(Maybe<Atom> functor = default)
+        public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
             where T : new()
         {
             var signature = TermMarshall.ToTerm(new T()).GetSignature();
@@ -57,7 +57,7 @@ namespace Ergo.Solver
             return signature;
         }
 
-        public void AddDataSource<T>(DataSource<T> data, Maybe<Atom> functor = default)
+        public void BindDataSource<T>(DataSource<T> data, Maybe<Atom> functor = default)
             where T : new()
         {
             var signature = GetDataSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
@@ -68,16 +68,11 @@ namespace Ergo.Solver
             hashSet.Add(data.Source);
         }
 
-        public DataSink<T> AddDataSink<T>(Maybe<Atom> functor = default, bool autoDisposeWithSolver = true)
+        public void BindDataSink<T>(DataSink<T> sink)
             where T : new()
         {
-            var name = GetDataSignature<T>(functor).Functor;
-            var sink = new DataSink<T>(this, name);
-            if(autoDisposeWithSolver)
-            {
-                Disposing += _ => sink.Dispose();
-            }
-            return sink;
+            sink.Connect(this);
+            Disposing += _ => sink.Disconnect(this);
         }
 
         public bool RemoveDataSources<T>(Atom functor)

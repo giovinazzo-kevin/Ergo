@@ -14,22 +14,32 @@ namespace Ergo.Interpreter
         where T : new()
     {
         private bool _disposed;
+        private readonly List<ErgoSolver> _solvers = new();
 
         private Channel<ITerm> Buffer;
         private Action<ITerm> DataPushedHandler;
 
         public event Action<ITerm> DataPushed;
 
-        public readonly ErgoSolver Solver;
         public readonly Atom Functor;
 
         
-        public DataSink(ErgoSolver solver, Atom functor)
+        public DataSink(Maybe<Atom> functor = default)
         {
-            Solver = solver;
-            Functor = functor;
-            solver.DataPushed += OnDataPushed;
+            Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
             RegenerateBuffer();
+        }
+
+        public void Connect(ErgoSolver solver)
+        {
+            solver.DataPushed += OnDataPushed;
+            _solvers.Add(solver);
+        }
+
+        public void Disconnect(ErgoSolver solver)
+        {
+            solver.DataPushed -= OnDataPushed;
+            _solvers.Remove(solver);
         }
 
         private void OnDataPushed(ErgoSolver s, ITerm t)
@@ -76,7 +86,10 @@ namespace Ergo.Interpreter
                 DataPushed -= DataPushedHandler;
                 DataPushedHandler = null;
             }
-            Solver.DataPushed -= OnDataPushed;
+            foreach (var solver in _solvers)
+            {
+                solver.DataPushed -= OnDataPushed;
+            }
             _disposed = true;
         }
     }

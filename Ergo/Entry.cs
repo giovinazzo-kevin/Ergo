@@ -9,7 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 
-var sink = default(DataSink<Person>);
+using var sink = new DataSink<Person>();
 var shell = new ErgoShell(interpreter =>
 {
     // interpreter.TryAddDirective lets you extend the interpreter
@@ -18,17 +18,16 @@ var shell = new ErgoShell(interpreter =>
 }, solver =>
 {
     // solver.TryAddBuiltIn lets you extend the solver
-    // solver.AddDataSource lets you pull objects from a C# IEnumerable/IAsyncEnumerable to Ergo
-    solver.AddDataSource(new DataSource<Person>(() => new PersonGenerator().Generate()));
-    // solver.AddDataSink lets you push terms from Ergo to a C# IAsyncEnumerable/Event
-    sink = solver.AddDataSink<Person>();
+    // solver.BindDataSource lets you pull objects from a C# IEnumerable/IAsyncEnumerable to Ergo
+    solver.BindDataSource(new DataSource<Person>(() => new PersonGenerator().Generate()));
+    // solver.BindDataSink lets you push terms from Ergo to a C# IAsyncEnumerable/Event
+    solver.BindDataSink(sink);
 });
 // shell.TryAddCommand lets you extend the shell
 
 var scope = shell.CreateScope();
 await foreach (var newScope in shell.Repl(scope))
 {
-    if (sink is null) continue;
     await foreach(var person in sink.Pull())
     {
         Console.WriteLine($"\r\n\tReceived:{person}");

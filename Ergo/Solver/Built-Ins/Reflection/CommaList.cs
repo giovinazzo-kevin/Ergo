@@ -21,7 +21,8 @@ namespace Ergo.Solver.BuiltIns
             {
                 if(!List.TryUnfold(listArg, out var list))
                 {
-                    throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, listArg.Explain());
+                    solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, listArg.Explain()));
+                    yield break;
                 }
                 var comma = new CommaSequence(list.Contents);
                 if(!new Substitution(commaArg, comma.Root).TryUnify(out var subs))
@@ -36,7 +37,8 @@ namespace Ergo.Solver.BuiltIns
             {
                 if (!CommaSequence.TryUnfold(commaArg, out var comma))
                 {
-                    throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaSequence, commaArg.Explain());
+                    solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaSequence, commaArg.Explain()));
+                    yield break;
                 }
                 var list = new List(comma.Contents);
                 if (!new Substitution(listArg, list.Root).TryUnify(out var subs))
@@ -47,7 +49,7 @@ namespace Ergo.Solver.BuiltIns
                 yield return new(WellKnown.Literals.True, subs.ToArray());
                 yield break;
             }
-            throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, commaArg.Explain());
+            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, commaArg.Explain()));
         }
     }
 }

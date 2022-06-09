@@ -21,7 +21,7 @@ namespace Ergo.Shell
         public readonly ErgoInterpreter Interpreter;
         public readonly CommandDispatcher Dispatcher;
         public readonly Func<LogLine, string> LineFormatter;
-        protected readonly ExceptionHandler DefaultExceptionHandler;
+        public readonly ExceptionHandler DefaultExceptionHandler;
         public readonly Action<ErgoSolver> ConfigureSolver;
 
         public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler, false, false);
@@ -123,7 +123,7 @@ namespace Ergo.Shell
             }
         }
 
-        public virtual async IAsyncEnumerable<ShellScope> EnterRepl(ShellScope scope, Func<string, bool> exit = null)
+        public virtual async IAsyncEnumerable<ShellScope> Repl(ShellScope scope, Func<string, bool> exit = null)
         {
             while(true) {
                 Write($"{scope.InterpreterScope.Module.Explain()}> ");

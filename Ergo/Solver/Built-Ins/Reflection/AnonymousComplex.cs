@@ -20,7 +20,8 @@ namespace Ergo.Solver.BuiltIns
         {
             if (!args[1].Matches<int>(out var arity))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Number, args[1].Explain());
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Number, args[1].Explain()));
+                yield break;
             }
             if (args[0] is not Atom functor)
             {
@@ -33,7 +34,8 @@ namespace Ergo.Solver.BuiltIns
                         yield break;
                     }
                 }
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Functor, args[0].Explain());
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Functor, args[0].Explain()));
+                yield break;
             }
             yield return new(functor.BuildAnonymousTerm(arity));
         }

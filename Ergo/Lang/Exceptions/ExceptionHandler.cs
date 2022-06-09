@@ -1,11 +1,13 @@
 ﻿using Ergo.Shell;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Threading.Tasks;
 
 namespace Ergo.Lang.Exceptions
 {
+
     public readonly struct ExceptionHandler
     {
         public readonly Action<ShellScope, Exception> Catch;
@@ -16,6 +18,8 @@ namespace Ergo.Lang.Exceptions
             Catch = @catch;
             Finally = @finally;
         }
+
+        public void Throw(ShellScope scope, Exception e) => Try(scope, () => throw e);
 
         public bool Try(ShellScope scope, [NotNull] Action action)
         {

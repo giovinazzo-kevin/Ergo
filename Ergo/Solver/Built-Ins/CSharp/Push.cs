@@ -4,14 +4,13 @@ using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
 using Ergo.Lang.Extensions;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class Yield : BuiltIn
+    public sealed class Push : BuiltIn
     {
-        public Yield()
-            : base("", new("yield"), Maybe<int>.Some(1), Modules.CSharp)
+        public Push()
+            : base("", new("push"), Maybe<int>.Some(1), Modules.CSharp)
         {
         }
 

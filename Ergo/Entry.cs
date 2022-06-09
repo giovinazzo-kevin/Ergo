@@ -17,18 +17,18 @@ var shell = new ErgoShell(interpreter =>
 
 }, solver =>
 {
-    // solver.TryAddBuiltIn lets you write built-in predicates in C#
-    // solver.AddDataSource lets you push objects from a C# IEnumerable/IAsyncEnumerable to Ergo
+    // solver.TryAddBuiltIn lets you extend the solver
+    // solver.AddDataSource lets you pull objects from a C# IEnumerable/IAsyncEnumerable to Ergo
     solver.AddDataSource(new DataSource<Person>(() => new PersonGenerator().Generate()));
-    // solver.AddDataSink lets you pull objects from Ergo to a C# IAsyncEnumerable/Event
+    // solver.AddDataSink lets you push terms from Ergo to a C# IAsyncEnumerable/Event
     sink = solver.AddDataSink<Person>();
 });
-// shell.TryAddCommand lets you extend the command shell
+// shell.TryAddCommand lets you extend the shell
 
 var scope = shell.CreateScope();
-await foreach (var newScope in shell.EnterRepl(scope))
+await foreach (var newScope in shell.Repl(scope))
 {
-    scope = newScope;
+    if (sink is null) continue;
     await foreach(var person in sink.Pull())
     {
         Console.WriteLine($"\r\n\tReceived:{person}");

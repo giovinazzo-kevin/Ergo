@@ -8,6 +8,7 @@ using Ergo.Interpreter;
 using System.Collections.Concurrent;
 using Ergo.Shell;
 using System.Reactive.Linq;
+using Ergo.Lang.Exceptions;
 
 namespace Ergo.Solver
 {
@@ -15,15 +16,15 @@ namespace Ergo.Solver
     {
         private static readonly ConcurrentDictionary<InterpreterScope, AsyncLocal<KnowledgeBase>> _scopeCache = new();
 
-        public static ErgoSolver Build(ErgoInterpreter i, ref ShellScope scope)
+        public static ErgoSolver Build(ErgoInterpreter i, ref ShellScope scope, SolverFlags flags = SolverFlags.Default)
         {
             var interpreterScope = scope.InterpreterScope;
-            var solver = Build(i, ref interpreterScope);
+            var solver = Build(i, ref interpreterScope, flags, scope);
             scope = scope.WithInterpreterScope(interpreterScope);
             return solver;
         }
 
-        public static ErgoSolver Build(ErgoInterpreter i, ref InterpreterScope scope)
+        public static ErgoSolver Build( ErgoInterpreter i, ref InterpreterScope scope, SolverFlags flags = SolverFlags.Default, ShellScope shellScope = default)
         {
             if (!_scopeCache.TryGetValue(scope, out var kb) || kb.Value == null)
             {
@@ -39,7 +40,7 @@ namespace Ergo.Solver
                     kb = _scopeCache[scope];
                 }
             }
-            return new ErgoSolver(i, scope, kb.Value);
+            return new ErgoSolver(i, scope, kb.Value, flags, shellScope);
             HashSet<Atom> LoadModule(ref InterpreterScope scope, KnowledgeBase kb, Module module, HashSet<Atom> added = null)
             {
                 added ??= new();

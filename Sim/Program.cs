@@ -54,7 +54,7 @@ var uiThread = new Thread(async () =>
 });
 
 uiThread.Start();
-await foreach(var _ in shell.EnterRepl(scope, str => Raylib.WindowShouldClose() || str.Trim().Equals("exit")));
+await foreach(var _ in shell.Repl(scope, str => Raylib.WindowShouldClose() || str.Trim().Equals("exit")));
 uiThread.Join();
 
 public static class Render

@@ -19,7 +19,8 @@ namespace Ergo.Solver.BuiltIns
             var (type, seq) = (arguments[0], arguments[1]);
             if (seq is Variable)
             {
-                throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, seq.Explain());
+                solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, seq.Explain()));
+                yield break;
             }
             if (List.TryUnfold(seq, out _))
             {

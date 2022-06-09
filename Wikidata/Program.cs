@@ -48,7 +48,7 @@ var scope = shell.CreateScope();
 //    .WithCurrentModule(module.Name)
 //    .WithRuntime(true));
 shell.Load(ref scope, "wd_tests");
-await foreach(var _ in shell.EnterRepl(scope));
+await foreach(var _ in shell.Repl(scope));
 
 public static class SnakExtensions
 {

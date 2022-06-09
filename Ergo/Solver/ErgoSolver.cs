@@ -14,6 +14,7 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Ergo.Shell;
 
 namespace Ergo.Solver
 {
@@ -22,6 +23,7 @@ namespace Ergo.Solver
         protected volatile bool Cut = false;
         public readonly SolverFlags Flags;
         public readonly KnowledgeBase KnowledgeBase;
+        public readonly ShellScope ShellScope;
         public readonly InterpreterScope InterpreterScope;
         public readonly Dictionary<Signature, BuiltIn> BuiltIns;
         public readonly ErgoInterpreter Interpreter;
@@ -31,17 +33,23 @@ namespace Ergo.Solver
         public event Action<ErgoSolver, ITerm> DataPushed;
         public event Action<ErgoSolver> Disposing;
 
-        public ErgoSolver(ErgoInterpreter i, InterpreterScope scope, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
+        public ErgoSolver(ErgoInterpreter i, InterpreterScope interpreterScope, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, ShellScope shellScope = default)
         {
             Interpreter = i;
             Flags = flags;
             KnowledgeBase = kb;
-            InterpreterScope = scope;
+            InterpreterScope = interpreterScope;
+            ShellScope = shellScope;
             BuiltIns = new();
             AddBuiltInsByReflection();
         }
+
+        public void Throw(Exception e)
+        {
+            ShellScope.ExceptionHandler.Throw(ShellScope, e);
+        }
         
-        protected Signature GetSignature<T>(Maybe<Atom> functor = default)
+        protected Signature GetDataSignature<T>(Maybe<Atom> functor = default)
             where T : new()
         {
             var signature = TermMarshall.ToTerm(new T()).GetSignature();
@@ -49,31 +57,21 @@ namespace Ergo.Solver
             return signature;
         }
 
-        protected DynamicPredicate GetDataSourcePredicate<T>(Signature signature)
-        {
-            var variableNames = new NamedPropertyTypeResolver<T>().GetMembers();
-            var head = new Complex(signature.Functor, variableNames.Select(v => (ITerm)new Variable(v)).ToArray());
-            var predicate = new Predicate($"Data Source <{typeof(T).Name}>", Modules.CSharp, head, new CommaSequence(WellKnown.Literals.False), dynamic: true);
-            return new(signature, predicate, assertz: true);
-        }
-
         public void AddDataSource<T>(DataSource<T> data, Maybe<Atom> functor = default)
             where T : new()
         {
-            var signature = GetSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
+            var signature = GetDataSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
             if (!DataSources.TryGetValue(signature, out var hashSet))
             {
                 DataSources[signature] = hashSet = new();
             }
             hashSet.Add(data.Source);
-            var pred = GetDataSourcePredicate<T>(signature);
-            Interpreter.TryAddDynamicPredicate(pred);
         }
 
         public DataSink<T> AddDataSink<T>(Maybe<Atom> functor = default, bool autoDisposeWithSolver = true)
             where T : new()
         {
-            var name = functor.Reduce(some => some, () => GetSignature<T>(Maybe<Atom>.None).Functor);
+            var name = GetDataSignature<T>(functor).Functor;
             var sink = new DataSink<T>(this, name);
             if(autoDisposeWithSolver)
             {
@@ -85,12 +83,7 @@ namespace Ergo.Solver
         public bool RemoveDataSources<T>(Atom functor)
             where T : new()
         {
-            var signature = GetSignature<T>(Maybe.Some(functor));
-            var pred = GetDataSourcePredicate<T>(signature);
-            if(!Interpreter.TryRemoveDynamicPredicate(pred))
-            {
-                return false;
-            }
+            var signature = GetDataSignature<T>(Maybe.Some(functor));
             if (DataSources.TryGetValue(signature, out var hashSet))
             {
                 hashSet.Clear();
@@ -119,46 +112,50 @@ namespace Ergo.Solver
             }
         }
 
-        protected async IAsyncEnumerable<KnowledgeBase.Match> GetMatches(ITerm head)
+        public async IAsyncEnumerable<KnowledgeBase.Match> GetDataSourceMatches(ITerm head)
         {
-            foreach (var match in KnowledgeBase.GetMatches(head))
+            // Allow enumerating all data sources by binding to a variable
+            if(head is Variable)
             {
-                yield return match;
-            }
-            
-            await foreach (var match in GetDataSourceMatches(head))
-            {
-                yield return match;
-            }
-
-            async IAsyncEnumerable<KnowledgeBase.Match> GetDataSourceMatches(ITerm head)
-            {
-                var signature = head.GetSignature();
-                // Return results from data sources 
-                if (DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
+                foreach (var sig in DataSources.Keys)
                 {
-                    foreach (var source in sources)
+                    var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOrThrow());
+                    if(!new Substitution(head, anon).TryUnify(out var subs))
                     {
-                        await foreach (var item in source)
+                        throw new InvalidOperationException();
+                    }
+                    head = anon.Substitute(subs);
+                    await foreach(var item in GetDataSourceMatches(head))
+                    {
+                        yield return item;
+                    }
+                    yield break;
+                }
+            }
+            var signature = head.GetSignature();
+            // Return results from data sources 
+            if (DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
+            {
+                foreach (var source in sources)
+                {
+                    await foreach (var item in source)
+                    {
+                        var predicate = new Predicate(
+                            "data source",
+                            Modules.CSharp,
+                            item.WithFunctor(signature.Functor),
+                            CommaSequence.Empty,
+                            dynamic: true
+                        );
+                        if (Predicate.TryUnify(head, predicate, out var matchSubs))
                         {
-                            var predicate = new Predicate(
-                                "data source",
-                                Modules.CSharp,
-                                item.WithFunctor(signature.Functor),
-                                CommaSequence.Empty,
-                                dynamic: true
-                            );
-                            if (Predicate.TryUnify(head, predicate, out var matchSubs))
-                            {
-                                predicate = Predicate.Substitute(predicate, matchSubs);
-                                yield return new KnowledgeBase.Match(head, predicate, matchSubs);
-                            }
+                            predicate = Predicate.Substitute(predicate, matchSubs);
+                            yield return new KnowledgeBase.Match(head, predicate, matchSubs);
                         }
                     }
                 }
             }
         }
-
 
         protected async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm qt, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
         {
@@ -247,9 +244,9 @@ namespace Ergo.Solver
                     continue;
                 }
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-                var (qualifiedGoal, matches) = await QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
+                var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
                 LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
-                await foreach (var m in matches)
+                foreach (var m in matches)
                 {
                     var innerScope = scope.WithDepth(scope.Depth + 1)
                         .WithModule(m.Rhs.DeclaringModule)
@@ -269,10 +266,10 @@ namespace Ergo.Solver
                 }
             }
 
-            async Task<(ITerm Qualified, IAsyncEnumerable<KnowledgeBase.Match> Matches)> QualifyGoal(Module module, ITerm goal)
+            (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module module, ITerm goal)
             {
-                var matches = GetMatches(goal);
-                if (await matches.AnyAsync())
+                var matches = KnowledgeBase.GetMatches(goal);
+                if (matches.Any())
                 {
                     return (goal, matches);
                 }
@@ -282,8 +279,8 @@ namespace Ergo.Solver
                     if (goal.TryQualify(scope.Module, out var qualified)
                         && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true))
                     {
-                        matches = GetMatches(qualified);
-                        if(await matches.AnyAsync())
+                        matches = KnowledgeBase.GetMatches(qualified);
+                        if(matches.Any())
                         {
                             return (qualified, matches);
                         }
@@ -293,8 +290,8 @@ namespace Ergo.Solver
                         if (goal.TryQualify(clause.DeclaringModule, out qualified)
                             && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
                         {
-                            matches = GetMatches(qualified);
-                            if (await matches.AnyAsync())
+                            matches = KnowledgeBase.GetMatches(qualified);
+                            if (matches.Any())
                             {
                                 return (qualified, matches);
                             }
@@ -307,15 +304,10 @@ namespace Ergo.Solver
                 {
                     if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
-                        throw new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain());
+                        Throw(new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain()));
                     }
                 }
-                return (goal, Empty());
-            }
-
-            async IAsyncEnumerable<KnowledgeBase.Match> Empty()
-            {
-                yield break;
+                return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
         }
 

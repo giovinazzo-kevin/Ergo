@@ -23,7 +23,8 @@ namespace Ergo.Solver.BuiltIns
             var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
             if (!format.Matches<string>(out var formatStr))
             {
-                throw new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain());
+                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain()));
+                yield break;
             }
             if (!List.TryUnfold(args, out var items))
             {
@@ -33,7 +34,8 @@ namespace Ergo.Solver.BuiltIns
             {
                 if(result.IsGround)
                 {
-                    throw new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain());
+                    solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain()));
+                    yield break;
                 }
                 else
                 {

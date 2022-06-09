@@ -23,12 +23,14 @@ namespace Ergo.Solver.BuiltIns
                 .WithCallee(Maybe.Some(GetStub(args)));
             if (args.Length == 0)
             {
-                throw new SolverException(SolverError.UndefinedPredicate, scope, Signature.WithArity(Maybe<int>.Some(0)).Explain());
+                solver.Throw(new SolverException(SolverError.UndefinedPredicate, scope, Signature.WithArity(Maybe<int>.Some(0)).Explain()));
+                yield break;
             }
             var goal = args.Aggregate((a, b) => a.Concat(b));
             if(goal is Variable)
             {
-                throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
+                solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain()));
+                yield break;
             }
             if (!CommaSequence.TryUnfold(goal, out var comma))
             {

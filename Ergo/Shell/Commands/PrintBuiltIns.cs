@@ -17,18 +17,19 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
+        public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var match = m.Groups["term"];
             var builtins = new List<BuiltIn>();
-            var solver = SolverBuilder.Build(shell.Interpreter, ref scope);
+            using var solver = SolverBuilder.Build(shell.Interpreter, ref scope);
             if (match?.Success ?? false)
             {
                 var parsed = shell.Parse<ITerm>(scope, match.Value).Value;
                 if (!parsed.HasValue)
                 {
                     shell.No();
-                    return scope;
+                    yield return scope;
+                    yield break;
                 }
                 var term = parsed.GetOrDefault();
                 if (solver.BuiltIns.TryGetValue(term.GetSignature(), out var builtin))
@@ -38,7 +39,8 @@ namespace Ergo.Shell.Commands
                 else
                 {
                     shell.No();
-                    return scope;
+                    yield return scope;
+                    yield break;
                 }
             }
             else
@@ -53,11 +55,12 @@ namespace Ergo.Shell.Commands
             if (canonicals.Length == 0)
             {
                 shell.No();
-                return scope;
+                yield return scope;
+                yield break;
             }
 
             shell.WriteTable(new[] { "Built-In", "Documentation" }, canonicals, ConsoleColor.DarkRed);
-            return scope;
+            yield return scope;
         }
     }
 }

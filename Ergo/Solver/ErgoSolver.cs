@@ -11,102 +11,25 @@ using Ergo.Interpreter;
 using System.IO;
 using Ergo.Lang.Utils;
 using System.Collections.Immutable;
-using System.Collections.Concurrent;
-using Ergo.Shell;
 using System.Runtime.CompilerServices;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 
 namespace Ergo.Solver
 {
-    public static class SolverBuilder
-    {
-        private static readonly ConcurrentDictionary<InterpreterScope, AsyncLocal<KnowledgeBase>> _scopeCache = new();
-
-        public static ErgoSolver Build(ErgoInterpreter i, ref ShellScope scope)
-        {
-            var interpreterScope = scope.InterpreterScope;
-            var solver = Build(i, ref interpreterScope);
-            scope = scope.WithInterpreterScope(interpreterScope);
-            return solver;
-        }
-
-        public static ErgoSolver Build(ErgoInterpreter i, ref InterpreterScope scope)
-        {
-            if (!_scopeCache.TryGetValue(scope, out var kb) || kb.Value == null)
-            {
-                kb ??= new();
-                kb.Value = new(i.DataSources);
-                var added = LoadModule(ref scope, kb.Value, scope.Modules[scope.Module]);
-                foreach (var module in scope.Modules.Values)
-                {
-                    LoadModule(ref scope, kb.Value, module, added);
-                }
-                if (!_scopeCache.TryAdd(scope, kb))
-                {
-                    kb = _scopeCache[scope];
-                }
-            }
-            return new ErgoSolver(i, scope, kb.Value);
-            HashSet<Atom> LoadModule(ref InterpreterScope scope, KnowledgeBase kb, Module module, HashSet<Atom> added = null)
-            {
-                added ??= new();
-                if (added.Contains(module.Name))
-                    return added;
-                added.Add(module.Name);
-                foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
-                {
-                    if (added.Contains(subModule))
-                        continue;
-                    if (!scope.Modules.TryGetValue(subModule, out var import))
-                    {
-                        var importScope = scope;
-                        scope = scope.WithModule(import = i.Load(ref importScope, subModule.Explain()));
-                    }
-                    LoadModule(ref scope, kb, import, added);
-                }
-                foreach (var pred in module.Program.KnowledgeBase)
-                {
-                    var sig = pred.Head.GetSignature();
-                    kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
-                    if (module.Name == scope.Module || module.ContainsExport(sig))
-                    {
-                        kb.AssertZ(pred.WithModuleName(module.Name));
-                    }
-                }
-                foreach (var key in i.DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
-                {
-                    foreach (var dyn in i.DynamicPredicates[key])
-                    {
-                        if (!dyn.AssertZ)
-                        {
-                            kb.AssertA(dyn.Predicate);
-                        }
-                        else
-                        {
-                            kb.AssertZ(dyn.Predicate);
-                        }
-                    }
-                }
-                return added;
-            }
-        }
-
-
-    }
-
-
-    public partial class ErgoSolver
+    public partial class ErgoSolver : IDisposable
     {
         protected volatile bool Cut = false;
-
         public readonly SolverFlags Flags;
         public readonly KnowledgeBase KnowledgeBase;
         public readonly InterpreterScope InterpreterScope;
         public readonly Dictionary<Signature, BuiltIn> BuiltIns;
         public readonly ErgoInterpreter Interpreter;
+        public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
         public event Action<SolverTraceType, string> Trace;
+        public event Action<ErgoSolver, ITerm> DataPushed;
+        public event Action<ErgoSolver> Disposing;
 
         public ErgoSolver(ErgoInterpreter i, InterpreterScope scope, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
         {
@@ -116,6 +39,70 @@ namespace Ergo.Solver
             InterpreterScope = scope;
             BuiltIns = new();
             AddBuiltInsByReflection();
+        }
+        
+        protected Signature GetSignature<T>(Maybe<Atom> functor = default)
+            where T : new()
+        {
+            var signature = TermMarshall.ToTerm(new T()).GetSignature();
+            signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
+            return signature;
+        }
+
+        protected DynamicPredicate GetDataSourcePredicate<T>(Signature signature)
+        {
+            var variableNames = new NamedPropertyTypeResolver<T>().GetMembers();
+            var head = new Complex(signature.Functor, variableNames.Select(v => (ITerm)new Variable(v)).ToArray());
+            var predicate = new Predicate($"Data Source <{typeof(T).Name}>", Modules.CSharp, head, new CommaSequence(WellKnown.Literals.False), dynamic: true);
+            return new(signature, predicate, assertz: true);
+        }
+
+        public void AddDataSource<T>(DataSource<T> data, Maybe<Atom> functor = default)
+            where T : new()
+        {
+            var signature = GetSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
+            if (!DataSources.TryGetValue(signature, out var hashSet))
+            {
+                DataSources[signature] = hashSet = new();
+            }
+            hashSet.Add(data.Source);
+            var pred = GetDataSourcePredicate<T>(signature);
+            Interpreter.TryAddDynamicPredicate(pred);
+        }
+
+        public DataSink<T> AddDataSink<T>(Maybe<Atom> functor = default, bool autoDisposeWithSolver = true)
+            where T : new()
+        {
+            var name = functor.Reduce(some => some, () => GetSignature<T>(Maybe<Atom>.None).Functor);
+            var sink = new DataSink<T>(this, name);
+            if(autoDisposeWithSolver)
+            {
+                Disposing += _ => sink.Dispose();
+            }
+            return sink;
+        }
+
+        public bool RemoveDataSources<T>(Atom functor)
+            where T : new()
+        {
+            var signature = GetSignature<T>(Maybe.Some(functor));
+            var pred = GetDataSourcePredicate<T>(signature);
+            if(!Interpreter.TryRemoveDynamicPredicate(pred))
+            {
+                return false;
+            }
+            if (DataSources.TryGetValue(signature, out var hashSet))
+            {
+                hashSet.Clear();
+                DataSources.Remove(signature);
+                return true;
+            }
+            return false;
+        }
+
+        public void PushData(ITerm data)
+        {
+            DataPushed?.Invoke(this, data);
         }
 
         public bool TryAddBuiltIn(BuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
@@ -129,6 +116,46 @@ namespace Ergo.Solver
                 if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
                 var inst = (BuiltIn)Activator.CreateInstance(type);
                 BuiltIns[inst.Signature] = inst;
+            }
+        }
+
+        protected async IAsyncEnumerable<KnowledgeBase.Match> GetMatches(ITerm head)
+        {
+            foreach (var match in KnowledgeBase.GetMatches(head))
+            {
+                yield return match;
+            }
+            
+            await foreach (var match in GetDataSourceMatches(head))
+            {
+                yield return match;
+            }
+
+            async IAsyncEnumerable<KnowledgeBase.Match> GetDataSourceMatches(ITerm head)
+            {
+                var signature = head.GetSignature();
+                // Return results from data sources 
+                if (DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
+                {
+                    foreach (var source in sources)
+                    {
+                        await foreach (var item in source)
+                        {
+                            var predicate = new Predicate(
+                                "data source",
+                                Modules.CSharp,
+                                item.WithFunctor(signature.Functor),
+                                CommaSequence.Empty,
+                                dynamic: true
+                            );
+                            if (Predicate.TryUnify(head, predicate, out var matchSubs))
+                            {
+                                predicate = Predicate.Substitute(predicate, matchSubs);
+                                yield return new KnowledgeBase.Match(head, predicate, matchSubs);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -244,7 +271,7 @@ namespace Ergo.Solver
 
             async Task<(ITerm Qualified, IAsyncEnumerable<KnowledgeBase.Match> Matches)> QualifyGoal(Module module, ITerm goal)
             {
-                var matches = KnowledgeBase.GetMatchesAndDataSourceMatches(goal);
+                var matches = GetMatches(goal);
                 if (await matches.AnyAsync())
                 {
                     return (goal, matches);
@@ -255,7 +282,7 @@ namespace Ergo.Solver
                     if (goal.TryQualify(scope.Module, out var qualified)
                         && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true))
                     {
-                        matches = KnowledgeBase.GetMatchesAndDataSourceMatches(qualified);
+                        matches = GetMatches(qualified);
                         if(await matches.AnyAsync())
                         {
                             return (qualified, matches);
@@ -266,7 +293,7 @@ namespace Ergo.Solver
                         if (goal.TryQualify(clause.DeclaringModule, out qualified)
                             && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
                         {
-                            matches = KnowledgeBase.GetMatchesAndDataSourceMatches(qualified);
+                            matches = GetMatches(qualified);
                             if (await matches.AnyAsync())
                             {
                                 return (qualified, matches);
@@ -323,6 +350,13 @@ namespace Ergo.Solver
         public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
         {
             return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
+        }
+
+
+        public void Dispose()
+        {
+            Disposing?.Invoke(this);
+            GC.SuppressFinalize(this);
         }
     }
 }

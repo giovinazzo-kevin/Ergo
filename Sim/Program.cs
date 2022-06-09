@@ -30,7 +30,7 @@ var uiThread = new Thread(async () =>
 {
     var uiScope = scope
         .WithExceptionThrowing(true);
-    var solver = shell.CreateSolver(ref uiScope);
+    using var solver = shell.CreateSolver(ref uiScope);
     var query = new Query(new(new Atom("init")));
     await foreach (var sol in solver.Solve(query)) ;
     Raylib.InitWindow(canvas.Value.Width, canvas.Value.Height, "Hello World");

@@ -2,6 +2,7 @@
 using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
+        public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var dir = m.Groups["dir"].Value;
             var interpreterScope = scope.InterpreterScope;
@@ -23,7 +24,7 @@ namespace Ergo.Shell.Commands
             var directive = parsed.GetOrDefault();
             if (shell.Interpreter.RunDirective(ref interpreterScope, directive))
             {
-                return scope.WithInterpreterScope(interpreterScope);
+                yield return scope.WithInterpreterScope(interpreterScope);
             }
             else throw new ShellException($"'{dir}' does not resolve to a directive.");
         }

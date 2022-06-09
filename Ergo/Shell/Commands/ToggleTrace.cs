@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,11 +13,11 @@ namespace Ergo.Shell.Commands
         {
         }
 
-        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
+        public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             scope = scope.WithTrace(!scope.TraceEnabled);
             shell.WriteLine($"Trace mode {(scope.TraceEnabled ? "enabled" : "disabled")}.", LogLevel.Inf);
-            return scope;
+            yield return scope;
         }
     }
 }

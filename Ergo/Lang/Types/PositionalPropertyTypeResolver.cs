@@ -13,7 +13,6 @@ namespace Ergo.Lang
         public override TermMarshalling Marshalling => TermMarshalling.Positional;
         public override IEnumerable<string> GetMembers() => Properties.Select((p, i) => i.ToString());
         public override ITerm TransformMember(string name, ITerm value) => value;
-        public override IEnumerable<string> GetArguments(Complex value) => value.Arguments.Select((a, i) => i.ToString());
         public override ITerm GetArgument(string name, Complex value) => value.Arguments[int.Parse(name)];
         public override Type GetMemberType(string name) => Properties[int.Parse(name)].PropertyType;
         public override object GetMemberValue(string name, object instance) =>  Properties[int.Parse(name)].GetValue(instance);

@@ -33,7 +33,7 @@ namespace Ergo.Shell.Commands
             DefaultAccentColor = accentColor;
         }
 
-        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
+        public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var requestCancel = new CancellationTokenSource();
             Console.CancelKeyPress += RequestCancel;
@@ -46,11 +46,12 @@ namespace Ergo.Shell.Commands
                 // Syntactic sugar
                 userQuery += '.';
             }
-            var solver = shell.CreateSolver(ref scope);
+            using var solver = shell.CreateSolver(ref scope);
             var parsed = shell.Parse<Query>(scope, userQuery).Value;
             if (!parsed.HasValue)
             {
-                return scope;
+                yield return scope;
+                yield break;
             }
             var query = parsed.GetOrDefault();
             shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
@@ -64,84 +65,87 @@ namespace Ergo.Shell.Commands
                 // SWI-Prolog goes with The Ultimate Question, we'll go with The Last Question instead.
                 shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
                 shell.No();
-                return scope;
+                yield return scope;
+                yield break;
             }
             var scope_ = scope;
-            await scope.ExceptionHandler.TryAsync(scope, async () => {
-                if (Interactive)
+
+            if (Interactive)
+            {
+                shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);
+                var any = false;
+                await foreach (var s in solutions)
                 {
-                    shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);
-                    var any = false;
-                    await foreach (var s in solutions)
+                    if (any)
                     {
-                        if (any)
+                        if (shell.ReadChar(true) != ' ')
                         {
-                            if (shell.ReadChar(true) != ' ')
-                            {
-                                break;
-                            }
-                            if (!scope_.TraceEnabled)
-                            {
-                                shell.WriteLine(" ∨", LogLevel.Rpl);
-                                shell.Write(String.Empty, LogLevel.Ans);
-                            }
+                            break;
                         }
-                        else
+                        if (!scope_.TraceEnabled)
                         {
-                            any = true;
+                            shell.WriteLine(" ∨", LogLevel.Rpl);
                             shell.Write(String.Empty, LogLevel.Ans);
                         }
-                        if (s.Substitutions.Any())
-                        {
-                            var join = String.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
-                            if (scope_.TraceEnabled)
-                            {
-                                shell.Write(String.Empty, LogLevel.Ans);
-                            }
-                            shell.Write($"{join}", LogLevel.Rpl);
-                            if(scope_.TraceEnabled)
-                            {
-                                shell.WriteLine();
-                            }
-                        }
-                        else
-                        {
-                            shell.Yes(nl: false, LogLevel.Rpl);
-                        }
-                    }
-                    if (!any) shell.No(nl: true, LogLevel.Rpl);
-                    shell.WriteLine(".");
-                }
-                else
-                {
-                    var cols = query.Goals
-                        .Contents
-                        .SelectMany(t => t.Variables)
-                        .Where(v => !v.Ignored)
-                        .Select(v => v.Name)
-                        .Distinct()
-                        .ToArray();
-
-                    var rows = (await solutions.CollectAsync())
-                        .Select(s => s.Simplify()
-                            .Substitutions
-                            .Select(r => r.Rhs.Explain())
-                            .ToArray())
-                        .ToArray();
-
-                    if (rows.Length > 0 && rows[0].Length == cols.Length)
-                    {
-                        shell.WriteTable(cols, rows, accent);
-                        shell.Yes();
                     }
                     else
                     {
-                        shell.No();
+                        any = true;
+                        shell.Write(String.Empty, LogLevel.Ans);
                     }
+                    if (s.Substitutions.Any())
+                    {
+                        var join = String.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
+                        if (scope_.TraceEnabled)
+                        {
+                            shell.Write(String.Empty, LogLevel.Ans);
+                        }
+                        shell.Write($"{join}", LogLevel.Rpl);
+                        if (scope_.TraceEnabled)
+                        {
+                            shell.WriteLine();
+                        }
+                    }
+                    else
+                    {
+                        shell.Yes(nl: false, LogLevel.Rpl);
+                    }
+                    yield return scope;
                 }
-            });
+                if (!any) shell.No(nl: true, LogLevel.Rpl);
+                shell.WriteLine(".");
+            }
+            else
+            {
+                var cols = query.Goals
+                    .Contents
+                    .SelectMany(t => t.Variables)
+                    .Where(v => !v.Ignored)
+                    .Select(v => v.Name)
+                    .Distinct()
+                    .ToArray();
+
+                var rows = (await solutions.CollectAsync())
+                    .Select(s => s.Simplify()
+                        .Substitutions
+                        .Select(r => r.Rhs.Explain())
+                        .ToArray())
+                    .ToArray();
+
+                if (rows.Length > 0 && rows[0].Length == cols.Length)
+                {
+                    shell.WriteTable(cols, rows, accent);
+                    shell.Yes();
+                }
+                else
+                {
+                    shell.No();
+                }
+            }
+
             Console.CancelKeyPress -= RequestCancel;
-            return scope;
+            yield return scope;
+            yield break;
             void RequestCancel(object _, ConsoleCancelEventArgs args)
             {
                 requestCancel.Cancel();

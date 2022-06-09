@@ -15,6 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\stdlib\csharp\csharp.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\stdlib\string\string.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -54,10 +57,6 @@
     <None Update="ergo\stdlib\prologue\prologue.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="CSharp\" />
   </ItemGroup>
 
 </Project>

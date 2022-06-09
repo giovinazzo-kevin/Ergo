@@ -19,9 +19,9 @@ namespace Ergo.Interpreter
         public readonly InterpreterFlags Flags;
         public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
         public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates = new();
-        public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
         public readonly InterpreterScope StdlibScope;
+
 
         public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         {
@@ -45,40 +45,6 @@ namespace Ergo.Interpreter
             return scope;
         }
 
-        protected Signature GetSignature<T>(Maybe<Atom> functor)
-            where T : new()
-        {
-            var signature = TermMarshall.ToTerm(new T()).GetSignature();
-            signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
-            return signature;
-        }
-
-        public void AddDataSource<T>(DataSource<T> data, Maybe<Atom> functor, string description = null)
-            where T : new()
-        {
-            var signature = GetSignature<T>(functor).WithModule(Maybe.Some(Modules.CSharp));
-            if (!DataSources.TryGetValue(signature, out var hashSet))
-            {
-                DataSources[signature] = hashSet = new();
-            }
-            hashSet.Add(data.Source);
-
-            var variableNames = new NamedPropertyTypeResolver<T>().GetMembers();
-            var head = new Complex(signature.Functor, variableNames.Select(v => (ITerm)new Variable(v)).ToArray());
-            var predicate = new Predicate(description ?? $"Data Source <{typeof(T).Name}>", Modules.CSharp, head, new CommaSequence(WellKnown.Literals.False), dynamic: true);
-            TryAddDynamicPredicate(new(signature, predicate, assertz: true));
-        }
-
-        public void RemoveDataSources<T>(Maybe<Atom> functor)
-            where T : new()
-        {
-            var signature = GetSignature<T>(functor);
-            if (DataSources.TryGetValue(signature, out var hashSet))
-            {
-                hashSet.Clear();
-                DataSources.Remove(signature);
-            }
-        }
 
         public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
 

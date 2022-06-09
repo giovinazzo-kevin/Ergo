@@ -11,6 +11,13 @@ namespace Ergo.Lang.Ast
         bool IsParenthesized { get; }
         IEnumerable<Variable> Variables { get; }
 
+        Maybe<Atom> GetFunctor() => this switch
+        {
+            Atom a => Maybe.Some(a),
+            Complex c => Maybe.Some(c.Functor),
+            _ => Maybe<Atom>.None
+        };
+
         ITerm WithFunctor(Atom newFunctor) => this switch
         {
             Atom => newFunctor,

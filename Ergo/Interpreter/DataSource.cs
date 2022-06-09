@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast;
+using Ergo.Solver;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -6,14 +7,15 @@ using System.Threading.Tasks;
 
 namespace Ergo.Interpreter
 {
+
     public sealed class DataSource : IAsyncEnumerable<ITerm>
     {
         private readonly Func<IAsyncEnumerable<ITerm>> Source;
         public event Action<DataSource, ITerm> ItemYielded;
 
-        async IAsyncEnumerable<ITerm> FromEnumerable(IEnumerable<ITerm> data)
+        async IAsyncEnumerable<ITerm> FromEnumerable(Func<IEnumerable<ITerm>> data)
         {
-            foreach (var item in data)
+            foreach (var item in data())
             {
                 await Task.CompletedTask;
                 yield return item;
@@ -21,9 +23,9 @@ namespace Ergo.Interpreter
             }
         }
 
-        async IAsyncEnumerable<ITerm> FromAsyncEnumerable(IAsyncEnumerable<ITerm> data)
+        async IAsyncEnumerable<ITerm> FromAsyncEnumerable(Func<IAsyncEnumerable<ITerm>> data)
         {
-            await foreach (var item in data)
+            await foreach (var item in data())
             {
                 await Task.CompletedTask;
                 yield return item;
@@ -36,12 +38,12 @@ namespace Ergo.Interpreter
             return Source().GetAsyncEnumerator(cancellationToken);
         }
 
-        public DataSource(IEnumerable<ITerm> source)
+        public DataSource(Func<IEnumerable<ITerm>> source)
         {
             Source = () => FromEnumerable(source);
         }
 
-        public DataSource(IAsyncEnumerable<ITerm> source)
+        public DataSource(Func<IAsyncEnumerable<ITerm>> source)
         {
             Source = () => FromAsyncEnumerable(source);
         }

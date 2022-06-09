@@ -15,6 +15,7 @@ namespace Ergo.Lang
 
         protected readonly Func<object, Atom> GetFunctor;
         protected readonly Lazy<bool> IsAtomic;
+        protected readonly Lazy<ITerm> DefaultValue;
 
         public ErgoTypeResolver()
         {
@@ -22,31 +23,37 @@ namespace Ergo.Lang
             {
                 IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(o?.ToString() ?? String.Empty);
+                DefaultValue = new(() => ToTerm(string.Empty));
             }
             else if (Type == typeof(bool))
             {
                 IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(o ?? false);
+                DefaultValue = new(() => ToTerm(false));
             }
             else if (Type.IsPrimitive)
             {
                 IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(Convert.ChangeType(o ?? 0, typeof(double)));
+                DefaultValue = new(() => ToTerm(0d));
             }
             else if (Type.IsEnum)
             {
                 IsAtomic = new(() => true);
                 GetFunctor = o => new Atom(o?.ToString() ?? Enum.GetNames(Type).First());
+                DefaultValue = new(() => ToTerm(Enum.GetNames(Type).First()));
             }
             else if(Type.IsArray)
             {
                 IsAtomic = new(() => false);
                 GetFunctor = o => WellKnown.Functors.List.First();
+                DefaultValue = new(() => ToTerm(Array.CreateInstance(Type.GetElementType(), 0)));
             }
             else
             {
                 IsAtomic = new(() => GetMembers().Count() == 0);
                 GetFunctor = o => new Atom(Type.Name.ToLower());
+                DefaultValue = new(() => ToTerm(Activator.CreateInstance(Type)));
             }
         }
 
@@ -55,7 +62,6 @@ namespace Ergo.Lang
         public abstract object GetMemberValue(string name, object instance);
         public abstract void SetMemberValue(string name, object instance, object value);
         public abstract IEnumerable<string> GetMembers();
-        public abstract IEnumerable<string> GetArguments(Complex value);
         public abstract ITerm GetArgument(string name, Complex value);
         public abstract ITerm TransformMember(string name, ITerm value);
         public abstract Type GetParameterType(string name, ConstructorInfo info);
@@ -131,18 +137,25 @@ namespace Ergo.Lang
                 {
                     return Enum.Parse(Type, ((Atom)t).Value.ToString());
                 }
-                return ((Atom)t).Value;
+                return t switch
+                {
+                    Complex cplx when cplx.Arguments.Length == 1 => ((Atom)cplx.Arguments[0]).Value,
+                    Atom a => a.Value,
+                    _ => null
+                };
             }
             if (Type.Namespace == null)
             {
-                // anonymous type
-                var args = GetArguments((Complex)t);
+                // anonymous/record type
+                var args = GetMembers();
                 var constructor = Type.GetConstructors().Single();
                 var instance = constructor.Invoke(args.Select(name =>
                 {
+                    var type = GetMemberType(name);
+                    var paramType = GetParameterType(name, constructor);
                     var arg = GetArgument(name, (Complex)t);
-                    var value = TermMarshall.FromTerm(arg, GetMemberType(name), Maybe.Some(Marshalling));
-                    value = Convert.ChangeType(value, GetParameterType(name, constructor));
+                    var value = TermMarshall.FromTerm(arg, type, Maybe.Some(Marshalling));
+                    value = Convert.ChangeType(value, paramType);
                     return value;
                 }).ToArray());
                 return instance;
@@ -162,12 +175,13 @@ namespace Ergo.Lang
                 else
                 {
                     var instance = Activator.CreateInstance(Type);
-                    var args = GetArguments((Complex)t);
+                    var args = GetMembers();
                     foreach (var name in args)
                     {
+                        var type = GetMemberType(name);
                         var arg = GetArgument(name, (Complex)t);
-                        var value = TermMarshall.FromTerm(arg, GetMemberType(name), Maybe.Some(Marshalling));
-                        value = Convert.ChangeType(value, GetMemberType(name));
+                        var value = TermMarshall.FromTerm(arg, type, Maybe.Some(Marshalling));
+                        value = Convert.ChangeType(value, type);
                         SetMemberValue(name, instance, value);
                     }
                     return instance;

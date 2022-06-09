@@ -23,18 +23,20 @@ namespace Ergo.Shell.Commands
             DefaultDispatcher = unknownCommand;
         }
 
-        public async Task<Maybe<ShellScope>> Dispatch(ErgoShell shell, ShellScope scope, string input)
+        public async IAsyncEnumerable<ShellScope> Dispatch(ErgoShell shell, ShellScope scope, string input)
         {
             foreach (var d in Commands.OrderByDescending(c => c.Priority))
             {
                 if (d.Expression.Match(input) is { Success: true } match)
                 {
-                    scope = await d.Callback(shell, scope, match);
-                    return Maybe.Some(scope);
+                    await foreach (var newScope in d.Callback(shell, scope, match))
+                    {
+                        yield return newScope;
+                    }
+                    yield break;
                 }
             }
             DefaultDispatcher(input);
-            return Maybe<ShellScope>.None;
         }
 
         public bool TryAdd(ShellCommand cmd)

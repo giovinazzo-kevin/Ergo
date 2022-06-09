@@ -13,7 +13,7 @@
 :- op(50, xfx, ['=..']).
 
 
-%: Term comparison (gt).
+%: Term expansion.
 '=..'(Term, [Functor|Args]) :- term(Functor, Args, Term).
 %: Term comparison (gt).
 '@>'(A, B)  :- compare(X, A, B), X  > 0.

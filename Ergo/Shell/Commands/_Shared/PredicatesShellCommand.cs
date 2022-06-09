@@ -2,6 +2,7 @@
 using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace Ergo.Shell.Commands
             Explain = explain;
         }
 
-        public override async Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
+        public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
         {
             var term = m.Groups["term"];
             var shellScope = scope;
@@ -31,7 +32,8 @@ namespace Ergo.Shell.Commands
                 if (!parsed.HasValue)
                 {
                     shell.No();
-                    return scope;
+                    yield return scope;
+                    yield break;
                 }
                 if (!scope.ExceptionHandler.TryGet(scope, () =>
                 {
@@ -48,7 +50,8 @@ namespace Ergo.Shell.Commands
                 {
                     shell.No();
                     scope = shellScope;
-                    return scope;
+                    yield return scope;
+                    yield break;
                 }
                 scope = shellScope;
             }
@@ -66,14 +69,15 @@ namespace Ergo.Shell.Commands
             if (explanations.Length == 0)
             {
                 shell.No();
-                return scope;
+                yield return scope;
+                yield break;
             }
             var cols = Explain
                 ? new[] { "Predicate", "Module", "Explanation" }
                 : new[] { "Predicate", "Module", "Documentation" }
                 ;
             shell.WriteTable(cols, explanations, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
-            return scope;
+            yield return scope;
         }
     }
 }

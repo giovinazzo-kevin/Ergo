@@ -129,15 +129,19 @@ namespace Ergo.Shell
                 Write($"{scope.InterpreterScope.Module.Explain()}> ");
                 var prompt = Prompt();
                 if (exit != null && exit(prompt)) break;
-                scope = await DoAsync(scope, prompt);
-                yield return scope;
+                await foreach (var result in DoAsync(scope, prompt))
+                {
+                    yield return result;
+                }
             }
         }
 
-        public async Task<ShellScope> DoAsync(ShellScope scope, string command)
+        public async IAsyncEnumerable<ShellScope> DoAsync(ShellScope scope, string command)
         {
-            var result = await scope.ExceptionHandler.TryGetAsync(scope, () => Dispatcher.Dispatch(this, scope, command));
-            return result.Reduce(some => some.Reduce(newScope => newScope, () => scope), () => scope);
+            await foreach(var result in Dispatcher.Dispatch(this, scope, command))
+            {
+                yield return result;
+            }
         }
     }
 }

@@ -12,9 +12,9 @@ namespace Ergo.Interpreter
         public readonly DataSource Source;
         public event Action<DataSource<T>, T, ITerm> ItemYielded;
 
-        async IAsyncEnumerable<ITerm> FromEnumerable(IEnumerable<T> data)
+        async IAsyncEnumerable<ITerm> FromEnumerable(Func<IEnumerable<T>> data)
         {
-            foreach (var item in data)
+            foreach (var item in data())
             {
                 await Task.CompletedTask;
                 var term = TermMarshall.ToTerm(item);
@@ -23,9 +23,9 @@ namespace Ergo.Interpreter
             }
         }
 
-        async IAsyncEnumerable<ITerm> FromAsyncEnumerable(IAsyncEnumerable<T> data)
+        async IAsyncEnumerable<ITerm> FromAsyncEnumerable(Func<IAsyncEnumerable<T>> data)
         {
-            await foreach (var item in data)
+            await foreach (var item in data())
             {
                 await Task.CompletedTask;
                 var term = TermMarshall.ToTerm(item);
@@ -39,14 +39,14 @@ namespace Ergo.Interpreter
             return ((IAsyncEnumerable<ITerm>)Source).GetAsyncEnumerator(cancellationToken);
         }
 
-        public DataSource(IEnumerable<T> source)
+        public DataSource(Func<IEnumerable<T>> source)
         {
-            Source = new(FromEnumerable(source));
+            Source = new(() => FromEnumerable(source));
         }
 
-        public DataSource(IAsyncEnumerable<T> source)
+        public DataSource(Func<IAsyncEnumerable<T>> source)
         {
-            Source = new(FromAsyncEnumerable(source));
+            Source = new(() => FromAsyncEnumerable(source));
         }
     }
 }

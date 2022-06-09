@@ -12,15 +12,13 @@ namespace Ergo.Lang
 {
     public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     {
-        protected readonly ImmutableDictionary<Signature, HashSet<DataSource>> DataSources;
         protected readonly OrderedDictionary Predicates;
         protected readonly InstantiationContext Context;
 
         public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 
-        public KnowledgeBase(Dictionary<Signature, HashSet<DataSource>> dataSources = null)
+        public KnowledgeBase()
         {
-            DataSources = ImmutableDictionary.CreateRange(dataSources ?? Enumerable.Empty<KeyValuePair<Signature, HashSet<DataSource>>>());
             Predicates = new OrderedDictionary();
             Context = new("K");
         }
@@ -56,39 +54,6 @@ namespace Ergo.Lang
             return false;
         }
 
-        public async IAsyncEnumerable<Match> GetDataSourceMatches(ITerm goal)
-        {
-            // Instantiate goal
-            if (!new Substitution(goal.Instantiate(Context), goal).TryUnify(out var subs))
-            {
-                yield break;
-            }
-            var head = goal.Substitute(subs);
-            var signature = head.GetSignature();
-            // Return results from data sources 
-            if (DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
-            {
-                foreach (var source in sources)
-                {
-                    await foreach (var item in source)
-                    {
-                        var predicate = new Predicate(
-                            "data source",
-                            Modules.CSharp,
-                            item.WithFunctor(signature.Functor),
-                            CommaSequence.Empty,
-                            dynamic: true
-                        ).Instantiate(Context);
-                        if (Predicate.TryUnify(head, predicate, out var matchSubs))
-                        {
-                            predicate = Predicate.Substitute(predicate, matchSubs);
-                            yield return new Match(goal, predicate, matchSubs.Concat(subs));
-                        }
-                    }
-                }
-            }
-        }
-
         public IEnumerable<Match> GetMatches(ITerm goal)
         {
             // Instantiate goal
@@ -107,18 +72,6 @@ namespace Ergo.Lang
                         yield return new Match(goal, predicate, matchSubs.Concat(subs));
                     }
                 }
-            }
-        }
-
-        public async IAsyncEnumerable<Match> GetMatchesAndDataSourceMatches(ITerm goal)
-        {
-            foreach (var match in GetMatches(goal))
-            {
-                yield return match;
-            }
-            await foreach(var match in GetDataSourceMatches(goal))
-            {
-                yield return match;
             }
         }
 

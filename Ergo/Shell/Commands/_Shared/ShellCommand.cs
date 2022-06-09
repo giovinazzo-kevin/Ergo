@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -12,7 +13,7 @@ namespace Ergo.Shell.Commands
 
         public readonly int Priority;
 
-        public abstract Task<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match);
+        public abstract IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match);
 
         public ShellCommand(string[] names, string desc, string regex, bool optionalRegex, int priority)
         {

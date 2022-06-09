@@ -60,7 +60,7 @@ namespace Ergo.Solver
         public void BindDataSource<T>(DataSource<T> data)
             where T : new()
         {
-            var signature = GetDataSignature<T>(Maybe.Some(data.Functor)).WithModule(Maybe.Some(Modules.CSharp));
+            var signature = GetDataSignature<T>(Maybe.Some(data.Functor)).WithModule(Maybe.None<Atom>());
             if (!DataSources.TryGetValue(signature, out var hashSet))
             {
                 DataSources[signature] = hashSet = new();
@@ -128,7 +128,7 @@ namespace Ergo.Solver
             }
             var signature = head.GetSignature();
             // Return results from data sources 
-            if (DataSources.TryGetValue(signature.WithModule(Maybe.Some(Modules.CSharp)), out var sources))
+            if (DataSources.TryGetValue(signature.WithModule(Maybe.None<Atom>()), out var sources))
             {
                 foreach (var source in sources)
                 {
@@ -146,9 +146,8 @@ namespace Ergo.Solver
                             predicate = Predicate.Substitute(predicate, matchSubs);
                             yield return new KnowledgeBase.Match(head, predicate, matchSubs);
                         }
-                        else
+                        else if (source.Reject(item))
                         {
-                            source.Recycle(item);
                             break;
                         }
                     }

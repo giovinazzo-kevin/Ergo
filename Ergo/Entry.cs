@@ -11,8 +11,18 @@ using System.Net.Http;
 
 using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();
-var personGenSource = new DataSource<Person>(() => new PersonGenerator().Generate(), Maybe.Some(new Atom("person_generator")));
-var feedbackSource = new DataSource<Person>(() => feedbackSink.Pull(), Maybe.Some(new Atom("person")));
+var personGenSource = new DataSource<Person>(
+    source: () => new PersonGenerator().Generate(), 
+    functor: Maybe.Some(new Atom("person_generator")), 
+    dataSemantics: RejectionData.Discard, 
+    ctrlSemantics: RejectionControl.Break
+);
+var feedbackSource = new DataSource<Person>(
+    source: () => feedbackSink.Pull(), 
+    functor: Maybe.Some(new Atom("person")), 
+    dataSemantics: RejectionData.Recycle,
+    ctrlSemantics: RejectionControl.Continue
+);
 var shell = new ErgoShell(interpreter =>
 {
     // interpreter.TryAddDirective lets you extend the interpreter
@@ -21,10 +31,10 @@ var shell = new ErgoShell(interpreter =>
 }, solver =>
 {
     // solver.TryAddBuiltIn lets you extend the solver
-    // solver.BindDataSink lets you push terms from Ergo to a C# IAsyncEnumerable/Event
+    // solver.BindDataSink lets you "push" terms from Ergo to a C# IAsyncEnumerable/Event
     solver.BindDataSink(consoleSink);
     solver.BindDataSink(feedbackSink);
-    // solver.BindDataSource lets you pull objects from a C# IEnumerable/IAsyncEnumerable to Ergo
+    // solver.BindDataSource lets you "pull" objects from a C# IEnumerable/IAsyncEnumerable to Ergo
     solver.BindDataSource(personGenSource);
     // You can also use a sink as a data source in order to share messages between application and language domains
     solver.BindDataSource(feedbackSource);

@@ -38,7 +38,6 @@ namespace Ergo.Interpreter
         public InterpreterScope CreateScope()
         {
             var scope = StdlibScope
-                .WithModule(new Module(Modules.CSharp, runtime: true))
                 .WithModule(new Module(Modules.User, runtime: true)
                     .WithImport(Modules.Stdlib))
                 .WithCurrentModule(Modules.User);

@@ -1,3 +1,9 @@
 ﻿:- module(csharp, [
+	'-#>'/1, '<#-'/1
 ]).
 
+:- op(11, fx, ['-#>']).
+:- op(12, xf, ['<#-']).
+
+'-#>'(Data) :- pull_data(Data).
+'<#-'(Data) :- push_data(Data).

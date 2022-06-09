@@ -42,16 +42,16 @@ namespace Ergo.Interpreter
             return ((IAsyncEnumerable<ITerm>)Source).GetAsyncEnumerator(cancellationToken);
         }
 
-            public DataSource(Func<IEnumerable<T>> source, Maybe<Atom> functor = default)
+        public DataSource(Func<IEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData rejectSemantics = RejectionData.Discard, RejectionControl enumSemantics = RejectionControl.Continue)
         {
             Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
-            Source = new(() => FromEnumerable(source));
+            Source = new(() => FromEnumerable(source), rejectSemantics, enumSemantics);
         }
 
-        public DataSource(Func<IAsyncEnumerable<T>> source, Maybe<Atom> functor = default)
+        public DataSource(Func<IAsyncEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData dataSemantics = RejectionData.Discard, RejectionControl ctrlSemantics = RejectionControl.Continue)
         {
             Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
-            Source = new(() => FromAsyncEnumerable(source));
+            Source = new(() => FromAsyncEnumerable(source), dataSemantics, ctrlSemantics);
         }
     }
 }

@@ -22,11 +22,17 @@ namespace Ergo.Shell.Commands
             var currentModule = interpreterScope.Modules[scope.InterpreterScope.Module];
             var parsed = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
             var directive = parsed.GetOrDefault();
-            if (shell.Interpreter.RunDirective(ref interpreterScope, directive))
+            var success = scope.ExceptionHandler.TryGet(scope, () => shell.Interpreter.RunDirective(ref interpreterScope, directive), out var ret);
+            if (success && ret)
             {
                 yield return scope.WithInterpreterScope(interpreterScope);
+                yield break;
             }
-            else throw new ShellException($"'{dir}' does not resolve to a directive.");
+            else if (!success)
+            {
+                yield break;
+            }
+            scope.ExceptionHandler.Throw(scope, new ShellException($"'{dir}' does not resolve to a directive."));
         }
     }
 }

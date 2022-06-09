@@ -1,0 +1,4 @@
+﻿:- module(test3, [
+]).
+
+:- use_module(test2).

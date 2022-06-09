@@ -93,15 +93,25 @@ namespace Ergo.Interpreter
                 .WithProgram(program);
             foreach (Atom import in module.Imports.Contents)
             {
+                LoadImport(import);
+            }
+            _fs.Seek(0, SeekOrigin.Begin);
+            return module;
+
+            void LoadImport(Atom import)
+            {
                 if (!Scope.Modules.TryGetValue(import, out var importedModule))
                 {
                     var importScope = Scope.WithoutModule(import);
                     importedModule = LoadDirectives(Interpreter, ref importScope, import.Explain());
                     Scope = Scope.WithModule(importedModule);
                 }
+                foreach (Atom innerImport in importedModule.Imports.Contents)
+                {
+                    if (Scope.Modules.ContainsKey(innerImport)) continue;
+                    LoadImport(innerImport);
+                }
             }
-            _fs.Seek(0, SeekOrigin.Begin);
-            return module;
         }
 
         public static Module Load(ErgoInterpreter interpreter, ref InterpreterScope scope, string fileName)

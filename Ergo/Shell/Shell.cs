@@ -132,6 +132,7 @@ namespace Ergo.Shell
                 await foreach (var result in DoAsync(scope, prompt))
                 {
                     yield return result;
+                    scope = result;
                 }
             }
         }

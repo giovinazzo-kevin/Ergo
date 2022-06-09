@@ -1,4 +1,4 @@
 ﻿:- module(info, [
 ]).
 
-fact('It is sunny outside')
+fact('It is sunny outside').

@@ -67,72 +67,47 @@ namespace Ergo.Shell
             return ReadLine(until);
         }
 
-        protected virtual void WithColors(LogLevel lvl, Solver.SolverTraceType trc, Action action, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
+        protected virtual (ConsoleColor Foreground, ConsoleColor Background) GetColors(LogLevel lvl, Solver.SolverTraceType trc = default)
+        {
+            switch (lvl)
+            {
+                case LogLevel.Wrn:
+                    return (ConsoleColor.DarkYellow, ConsoleColor.White);
+                case LogLevel.Err:
+                    return (ConsoleColor.Red, ConsoleColor.White);
+                case LogLevel.Inf:
+                    return (ConsoleColor.DarkCyan, ConsoleColor.White);
+                case LogLevel.Ans:
+                    return (ConsoleColor.DarkBlue, ConsoleColor.White);
+                case LogLevel.Cmt:
+                    return (ConsoleColor.DarkGreen, ConsoleColor.White);
+                case LogLevel.Dbg:
+                    return (ConsoleColor.DarkMagenta, ConsoleColor.White);
+                case LogLevel.Trc:
+                    switch (trc)
+                    {
+                        case Solver.SolverTraceType.Call:
+                            return (ConsoleColor.DarkGray, ConsoleColor.White);
+                        case Solver.SolverTraceType.Exit:
+                            return (ConsoleColor.Gray, ConsoleColor.White);
+                        case Solver.SolverTraceType.Retn:
+                            return (ConsoleColor.Magenta, ConsoleColor.White);
+                        case Solver.SolverTraceType.Resv:
+                            return (ConsoleColor.DarkGreen, ConsoleColor.White);
+                        case Solver.SolverTraceType.Fail:
+                            return (ConsoleColor.DarkRed, ConsoleColor.White);
+                        default:
+                            return (ConsoleColor.DarkGray, ConsoleColor.White);
+                    }
+            }
+            return (ConsoleColor.Black, ConsoleColor.White);
+        }
+
+        protected virtual void WithColors(Action action, (ConsoleColor Foreground, ConsoleColor Background) colors)
         {
             var oldFg = Console.ForegroundColor;
             var oldBg = Console.BackgroundColor;
-            if(!overrideFg.HasValue || !overrideBg.HasValue)
-            {
-                switch (lvl)
-                {
-                    case LogLevel.Wrn:
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.Err:
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.Inf:
-                        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.Ans:
-                        Console.ForegroundColor = ConsoleColor.DarkBlue;
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.Cmt:
-                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.Dbg:
-                        Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                    case LogLevel.Trc:
-                        switch (trc)
-                        {
-                            case Solver.SolverTraceType.Call:
-                                Console.ForegroundColor = ConsoleColor.DarkGray;
-                                break;
-                            case Solver.SolverTraceType.Exit:
-                                Console.ForegroundColor = ConsoleColor.Gray;
-                                break;
-                            case Solver.SolverTraceType.Retn:
-                                Console.ForegroundColor = ConsoleColor.Magenta;
-                                break;
-                            case Solver.SolverTraceType.Resv:
-                                Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                break;
-                            case Solver.SolverTraceType.Fail:
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                break;
-                            default:
-                                Console.ForegroundColor = ConsoleColor.DarkGray;
-                                break;
-                        }
-                        Console.BackgroundColor = ConsoleColor.White;
-                        break;
-                }
-            }
-            if (overrideFg is { } fg)
-            {
-                Console.ForegroundColor = fg;
-            }
-            if (overrideBg is { } bg)
-            {
-                Console.BackgroundColor = bg;
-            }
+            (Console.ForegroundColor, Console.BackgroundColor) = colors;
             action();
             Console.ForegroundColor = oldFg;
             Console.BackgroundColor = oldBg;
@@ -142,13 +117,15 @@ namespace Ergo.Shell
         {
             var now = DateTime.Now;
             var lines = str.Replace("\r", "").Split('\n').Select(l => new LogLine(l, lvl, now)).ToArray();
-
-            WithColors(lvl, trc, () => {
+            var colors = GetColors(lvl, trc);
+            if (overrideFg.HasValue) colors.Foreground = overrideFg.Value;
+            if (overrideBg.HasValue) colors.Background = overrideBg.Value;
+            WithColors(() => {
                 foreach (var line in lines.Take(lines.Length - 1)) {
                     Console.WriteLine(LineFormatter(line));
                 }
                 Console.Write(LineFormatter(lines.Last())  );
-            }, overrideFg, overrideBg);
+            }, colors);
         }
 
         public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
@@ -181,34 +158,70 @@ namespace Ergo.Shell
             if (nl) WriteLine();
         }
 
-        public virtual void WriteTree<T, K>(T value, Func<T, K> getKey, Func<T, IEnumerable<T>> getChildren, Func<T, string> toString)
+        public virtual void WriteTree<T, K>(T value, Func<T, K> getKey, Func<T, IEnumerable<T>> getChildren, Func<T, string> toString, Func<T, bool> shouldPrintCyclicTerm)
         {
             var seen = new HashSet<K>();
             var tree = BuildTree(value);
             WriteLine(toString(value));
             for (int i = 0; i < tree.Children.Length; i++)
             {
-                WriteNode(tree, tree.Children[i], 0, i == tree.Children.Length - 1);
+                WriteNode(tree, tree.Children[i], 0);
             }
-            void WriteNode(TreeNode<T> parent, TreeNode<T> node, int indent = 0, bool last = false)
+            void WriteNode(TreeNode<T> parent, TreeNode<T> node, int indent = 0)
             {
+                var last = parent.Children.Last() == node;
                 var key = getKey(node.Value);
+                var cycle = seen.Contains(key);
+                if (cycle && !shouldPrintCyclicTerm(node.Value))
+                    return;
                 var spaces = String.Join("", Enumerable.Range(0, indent).Select(_ => "   "));
+                //if (indent > 0) spaces = $"{spaces}│    ";
                 var connector = new string('─', 2);
                 Write(spaces);
-                Write(last ? "└" : "├");
-                Write(connector);
-                Write(toString(node.Value));
-                if (seen.Contains(key))
+                var ancestors = GetAncestors(parent).ToArray();
+                for (int j = 0; j < ancestors.Length; j++)
                 {
-                    WriteLine("...");
+                    Write("\b\b\b");
+                }
+                for (int j = ancestors.Length - 1; j >= 1; j--)
+                {
+                    if(ancestors[j].Children.Last() != ancestors[j - 1])
+                    {
+                        Write("│  ", overrideFg: ConsoleColor.Gray);
+                    }
+                    else
+                    {
+                        Write("   ");
+                    }
+                }
+                Write(last ? "└" : "├", overrideFg: ConsoleColor.Gray);
+                Write(connector, overrideFg: ConsoleColor.Gray);
+                if (cycle)
+                {
+                    Write(toString(node.Value), overrideFg: ConsoleColor.DarkGray);
+                    WriteLine("…", overrideFg: ConsoleColor.DarkGray);
                     return;
+                }
+                else
+                {
+                    Write(toString(node.Value), overrideFg: ConsoleColor.Black);
                 }
                 WriteLine();
                 seen.Add(key);
                 for (int i = 0; i < node.Children.Length; i++)
                 {
-                    WriteNode(node, node.Children[i], indent + 1, i == node.Children.Length - 1);
+                    WriteNode(node, node.Children[i], indent + 1);
+                }
+            }
+
+            IEnumerable<TreeNode<T>> GetAncestors(TreeNode<T> node)
+            {
+                var cur = node;
+                while(true)
+                {
+                    yield return cur;
+                    cur = cur.Parent.GetOrDefault();
+                    if (cur is null) yield break;
                 }
             }
 
@@ -234,7 +247,7 @@ namespace Ergo.Shell
                 dict ??= new();
                 var key = getKey(value);
                 if (dict.TryGetValue(key, out var node))
-                    return node;
+                    return new(value, node.Children);
                 var ret = dict[key] = new(value);
                 var children = getChildren(value)
                     .Select(child => BuildTree(child, dict))

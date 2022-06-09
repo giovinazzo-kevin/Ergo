@@ -3,7 +3,9 @@
 ]).
 
 :- op(11, fx, ['-#>']).
-:- op(12, xf, ['<#-']).
+:- op(12, fx, ['<#-']).
 
+%: Retrieves items from all matching C# DataSources.
 '-#>'(Data) :- pull_data(Data).
+%: Pushes items to all matching C# DataSinks.
 '<#-'(Data) :- push_data(Data).

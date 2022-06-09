@@ -4,7 +4,6 @@
 
 :- op(15, xfy, ['|']).
 
-
 member(_, []) :- false.
 member(X, [Y|T]) :- (X = Y; member(X, T)).
 

@@ -28,12 +28,10 @@
 '?='(A,B) :- \+unifiable(A,B,[_H|_T]).
 %: Anonymous type declaration. (TODO: remove?)
 '/'(Functor, Arity) :- anon(Functor, Arity).
-
 %: True when Term is a term with functor Name/Arity.
 functor(Term, Name, Arity) :-
 	Term =.. [Name|Args],
 	length(Args, Arity).
-
 %: True when Term is a term with functor Name/Arity.
 arg(Arg, Term, Value) :-
 	Term =.. [_|Args],

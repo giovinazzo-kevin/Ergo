@@ -19,6 +19,7 @@ tag(global, '*').
 tag(shell, global).
 tag(commands, shell).
 tag(interpreter, global).
+tag(solver, global).
 tag(directives, interpreter).
 tag(ast, global).
 tag(modules, interpreter).
@@ -33,13 +34,13 @@ todo('Tabling/memoization', [global]).
 todo('Typesystem', [global]).
 todo('Lambdas/Higher order predicates', [global]).
 todo('Libraries', [modules]).
-todo('C# Data sources', [interpreter]).
+todo('First class dictionary terms for named marshalling', [global]).
+todo('Improved marshalling, debugging for Data Sources/Sinks', [solver]).
 todo('Term/Goal expansions', [interpreter]).
 todo('Stack/Recursion optimizations', [interpreter]).
-todo('C#-interoperable objects', [ast]).
-todo('IL codegen', [ast]).
+todo('IL codegen', [global, ast]).
 todo('Modules', [tests]).
 todo('Sugaring/Desugaring rules', [tests]).
 todo('Operator and literal resolution', [tests]).
-todo('List available operators', [commands]).
-todo('Describe current module', [commands]).
+todo('Standardized table commands', [commands]).
+todo('Standardized tree commands', [commands]).

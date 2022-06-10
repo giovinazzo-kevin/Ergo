@@ -1,6 +1,0 @@
-﻿:- module(test2, [
-]).
-
-:- use_module(test).
-:- use_module(tree).
-:- use_module(todo).

@@ -7,13 +7,8 @@ using System.Linq;
 
 namespace Ergo.Interpreter.Directives
 {
-
     public class DeclareOperator : InterpreterDirective
     {
-        enum OperatorType
-        {
-            fx, xf, xfx, xfy, yfx
-        }
 
         public DeclareOperator()
             : base("", new("op"), Maybe.Some(3), 10)
@@ -34,15 +29,7 @@ namespace Ergo.Interpreter.Directives
             {
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[2].Explain());
             }
-            var (affix, assoc) = type switch
-            {
-                OperatorType.fx => (OperatorAffix.Prefix, OperatorAssociativity.Right),
-                OperatorType.xf => (OperatorAffix.Postfix, OperatorAssociativity.Left),
-                OperatorType.xfx => (OperatorAffix.Infix, OperatorAssociativity.None),
-                OperatorType.xfy => (OperatorAffix.Infix, OperatorAssociativity.Right),
-                OperatorType.yfx => (OperatorAffix.Infix, OperatorAssociativity.Left),
-                _ => throw new NotSupportedException()
-            };
+            var (affix, assoc) = Operator.GetAffixAndAssociativity(type);
             var existingOperators = scope.Operators.Value;
             foreach (var op in existingOperators.Where(x => x.Affix == affix))
             {

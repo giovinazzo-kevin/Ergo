@@ -25,7 +25,33 @@ namespace Ergo.Lang.Ast
             Precedence = precedence;
         }
 
-        public string Explain() => $"← op({Precedence}, builtin, {CanonicalFunctor.Explain()})";
+        public static (OperatorAffix, OperatorAssociativity) GetAffixAndAssociativity(OperatorType type)
+        {
+            return type switch
+            {
+                OperatorType.fx => (OperatorAffix.Prefix, OperatorAssociativity.Right),
+                OperatorType.xf => (OperatorAffix.Postfix, OperatorAssociativity.Left),
+                OperatorType.xfx => (OperatorAffix.Infix, OperatorAssociativity.None),
+                OperatorType.xfy => (OperatorAffix.Infix, OperatorAssociativity.Right),
+                OperatorType.yfx => (OperatorAffix.Infix, OperatorAssociativity.Left),
+                _ => throw new NotSupportedException()
+            };
+        }
+
+        public static OperatorType GetOperatorType(OperatorAffix affix, OperatorAssociativity associativity)
+        {
+            return (affix, associativity) switch
+            {
+                (OperatorAffix.Prefix, OperatorAssociativity.Right) => OperatorType.fx,
+                (OperatorAffix.Postfix, OperatorAssociativity.Left) => OperatorType.xf,
+                (OperatorAffix.Infix, OperatorAssociativity.None) => OperatorType.xfx,
+                (OperatorAffix.Infix, OperatorAssociativity.Right) => OperatorType.xfy,
+                (OperatorAffix.Infix, OperatorAssociativity.Left) => OperatorType.yfx,
+                _ => throw new NotSupportedException()
+            };
+        }
+
+        public string Explain() => $"← op({Precedence}, {GetOperatorType(Affix, Associativity)}, [{String.Join(",", Synonyms.Select(s => s.Explain()))}])";
     }
 
 }

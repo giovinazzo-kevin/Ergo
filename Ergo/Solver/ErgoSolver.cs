@@ -20,6 +20,7 @@ namespace Ergo.Solver
 {
     public partial class ErgoSolver : IDisposable
     {
+
         protected volatile bool Cut = false;
         public readonly SolverFlags Flags;
         public readonly KnowledgeBase KnowledgeBase;
@@ -27,6 +28,8 @@ namespace Ergo.Solver
         public readonly InterpreterScope InterpreterScope;
         public readonly Dictionary<Signature, BuiltIn> BuiltIns;
         public readonly ErgoInterpreter Interpreter;
+
+        public readonly HashSet<Atom> DataSinks = new();
         public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
         public event Action<SolverTraceType, string> Trace;
@@ -71,8 +74,13 @@ namespace Ergo.Solver
         public void BindDataSink<T>(DataSink<T> sink)
             where T : new()
         {
+            DataSinks.Add(sink.Functor);
             sink.Connect(this);
-            Disposing += _ => sink.Disconnect(this);
+            Disposing += _ =>
+            {
+                sink.Disconnect(this);
+                DataSinks.Remove(sink.Functor);
+            };
         }
 
         public bool RemoveDataSources<T>(Atom functor)

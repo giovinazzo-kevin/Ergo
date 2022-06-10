@@ -1,7 +1,0 @@
-﻿:- module(test4, [
-]).
-
-:- use_module(test3).
-:- use_module(test2).
-:- use_module(test).
-:- use_module(todo).

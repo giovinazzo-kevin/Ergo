@@ -32,7 +32,9 @@
 functor(Term, Name, Arity) :-
 	Term =.. [Name|Args],
 	length(Args, Arity).
-%: True when Term is a term with functor Name/Arity.
+%: Term should be instantiated to a term, Arg to an integer between 1 and the arity of Term. 
+%: Value is unified with the Arg-th argument of Term. 
+%: Arg may also be unbound. In this case Value will be unified with the successive arguments of the term.
 arg(Arg, Term, Value) :-
 	Term =.. [_|Args],
 	nth1(Arg, Args, Value).

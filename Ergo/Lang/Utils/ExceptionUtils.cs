@@ -19,6 +19,7 @@ namespace Ergo.Lang.Utils
                 , Parser.ErrorType.UnterminatedClauseList => "Unterminated clause list."
                 , Parser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file."
                 , Parser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}"
+                , Parser.ErrorType.KeyExpected => "Key expected; found: {0}"
                 , _ => error.ToString()
             };
 

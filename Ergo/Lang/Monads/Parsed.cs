@@ -9,7 +9,9 @@ namespace Ergo.Lang
     {
         private static Maybe<T> Box(object value) => Maybe.Some((T)value);
         private readonly Lazy<Maybe<T>> _value;
+        private readonly Lazy<Maybe<T>> _valueUnsafe;
         public readonly Maybe<T> Value => _value.Value;
+        public readonly Maybe<T> ValueUnsafe => _valueUnsafe.Value;
 
         public Parsed(string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
         {
@@ -51,9 +53,19 @@ namespace Ergo.Lang
                 {
                     return parse(parser);
                 }
-                catch(ParserException)
+                catch (ParserException)
                 {
                     return Maybe<T>.None;
+                }
+                finally
+                {
+                    parser.Dispose();
+                }
+            });
+            _valueUnsafe = new Lazy<Maybe<T>>(() => {
+                try
+                {
+                    return parse(parser);
                 }
                 finally
                 {

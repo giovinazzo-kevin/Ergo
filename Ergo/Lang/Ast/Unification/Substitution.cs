@@ -1,4 +1,5 @@
 ﻿
+using Ergo.Lang.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,9 +49,6 @@ namespace Ergo.Lang.Ast
             var S = new List<Substitution>();
             while (E.Count > 0) {
                 var (x, y) = E[0];
-                if (x is Dict a) x = a.CanonicalForm;
-                if (y is Dict b) y = b.CanonicalForm;
-
                 E.RemoveAt(0);
                 if (!x.Equals(y)) {
                     if(y is Variable) {
@@ -63,12 +61,29 @@ namespace Ergo.Lang.Ast
                         var cx = (Complex)x;
                         var cy = (Complex)y;
 
-                        if (cx.Matches(cy)) {
-                            for (int i = 0; i < cx.Arguments.Length; i++) {
-                                E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
-                            }
+                        if (!cx.Matches(cy)) {
+                            return false;
                         }
-                        else return false;
+                        for (int i = 0; i < cx.Arguments.Length; i++)
+                        {
+                            E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
+                        }
+                    }
+                    else if (x is Dict && y is Dict) {
+                        var dx = (Dict)x;
+                        var dy = (Dict)y;
+
+                        var dxFunctor = dx.Functor.Reduce(a => (ITerm)a, v => v);
+                        var dyFunctor = dy.Functor.Reduce(a => (ITerm)a, v => v);
+                        E.Add(new Substitution(dxFunctor, dyFunctor));
+
+                        var set = dx.Dictionary.Keys.Intersect(dy.Dictionary.Keys);
+                        if (!set.Any() && (dx.Dictionary.Count + dy.Dictionary.Count > 0))
+                            return false;
+                        foreach (var key in set) 
+                        {
+                            E.Add(new Substitution(dx.Dictionary[key], dy.Dictionary[key]));
+                        }
                     }
                     else return false;
                 }

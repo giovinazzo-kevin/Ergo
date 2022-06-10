@@ -231,9 +231,18 @@ namespace Ergo.Lang
             {
                 return Fail(pos);
             }
-            var pairs = inner.Contents.Select(item => item is Variable
-                ? new KeyValuePair<ITerm, ITerm>(item, item)
-                : new KeyValuePair<ITerm, ITerm>(((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
+            foreach (var item in inner.Contents)
+            {
+                if(item is Variable)
+                {
+                    throw new ParserException(ErrorType.KeyExpected, _lexer.State, item.Explain());
+                }
+                if(item is Complex cplx && cplx.Arguments.First() is not Atom)
+                {
+                    throw new ParserException(ErrorType.KeyExpected, _lexer.State, cplx.Arguments.First().Explain());
+                }
+            }
+            var pairs = inner.Contents.Select(item => new KeyValuePair<ITerm, ITerm>(((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
             dict = new(functor, pairs);
             return true;
         }

@@ -46,8 +46,8 @@ namespace Ergo.Shell.Commands
                 // Syntactic sugar
                 userQuery += '.';
             }
-            using var solver = shell.CreateSolver(ref scope);
-            var parsed = shell.Parse<Query>(scope, userQuery).Value;
+            using var solver = shell.CreateSolver(ref scope);;
+            scope.ExceptionHandler.TryGet(scope, () => shell.Parse<Query>(scope, userQuery).ValueUnsafe, out var parsed);
             if (!parsed.HasValue)
             {
                 yield return scope;

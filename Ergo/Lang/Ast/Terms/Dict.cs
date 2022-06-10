@@ -39,8 +39,8 @@ namespace Ergo.Lang.Ast
         public bool IsQualified { get; }
         public bool IsParenthesized { get; }
         public IEnumerable<Variable> Variables =>
-            Functor.IsA ? KeyValuePairs.SelectMany(x => x.Variables)
-                        : KeyValuePairs.SelectMany(x => x.Variables).Prepend(Functor.Reduce(_ => default, v => v));
+            Functor.IsA ? Dictionary.Values.SelectMany(x => x.Variables)
+                        : Dictionary.Values.SelectMany(x => x.Variables).Prepend(Functor.Reduce(_ => default, v => v));
 
         public int CompareTo(ITerm o)
         {

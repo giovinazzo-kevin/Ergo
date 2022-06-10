@@ -10,6 +10,7 @@
             , ExpectedArgumentDelimiterOrClosedParens
             , ExpectedPredicateDelimiterOrTerminator
             , ExpectedClauseList
+            , KeyExpected
             , UnterminatedClauseList
             , ComplexHasNoArguments
             , OperatorDoesNotExist

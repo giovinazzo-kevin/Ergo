@@ -306,7 +306,7 @@ namespace Ergo.Solver
                 }
                 var signature = goal.GetSignature();
                 var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
-                if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules[dynModule].DynamicPredicates.Contains(signature)))
+                if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
                 {
                     if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {

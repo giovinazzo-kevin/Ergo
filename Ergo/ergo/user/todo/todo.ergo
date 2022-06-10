@@ -2,10 +2,6 @@
 	tag/2, subtag/2, todo/3, todo_find/2
 ]).
 
-:- use_module(info).
-:- use_module(tree).
-:- use_module(test).
-
 % ----
 
 todo_find(Tag, todo(Name, Tags)) :- todo(Name, Tags), member(T, Tags), (Tag = T ; subtag(T, Tag)).
@@ -44,3 +40,5 @@ todo('Sugaring/Desugaring rules', [tests]).
 todo('Operator and literal resolution', [tests]).
 todo('Standardized table commands', [commands]).
 todo('Standardized tree commands', [commands]).
+
+test{x:1, y:2, z:2}.

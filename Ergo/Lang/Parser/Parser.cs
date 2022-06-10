@@ -233,7 +233,7 @@ namespace Ergo.Lang
             }
             foreach (var item in inner.Contents)
             {
-                if(item is Variable)
+                if(item is not Complex)
                 {
                     throw new ParserException(ErrorType.KeyExpected, _lexer.State, item.Explain());
                 }

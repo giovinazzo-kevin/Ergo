@@ -32,7 +32,7 @@ namespace Ergo.Lang.Ast
             IsGround = Functor.IsA ? KeyValuePairs.All(x => x.IsGround) : false;
             IsQualified = false;
             IsParenthesized = false;
-            CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), KeyValuePairs.Prepend(Functor.Reduce(a => (ITerm)a, b => b)).ToArray());
+            CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).Root });
         }
 
         public bool IsGround { get; }

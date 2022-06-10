@@ -144,6 +144,11 @@ namespace Ergo.Lang
 
             bool TryParseTermInner(out ITerm ITerm)
             {
+                if (TryParseDict(out var dict))
+                {
+                    ITerm = dict;
+                    return true;
+                }
                 if (TryParseList(out var list)) {
                     ITerm = list.Root;
                     return true;
@@ -176,11 +181,14 @@ namespace Ergo.Lang
                 , "[", ",", "]"
                 , true
                 , out var full
-            )) {
+            ))
+            {
                 if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                    && WellKnown.Functors.List.Contains(cplx.Functor)) {
+                    && WellKnown.Functors.List.Contains(cplx.Functor))
+                {
                     var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                    if(CommaSequence.TryUnfold(cplx.Arguments[0], out var comma)) {
+                    if (CommaSequence.TryUnfold(cplx.Arguments[0], out var comma))
+                    {
                         arguments = comma.Contents;
                     }
                     seq = new List(arguments, Maybe.Some(cplx.Arguments[1]));
@@ -190,6 +198,44 @@ namespace Ergo.Lang
                 return true;
             }
             return Fail(pos);
+        }
+
+        public bool TryParseDict(out Dict dict)
+        {
+            dict = default;
+            var pos = _lexer.State;
+
+            var functor = (Either<Atom, Variable>)default;
+            if (TryParseAtom(out var atom))
+            {
+                functor = atom;
+            }
+            else if (TryParseVariable(out var variable))
+            {
+                functor = variable;
+            }
+            else
+            {
+                return Fail(pos);
+            }
+            if (!TryParseSequence(
+                  CommaSequence.CanonicalFunctor
+                , CommaSequence.EmptyLiteral
+                , () => TryParseTermOrExpression(out var t, out var p)
+                    ? (t is Complex cplx && (WellKnown.Functors.NamedArgument.Contains(cplx.Functor) || WellKnown.Functors.Conjunction.Contains(cplx.Functor)), t, p)
+                    : (false, default, p)
+                , "{", ",", "}"
+                , true
+                , out var inner
+            ))
+            {
+                return Fail(pos);
+            }
+            var pairs = inner.Contents.Select(item => item is Variable
+                ? new KeyValuePair<ITerm, ITerm>(item, item)
+                : new KeyValuePair<ITerm, ITerm>(((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
+            dict = new(functor, pairs);
+            return true;
         }
 
         private bool ExpectOperator(Func<Operator, bool> match, out Operator op)

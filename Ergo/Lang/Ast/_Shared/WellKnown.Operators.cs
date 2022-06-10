@@ -20,7 +20,7 @@ namespace Ergo.Lang.Ast
             public static readonly Operator ModuleQualifier = new(Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 5, Functors.Module);
 
             public static readonly Operator[] DefinedOperators = new[] { 
-                UnaryHorn, BinaryHorn, ArityIndicator, ModuleQualifier
+                UnaryHorn, BinaryHorn, ArityIndicator
             };
         }
     }

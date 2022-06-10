@@ -49,7 +49,7 @@ namespace Ergo.Lang
         protected bool TryParseSequence(
             Atom functor, 
             ITerm emptyElement, 
-            Func<(bool, ITerm, bool parens)> tryParseElement, 
+            Func<(bool Success, ITerm Term, bool Parens)> tryParseElement, 
             string openingDelim, 
             string separator, 
             string closingDelim, 

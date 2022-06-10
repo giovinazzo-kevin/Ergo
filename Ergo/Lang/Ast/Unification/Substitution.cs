@@ -48,6 +48,9 @@ namespace Ergo.Lang.Ast
             var S = new List<Substitution>();
             while (E.Count > 0) {
                 var (x, y) = E[0];
+                if (x is Dict a) x = a.CanonicalForm;
+                if (y is Dict b) y = b.CanonicalForm;
+
                 E.RemoveAt(0);
                 if (!x.Equals(y)) {
                     if(y is Variable) {

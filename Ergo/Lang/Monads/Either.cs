@@ -5,7 +5,7 @@ namespace Ergo.Lang
 
     public readonly struct Either<TA, TB>
     {
-        private readonly bool IsA { get; }
+        public readonly bool IsA { get; }
         private readonly TA A { get; }
         private readonly TB B { get; }
 

@@ -5,6 +5,8 @@ using System.Linq;
 
 namespace Ergo.Lang.Ast
 {
+
+
     [DebuggerDisplay("{ Explain() }")]
     public readonly struct Variable : ITerm
     {

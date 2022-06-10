@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -15,6 +16,7 @@ namespace Ergo.Lang.Ast
         public readonly Maybe<OperatorAffix> Affix;
         public readonly bool IsParenthesized { get; }
 
+
         public readonly Atom Functor;
         public readonly ITerm[] Arguments;
         public readonly int Arity => Arguments.Length;
@@ -25,7 +27,7 @@ namespace Ergo.Lang.Ast
         {
             Functor = functor;
             Arguments = args;
-            HashCode = System.HashCode.Combine(Functor, Arguments.Length);
+            HashCode = Arguments.Aggregate(Functor.GetHashCode(), (hash, a) => System.HashCode.Combine(hash, a));
             IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
             Affix = Maybe<OperatorAffix>.None;
             IsParenthesized = false;
@@ -37,14 +39,13 @@ namespace Ergo.Lang.Ast
             Affix = affix;
             IsParenthesized = parenthesized;
         }
-
         public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, Arguments);
         public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, Arguments);
         public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, Arguments);
 
         public string Explain(bool canonical = false)
         {
-            if(!canonical && IsParenthesized)
+            if (!canonical && IsParenthesized)
             {
                 return $"({Inner(this)})";
             }
@@ -89,8 +90,6 @@ namespace Ergo.Lang.Ast
 
         public Complex WithArguments(params ITerm[] args)
         {
-            //if (args.Length != Arguments.Length)
-            //    throw new ArgumentOutOfRangeException(nameof(args));
             return new Complex(Affix, IsParenthesized, Functor, args);
         }
 
@@ -101,7 +100,8 @@ namespace Ergo.Lang.Ast
 
         public override bool Equals(object obj)
         {
-            if (obj is not Complex other) {
+            if (obj is not Complex other)
+            {
                 return false;
             }
             var args = Arguments;
@@ -144,5 +144,4 @@ namespace Ergo.Lang.Ast
             return !(left == right);
         }
     }
-
 }

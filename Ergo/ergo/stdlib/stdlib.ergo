@@ -1,6 +1,7 @@
 ﻿:- module(stdlib, []).
 :- use_module(prologue).
 :- use_module(list).
+:- use_module(dict).
 :- use_module(math).
 :- use_module(meta).
 :- use_module(io).

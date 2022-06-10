@@ -11,6 +11,8 @@
             public static readonly Atom[] IntDivision = new Atom[] { new("//") };
             public static readonly Atom[] Arity = Division;
             public static readonly Atom[] Module = new Atom[] { new("::") };
+            public static readonly Atom[] Dict = new Atom[] { new("dict") };
+            public static readonly Atom[] NamedArgument = new Atom[] { new(":") };
             public static readonly Atom[] Addition = new Atom[] { new("+") };
             public static readonly Atom[] Plus = Addition;
             public static readonly Atom[] Subtraction = new Atom[] { new("-") };

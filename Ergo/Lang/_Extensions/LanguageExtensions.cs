@@ -14,6 +14,7 @@ namespace Ergo.Lang.Extensions
             if (t is Atom a) return ifAtom(a);
             if (t is Variable v) return ifVariable(v);
             if (t is Complex c) return ifComplex(c);
+            if (t is Dict d) return ifComplex(d.CanonicalForm);
             throw new NotSupportedException(t.GetType().Name);
         }
         public static bool Is<T>(this ITerm t, out T match, Func<T, bool> filter = null)

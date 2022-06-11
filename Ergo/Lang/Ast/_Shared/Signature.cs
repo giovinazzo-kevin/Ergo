@@ -39,7 +39,9 @@ namespace Ergo.Lang.Ast
             {
                 return false;
             }
-            return Functor.Equals(other.Functor) && Arity.Equals(other.Arity) && Module.Equals(other.Module);
+            return Functor.Equals(other.Functor) 
+                && (!Arity.HasValue || !other.Arity.HasValue || Arity.Equals(other.Arity))
+                && Module.Equals(other.Module);
         }
 
         public static bool operator ==(Signature left, Signature right)

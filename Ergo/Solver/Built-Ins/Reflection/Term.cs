@@ -19,7 +19,19 @@ namespace Ergo.Solver.BuiltIns
             var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
             if(termArg is not Variable)
             {
-                if(termArg is Complex complex)
+                if (termArg is Dict dict)
+                {
+                    var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
+                    if (!new Substitution(functorArg, new Atom("dict")).TryUnify(out var funSubs)
+                    || !new Substitution(args, new List(new[] { tag }.Append(new List(dict.KeyValuePairs).Root)).Root).TryUnify(out var listSubs))
+                    {
+                        yield return new(WellKnown.Literals.False);
+                        yield break;
+                    }
+                    yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
+                    yield break;
+                }
+                if (termArg is Complex complex)
                 {
                     if (!new Substitution(functorArg, complex.Functor).TryUnify(out var funSubs)
                     || !new Substitution(args, new List(complex.Arguments).Root).TryUnify(out var listSubs))

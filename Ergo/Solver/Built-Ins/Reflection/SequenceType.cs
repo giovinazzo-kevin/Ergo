@@ -16,7 +16,7 @@ namespace Ergo.Solver.BuiltIns
 
         public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
         {
-            var (type, seq) = (arguments[0], arguments[1]);
+            var (type, seq) = (arguments[1], arguments[0]);
             if (seq is Variable)
             {
                 solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, seq.Explain()));

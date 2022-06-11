@@ -20,7 +20,6 @@ namespace Ergo.Solver
 {
     public partial class ErgoSolver : IDisposable
     {
-
         protected volatile bool Cut = false;
         public readonly SolverFlags Flags;
         public readonly KnowledgeBase KnowledgeBase;

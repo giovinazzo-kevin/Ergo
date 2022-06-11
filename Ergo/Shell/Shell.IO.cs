@@ -127,16 +127,18 @@ namespace Ergo.Shell
             if (overrideBg.HasValue) colors.Background = overrideBg.Value;
             WithColors(() => {
                 foreach (var line in lines.Take(lines.Length - 1)) {
-                    Console.WriteLine(LineFormatter(line));
+                    Out.WriteLine(LineFormatter(line));
+                    Out.Flush();
                 }
-                Console.Write(LineFormatter(lines.Last())  );
+                Out.Write(LineFormatter(lines.Last()));
+                Out.Flush();
             }, colors);
         }
 
         public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
         {
             Write(str, lvl, trc, overrideFg, overrideBg);
-            Console.WriteLine();
+            Out.WriteLine();
         }
 
         public virtual void Yes(bool nl = true, LogLevel lvl = LogLevel.Ans)

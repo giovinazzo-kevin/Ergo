@@ -46,7 +46,7 @@ await foreach (var _ in shell.Repl(scope))
 {
     await foreach(var person in consoleSink.Pull())
     {
-        Console.WriteLine($"\r\n\tReceived:{person}");
+        Console.WriteLine($"Received:{person}");
     }
 }
 

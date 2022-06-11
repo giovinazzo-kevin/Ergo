@@ -50,43 +50,8 @@ namespace Ergo.Lang.Ast
             while (E.Count > 0) {
                 var (x, y) = E[0];
                 E.RemoveAt(0);
-                if (!x.Equals(y)) {
-                    if(y is Variable) {
-                        ApplySubstitution(new Substitution(y, x));
-                    }
-                    else if (x is Variable) {
-                        ApplySubstitution(new Substitution(x, y));
-                    }
-                    else if (x is Complex && y is Complex) {
-                        var cx = (Complex)x;
-                        var cy = (Complex)y;
-
-                        if (!cx.Matches(cy)) {
-                            return false;
-                        }
-                        for (int i = 0; i < cx.Arguments.Length; i++)
-                        {
-                            E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
-                        }
-                    }
-                    else if (x is Dict && y is Dict) {
-                        var dx = (Dict)x;
-                        var dy = (Dict)y;
-
-                        var dxFunctor = dx.Functor.Reduce(a => (ITerm)a, v => v);
-                        var dyFunctor = dy.Functor.Reduce(a => (ITerm)a, v => v);
-                        E.Add(new Substitution(dxFunctor, dyFunctor));
-
-                        var set = dx.Dictionary.Keys.Intersect(dy.Dictionary.Keys);
-                        if (!set.Any() && dx.Dictionary.Count != 0 && dy.Dictionary.Count != 0)
-                            return false;
-                        foreach (var key in set) 
-                        {
-                            E.Add(new Substitution(dx.Dictionary[key], dy.Dictionary[key]));
-                        }
-                    }
-                    else return false;
-                }
+                if (!Unify(x, y))
+                    return false;
             }
 
             substitutions = S;
@@ -96,6 +61,76 @@ namespace Ergo.Lang.Ast
             {
                 E = new List<Substitution>(E.Select(eq => new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s))).Distinct());
                 S = new List<Substitution>(S.Select(eq => new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s))).Append(s).Distinct());
+            }
+
+            bool Unify(ITerm x, ITerm y)
+            {
+                if (x is Complex && Dict.TryUnfold(x, out var xd))
+                    x = xd;
+                if (y is Complex && Dict.TryUnfold(y, out var yd))
+                    y = yd;
+                if (!x.Equals(y))
+                {
+                    if (y is Variable)
+                    {
+                        ApplySubstitution(new Substitution(y, x));
+                    }
+                    else if (x is Variable)
+                    {
+                        ApplySubstitution(new Substitution(x, y));
+                    }
+                    else if (x is Complex cx && y is Complex cy)
+                    {
+                        if (!DoComplex(cx, cy))
+                            return false;
+                    }
+                    else if (x is Dict dx && y is Dict dy)
+                    {
+                        if (!DoDict(dx, dy))
+                            return false;
+                    }
+                    else if (
+                        (x is Dict || y is Dict)
+                        && (x is Complex { Functor: { } f } && WellKnown.Functors.Dict.Contains(f)
+                            || y is Complex { Functor: { } g } && WellKnown.Functors.Dict.Contains(g)))
+                    {
+                        var cx1 = x is Dict d1 ? d1.CanonicalForm : (Complex)x;
+                        var cy1 = y is Dict d2 ? d2.CanonicalForm : (Complex)y;
+                        if (!DoComplex(cx1, cy1))
+                            return false;
+                    }
+                    else return false;
+                }
+                return true;
+            }
+
+            bool DoDict(Dict dx, Dict dy)
+            {
+                var dxFunctor = dx.Functor.Reduce(a => (ITerm)a, v => v);
+                var dyFunctor = dy.Functor.Reduce(a => (ITerm)a, v => v);
+                E.Add(new Substitution(dxFunctor, dyFunctor));
+
+                var set = dx.Dictionary.Keys.Intersect(dy.Dictionary.Keys);
+                if (!set.Any() && dx.Dictionary.Count != 0 && dy.Dictionary.Count != 0)
+                    return false;
+                foreach (var key in set)
+                {
+                    E.Add(new Substitution(dx.Dictionary[key], dy.Dictionary[key]));
+                }
+                return true;
+            }
+
+            bool DoComplex(Complex cx, Complex cy)
+            {
+                if (!cx.Matches(cy))
+                {
+                    return false;
+                }
+                for (int i = 0; i < cx.Arguments.Length; i++)
+                {
+                    E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
+                }
+                return true;
             }
         }
 

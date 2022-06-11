@@ -24,6 +24,9 @@ namespace Ergo.Shell
         public readonly ExceptionHandler DefaultExceptionHandler;
         public readonly Action<ErgoSolver> ConfigureSolver;
 
+        public TextReader In  { get; private set; }
+        public TextWriter Out  { get; private set; }
+
         public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler, false, false);
 
         public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
@@ -125,7 +128,13 @@ namespace Ergo.Shell
 
         public virtual async IAsyncEnumerable<ShellScope> Repl(ShellScope scope, Func<string, bool> exit = null)
         {
-            while(true) {
+            Out = new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding);
+            In = new StreamReader(Console.OpenStandardInput(), Console.InputEncoding);
+
+            Console.SetOut(Out);
+            Console.SetIn(In);
+
+            while (true) {
                 Write($"{scope.InterpreterScope.Module.Explain()}> ");
                 var prompt = Prompt();
                 if (exit != null && exit(prompt)) break;
@@ -135,6 +144,9 @@ namespace Ergo.Shell
                     scope = result;
                 }
             }
+
+            Out.Dispose();
+            In.Dispose();
         }
 
         public async IAsyncEnumerable<ShellScope> DoAsync(ShellScope scope, string command)

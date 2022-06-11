@@ -75,21 +75,18 @@ namespace Ergo.Shell.Commands
                 var any = false;
                 await foreach (var s in solutions)
                 {
-                    if (any)
+                    if(!any)
                     {
-                        if (shell.ReadChar(true) != ' ')
-                        {
-                            break;
-                        }
+                        any = true;
+                    }
+                    else
+                    {
                         if (!scope_.TraceEnabled)
                         {
                             shell.WriteLine(" ∨", LogLevel.Rpl);
                         }
                     }
-                    else
-                    {
-                        any = true;
-                    }
+                    yield return scope;
                     if (s.Substitutions.Any())
                     {
                         var join = String.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
@@ -103,7 +100,10 @@ namespace Ergo.Shell.Commands
                     {
                         shell.Yes(nl: false, LogLevel.Rpl);
                     }
-                    yield return scope;
+                    if (shell.ReadChar(true) != ' ')
+                    {
+                        break;
+                    }
                 }
                 if (!any) shell.No(nl: false, LogLevel.Rpl);
                 shell.WriteLine(".");

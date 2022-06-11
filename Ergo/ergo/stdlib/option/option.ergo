@@ -1,0 +1,11 @@
+﻿:- module(option, [
+    named_arg/3,
+    named_tuple/3
+]).
+
+:- op(1000, xfx, [':']).
+
+named_arg(Name:Arg, Name, Arg) :- ground(Name).
+
+named_tuple(Complex, Name, Tuple) :- ground(Tuple), comma_list(Tuple, Args), term(Name, Args, Complex).
+named_tuple(Complex, Name, Tuple) :- \+ground(Tuple), term(Name, Args, Complex), comma_list(Tuple, Args).

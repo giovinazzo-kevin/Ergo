@@ -27,7 +27,7 @@
     <None Update="ergo\user\info\info.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\user\option\option.ergo">
+    <None Update="ergo\stdlib\option\option.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ergo\stdlib\reflection\reflection.ergo">

@@ -3,3 +3,5 @@
 ]).
 
 :- op(21, xfx, [':']).
+
+%: Get all K/V pairs: dict(_, _Args), member(_Arg, _Args), named_arg(_Arg, Name, Value).

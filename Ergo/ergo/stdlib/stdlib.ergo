@@ -2,6 +2,7 @@
 :- use_module(prologue).
 :- use_module(list).
 :- use_module(dict).
+:- use_module(option).
 :- use_module(math).
 :- use_module(meta).
 :- use_module(io).

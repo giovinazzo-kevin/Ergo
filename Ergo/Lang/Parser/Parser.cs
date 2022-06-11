@@ -242,7 +242,7 @@ namespace Ergo.Lang
                     throw new ParserException(ErrorType.KeyExpected, _lexer.State, cplx.Arguments.First().Explain());
                 }
             }
-            var pairs = inner.Contents.Select(item => new KeyValuePair<ITerm, ITerm>(((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
+            var pairs = inner.Contents.Select(item => new KeyValuePair<Atom, ITerm>((Atom)((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
             dict = new(functor, pairs);
             return true;
         }

@@ -18,15 +18,15 @@ namespace Ergo.Solver
         public Solution Simplify()
         {
             return new(Inner(Substitutions)
-                .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
+                .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false, d => false))
                 .ToArray())
                 ;
             IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
             {
                 var answers = subs
-                    .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false));
+                    .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false, d => false));
                 var steps = subs
-                    .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false))
+                    .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false, d => false))
                     .ToDictionary(s => s.Lhs);
                 foreach (var ans in answers)
                 {

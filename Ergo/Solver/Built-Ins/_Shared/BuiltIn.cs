@@ -25,7 +25,7 @@ namespace Ergo.Solver.BuiltIns
 
         public BuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
         {
-            Signature = new(functor, arity, Maybe.Some(module));
+            Signature = new(functor, arity, Maybe.Some(module), Maybe<Atom>.None);
             Documentation = documentation;
         }
     }

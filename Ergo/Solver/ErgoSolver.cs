@@ -55,8 +55,11 @@ namespace Ergo.Solver
         public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
             where T : new()
         {
-            var signature = TermMarshall.ToTerm(new T()).GetSignature();
-            signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
+            var term = TermMarshall.ToTerm(new T());
+            var signature = term.GetSignature();
+            signature = term is Dict
+                ? signature.WithTag(functor)
+                : functor.Reduce(some => signature.WithFunctor(some), () => signature);
             return signature;
         }
 
@@ -138,6 +141,7 @@ namespace Ergo.Solver
             // Return results from data sources 
             if (DataSources.TryGetValue(signature.WithModule(Maybe.None<Atom>()), out var sources))
             {
+                signature = DataSources.Keys.Single(k => k.Equals(signature));
                 foreach (var source in sources)
                 {
                     await foreach (var item in source)
@@ -145,7 +149,7 @@ namespace Ergo.Solver
                         var predicate = new Predicate(
                             "data source",
                             Modules.CSharp,
-                            item.WithFunctor(signature.Functor),
+                            item.WithFunctor(signature.Tag.Reduce(some => some, () => signature.Functor)),
                             CommaSequence.Empty,
                             dynamic: true
                         );
@@ -188,7 +192,13 @@ namespace Ergo.Solver
             {
                 LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
                 ct.ThrowIfCancellationRequested();
-                await foreach(var eval in builtIn.Apply(this, scope, term.Reduce(a => Array.Empty<ITerm>(), v => Array.Empty<ITerm>(), c => c.Arguments)))
+                var args = term.Reduce(
+                    a => Array.Empty<ITerm>(), 
+                    v => Array.Empty<ITerm>(), 
+                    c => c.Arguments,
+                    d => d.KeyValuePairs
+                );
+                await foreach(var eval in builtIn.Apply(this, scope, args))
                 {
                     LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
                     ct.ThrowIfCancellationRequested();

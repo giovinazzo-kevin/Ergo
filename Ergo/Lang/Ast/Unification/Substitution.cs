@@ -78,7 +78,7 @@ namespace Ergo.Lang.Ast
                         E.Add(new Substitution(dxFunctor, dyFunctor));
 
                         var set = dx.Dictionary.Keys.Intersect(dy.Dictionary.Keys);
-                        if (!set.Any() && (dx.Dictionary.Count + dy.Dictionary.Count > 0))
+                        if (!set.Any() && dx.Dictionary.Count != 0 && dy.Dictionary.Count != 0)
                             return false;
                         foreach (var key in set) 
                         {

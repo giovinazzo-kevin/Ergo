@@ -44,13 +44,15 @@ namespace Ergo.Interpreter
 
         public DataSource(Func<IEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData rejectSemantics = RejectionData.Discard, RejectionControl enumSemantics = RejectionControl.Continue)
         {
-            Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
+            var signature = ErgoSolver.GetDataSignature<T>(functor);
+            Functor = signature.Tag.Reduce(some => some, () => signature.Functor);
             Source = new(() => FromEnumerable(source), rejectSemantics, enumSemantics);
         }
 
         public DataSource(Func<IAsyncEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData dataSemantics = RejectionData.Discard, RejectionControl ctrlSemantics = RejectionControl.Continue)
         {
-            Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
+            var signature = ErgoSolver.GetDataSignature<T>(functor);
+            Functor = signature.Tag.Reduce(some => some, () => signature.Functor);
             Source = new(() => FromAsyncEnumerable(source), dataSemantics, ctrlSemantics);
         }
     }

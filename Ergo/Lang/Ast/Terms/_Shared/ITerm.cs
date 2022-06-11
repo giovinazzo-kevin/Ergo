@@ -15,6 +15,7 @@ namespace Ergo.Lang.Ast
         {
             Atom a => Maybe.Some(a),
             Complex c => Maybe.Some(c.Functor),
+            Dict d => d.Functor.Reduce(a => Maybe.Some(a), v => Maybe<Atom>.None),
             _ => Maybe<Atom>.None
         };
 
@@ -23,6 +24,7 @@ namespace Ergo.Lang.Ast
             Atom => newFunctor,
             Variable v => v,
             Complex c => c.WithFunctor(newFunctor),
+            Dict d => d.WithFunctor(newFunctor),
             var x => x
         };
 

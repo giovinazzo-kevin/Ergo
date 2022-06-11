@@ -36,7 +36,7 @@ namespace Ergo.Shell.Commands
             {
                 if(!term.IsGround || new Substitution(signature.Functor, functor).TryUnify(out _))
                 {
-                    sinks.Add(new(functor, Maybe<int>.None, Maybe<Atom>.None));
+                    sinks.Add(new(functor, Maybe<int>.None, Maybe<Atom>.None, Maybe<Atom>.None));
                 }
             }
 

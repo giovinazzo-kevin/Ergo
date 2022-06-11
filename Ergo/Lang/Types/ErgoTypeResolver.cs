@@ -62,8 +62,9 @@ namespace Ergo.Lang
         public abstract object GetMemberValue(string name, object instance);
         public abstract void SetMemberValue(string name, object instance, object value);
         public abstract IEnumerable<string> GetMembers();
-        public abstract ITerm GetArgument(string name, Complex value);
+        public abstract ITerm GetArgument(string name, ITerm value);
         public abstract ITerm TransformMember(string name, ITerm value);
+        public abstract ITerm TransformTerm(Atom functor, ITerm[] args);
         public abstract Type GetParameterType(string name, ConstructorInfo info);
 
         public virtual ITerm ToTerm(object o, Maybe<Atom> overrideFunctor = default, Maybe<TermMarshalling> overrideMarshalling = default)
@@ -112,9 +113,9 @@ namespace Ergo.Lang
                     }
                 ).ToArray();
             }
-            return TransformTerm(functor, args);
+            return TransformTermInternal(functor, args);
 
-            ITerm TransformTerm(Atom functor, ITerm[] args)
+            ITerm TransformTermInternal(Atom functor, ITerm[] args)
             {
                 if (args.Length == 0)
                     return new Atom(functor);
@@ -122,8 +123,7 @@ namespace Ergo.Lang
                 if (WellKnown.Functors.List.Contains(functor))
                     return new List(args).Root;
 
-                return new Complex(functor, args)
-                    .AsParenthesized(WellKnown.Functors.Conjunction.Contains(functor));
+                return TransformTerm(functor, args);
             }
 
         }
@@ -153,7 +153,7 @@ namespace Ergo.Lang
                 {
                     var type = GetMemberType(name);
                     var paramType = GetParameterType(name, constructor);
-                    var arg = GetArgument(name, (Complex)t);
+                    var arg = GetArgument(name, t);
                     var value = TermMarshall.FromTerm(arg, type, Maybe.Some(Marshalling));
                     value = Convert.ChangeType(value, paramType);
                     return value;

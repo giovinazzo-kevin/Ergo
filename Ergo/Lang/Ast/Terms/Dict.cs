@@ -12,27 +12,36 @@ namespace Ergo.Lang.Ast
         public readonly Complex CanonicalForm;
 
         public readonly ITerm[] KeyValuePairs;
-        public readonly ImmutableDictionary<ITerm, ITerm> Dictionary;
+        public readonly ImmutableDictionary<Atom, ITerm> Dictionary;
         public readonly Either<Atom, Variable> Functor;
 
         private readonly int HashCode;
 
-        public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<ITerm, ITerm>> args)
+        public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args)
         {
             Functor = functor;
             Dictionary = ImmutableDictionary.CreateRange(args);
             KeyValuePairs = args
-                .Select(kv => kv.Key is Variable && kv.Value == kv.Key
-                    ? kv.Key
-                    : new Complex(WellKnown.Functors.NamedArgument.First(), kv.Key, kv.Value)
+                .Select(kv => (ITerm)new Complex(WellKnown.Functors.NamedArgument.First(), kv.Key, kv.Value)
                         .AsOperator(OperatorAffix.Infix))
                 .OrderBy(o => o)
                 .ToArray();
-            HashCode = KeyValuePairs.Aggregate(Functor.GetHashCode(), (hash, a) => System.HashCode.Combine(hash, a));
             IsGround = Functor.IsA ? KeyValuePairs.All(x => x.IsGround) : false;
             IsQualified = false;
             IsParenthesized = false;
             CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).Root });
+            HashCode = CanonicalForm.GetHashCode();
+        }
+        private Dict(Either<Atom, Variable> functor, ImmutableDictionary<Atom, ITerm> dict, ITerm[] kvp)
+        {
+            Functor = functor;
+            Dictionary = dict;
+            KeyValuePairs = kvp;
+            IsGround = Functor.IsA ? KeyValuePairs.All(x => x.IsGround) : false;
+            IsQualified = false;
+            IsParenthesized = false;
+            CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).Root });
+            HashCode = CanonicalForm.GetHashCode();
         }
 
         public bool IsGround { get; }
@@ -41,7 +50,6 @@ namespace Ergo.Lang.Ast
         public IEnumerable<Variable> Variables =>
             Functor.IsA ? Dictionary.Values.SelectMany(x => x.Variables)
                         : Dictionary.Values.SelectMany(x => x.Variables).Prepend(Functor.Reduce(_ => default, v => v));
-
         public int CompareTo(ITerm o)
         {
             if (o is Atom) return 1;
@@ -50,6 +58,8 @@ namespace Ergo.Lang.Ast
             if (o is not Complex other) throw new InvalidCastException();
             return CanonicalForm.CompareTo(other);
         }
+
+        public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary, KeyValuePairs);
 
         public override bool Equals(object obj)
         {
@@ -77,7 +87,7 @@ namespace Ergo.Lang.Ast
         public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
         {
             return new Dict(Functor.Map(a => a, b => (Variable)b.Instantiate(ctx, vars)), Dictionary
-                .Select(kv => new KeyValuePair<ITerm, ITerm>(kv.Key.Instantiate(ctx, vars), kv.Value.Instantiate(ctx, vars))));
+                .Select(kv => new KeyValuePair<Atom, ITerm>(kv.Key, kv.Value.Instantiate(ctx, vars))));
         }
 
         public ITerm Substitute(Substitution s)
@@ -94,7 +104,7 @@ namespace Ergo.Lang.Ast
                 _ => throw new InvalidOperationException()
             };
             var newArgs = Dictionary
-                .Select(kv => new KeyValuePair<ITerm, ITerm>(kv.Key.Substitute(s), kv.Value.Substitute(s)));
+                .Select(kv => new KeyValuePair<Atom, ITerm>(kv.Key, kv.Value.Substitute(s)));
             return new Dict(newFunctor, newArgs);
         }
 

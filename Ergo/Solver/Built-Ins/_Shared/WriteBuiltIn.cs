@@ -29,7 +29,9 @@ namespace Ergo.Solver.BuiltIns
                 v => v,
                 c => c.WithFunctor(c.Functor.AsQuoted(false))
                       .WithArguments(c.Arguments
-                        .Select(a => AsQuoted(a, false)).ToArray())
+                        .Select(a => AsQuoted(a, false)).ToArray()),
+                d => new Dict(d.Functor.Map(a => a.AsQuoted(false), v => v), d.Dictionary
+                    .Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key.AsQuoted(false), AsQuoted(kvp.Value, false))))
             );
         }
 

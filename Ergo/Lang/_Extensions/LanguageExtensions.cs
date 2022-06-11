@@ -9,12 +9,20 @@ namespace Ergo.Lang.Extensions
 {
     public static class LanguageExtensions
     {
-        public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
+        public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex, Func<Dict, T> ifDict)
         {
             if (t is Atom a) return ifAtom(a);
             if (t is Variable v) return ifVariable(v);
             if (t is Complex c) return ifComplex(c);
-            if (t is Dict d) return ifComplex(d.CanonicalForm);
+            if (t is Dict d) return ifDict(d);
+            throw new NotSupportedException(t.GetType().Name);
+        }
+        public static T Map<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex, Func<Dict, T> ifDict)
+        {
+            if (t is Atom a) return ifAtom(a);
+            if (t is Variable v) return ifVariable(v);
+            if (t is Complex c) return ifComplex(c);
+            if (t is Dict d) return ifDict(d);
             throw new NotSupportedException(t.GetType().Name);
         }
         public static bool Is<T>(this ITerm t, out T match, Func<T, bool> filter = null)
@@ -49,16 +57,26 @@ namespace Ergo.Lang.Extensions
             if(term.TryGetQualification(out var qm, out var qv))
             {
                 var qs = qv.GetSignature();
+
+                var tag = Maybe<Atom>.None;
+                if(qv is Complex cplx && WellKnown.Functors.Subtraction.Contains(cplx.Functor))
+                {
+                    qv = cplx.Arguments[0];
+                    tag = Maybe.Some((Atom)cplx.Arguments[1]);
+                }
+
                 return new Signature(
                     qs.Functor,
                     qs.Arity,
-                    Maybe.Some(qm)
+                    Maybe.Some(qm),
+                    tag
                 );
             }
             return new Signature(
-                term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
-                Maybe.Some(term.Reduce(a => 0, v => 0, c => c.Arity)),
-                Maybe<Atom>.None
+                term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor, d => d.CanonicalForm.Functor),
+                term.Map(a => Maybe.Some(0), v => Maybe.Some(0), c => Maybe.Some(c.Arity), d => Maybe.Some(d.CanonicalForm.Arity)),
+                Maybe<Atom>.None,
+                term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None, d => d.Functor.Reduce(a => Maybe.Some(a), v => Maybe<Atom>.None))
             );
         }
 

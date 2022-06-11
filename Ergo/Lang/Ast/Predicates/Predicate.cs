@@ -31,7 +31,7 @@ namespace Ergo.Lang.Ast
             return expl;
         }
 
-        public static int Arity(ITerm head) => head.Reduce(a => 0, v => 0, c => c.Arity);
+        public static int Arity(ITerm head) => head.Reduce(a => 0, v => 0, c => c.Arity, d => 2);
 
         public Predicate(string desc, Atom module, ITerm head, CommaSequence body, bool dynamic = false)
         {

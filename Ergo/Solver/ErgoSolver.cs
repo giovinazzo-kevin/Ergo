@@ -22,12 +22,12 @@ namespace Ergo.Solver
     {
         protected volatile bool Cut = false;
         public readonly SolverFlags Flags;
-        public readonly KnowledgeBase KnowledgeBase;
         public readonly ShellScope ShellScope;
         public readonly InterpreterScope InterpreterScope;
         public readonly Dictionary<Signature, BuiltIn> BuiltIns;
         public readonly ErgoInterpreter Interpreter;
 
+        public readonly KnowledgeBase KnowledgeBase;
         public readonly HashSet<Atom> DataSinks = new();
         public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
@@ -220,6 +220,76 @@ namespace Ergo.Solver
             Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
         }
 
+
+        public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, Maybe<Atom> entry = default, HashSet<Atom> added = null)
+        {
+            added ??= new();
+            var changed = term;
+            if (term is Variable)
+                return Maybe<ITerm>.None;
+            var signature = term.GetSignature();
+            var currentModule = InterpreterScope.Module;
+            var entryModule = entry.Reduce(some => some, () => currentModule);
+            if (InterpreterScope.Modules[entryModule].Expansions.TryGetValue(signature, out var literals))
+            {
+                foreach (var expand in literals)
+                {
+                    if (!new Substitution(term, expand.Head).TryUnify(out var subs))
+                        continue;
+                    var head = expand.Value.Substitute(subs);
+                    if (expand.Value.IsGround)
+                    {
+                        changed = head;
+                    }
+                    else
+                    {
+                        var eval = new Variable("_Eval");
+                        if (head.Variables.Any(v => v.Equals(eval)))
+                        {
+                            // Assume expand is callable
+                            await foreach (var item in Solve(new(new(head))))
+                            {
+                                return Maybe.Some(item.Links.Value[eval]);
+                            }
+                        }
+                    }
+                }
+                return Maybe.Some(changed);
+            }
+            if (added.Contains(entryModule) || !InterpreterScope.Modules.TryGetValue(entryModule, out var module))
+            {
+                return Maybe<ITerm>.None;
+            }
+            added.Add(entryModule);
+            foreach (Atom import in module.Imports.Contents.Reverse())
+            {
+                var ret = await TryExpandTerm(term, Maybe.Some(import), added);
+                if (ret.HasValue)
+                    return ret;
+            }
+            if (term is Complex c)
+            {
+                var any = false;
+                var args = new ITerm[c.Arguments.Length];
+                for (int i = 0; i < args.Length; i++)
+                {
+                    var ret = await TryExpandTerm(c.Arguments[i], entry, added);
+                    args[i] = ret.Reduce(some => some, () => c.Arguments[i]);
+                    any = ret.HasValue;
+                }
+                changed = c.WithArguments(args);
+                if (any)
+                    return Maybe.Some(changed);
+            }
+            if (term is Dict d)
+            {
+                var ret = await TryExpandTerm(d.CanonicalForm, entry, added);
+                if (ret.HasValue)
+                    return ret;
+            }
+            return Maybe<ITerm>.None;
+        }
+
         protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
         {
             ct.ThrowIfCancellationRequested();
@@ -236,7 +306,10 @@ namespace Ergo.Solver
                 yield break;
             }
             // Cyclic literal definitions throw an error, so this replacement loop always terminates
-            while (InterpreterScope.TryReplaceLiterals(goal, out goal)) { ct.ThrowIfCancellationRequested(); }
+            while (await TryExpandTerm(goal) is { HasValue: true } exp) { 
+                ct.ThrowIfCancellationRequested();
+                goal = exp.GetOrDefault();
+            }
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
             await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))

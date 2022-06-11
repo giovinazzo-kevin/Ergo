@@ -8,6 +8,7 @@ using Ergo.Solver;
 using System.Linq;
 using Ergo.Lang;
 using System;
+using Ergo.Lang.Extensions;
 
 namespace Ergo.Interpreter
 {
@@ -98,55 +99,6 @@ namespace Ergo.Interpreter
             }
         }
 
-
-        public bool TryReplaceLiterals(ITerm term, out ITerm changed, Maybe<Atom> entry = default, HashSet<Atom> added = null)
-        {
-            changed = term;
-            if (term is Variable) 
-                return false;
-            added ??= new();
-            var currentModule = Module;
-            var entryModule = entry.Reduce(some => some, () => currentModule);
-            if (added.Contains(entryModule) || !Modules.TryGetValue(entryModule, out var module))
-            {
-                return false;
-            }
-            added.Add(entryModule);
-            if(term is Atom a)
-            {
-                if(module.Literals.TryGetValue(a, out var literal))
-                {
-                    changed = literal.Value;
-                    return true;
-                }
-            }
-            if(term is Complex c)
-            {
-                var args = new ITerm[c.Arguments.Length];
-                var any = false;
-                for (int i = 0; i < args.Length; i++)
-                {
-                    if(TryReplaceLiterals(c.Arguments[i], out var arg, entry))
-                    {
-                        any = true;
-                        args[i] = arg;
-                    }
-                    else
-                    {
-                        args[i] = c.Arguments[i];
-                    }
-                }
-                changed = c.WithArguments(args);
-                return any;
-            }
-            foreach (Atom import in module.Imports.Contents.Reverse())
-            {
-                if (TryReplaceLiterals(term, out changed, Maybe.Some(import), added))
-                    return true;
-            }
-            return false;
-        }
-        
         public bool IsModuleVisible(Atom name, Maybe<Atom> entry = default, HashSet<Atom> added = null)
         {
             added ??= new();

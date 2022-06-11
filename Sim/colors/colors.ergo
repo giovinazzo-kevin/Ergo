@@ -1,7 +1,7 @@
 ﻿:- module(colors, []).
 
-:- lit(black, color(0, 0, 0, 255)).
-:- lit(magenta, color(255, 0, 255, 255)).
-:- lit(red, color(255, 0, 0, 255)).
-:- lit(green, color(0, 255, 0, 255)).
-:- lit(blue, color(0, 0, 255, 255)).
+:- expand(black, color(0, 0, 0, 255)).
+:- expand(magenta, color(255, 0, 255, 255)).
+:- expand(red, color(255, 0, 0, 255)).
+:- expand(green, color(0, 255, 0, 255)).
+:- expand(blue, color(0, 0, 255, 255)).

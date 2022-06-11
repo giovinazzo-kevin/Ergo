@@ -7,8 +7,8 @@
         , ModuleAlreadyImported
         , ModuleNameClash
         , OperatorClash
-        , LiteralClashWithBuiltIn
-        , LiteralClash
+        , ExpansionClashWithLiteral
+        , ExpansionClash
         , LiteralCyclicDefinition
         , ModuleRedefinition
         , UndefinedDirective

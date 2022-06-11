@@ -84,22 +84,16 @@ namespace Ergo.Shell.Commands
                         if (!scope_.TraceEnabled)
                         {
                             shell.WriteLine(" ∨", LogLevel.Rpl);
-                            shell.Write(String.Empty, LogLevel.Ans);
                         }
                     }
                     else
                     {
                         any = true;
-                        shell.Write(String.Empty, LogLevel.Ans);
                     }
                     if (s.Substitutions.Any())
                     {
                         var join = String.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
-                        if (scope_.TraceEnabled)
-                        {
-                            shell.Write(String.Empty, LogLevel.Ans);
-                        }
-                        shell.Write($"{join}", LogLevel.Rpl);
+                        shell.Write($"{join}", LogLevel.Ans);
                         if (scope_.TraceEnabled)
                         {
                             shell.WriteLine();
@@ -111,7 +105,7 @@ namespace Ergo.Shell.Commands
                     }
                     yield return scope;
                 }
-                if (!any) shell.No(nl: true, LogLevel.Rpl);
+                if (!any) shell.No(nl: false, LogLevel.Rpl);
                 shell.WriteLine(".");
             }
             else

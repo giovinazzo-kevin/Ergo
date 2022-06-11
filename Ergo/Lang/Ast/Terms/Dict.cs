@@ -17,11 +17,12 @@ namespace Ergo.Lang.Ast
 
         private readonly int HashCode;
 
-        public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args)
+        public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args = default)
         {
+            args ??= Enumerable.Empty<KeyValuePair<Atom, ITerm>>();
             Functor = functor;
             Dictionary = ImmutableDictionary.CreateRange(args);
-            KeyValuePairs = args
+            KeyValuePairs = Dictionary
                 .Select(kv => (ITerm)new Complex(WellKnown.Functors.NamedArgument.First(), kv.Key, kv.Value)
                         .AsOperator(OperatorAffix.Infix))
                 .OrderBy(o => o)

@@ -125,7 +125,7 @@ namespace Ergo.Solver
             {
                 foreach (var sig in DataSources.Keys)
                 {
-                    var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOrThrow());
+                    var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOrThrow()));
                     if(!new Substitution(head, anon).TryUnify(out var subs))
                     {
                         continue;
@@ -196,7 +196,7 @@ namespace Ergo.Solver
                     a => Array.Empty<ITerm>(), 
                     v => Array.Empty<ITerm>(), 
                     c => c.Arguments,
-                    d => d.KeyValuePairs
+                    d => new ITerm[] { d }
                 );
                 await foreach(var eval in builtIn.Apply(this, scope, args))
                 {

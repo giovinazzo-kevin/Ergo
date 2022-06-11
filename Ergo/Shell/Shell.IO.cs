@@ -53,12 +53,17 @@ namespace Ergo.Shell
         public virtual string ReadLine(string until = "\r\n")
         {
             var sb = new StringBuilder();
-            while ((char)Console.Read() is var c) {
-                sb.Append(c);
-                if (sb.ToString().EndsWith(until)) {
-                    break;
+            WithColors(() =>
+            {
+                while ((char)Console.Read() is var c)
+                {
+                    sb.Append(c);
+                    if (sb.ToString().EndsWith(until))
+                    {
+                        break;
+                    }
                 }
-            }
+            }, (ConsoleColor.DarkMagenta, ConsoleColor.White));
             return sb.ToString()[..^until.Length];
         }
 
@@ -82,18 +87,18 @@ namespace Ergo.Shell
                 case LogLevel.Cmt:
                     return (ConsoleColor.DarkGreen, ConsoleColor.White);
                 case LogLevel.Dbg:
-                    return (ConsoleColor.DarkMagenta, ConsoleColor.White);
+                    return (ConsoleColor.DarkGray, ConsoleColor.White);
                 case LogLevel.Trc:
                     switch (trc)
                     {
                         case Solver.SolverTraceType.Call:
-                            return (ConsoleColor.DarkGray, ConsoleColor.White);
+                            return (ConsoleColor.Green, ConsoleColor.White);
                         case Solver.SolverTraceType.Exit:
-                            return (ConsoleColor.Gray, ConsoleColor.White);
+                            return (ConsoleColor.DarkGreen, ConsoleColor.White);
                         case Solver.SolverTraceType.Retn:
                             return (ConsoleColor.Magenta, ConsoleColor.White);
                         case Solver.SolverTraceType.Resv:
-                            return (ConsoleColor.DarkGreen, ConsoleColor.White);
+                            return (ConsoleColor.DarkMagenta, ConsoleColor.White);
                         case Solver.SolverTraceType.Fail:
                             return (ConsoleColor.DarkRed, ConsoleColor.White);
                         default:
@@ -132,18 +137,6 @@ namespace Ergo.Shell
         {
             Write(str, lvl, trc, overrideFg, overrideBg);
             Console.WriteLine();
-        }
-
-        public virtual void WriteList(IReadOnlyCollection<string> list)
-        {
-            var str = "No.";
-            if (list.Count > 1) {
-                str = "\t" + String.Join("\n\t, ", list) + "\n\t.";
-            }
-            else if (list.Count == 1) {
-                str = "\t" + list.Single() + ".";
-            }
-            WriteLine(str);
         }
 
         public virtual void Yes(bool nl = true, LogLevel lvl = LogLevel.Ans)

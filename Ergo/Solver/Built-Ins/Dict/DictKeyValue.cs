@@ -9,10 +9,10 @@ using System.Linq;
 
 namespace Ergo.Solver.BuiltIns
 {
-    public sealed class DictEval : BuiltIn
+    public sealed class DictKeyValue : BuiltIn
     {
-        public DictEval()
-            : base("", new($"dict_eval"), Maybe<int>.Some(3), Modules.Dict)
+        public DictKeyValue()
+            : base("", new($"dict_key_value"), Maybe<int>.Some(3), Modules.Dict)
         {
         }
 
@@ -36,6 +36,11 @@ namespace Ergo.Solver.BuiltIns
                     if (new Substitution(args[1], key).TryUnify(out var subs) && new Substitution(args[2], dict.Dictionary[key]).TryUnify(out var vSubs))
                     {
                         yield return new Evaluation(WellKnown.Literals.True, subs.Concat(vSubs).ToArray());
+                    }
+                    else
+                    {
+                        yield return new Evaluation(WellKnown.Literals.False);
+                        yield break;
                     }
                 }
                 yield break;

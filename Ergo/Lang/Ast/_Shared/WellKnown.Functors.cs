@@ -16,6 +16,7 @@
             public static readonly Atom[] Addition = new Atom[] { new("+") };
             public static readonly Atom[] Plus = Addition;
             public static readonly Atom[] Subtraction = new Atom[] { new("-") };
+            public static readonly Atom[] SignatureTag = new Atom[] { new("^") };
             public static readonly Atom[] Minus = Subtraction;
             public static readonly Atom[] Power = new Atom[] { new("^") };
             public static readonly Atom[] SquareRoot = new Atom[] { new("√"), new("sqrt") };

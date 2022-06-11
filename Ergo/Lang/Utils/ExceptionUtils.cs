@@ -61,7 +61,11 @@ namespace Ergo.Lang.Utils
             };
 
             if (args != null && args.Length > 0) {
-                msg = String.Format(msg, args);
+                try
+                {
+                    msg = String.Format(msg, args);
+                }
+                catch { }
             }
 
             return msg;
@@ -78,7 +82,11 @@ namespace Ergo.Lang.Utils
             };
 
             if (args != null && args.Length > 0) {
-                msg = String.Format(msg, args);
+                try
+                {
+                    msg = String.Format(msg, args);
+                }
+                catch { }
             }
             var expl = scope.Explain();
             if(!String.IsNullOrWhiteSpace(expl))

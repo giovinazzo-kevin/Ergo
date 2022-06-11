@@ -59,7 +59,7 @@ namespace Ergo.Lang.Extensions
                 var qs = qv.GetSignature();
 
                 var tag = Maybe<Atom>.None;
-                if(qv is Complex cplx && WellKnown.Functors.Subtraction.Contains(cplx.Functor))
+                if(qv is Complex cplx && WellKnown.Functors.SignatureTag.Contains(cplx.Functor))
                 {
                     qv = cplx.Arguments[0];
                     tag = Maybe.Some((Atom)cplx.Arguments[1]);
@@ -74,7 +74,7 @@ namespace Ergo.Lang.Extensions
             }
             return new Signature(
                 term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor, d => d.CanonicalForm.Functor),
-                term.Map(a => Maybe.Some(0), v => Maybe.Some(0), c => Maybe.Some(c.Arity), d => Maybe.Some(d.CanonicalForm.Arity)),
+                term.Map(a => Maybe.Some(0), v => Maybe.Some(0), c => Maybe.Some(c.Arity), d => Maybe<int>.None),
                 Maybe<Atom>.None,
                 term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None, d => d.Functor.Reduce(a => Maybe.Some(a), v => Maybe<Atom>.None))
             );

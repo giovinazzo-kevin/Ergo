@@ -26,7 +26,11 @@ namespace Ergo.Lang.Ast
             var module = Module.Reduce(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}", () => "");
             var tag = Tag.Reduce(some => some.Explain(), () => null);
             var arity = Arity.Reduce(some => some.ToString(), () => "*");
-            return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.Subtraction.First().Explain() : null)}{tag}/{arity}";
+            if(WellKnown.Functors.Dict.Contains(Functor) && tag != null)
+            {
+                return $"{module}{tag}{{}}/{arity}";
+            }
+            return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.SignatureTag.First().Explain() : null)}{tag}/{arity}";
         }
 
         public override bool Equals(object obj)
@@ -60,7 +64,7 @@ namespace Ergo.Lang.Ast
                 && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 c.Arguments[0].TryGetQualification(out var qm, out var qs);
-                if(qs is Complex d && WellKnown.Functors.Subtraction.Contains(d.Functor) && d.Arguments.Length == 2)
+                if(qs is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
                 {
                     sig = new((Atom)d.Arguments[0], Maybe.Some(match.Arity), Maybe.Some(qm), Maybe.Some((Atom)d.Arguments[1]));
                     return true;

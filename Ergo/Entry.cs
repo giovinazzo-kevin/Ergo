@@ -36,7 +36,7 @@ var shell = new ErgoShell(interpreter =>
     solver.BindDataSink(feedbackSink);
     // solver.BindDataSource lets you "pull" objects from a C# IEnumerable/IAsyncEnumerable to Ergo
     solver.BindDataSource(personGenSource);
-    // You can also use a sink as a data source in order to share messages between application and language domains
+    // You can also use a sink as a data source in order to share messages between language domains
     solver.BindDataSource(feedbackSource);
 });
 // shell.TryAddCommand lets you extend the shell

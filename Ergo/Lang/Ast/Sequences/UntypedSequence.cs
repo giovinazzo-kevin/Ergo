@@ -30,6 +30,7 @@ public readonly struct UntypedSequence : ISequence
         {
             return $"{{{Inner(this)}}}";
         }
+
         return Inner(this);
         string Inner(UntypedSequence seq)
         {
@@ -37,11 +38,13 @@ public readonly struct UntypedSequence : ISequence
             {
                 return seq.EmptyElement.Explain(canonical);
             }
+
             var joined = string.Join(',', seq.Contents.Select(t => t.Explain(canonical)));
             if (seq.Contents.Length != 1)
             {
                 return $"({joined})";
             }
+
             return joined;
         }
     }

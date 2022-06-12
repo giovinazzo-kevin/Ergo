@@ -24,6 +24,7 @@ public sealed class PrintDataSinks : ShellCommand
             yield return scope;
             yield break;
         }
+
         var term = parsed.GetOrDefault();
         var signature = term.GetSignature().WithModule(Maybe.None<Atom>());
         foreach (var functor in solver.DataSinks)

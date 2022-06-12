@@ -22,6 +22,7 @@ public sealed class Call : BuiltIn
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         var goal = args.Aggregate((a, b) => a.Concat(b));
         if (goal is Variable)
         {
@@ -29,16 +30,19 @@ public sealed class Call : BuiltIn
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         if (!CommaSequence.TryUnfold(goal, out var comma))
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(goal));
         }
+
         var any = false;
         await foreach (var solution in solver.Solve(new(comma), Maybe.Some(scope)))
         {
             yield return new Evaluation(WellKnown.Literals.True, solution.Substitutions);
             any = true;
         }
+
         if (!any)
         {
             yield return new Evaluation(WellKnown.Literals.False);

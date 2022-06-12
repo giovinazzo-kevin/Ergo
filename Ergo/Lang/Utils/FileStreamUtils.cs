@@ -5,10 +5,7 @@ namespace Ergo.Lang.Utils;
 
 public static class FileStreamUtils
 {
-    public static Stream MemoryStream(string contents)
-    {
-        return new MemoryStream(Encoding.UTF8.GetBytes(contents));
-    }
+    public static Stream MemoryStream(string contents) => new MemoryStream(Encoding.UTF8.GetBytes(contents));
 
     public static Stream EncodedFileStream(FileStream file, bool closeStream = true)
     {
@@ -23,8 +20,10 @@ public static class FileStreamUtils
             {
                 file.Dispose();
             }
+
             stream = ms;
         }
+
         stream.Seek(0, SeekOrigin.Begin);
         return stream;
     }

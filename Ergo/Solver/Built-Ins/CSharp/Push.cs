@@ -18,6 +18,7 @@ public sealed class Push : BuiltIn
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         solver.PushData(args[0]);
         yield return new(WellKnown.Literals.True);
     }

@@ -15,6 +15,7 @@ public sealed class Retract : DynamicPredicateBuiltIn
             yield return new(WellKnown.Literals.True);
             any = true;
         }
+
         if (!any)
         {
             yield return new(WellKnown.Literals.False);

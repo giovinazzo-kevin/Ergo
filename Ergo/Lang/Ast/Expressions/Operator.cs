@@ -48,6 +48,6 @@ public readonly partial struct Operator
         };
     }
 
-    public string Explain() => $"← op({Precedence}, {GetOperatorType(Affix, Associativity)}, [{String.Join(",", Synonyms.Select(s => s.Explain()))}])";
+    public string Explain() => $"← op({Precedence}, {GetOperatorType(Affix, Associativity)}, [{string.Join(",", Synonyms.Select(s => s.Explain()))}])";
 }
 

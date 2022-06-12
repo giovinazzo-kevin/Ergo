@@ -19,6 +19,7 @@ public sealed class FindAll : BuiltIn
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
         }
+
         var solutions = (await solver.Solve(new(comma), Maybe.Some(scope)).CollectAsync())
             .Select(s => s.Simplify())
             .ToArray();

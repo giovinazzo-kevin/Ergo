@@ -61,6 +61,7 @@ public readonly struct Module
         {
             arr = ImmutableArray<Expansion>.Empty;
         }
+
         var newLiterals = Expansions.SetItem(signature, arr.Add(new Expansion(key, value)));
         return new(Name, Imports, Exports, Operators, newLiterals, DynamicPredicates, Program, Runtime);
     }

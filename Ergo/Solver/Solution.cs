@@ -35,8 +35,10 @@ public readonly struct Solution
                     {
                         break;
                     }
+
                     vars = newVars;
                 }
+
                 yield return ret;
             }
         }

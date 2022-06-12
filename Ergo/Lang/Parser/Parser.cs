@@ -12,7 +12,7 @@ public partial class Parser : IDisposable
     public Parser(Lexer lexer)
     {
         _lexer = lexer;
-        _discardContext = new(String.Empty);
+        _discardContext = new(string.Empty);
     }
 
     public bool TryGetOperatorsFromFunctor(Atom functor, out IEnumerable<Operator> ops)
@@ -24,6 +24,7 @@ public partial class Parser : IDisposable
         {
             return false;
         }
+
         ops = match;
         return true;
     }
@@ -52,15 +53,18 @@ public partial class Parser : IDisposable
             atom = WellKnown.Literals.Cut;
             return true;
         }
+
         if (Expect(Lexer.TokenType.Term, out string ITerm))
         {
             if (!IsAtomIdentifier(ITerm))
             {
                 return Fail(pos);
             }
+
             atom = new Atom(ITerm);
             return true;
         }
+
         return Fail(pos);
 
     }
@@ -74,17 +78,21 @@ public partial class Parser : IDisposable
             {
                 return Fail(pos);
             }
+
             if (term.StartsWith("__K"))
             {
                 Throw(pos, ErrorType.TermHasIllegalName, var.Name);
             }
+
             if (term.Equals(WellKnown.Literals.Discard.Explain()))
             {
                 term = $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}";
             }
+
             var = new Variable(term);
             return true;
         }
+
         return Fail(pos);
     }
     public bool TryParseComplex(out Complex cplx)
@@ -97,6 +105,7 @@ public partial class Parser : IDisposable
         {
             return Fail(pos);
         }
+
         if (!TryParseSequence(
               CommaSequence.CanonicalFunctor
             , CommaSequence.EmptyLiteral
@@ -108,6 +117,7 @@ public partial class Parser : IDisposable
         {
             return Fail(pos);
         }
+
         cplx = !inner.IsParenthesized && CommaSequence.TryUnfold(inner.Root, out _)
             ? new Complex(new Atom(functor), inner.Contents.ToArray())
             : new Complex(new Atom(functor), inner.Root);
@@ -122,10 +132,12 @@ public partial class Parser : IDisposable
             parenthesized = expr.Complex.IsParenthesized;
             return true;
         }
+
         if (TryParseTerm(out term, out parenthesized))
         {
             return true;
         }
+
         term = default;
         return Fail(pos);
     }
@@ -139,17 +151,20 @@ public partial class Parser : IDisposable
             parenthesized = true;
             return true;
         }
+
         if (Parenthesized(() => TryParseTerm(out var eval, out _) ? (true, eval) : (false, default), out var eval))
         {
             term = eval;
             parenthesized = true;
             return true;
         }
+
         if (TryParseTermInner(out var t))
         {
             term = t;
             return true;
         }
+
         return Fail(pos);
 
         bool TryParseTermInner(out ITerm ITerm)
@@ -159,26 +174,31 @@ public partial class Parser : IDisposable
                 ITerm = dict;
                 return true;
             }
+
             if (TryParseList(out var list))
             {
                 ITerm = list.Root;
                 return true;
             }
+
             if (TryParseVariable(out var var))
             {
                 ITerm = var;
                 return true;
             }
+
             if (TryParseComplex(out var cplx))
             {
                 ITerm = cplx;
                 return true;
             }
+
             if (TryParseAtom(out var atom))
             {
                 ITerm = atom;
                 return true;
             }
+
             ITerm = default;
             return false;
         }
@@ -205,12 +225,15 @@ public partial class Parser : IDisposable
                 {
                     arguments = comma.Contents;
                 }
+
                 seq = new List(arguments, Maybe.Some(cplx.Arguments[1]));
                 return true;
             }
+
             seq = new List(full.Contents);
             return true;
         }
+
         return Fail(pos);
     }
 
@@ -232,6 +255,7 @@ public partial class Parser : IDisposable
         {
             return Fail(pos);
         }
+
         if (!TryParseSequence(
               CommaSequence.CanonicalFunctor
             , CommaSequence.EmptyLiteral
@@ -245,17 +269,20 @@ public partial class Parser : IDisposable
         {
             return Fail(pos);
         }
+
         foreach (var item in inner.Contents)
         {
             if (item is not Complex)
             {
                 throw new ParserException(ErrorType.KeyExpected, _lexer.State, item.Explain());
             }
+
             if (item is Complex cplx && cplx.Arguments.First() is not Atom)
             {
                 throw new ParserException(ErrorType.KeyExpected, _lexer.State, cplx.Arguments.First().Explain());
             }
         }
+
         var pairs = inner.Contents.Select(item => new KeyValuePair<Atom, ITerm>((Atom)((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
         dict = new(functor, pairs);
         return true;
@@ -271,6 +298,7 @@ public partial class Parser : IDisposable
             op = ops.Single(match);
             return true;
         }
+
         return false;
     }
 
@@ -296,6 +324,7 @@ public partial class Parser : IDisposable
                 var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
                 return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
             }
+
             return new Expression(op, lhs, Maybe.Some(rhs), exprParenthesized);
         }
 
@@ -317,11 +346,13 @@ public partial class Parser : IDisposable
                 expr = BuildExpression(op, cplx.Arguments[0], exprParenthesized: exprParenthesized);
                 return true;
             }
+
             if (cplx.Arguments.Length == 2)
             {
                 expr = BuildExpression(op, cplx.Arguments[0], Maybe.Some(cplx.Arguments[1]), exprParenthesized: exprParenthesized);
                 return true;
             }
+
             return false;
         }
     }
@@ -336,6 +367,7 @@ public partial class Parser : IDisposable
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
         }
+
         return Fail(pos);
     }
 
@@ -349,6 +381,7 @@ public partial class Parser : IDisposable
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
         }
+
         return Fail(pos);
     }
 
@@ -368,10 +401,12 @@ public partial class Parser : IDisposable
             {
                 return Fail(pos);
             }
+
             var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
             expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
             return true;
         }
+
         return Fail(pos);
 
         bool WithMinPrecedence(ITerm lhs, int minPrecedence, out Expression expr)
@@ -381,10 +416,12 @@ public partial class Parser : IDisposable
             {
                 return Fail(pos);
             }
+
             if (lookahead.Affix != OperatorAffix.Infix || lookahead.Precedence < minPrecedence)
             {
                 return Fail(pos);
             }
+
             while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence)
             {
                 _lexer.TryReadNextToken(out _);
@@ -393,11 +430,13 @@ public partial class Parser : IDisposable
                 {
                     return Fail(pos);
                 }
+
                 if (!TryPeekNextOperator(out lookahead))
                 {
                     expr = BuildExpression(op, lhs, Maybe.Some(rhs));
                     break;
                 }
+
                 while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
                     || lookahead.Associativity == OperatorAssociativity.Right && lookahead.Precedence == op.Precedence)
                 {
@@ -405,14 +444,17 @@ public partial class Parser : IDisposable
                     {
                         break;
                     }
+
                     rhs = newRhs.Complex;
                     if (!TryPeekNextOperator(out lookahead))
                     {
                         break;
                     }
                 }
+
                 lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
             }
+
             return true;
         }
 
@@ -425,15 +467,18 @@ public partial class Parser : IDisposable
                 ITerm = prefix.Complex;
                 return true;
             }
+
             if (TryParsePostfixExpression(out var postfix))
             {
                 ITerm = postfix.Complex;
                 return true;
             }
+
             if (TryParseTerm(out ITerm, out parenthesized))
             {
                 return true;
             }
+
             return Fail(pos);
         }
 
@@ -446,10 +491,10 @@ public partial class Parser : IDisposable
                 op = ops.Where(op => op.Affix == OperatorAffix.Infix).Single();
                 return true;
             }
+
             return false;
         }
     }
-
 
     public bool TryParseDirective(out Directive directive)
     {
@@ -459,19 +504,23 @@ public partial class Parser : IDisposable
         {
             return Fail(pos);
         }
+
         if (!WellKnown.Operators.UnaryHorn.Equals(op.Operator))
         {
             return Fail(pos);
         }
+
         if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
         {
             Throw(pos, ErrorType.UnterminatedClauseList);
         }
+
         var lhs = op.Left;
         if (CommaSequence.TryUnfold(lhs, out var expr))
         {
             lhs = expr.Root;
         }
+
         directive = new(lhs);
         return true;
     }
@@ -485,12 +534,13 @@ public partial class Parser : IDisposable
             desc = desc[1..].TrimStart();
             while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
             {
-                if (!String.IsNullOrEmpty(newDesc))
+                if (!string.IsNullOrEmpty(newDesc))
                 {
                     desc += "\n" + newDesc[1..].TrimStart();
                 }
             }
         }
+
         desc ??= " ";
         if (_lexer.Eof)
             return Fail(pos);
@@ -500,21 +550,26 @@ public partial class Parser : IDisposable
             {
                 return MakePredicate(pos, desc, head, new(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)), out predicate);
             }
+
             Throw(pos, ErrorType.ExpectedClauseList);
         }
+
         if (!WellKnown.Operators.BinaryHorn.Equals(op.Operator))
         {
             op = new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some<ITerm>(WellKnown.Literals.True), false);
         }
+
         if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
         {
             Throw(pos, ErrorType.UnterminatedClauseList);
         }
+
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
         if (!CommaSequence.TryUnfold(rhs, out var expr))
         {
             expr = new(ImmutableArray<ITerm>.Empty.Add(rhs));
         }
+
         return MakePredicate(pos, desc, op.Left, expr, out predicate);
 
         bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaSequence body, out Predicate c)
@@ -527,8 +582,9 @@ public partial class Parser : IDisposable
                 .Select(v => v.Explain());
             if (singletons.Any())
             {
-                Throw(pos, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), String.Join(", ", singletons));
+                Throw(pos, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), string.Join(", ", singletons));
             }
+
             c = new Predicate(
                 desc
                 , Modules.User
@@ -547,10 +603,12 @@ public partial class Parser : IDisposable
         {
             directives.Add(directive);
         }
+
         while (TryParsePredicate(out var predicate))
         {
             predicates.Add(predicate);
         }
+
         program = new ErgoProgram(directives.ToArray(), predicates.ToArray())
             .AsPartial(false);
         return true;
@@ -570,6 +628,7 @@ public partial class Parser : IDisposable
         {
             // The parser reached a point where a newly-declared operator was used. Probably.
         }
+
         program = new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>())
             .AsPartial(true);
         return true;

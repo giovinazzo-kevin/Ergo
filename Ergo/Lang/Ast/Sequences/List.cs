@@ -42,6 +42,7 @@ public readonly struct List : ISequence
             expr = Empty;
             return true;
         }
+
         if (t is Complex c && CanonicalFunctor.Equals(c.Functor))
         {
             var args = new List<ITerm>() { c.Arguments[0] };
@@ -50,6 +51,7 @@ public readonly struct List : ISequence
                 expr = new List(ImmutableArray.CreateRange(args));
                 return true;
             }
+
             if (c.Arguments.Length != 2)
                 return false;
             if (TryUnfold(c.Arguments[1], out var subExpr))
@@ -64,6 +66,7 @@ public readonly struct List : ISequence
                 return true;
             }
         }
+
         return false;
     }
 
@@ -73,6 +76,7 @@ public readonly struct List : ISequence
         {
             return $"({Inner(this)})";
         }
+
         return Inner(this);
         string Inner(List seq)
         {
@@ -80,11 +84,13 @@ public readonly struct List : ISequence
             {
                 return seq.Tail.Explain(canonical);
             }
-            var joined = String.Join(',', seq.Contents.Select(t => t.Explain(canonical)));
+
+            var joined = string.Join(',', seq.Contents.Select(t => t.Explain(canonical)));
             if (!seq.Tail.Equals(seq.EmptyElement))
             {
                 return $"[{joined}|{seq.Tail.Explain(canonical)}]";
             }
+
             return $"[{joined}]";
         }
     }

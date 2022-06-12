@@ -35,6 +35,7 @@ public readonly struct ExceptionHandler
         {
             Finally?.Invoke();
         }
+
         return true;
     }
 
@@ -55,6 +56,7 @@ public readonly struct ExceptionHandler
         {
             Finally?.Invoke();
         }
+
         return true;
     }
 
@@ -75,6 +77,7 @@ public readonly struct ExceptionHandler
         {
             Finally?.Invoke();
         }
+
         return true;
     }
 

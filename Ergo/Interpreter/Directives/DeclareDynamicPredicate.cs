@@ -13,6 +13,7 @@ public class DeclareDynamicPredicate : InterpreterDirective
         {
             sig = args[0].GetSignature();
         }
+
         scope = scope.WithModule(scope.Modules[scope.Module]
             .WithDynamicPredicate(sig));
         return true;

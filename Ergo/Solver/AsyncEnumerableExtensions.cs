@@ -11,6 +11,7 @@ public static class AsyncEnumerableExtensions
         {
             bag.Add(item);
         }
+
         return bag;
     }
 }

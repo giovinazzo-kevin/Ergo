@@ -54,6 +54,7 @@ public sealed class DataSource : IAsyncEnumerable<ITerm>
                 _queues.Back.Enqueue(item);
                 break;
         }
+
         return ControlSemantics == RejectionControl.Break;
     }
 
@@ -71,6 +72,7 @@ public sealed class DataSource : IAsyncEnumerable<ITerm>
                 if (_queues.Front.TryDequeue(out var b)) return Maybe.Some(b);
                 return Maybe<ITerm>.None;
         }
+
         return Maybe<ITerm>.None;
     }
 
@@ -94,6 +96,7 @@ public sealed class DataSource : IAsyncEnumerable<ITerm>
             while (GetReject().TryGetValue(out var reject))
                 yield return reject;
         }
+
         await Task.CompletedTask;
     }
 
@@ -111,10 +114,7 @@ public sealed class DataSource : IAsyncEnumerable<ITerm>
         }
     }
 
-    public IAsyncEnumerator<ITerm> GetAsyncEnumerator(CancellationToken cancellationToken = default)
-    {
-        return Source().GetAsyncEnumerator(cancellationToken);
-    }
+    public IAsyncEnumerator<ITerm> GetAsyncEnumerator(CancellationToken cancellationToken = default) => Source().GetAsyncEnumerator(cancellationToken);
 
     public DataSource(Func<IEnumerable<ITerm>> source, RejectionData rejectSemantics = RejectionData.Discard, RejectionControl enumSemantics = RejectionControl.Continue)
     {

@@ -15,10 +15,12 @@ public class SetModule : InterpreterDirective
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
         }
+
         if (!scope.Runtime)
         {
             return new DeclareModule().Execute(interpreter, ref scope, args[0], WellKnown.Literals.EmptyList);
         }
+
         var module = interpreter
             .EnsureModule(ref scope, moduleName);
         scope = scope

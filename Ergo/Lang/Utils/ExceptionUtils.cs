@@ -32,7 +32,7 @@ public static class ExceptionUtils
 
         if (args != null && args.Length > 0)
         {
-            msg = String.Format(msg, args);
+            msg = string.Format(msg, args);
         }
 
         return msg;
@@ -47,7 +47,7 @@ public static class ExceptionUtils
 
         if (args != null && args.Length > 0)
         {
-            msg = String.Format(msg, args);
+            msg = string.Format(msg, args);
         }
 
         return msg;
@@ -57,23 +57,23 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
-            InterpreterError.UndefinedDirective => String.Format("Undefined directive: {0}", args)
+            InterpreterError.UndefinedDirective => string.Format("Undefined directive: {0}", args)
             ,
-            InterpreterError.ModuleRedefinition => String.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
+            InterpreterError.ModuleRedefinition => string.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
             ,
-            InterpreterError.ModuleNameClash => String.Format("Module {0} can't be declared because it would shadow a static module", args)
+            InterpreterError.ModuleNameClash => string.Format("Module {0} can't be declared because it would shadow a static module", args)
             ,
-            InterpreterError.ExpansionClashWithLiteral => String.Format("Literal {0} can't be declared because it would shadow a built-in literal", args)
+            InterpreterError.ExpansionClashWithLiteral => string.Format("Literal {0} can't be declared because it would shadow a built-in literal", args)
             ,
-            InterpreterError.ExpansionClash => String.Format("Literal {0} was already declared in this module", args)
+            InterpreterError.ExpansionClash => string.Format("Literal {0} was already declared in this module", args)
             ,
-            InterpreterError.LiteralCyclicDefinition => String.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args)
+            InterpreterError.LiteralCyclicDefinition => string.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args)
             ,
-            InterpreterError.OperatorClash => String.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
+            InterpreterError.OperatorClash => string.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
             ,
-            InterpreterError.ExpectedTermOfTypeAt => String.Format("Expected term of type {0}, found: {1}", args)
+            InterpreterError.ExpectedTermOfTypeAt => string.Format("Expected term of type {0}, found: {1}", args)
             ,
-            InterpreterError.ModuleAlreadyImported => String.Format("Module already imported: {0}", args)
+            InterpreterError.ModuleAlreadyImported => string.Format("Module already imported: {0}", args)
             ,
             _ => error.ToString()
         };
@@ -82,7 +82,7 @@ public static class ExceptionUtils
         {
             try
             {
-                msg = String.Format(msg, args);
+                msg = string.Format(msg, args);
             }
             catch { }
         }
@@ -94,11 +94,11 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
-            SolverError.CannotRetractImportedPredicate => String.Format("Can't retract {0} from module {1} because it was declared in module {2}", args)
+            SolverError.CannotRetractImportedPredicate => string.Format("Can't retract {0} from module {1} because it was declared in module {2}", args)
             ,
-            SolverError.UndefinedPredicate => String.Format("Undefined predicate: {0}", args)
+            SolverError.UndefinedPredicate => string.Format("Undefined predicate: {0}", args)
             ,
-            SolverError.TermNotSufficientlyInstantiated => String.Format("Term not sufficiently instantiated: {0}", args)
+            SolverError.TermNotSufficientlyInstantiated => string.Format("Term not sufficiently instantiated: {0}", args)
             ,
             _ => error.ToString()
         };
@@ -107,15 +107,17 @@ public static class ExceptionUtils
         {
             try
             {
-                msg = String.Format(msg, args);
+                msg = string.Format(msg, args);
             }
             catch { }
         }
+
         var expl = scope.Explain();
-        if (!String.IsNullOrWhiteSpace(expl))
+        if (!string.IsNullOrWhiteSpace(expl))
         {
             msg = $"{msg}\r\n\r\nIn:\r\n{expl}";
         }
+
         return msg;
     }
 
@@ -124,10 +126,11 @@ public static class ExceptionUtils
         var ctx = state.Context.Replace("\t", "    ");
         var ctxIndicator = new string('~', ctx.Length) + "^";
         var ret = $"at line {state.Line}, col {state.Column}:\r\n\t{error}\r\n\r\n\t{ctx}\r\n\t{ctxIndicator} (here)\r\n";
-        if (!String.IsNullOrEmpty(state.Filename))
+        if (!string.IsNullOrEmpty(state.Filename))
         {
             ret = $"In file '{state.Filename}', " + ret;
         }
+
         return ret;
     }
 }

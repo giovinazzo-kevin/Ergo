@@ -14,7 +14,6 @@ public partial class ErgoInterpreter
 
     public readonly InterpreterScope StdlibScope;
 
-
     public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
     {
         Flags = flags;
@@ -36,7 +35,6 @@ public partial class ErgoInterpreter
         return scope;
     }
 
-
     public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
 
     protected void AddDirectivesByReflection()
@@ -57,6 +55,7 @@ public partial class ErgoInterpreter
         {
             hashSet = DynamicPredicates[d.Signature] = new() { };
         }
+
         hashSet.Add(d);
         return true;
     }
@@ -67,6 +66,7 @@ public partial class ErgoInterpreter
         {
             return false;
         }
+
         hashSet.Remove(d);
         return true;
     }
@@ -89,6 +89,7 @@ public partial class ErgoInterpreter
                     .WithModule(module = new Module(name, runtime: true));
             }
         }
+
         return module;
     }
 
@@ -113,13 +114,14 @@ public partial class ErgoInterpreter
         {
             return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
         }
+
         if (Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
         {
             throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain(canonical: false));
         }
+
         return false;
     }
-
 
     public void LoadScope(ref InterpreterScope scope, KnowledgeBase kb)
     {
@@ -130,6 +132,7 @@ public partial class ErgoInterpreter
         {
             LoadModule(ref scope, module, added);
         }
+
         void LoadModule(ref InterpreterScope scope, Module module, HashSet<Atom> added)
         {
             if (added.Contains(module.Name))
@@ -144,8 +147,10 @@ public partial class ErgoInterpreter
                     var importScope = scope;
                     scope = scope.WithModule(import = Load(ref importScope, subModule.Explain()));
                 }
+
                 LoadModule(ref scope, import, added);
             }
+
             foreach (var pred in module.Program.KnowledgeBase)
             {
                 var sig = pred.Head.GetSignature();
@@ -158,6 +163,7 @@ public partial class ErgoInterpreter
                     kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
                 }
             }
+
             foreach (var key in DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
             {
                 foreach (var dyn in DynamicPredicates[key])

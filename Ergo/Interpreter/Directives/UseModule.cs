@@ -15,15 +15,18 @@ public class UseModule : InterpreterDirective
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
         }
+
         if (moduleName == scope.Module || scope.Modules[scope.Module].Imports.Contents.Contains(moduleName))
         {
             throw new InterpreterException(InterpreterError.ModuleAlreadyImported, scope, args[0].Explain());
         }
+
         if (!scope.Modules.TryGetValue(moduleName, out var module))
         {
             var importScope = scope;
             module = ModuleLoader.LoadDirectives(interpreter, ref importScope, moduleName.Explain());
         }
+
         scope = scope
             .WithModule(module)
             .WithModule(scope.Modules[scope.Module]

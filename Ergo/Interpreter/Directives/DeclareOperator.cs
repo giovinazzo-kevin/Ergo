@@ -16,14 +16,17 @@ public class DeclareOperator : InterpreterDirective
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.Integer, args[0].Explain());
         }
+
         if (!args[1].Matches<OperatorType>(out var type))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, "OperatorType", args[1].Explain());
         }
+
         if (!args[2].Matches<string[]>(out var synonyms))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[2].Explain());
         }
+
         var (affix, assoc) = Operator.GetAffixAndAssociativity(type);
         var existingOperators = scope.Operators.Value;
         foreach (var op in existingOperators.Where(x => x.Affix == affix))
@@ -38,6 +41,7 @@ public class DeclareOperator : InterpreterDirective
                 }
             }
         }
+
         var synonymAtoms = synonyms.Select(x => new Atom(x)).ToArray();
         scope = scope.WithModule(scope.Modules[scope.Module]
             .WithOperator(new(scope.Module, affix, assoc, precedence, synonymAtoms)));

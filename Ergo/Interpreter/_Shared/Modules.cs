@@ -12,7 +12,6 @@ public static class Modules
     public static readonly Atom String = new("string");
     public static readonly Atom CSharp = new("csharp");
 
-
     public static readonly Atom Stdlib = new("stdlib");
     public static readonly Atom User = new("user");
 }

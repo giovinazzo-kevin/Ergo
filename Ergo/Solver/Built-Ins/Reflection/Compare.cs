@@ -21,6 +21,7 @@ public sealed class Compare : BuiltIn
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
+
             if (result.Equals(cmp))
             {
                 yield return new(WellKnown.Literals.True);
@@ -29,8 +30,10 @@ public sealed class Compare : BuiltIn
             {
                 yield return new(WellKnown.Literals.False);
             }
+
             yield break;
         }
+
         yield return new(WellKnown.Literals.True, new Substitution(arguments[0], new Atom(cmp)));
     }
 }

@@ -29,11 +29,13 @@ public static class SolverBuilder
             {
                 LoadModule(ref scope, kb.Value, module, added);
             }
+
             if (!_scopeCache.TryAdd(scope, kb))
             {
                 kb = _scopeCache[scope];
             }
         }
+
         return new ErgoSolver(i, scope, kb.Value, flags, shellScope);
         HashSet<Atom> LoadModule(ref InterpreterScope scope, KnowledgeBase kb, Module module, HashSet<Atom> added = null)
         {
@@ -50,8 +52,10 @@ public static class SolverBuilder
                     var importScope = scope;
                     scope = scope.WithModule(import = i.Load(ref importScope, subModule.Explain()));
                 }
+
                 LoadModule(ref scope, kb, import, added);
             }
+
             foreach (var pred in module.Program.KnowledgeBase)
             {
                 var sig = pred.Head.GetSignature();
@@ -61,6 +65,7 @@ public static class SolverBuilder
                     kb.AssertZ(pred.WithModuleName(module.Name));
                 }
             }
+
             foreach (var key in i.DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
             {
                 foreach (var dyn in i.DynamicPredicates[key])
@@ -75,9 +80,9 @@ public static class SolverBuilder
                     }
                 }
             }
+
             return added;
         }
     }
-
 
 }

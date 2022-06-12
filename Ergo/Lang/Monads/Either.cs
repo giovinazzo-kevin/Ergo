@@ -12,6 +12,7 @@ public readonly struct Either<TA, TB>
         {
             return new Either<TC, TD>(mapA(A), default, IsA);
         }
+
         return new Either<TC, TD>(default, mapB(B), IsA);
     }
 
@@ -21,9 +22,9 @@ public readonly struct Either<TA, TB>
         {
             return mapA(A);
         }
+
         return mapB(B);
     }
-
 
     private Either(TA a, TB b, bool isA)
     {
@@ -41,16 +42,14 @@ public readonly struct Either<TA, TB>
                 ? Equals(other.A, A)
                 : Equals(other.B, B);
         }
+
         return false;
     }
 
     public static Either<TA, TB> FromA(TA a) => new(a, default, true);
     public static Either<TA, TB> FromB(TB b) => new(default, b, false);
 
-    public override int GetHashCode()
-    {
-        return IsA ? A.GetHashCode() : B.GetHashCode();
-    }
+    public override int GetHashCode() => IsA ? A.GetHashCode() : B.GetHashCode();
 
     public static implicit operator Either<TA, TB>(TA a) => FromA(a);
     public static implicit operator Either<TA, TB>(TB a) => FromB(a);

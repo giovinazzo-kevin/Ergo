@@ -22,10 +22,12 @@ public sealed class FormatString : BuiltIn
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         if (!List.TryUnfold(args, out var items))
         {
             items = new List(args);
         }
+
         if (!result.Matches<string>(out var resultStr))
         {
             if (result.IsGround)
@@ -39,6 +41,7 @@ public sealed class FormatString : BuiltIn
                 resultStr = formatStr;
             }
         }
+
         var testStr = PositionalParamRegex.Replace(resultStr, match =>
         {
             var argIndex = int.Parse(match.Groups[1].Value);

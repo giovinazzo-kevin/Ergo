@@ -31,6 +31,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 Predicates.Insert(0, key, new List<Predicate>());
             }
         }
+
         return (List<Predicate>)Predicates[key];
     }
 
@@ -42,12 +43,14 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             predicates = (List<Predicate>)Predicates[key];
             return true;
         }
+
         var looseKey = key.WithModule(Maybe<Atom>.None);
         if (key.Module.HasValue && Predicates.Contains(looseKey))
         {
             predicates = (List<Predicate>)Predicates[looseKey];
             return predicates.All(p => p.DeclaringModule.Equals(key.Module.GetOrThrow()));
         }
+
         return false;
     }
 
@@ -58,6 +61,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         {
             yield break;
         }
+
         var head = goal.Substitute(subs);
         var signature = head.GetSignature();
         // Return predicate matches
@@ -66,7 +70,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             foreach (var k in list)
             {
                 var predicate = k.Instantiate(Context);
-                if (Predicate.TryUnify(head, predicate, out var matchSubs))
+                if (predicate.Unify(head).TryGetValue(out var matchSubs))
                 {
                     predicate = Predicate.Substitute(predicate, matchSubs);
                     yield return new Match(goal, predicate, matchSubs.Concat(subs));
@@ -75,15 +79,9 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         }
     }
 
-    public void AssertA(Predicate k)
-    {
-        GetOrCreate(k.Head.GetSignature(), append: false).Insert(0, k);
-    }
+    public void AssertA(Predicate k) => GetOrCreate(k.Head.GetSignature(), append: false).Insert(0, k);
 
-    public void AssertZ(Predicate k)
-    {
-        GetOrCreate(k.Head.GetSignature(), append: true).Add(k);
-    }
+    public void AssertZ(Predicate k) => GetOrCreate(k.Head.GetSignature(), append: true).Add(k);
 
     public bool Retract(ITerm head)
     {
@@ -92,13 +90,14 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (Predicate.TryUnify(head, predicate, out _))
+                if (predicate.Unify(head).HasValue)
                 {
                     matches.RemoveAt(i);
                     return true;
                 }
             }
         }
+
         return false;
     }
 
@@ -110,13 +109,14 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (Predicate.TryUnify(head, predicate, out _))
+                if (predicate.Unify(head).HasValue)
                 {
                     retracted++;
                     matches.RemoveAt(i);
                 }
             }
         }
+
         return retracted;
     }
 
@@ -128,9 +128,6 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             .GetEnumerator();
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 

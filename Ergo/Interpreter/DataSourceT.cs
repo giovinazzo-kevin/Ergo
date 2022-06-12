@@ -33,10 +33,7 @@ public sealed class DataSource<T> : IAsyncEnumerable<ITerm>
         }
     }
 
-    public IAsyncEnumerator<ITerm> GetAsyncEnumerator(CancellationToken cancellationToken = default)
-    {
-        return Source.GetAsyncEnumerator(cancellationToken);
-    }
+    public IAsyncEnumerator<ITerm> GetAsyncEnumerator(CancellationToken cancellationToken = default) => Source.GetAsyncEnumerator(cancellationToken);
 
     public DataSource(Func<IEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData rejectSemantics = RejectionData.Discard, RejectionControl enumSemantics = RejectionControl.Continue)
     {

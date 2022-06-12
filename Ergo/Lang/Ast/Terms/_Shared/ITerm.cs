@@ -31,6 +31,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
             qualified = this;
             return false;
         }
+
         qualified = new Complex(WellKnown.Functors.Module.First(), m, this)
             .AsOperator(OperatorAffix.Infix);
         return true;
@@ -43,6 +44,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
             value = this;
             return false;
         }
+
         module = module_;
         value = cplx.Arguments[1];
         return true;
@@ -70,8 +72,10 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
             {
                 @base = @base.Substitute(steps[var]);
             }
+
             variables = @base.Variables.Where(var => steps.ContainsKey(var));
         }
+
         return @base;
     }
 }

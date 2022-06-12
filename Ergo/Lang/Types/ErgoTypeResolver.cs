@@ -17,7 +17,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         if (Type == typeof(char) || Type == typeof(string))
         {
             IsAtomic = new(() => true);
-            GetFunctor = o => new Atom(o?.ToString() ?? String.Empty);
+            GetFunctor = o => new Atom(o?.ToString() ?? string.Empty);
             DefaultValue = new(() => ToTerm(string.Empty));
         }
         else if (Type == typeof(bool))
@@ -104,10 +104,12 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                             return x;
                         }).ToArray()).Root;
                     }
+
                     return member;
                 }
             ).ToArray();
         }
+
         return TransformTermInternal(functor, args);
 
         ITerm TransformTermInternal(Atom functor, ITerm[] args)
@@ -123,7 +125,6 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
     }
 
-
     public virtual object FromTerm(ITerm t)
     {
         if (IsAtomic.Value)
@@ -132,6 +133,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             {
                 return Enum.Parse(Type, ((Atom)t).Value.ToString());
             }
+
             return t switch
             {
                 Complex cplx when cplx.Arguments.Length == 1 => ((Atom)cplx.Arguments[0]).Value,
@@ -139,6 +141,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 _ => null
             };
         }
+
         if (Type.Namespace == null)
         {
             // anonymous/record type
@@ -165,6 +168,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                     var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Maybe.Some(Marshalling));
                     instance.SetValue(obj, i);
                 }
+
                 return instance;
             }
             else
@@ -179,6 +183,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                     value = Convert.ChangeType(value, type);
                     SetMemberValue(name, instance, value);
                 }
+
                 return instance;
             }
         }

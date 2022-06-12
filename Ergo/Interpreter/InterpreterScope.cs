@@ -55,6 +55,7 @@ public readonly struct InterpreterScope
         {
             yield break;
         }
+
         added.Add(entryModule);
         var depth_ = depth;
         foreach (Atom import in module.Imports.Contents)
@@ -64,6 +65,7 @@ public readonly struct InterpreterScope
                 yield return importedOp;
             }
         }
+
         foreach (var op in module.Operators)
         {
             yield return (op, depth);
@@ -117,6 +119,7 @@ public readonly struct InterpreterScope
         {
             return false;
         }
+
         added.Add(entryModule);
         foreach (var import in module.Imports.Contents)
         {
@@ -125,6 +128,7 @@ public readonly struct InterpreterScope
             if (IsModuleVisible(name, Maybe.Some((Atom)import), added))
                 return true;
         }
+
         return false;
     }
 }

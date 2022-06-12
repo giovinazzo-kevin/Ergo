@@ -23,6 +23,7 @@ public sealed class Unifiable : BuiltIn
                 yield break;
             }
         }
+
         yield return new(WellKnown.Literals.False);
     }
 }

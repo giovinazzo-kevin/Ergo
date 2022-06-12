@@ -27,7 +27,6 @@ public partial class ErgoShell
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetConsoleCP(uint wCodePageID);
 
-
     protected virtual string DefaultLineFormatter(LogLine line)
     {
         var lvl = line.Level.ToString().ToUpper();
@@ -42,10 +41,7 @@ public partial class ErgoShell
         .Replace("\n", $"\n{lvl} ");
     }
 
-    public virtual char ReadChar(bool intercept = false)
-    {
-        return Console.ReadKey(intercept).KeyChar;
-    }
+    public virtual char ReadChar(bool intercept = false) => Console.ReadKey(intercept).KeyChar;
 
     public virtual string ReadLine(string until = "\r\n")
     {
@@ -64,10 +60,7 @@ public partial class ErgoShell
         return sb.ToString()[..^until.Length];
     }
 
-    public virtual string Prompt(string until = "\r\n")
-    {
-        return ReadLine(until);
-    }
+    public virtual string Prompt(string until = "\r\n") => ReadLine(until);
 
     protected virtual (ConsoleColor Foreground, ConsoleColor Background) GetColors(LogLevel lvl, Solver.SolverTraceType trc = default)
     {
@@ -116,6 +109,7 @@ public partial class ErgoShell
                 Out.WriteLine(LineFormatter(line));
                 Out.Flush();
             }
+
             Out.Write(LineFormatter(lines.Last()));
             Out.Flush();
         }, colors);
@@ -154,6 +148,7 @@ public partial class ErgoShell
         {
             WriteNode(tree, tree.Children[i], 0);
         }
+
         void WriteNode(TreeNode<T> parent, TreeNode<T> node, int indent = 0)
         {
             var last = parent.Children.Last() == node;
@@ -161,7 +156,7 @@ public partial class ErgoShell
             var cycle = seen.Contains(key);
             if (cycle && !shouldPrintCyclicTerm(node.Value))
                 return;
-            var spaces = String.Join("", Enumerable.Range(0, indent).Select(_ => "   "));
+            var spaces = string.Join("", Enumerable.Range(0, indent).Select(_ => "   "));
             //if (indent > 0) spaces = $"{spaces}│    ";
             var connector = new string('─', 2);
             Write(spaces);
@@ -170,6 +165,7 @@ public partial class ErgoShell
             {
                 Write("\b\b\b");
             }
+
             for (var j = ancestors.Length - 1; j >= 1; j--)
             {
                 if (ancestors[j].Children.Last() != ancestors[j - 1])
@@ -181,6 +177,7 @@ public partial class ErgoShell
                     Write("   ");
                 }
             }
+
             Write(last ? "└" : "├", overrideFg: ConsoleColor.Gray);
             Write(connector, overrideFg: ConsoleColor.Gray);
             if (cycle)
@@ -193,6 +190,7 @@ public partial class ErgoShell
             {
                 Write(toString(node.Value), overrideFg: overrideFg ?? ConsoleColor.Black);
             }
+
             WriteLine();
             seen.Add(key);
             for (var i = 0; i < node.Children.Length; i++)
@@ -220,12 +218,14 @@ public partial class ErgoShell
                 cycle = ImmutableArray.CreateRange(seen.Skip(seen.LastIndexOf(current)));
                 return true;
             }
+
             seen = seen.Add(current);
             foreach (var child in current.Children)
             {
                 if (IsPathCyclic(current, child, out cycle, seen))
                     return true;
             }
+
             return false;
         }
 
@@ -243,6 +243,7 @@ public partial class ErgoShell
             {
                 c.Parent = Maybe.Some(ret);
             }
+
             ret.Children = children;
             return ret;
         }
@@ -283,6 +284,7 @@ public partial class ErgoShell
                 {
                     AlternateColors(i);
                 }
+
                 if (i > 0 && i < described.Length - 1 && j == described[i].Length - 1)
                 {
                     Write("\u001b[4m " + described[i][j] + " \u001b[0m");
@@ -291,10 +293,12 @@ public partial class ErgoShell
                 {
                     Write(" " + described[i][j] + " ");
                 }
+
                 AlternateColors(-1);
                 WriteLine("║ ");
             }
         }
+
         AlternateColors(-1);
         DrawBorder(l: '╚', h: '═', s: '╩', r: '╝');
         Console.ForegroundColor = oldFg;
@@ -322,6 +326,7 @@ public partial class ErgoShell
                 str += s + new string(h, longestCells[i] + 2);
 
             }
+
             WriteLine($"\t{l}{str}{r}");
         }
 
@@ -334,13 +339,14 @@ public partial class ErgoShell
                 var str = "";
                 for (var i = 0; i < row.Length; i++)
                 {
-                    var cell = row[i].Length > j ? row[i][j] : String.Empty;
+                    var cell = row[i].Length > j ? row[i][j] : string.Empty;
                     str += cell.PadRight(longestCells[i], ' ');
                     if (i < row.Length - 1)
                     {
                         str += " ║ ";
                     }
                 }
+
                 yield return str;
             }
         }

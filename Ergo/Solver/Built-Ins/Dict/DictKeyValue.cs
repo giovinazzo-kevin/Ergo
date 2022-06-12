@@ -18,6 +18,7 @@ public sealed class DictKeyValue : BuiltIn
             yield return new Evaluation(WellKnown.Literals.False);
             yield break;
         }
+
         if (args[0] is Dict dict || Dict.TryUnfold(args[0], out dict))
         {
             if (!dict.Dictionary.Keys.Any())
@@ -25,6 +26,7 @@ public sealed class DictKeyValue : BuiltIn
                 yield return new Evaluation(WellKnown.Literals.False);
                 yield break;
             }
+
             foreach (var key in dict.Dictionary.Keys)
             {
                 var s1 = args[1].Unify(key).TryGetValue(out var subs);
@@ -42,8 +44,10 @@ public sealed class DictKeyValue : BuiltIn
                     }
                 }
             }
+
             yield break;
         }
+
         yield return new Evaluation(WellKnown.Literals.False);
     }
 }

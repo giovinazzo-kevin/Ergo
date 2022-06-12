@@ -3,7 +3,6 @@ using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
-
 [DebuggerDisplay("{ Explain() }")]
 public readonly struct ErgoProgram : IExplainable
 {
@@ -13,7 +12,7 @@ public readonly struct ErgoProgram : IExplainable
 
     public string Explain(bool canonical)
     {
-        return String.Join("\r\n\r\n",
+        return string.Join("\r\n\r\n",
             Directives.Select(d => d.Explain(canonical)).Concat(
             KnowledgeBase.Select(r => r.Explain(canonical)))
         );
@@ -27,6 +26,7 @@ public readonly struct ErgoProgram : IExplainable
         {
             KnowledgeBase.AssertZ(k);
         }
+
         IsPartial = false;
     }
 

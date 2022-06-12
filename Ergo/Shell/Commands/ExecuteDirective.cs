@@ -27,6 +27,7 @@ public sealed class ExecuteDirective : ShellCommand
         {
             yield break;
         }
+
         scope.ExceptionHandler.Throw(scope, new ShellException($"'{dir}' does not resolve to a directive."));
     }
 }

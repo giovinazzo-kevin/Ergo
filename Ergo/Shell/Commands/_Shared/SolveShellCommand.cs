@@ -14,7 +14,7 @@ public abstract class SolveShellCommand : ShellCommand
         var colorMap = Enum.GetNames(typeof(ConsoleColor))
             .Select(v => v.ToString())
             .ToList();
-        return String.Join('|', colorMap);
+        return string.Join('|', colorMap);
     }
 
     protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor)
@@ -37,6 +37,7 @@ public abstract class SolveShellCommand : ShellCommand
             // Syntactic sugar
             userQuery += '.';
         }
+
         using var solver = shell.CreateSolver(ref scope); ;
         scope.ExceptionHandler.TryGet(scope, () => shell.Parse<Query>(scope, userQuery).ValueUnsafe, out var parsed);
         if (!parsed.HasValue)
@@ -44,12 +45,14 @@ public abstract class SolveShellCommand : ShellCommand
             yield return scope;
             yield break;
         }
+
         var query = parsed.GetOrDefault();
         shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
         if (scope.TraceEnabled)
         {
             solver.Trace += (type, trace) => shell.WriteLine(trace, LogLevel.Trc, type);
         }
+
         var solutions = solver.Solve(query, ct: requestCancel.Token); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
@@ -58,6 +61,7 @@ public abstract class SolveShellCommand : ShellCommand
             yield return scope;
             yield break;
         }
+
         var scope_ = scope;
 
         if (Interactive)
@@ -77,10 +81,11 @@ public abstract class SolveShellCommand : ShellCommand
                         shell.WriteLine(" ∨", LogLevel.Rpl);
                     }
                 }
+
                 yield return scope;
                 if (s.Substitutions.Any())
                 {
-                    var join = String.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
+                    var join = string.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
                     shell.Write($"{join}", LogLevel.Ans);
                     if (scope_.TraceEnabled)
                     {
@@ -91,11 +96,13 @@ public abstract class SolveShellCommand : ShellCommand
                 {
                     shell.Yes(nl: false, LogLevel.Rpl);
                 }
+
                 if (shell.ReadChar(true) != ' ')
                 {
                     break;
                 }
             }
+
             if (!any) shell.No(nl: false, LogLevel.Rpl);
             shell.WriteLine(".");
         }

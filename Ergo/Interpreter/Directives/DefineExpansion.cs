@@ -20,15 +20,18 @@ public class DefineExpansion : InterpreterDirective
         {
             throw new InterpreterException(InterpreterError.ExpansionClashWithLiteral, scope, args[0].Explain());
         }
+
         var signature = args[0].GetSignature();
         if (scope.Modules[scope.Module].Expansions.TryGetValue(signature, out var expansions) && expansions.Any(a => a.Head.Equals(args[0])))
         {
             throw new InterpreterException(InterpreterError.ExpansionClash, scope, args[0].Explain());
         }
+
         if (CyclicDefinition(args[0], args[1]))
         {
             throw new InterpreterException(InterpreterError.LiteralCyclicDefinition, scope, args[0].Explain(), args[1].Explain());
         }
+
         scope = scope.WithModule(scope.Modules[scope.Module]
             .WithExpansion(args[0], args[1]));
         return true;

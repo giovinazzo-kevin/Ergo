@@ -19,6 +19,7 @@ public sealed class SequenceType : BuiltIn
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         if (List.TryUnfold(seq, out _))
         {
             if (type.Unify(new Atom("list")).TryGetValue(out var subs))
@@ -27,6 +28,7 @@ public sealed class SequenceType : BuiltIn
                 yield break;
             }
         }
+
         if (CommaSequence.TryUnfold(seq, out _))
         {
             if (type.Unify(new Atom("comma")).TryGetValue(out var subs))
@@ -35,6 +37,7 @@ public sealed class SequenceType : BuiltIn
                 yield break;
             }
         }
+
         yield return new(WellKnown.Literals.False);
     }
 }

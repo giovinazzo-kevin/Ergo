@@ -22,6 +22,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
         {
             throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
         }
+
         if (instances is not Variable && !List.TryUnfold(instances, out _))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, instances.Explain());
@@ -33,6 +34,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             templateVars = templateVars.Concat(c.Arguments[0].Variables);
             goal = c.Arguments[1];
         }
+
         templateVars = templateVars.Concat(template.Variables)
             .ToHashSet();
 

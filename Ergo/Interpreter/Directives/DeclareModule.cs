@@ -14,20 +14,24 @@ public class DeclareModule : InterpreterDirective
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
         }
+
         if (!scope.Runtime && scope.Module != Modules.User)
         {
             throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Module.Explain(), moduleName.Explain());
         }
+
         if (!List.TryUnfold(args[1], out var exports))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[1].Explain());
         }
+
         if (scope.Modules.TryGetValue(moduleName, out var module))
         {
             if (!module.Runtime)
             {
                 throw new InterpreterException(InterpreterError.ModuleNameClash, scope, moduleName.Explain());
             }
+
             module = module.WithExports(exports.Contents);
         }
         else
@@ -36,6 +40,7 @@ public class DeclareModule : InterpreterDirective
                 .WithExports(exports.Contents)
                 .WithImport(Modules.Stdlib);
         }
+
         scope = scope
             .WithModule(module)
             .WithCurrentModule(module.Name);
@@ -47,6 +52,7 @@ public class DeclareModule : InterpreterDirective
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.Signature, item.Explain());
             }
         }
+
         return true;
     }
 }

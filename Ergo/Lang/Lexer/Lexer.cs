@@ -48,6 +48,7 @@ public partial class Lexer : IDisposable
             Seek(s);
             return true;
         }
+
         Seek(s);
         return false;
     }
@@ -130,31 +131,37 @@ public partial class Lexer : IDisposable
             next = ReadString(ch);
             return true;
         }
+
         if (IsNumberStart(ch))
         {
             next = ReadNumber();
             return true;
         }
+
         if (IsIdentifierStart(ch))
         {
             next = ReadIdentifier();
             return true;
         }
+
         if (IsOperatorPiece(ch, 0))
         {
             next = ReadOperator();
             return true;
         }
+
         if (IsPunctuationPiece(ch))
         {
             next = ReadPunctuation();
             return true;
         }
+
         if (IsSingleLineCommentStart(ch))
         {
             next = ReadSingleLineComment();
             return true;
         }
+
         return false;
 
         // ------------------- Helpers -------------------
@@ -205,6 +212,7 @@ public partial class Lexer : IDisposable
             {
                 Column++;
             }
+
             return c;
         }
 
@@ -212,21 +220,20 @@ public partial class Lexer : IDisposable
         bool IsStringDelimiter(char c) => c is '"' or '\'';
         bool IsCarriageReturn(char c) => c == '\r';
         bool IsNewline(char c) => c == '\n';
-        bool IsDigit(char c) => Char.IsDigit(c);
+        bool IsDigit(char c) => char.IsDigit(c);
         bool IsDecimalDelimiter(char c) => c == '.';
         bool IsDocumentationCommentStart(char c) => c == ':';
         bool IsNumberStart(char c) => IsDigit(c);
         bool IsNumberPiece(char c) => IsNumberStart(c) || IsDecimalDelimiter(c) || c == '-' || c == '+';
-        bool IsIdentifierStart(char c) => Char.IsLetter(c) || c == '_' || c == '!' || c == '⊤' || c == '⊥';
+        bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_' || c == '!' || c == '⊤' || c == '⊥';
         bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
         bool IsKeyword(string s) => KeywordSymbols.Contains(s);
         bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);
         bool IsOperatorPiece(char c, int index) => OperatorSymbols.Select(o => o.ElementAtOrDefault(index)).Where(x => x != default(char)).Contains(c) || c == '\\';
 
-
         void SkipWhitespace()
         {
-            while (!Eof && Char.IsWhiteSpace(Peek()))
+            while (!Eof && char.IsWhiteSpace(Peek()))
             {
                 Read();
             }
@@ -245,6 +252,7 @@ public partial class Lexer : IDisposable
                 {
                     break;
                 }
+
                 ReadSingleLineComment();
                 SkipWhitespace();
             }
@@ -264,6 +272,7 @@ public partial class Lexer : IDisposable
                     escapeSb.Append('\\');
                     Read();
                 }
+
                 if (Eof) break;
                 if (Peek() != delim || escaping)
                 {
@@ -277,6 +286,7 @@ public partial class Lexer : IDisposable
                     break;
                 }
             }
+
             return Token.FromString(sb.ToString());
         }
 
@@ -288,7 +298,7 @@ public partial class Lexer : IDisposable
             {
                 if (IsDigit(Peek()))
                 {
-                    var digit = Int32.Parse(Read().ToString());
+                    var digit = int.Parse(Read().ToString());
                     if (integralPlaces == -1)
                     {
                         number = number * 10 + digit;
@@ -308,9 +318,11 @@ public partial class Lexer : IDisposable
                         Seek(s);
                         break;
                     }
+
                     integralPlaces = i;
                 }
             }
+
             return Token.FromNumber(number);
         }
 
@@ -321,11 +333,13 @@ public partial class Lexer : IDisposable
             {
                 sb.Append(Read());
             }
+
             var str = sb.ToString();
             if (IsKeyword(str))
             {
                 return Token.FromKeyword(str);
             }
+
             return Token.FromITerm(str);
         }
 
@@ -339,6 +353,7 @@ public partial class Lexer : IDisposable
             {
                 sb.Append(Read());
             }
+
             return Token.FromComment(sb.ToString().Trim());
         }
 
@@ -355,6 +370,7 @@ public partial class Lexer : IDisposable
                     if (set[o].Length <= i || set[o][i] != ch)
                         set.RemoveAt(o);
                 }
+
                 if (set.Count >= 1)
                 {
                     i++;
@@ -370,6 +386,7 @@ public partial class Lexer : IDisposable
                     throw new LexerException(ErrorType.UnrecognizedPunctuation, State);
                 }
             }
+
             SkipWhitespace();
             return Token.FromPunctuation(set.OrderBy(s => s.Length).First());
         }
@@ -387,6 +404,7 @@ public partial class Lexer : IDisposable
                     if (set[o].Length <= i || set[o][i] != ch)
                         set.RemoveAt(o);
                 }
+
                 if (set.Count >= 1)
                 {
                     i++;
@@ -401,6 +419,7 @@ public partial class Lexer : IDisposable
                                 throw new LexerException(ErrorType.UnrecognizedOperator, State);
                             }
                         }
+
                         break;
                     }
                 }
@@ -410,6 +429,7 @@ public partial class Lexer : IDisposable
                     throw new LexerException(ErrorType.UnrecognizedOperator, State);
                 }
             }
+
             SkipWhitespace();
             return Token.FromOperator(set.OrderBy(s => s.Length).First());
         }

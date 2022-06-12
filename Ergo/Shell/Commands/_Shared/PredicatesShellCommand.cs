@@ -7,10 +7,7 @@ public abstract class PredicatesShellCommand : ShellCommand
     public readonly bool Explain;
 
     public PredicatesShellCommand(string[] names, string desc, bool explain)
-        : base(names, desc, @"(?<term>[^\s].*)?", true, 90)
-    {
-        Explain = explain;
-    }
+        : base(names, desc, @"(?<term>[^\s].*)?", true, 90) => Explain = explain;
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
@@ -28,6 +25,7 @@ public abstract class PredicatesShellCommand : ShellCommand
                 yield return scope;
                 yield break;
             }
+
             if (!scope.ExceptionHandler.TryGet(scope, () =>
             {
                 var matches = shell.Interpreter.GetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First());
@@ -38,6 +36,7 @@ public abstract class PredicatesShellCommand : ShellCommand
                     shellScope = shellScope.WithInterpreterScope(interpreterScope);
                     return true;
                 }
+
                 return false;
             }, out var yes) || !yes)
             {
@@ -46,6 +45,7 @@ public abstract class PredicatesShellCommand : ShellCommand
                 yield return scope;
                 yield break;
             }
+
             scope = shellScope;
         }
 
@@ -65,6 +65,7 @@ public abstract class PredicatesShellCommand : ShellCommand
             yield return scope;
             yield break;
         }
+
         var cols = Explain
             ? new[] { "Predicate", "Module", "Explanation" }
             : new[] { "Predicate", "Module", "Documentation" }

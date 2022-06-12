@@ -2,7 +2,6 @@
 
 namespace Ergo.Lang.Ast;
 
-
 [DebuggerDisplay("{ Explain() }")]
 public readonly struct Variable : ITerm
 {
@@ -17,10 +16,11 @@ public readonly struct Variable : ITerm
 
     public Variable(string name)
     {
-        if (String.IsNullOrWhiteSpace(name) || name[0] != Char.ToUpper(name[0]))
+        if (string.IsNullOrWhiteSpace(name) || name[0] != char.ToUpper(name[0]))
         {
             throw new InvalidOperationException("Variables must have a name that starts with an uppercase letter.");
         }
+
         Name = name;
         Ignored = name.StartsWith('_');
         HashCode = Name.GetHashCode();
@@ -43,6 +43,7 @@ public readonly struct Variable : ITerm
         {
             return inst;
         }
+
         return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
     }
 
@@ -57,14 +58,12 @@ public readonly struct Variable : ITerm
         {
             return false;
         }
+
         return Equals(Name, other.Name);
     }
     public bool Equals(ITerm obj) => Equals((object)obj);
 
-    public override int GetHashCode()
-    {
-        return HashCode;
-    }
+    public override int GetHashCode() => HashCode;
 
     public int CompareTo(ITerm o)
     {
@@ -75,14 +74,8 @@ public readonly struct Variable : ITerm
         return Name.CompareTo(other.Name);
     }
 
-    public static bool operator ==(Variable left, Variable right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Variable left, Variable right) => left.Equals(right);
 
-    public static bool operator !=(Variable left, Variable right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Variable left, Variable right) => !(left == right);
 }
 

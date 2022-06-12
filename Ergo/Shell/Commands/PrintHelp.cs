@@ -20,6 +20,7 @@ public sealed class PrintHelp : ShellCommand
                 d.Names.Any(n => n.StartsWith(cmd.Value, StringComparison.OrdinalIgnoreCase) || n.Contains(alias, StringComparison.OrdinalIgnoreCase))
             );
         }
+
         var dispatchers = dispatchersQuery
             .OrderByDescending(d => d.Priority)
             .Select(d => new[] { string.Join(", ", d.Names), d.Priority.ToString(), d.Description })
@@ -31,6 +32,7 @@ public sealed class PrintHelp : ShellCommand
                 yield return result;
             }
         }
+
         shell.WriteTable(new[] { "Command", "Priority", "Description" }, dispatchers, ConsoleColor.DarkGreen);
         yield return scope;
     }

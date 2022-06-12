@@ -18,7 +18,6 @@ public sealed class DataSink<T> : IDisposable
 
     public readonly Atom Functor;
 
-
     public DataSink(Maybe<Atom> functor = default)
     {
         Functor = ErgoSolver.GetDataSignature<T>(functor).Functor;
@@ -60,15 +59,18 @@ public sealed class DataSink<T> : IDisposable
         {
             throw new InvalidOperationException();
         }
+
         await foreach (var item in Buffer.Reader.ReadAllAsync(ct))
         {
             yield return TermMarshall.FromTerm<T>(item);
         }
+
         if (DataPushedHandler != null)
         {
             DataPushed -= DataPushedHandler;
             DataPushedHandler = null;
         }
+
         RegenerateBuffer();
     }
 
@@ -81,10 +83,12 @@ public sealed class DataSink<T> : IDisposable
             DataPushed -= DataPushedHandler;
             DataPushedHandler = null;
         }
+
         foreach (var solver in _solvers)
         {
             solver.DataPushed -= OnDataPushed;
         }
+
         _disposed = true;
     }
 }

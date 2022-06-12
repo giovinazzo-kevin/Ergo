@@ -96,6 +96,7 @@ public partial class ErgoShell
             WriteLine($"File already exists: {fileName}", LogLevel.Err);
             return;
         }
+
         var module = scope.InterpreterScope.Modules[scope.InterpreterScope.Module];
         // TODO: make it easier to save directives
         var dirs = module.Imports.Contents

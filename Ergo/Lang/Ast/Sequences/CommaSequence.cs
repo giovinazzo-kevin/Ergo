@@ -39,6 +39,7 @@ public readonly struct CommaSequence : ISequence
             expr = new CommaSequence();
             return true;
         }
+
         if (t is Complex c && WellKnown.Functors.Conjunction.Contains(c.Functor))
         {
             var args = ImmutableArray<ITerm>.Empty.Add(c.Arguments[0]);
@@ -47,6 +48,7 @@ public readonly struct CommaSequence : ISequence
                 expr = new CommaSequence(args);
                 return true;
             }
+
             if (c.Arguments.Length != 2)
                 return false;
             if (c.Arguments[1].Equals(EmptyLiteral))
@@ -54,6 +56,7 @@ public readonly struct CommaSequence : ISequence
                 expr = new CommaSequence(args);
                 return true;
             }
+
             if (!c.Arguments[1].IsParenthesized && TryUnfold(c.Arguments[1], out var subExpr))
             {
                 expr = new CommaSequence(args.AddRange(subExpr.Contents));
@@ -65,9 +68,9 @@ public readonly struct CommaSequence : ISequence
                 return true;
             }
         }
+
         return false;
     }
-
 
     public string Explain(bool canonical = false)
     {
@@ -75,6 +78,7 @@ public readonly struct CommaSequence : ISequence
         {
             return $"({Inner(this)})";
         }
+
         return Inner(this);
         string Inner(CommaSequence seq)
         {
@@ -82,6 +86,7 @@ public readonly struct CommaSequence : ISequence
             {
                 return seq.EmptyElement.Explain(canonical);
             }
+
             var joined = string.Join(canonical ? "∧" : ",", seq.Contents.Select(t => t.Explain(canonical)));
             return joined;
         }

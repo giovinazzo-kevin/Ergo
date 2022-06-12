@@ -24,9 +24,11 @@ public sealed class Term : BuiltIn
                     yield return new(WellKnown.Literals.False);
                     yield break;
                 }
+
                 yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
                 yield break;
             }
+
             if (termArg is Complex complex)
             {
                 if (!functorArg.Unify(complex.Functor).TryGetValue(out var funSubs)
@@ -35,9 +37,11 @@ public sealed class Term : BuiltIn
                     yield return new(WellKnown.Literals.False);
                     yield break;
                 }
+
                 yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
                 yield break;
             }
+
             if (termArg is Atom atom)
             {
                 if (!functorArg.Unify(atom).TryGetValue(out var funSubs)
@@ -46,22 +50,26 @@ public sealed class Term : BuiltIn
                     yield return new(WellKnown.Literals.False);
                     yield break;
                 }
+
                 yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
                 yield break;
             }
         }
+
         if (functorArg is Variable)
         {
             solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, functorArg.Explain()));
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         if (functorArg is not Atom functor)
         {
             solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Atom, functorArg.Explain()));
             yield return new(WellKnown.Literals.False);
             yield break;
         }
+
         if (!List.TryUnfold(args, out var argsList) || argsList.Contents.Length == 0)
         {
             if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
@@ -70,12 +78,14 @@ public sealed class Term : BuiltIn
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
+
             if (!termArg.Unify(functor).TryGetValue(out var subs)
             || !args.Unify(WellKnown.Literals.EmptyList).TryGetValue(out var argsSubs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
+
             yield return new(WellKnown.Literals.True, subs.Concat(argsSubs).ToArray());
         }
         else
@@ -85,6 +95,7 @@ public sealed class Term : BuiltIn
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
+
             yield return new(WellKnown.Literals.True, subs.ToArray());
         }
     }

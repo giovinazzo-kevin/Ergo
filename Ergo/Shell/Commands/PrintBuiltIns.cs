@@ -25,6 +25,7 @@ public sealed class PrintBuiltIns : ShellCommand
                 yield return scope;
                 yield break;
             }
+
             var term = parsed.GetOrDefault();
             if (solver.BuiltIns.TryGetValue(term.GetSignature(), out var builtin))
             {

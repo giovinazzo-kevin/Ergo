@@ -24,6 +24,7 @@ public sealed class PrintDataSources : ShellCommand
             yield return scope;
             yield break;
         }
+
         var term = parsed.GetOrDefault();
         var signature = term.GetSignature().WithModule(Maybe.None<Atom>());
         if (solver.DataSources.TryGetValue(signature, out _))

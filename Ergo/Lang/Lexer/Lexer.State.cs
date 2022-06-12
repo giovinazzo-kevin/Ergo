@@ -16,7 +16,7 @@ public partial class Lexer
             Position = pos;
             Line = line;
             Column = col;
-            Context = ctx ?? String.Empty;
+            Context = ctx ?? string.Empty;
         }
     }
 }

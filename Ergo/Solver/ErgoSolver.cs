@@ -38,10 +38,7 @@ public partial class ErgoSolver : IDisposable
         AddBuiltInsByReflection();
     }
 
-    public void Throw(Exception e)
-    {
-        ShellScope.ExceptionHandler.Throw(ShellScope, e);
-    }
+    public void Throw(Exception e) => ShellScope.ExceptionHandler.Throw(ShellScope, e);
 
     public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
         where T : new()
@@ -62,6 +59,7 @@ public partial class ErgoSolver : IDisposable
         {
             DataSources[signature] = hashSet = new();
         }
+
         hashSet.Add(data.Source);
     }
 
@@ -87,13 +85,11 @@ public partial class ErgoSolver : IDisposable
             DataSources.Remove(signature);
             return true;
         }
+
         return false;
     }
 
-    public void PushData(ITerm data)
-    {
-        DataPushed?.Invoke(this, data);
-    }
+    public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
     public bool TryAddBuiltIn(BuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
 
@@ -121,13 +117,16 @@ public partial class ErgoSolver : IDisposable
                 {
                     continue;
                 }
+
                 await foreach (var item in GetDataSourceMatches(anon.Substitute(subs)))
                 {
                     yield return item;
                 }
             }
+
             yield break;
         }
+
         var signature = head.GetSignature();
         // Return results from data sources 
         if (DataSources.TryGetValue(signature.WithModule(Maybe.None<Atom>()), out var sources))
@@ -144,7 +143,7 @@ public partial class ErgoSolver : IDisposable
                         CommaSequence.Empty,
                         dynamic: true
                     );
-                    if (Predicate.TryUnify(head, predicate, out var matchSubs))
+                    if (predicate.Unify(head).TryGetValue(out var matchSubs))
                     {
                         predicate = Predicate.Substitute(predicate, matchSubs);
                         yield return new KnowledgeBase.Match(head, predicate, matchSubs);
@@ -178,6 +177,7 @@ public partial class ErgoSolver : IDisposable
                 }
             }
         }
+
         while (BuiltIns.TryGetValue(sig, out var builtIn)
         || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
         {
@@ -199,19 +199,13 @@ public partial class ErgoSolver : IDisposable
                 any = true;
             }
         }
+
         if (!any) yield return new(qt);
     }
 
-    private void LogTrace(SolverTraceType type, ITerm term, int depth = 0)
-    {
-        LogTrace(type, term.Explain(), depth);
-    }
+    private void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
 
-    private void LogTrace(SolverTraceType type, string s, int depth = 0)
-    {
-        Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
-    }
-
+    private void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
 
     public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, Maybe<Atom> entry = default)
     {
@@ -230,6 +224,7 @@ public partial class ErgoSolver : IDisposable
                     continue;
             }
         }
+
         return Maybe.Some(term);
     }
 
@@ -245,6 +240,7 @@ public partial class ErgoSolver : IDisposable
             {
                 yield return s;
             }
+
             Cut = false;
             yield break;
         }
@@ -267,6 +263,7 @@ public partial class ErgoSolver : IDisposable
                 LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
                 yield break;
             }
+
             if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
             {
                 LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", scope.Depth);
@@ -276,6 +273,7 @@ public partial class ErgoSolver : IDisposable
                     Cut = true;
                     yield break;
                 }
+
                 continue;
             }
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
@@ -293,6 +291,7 @@ public partial class ErgoSolver : IDisposable
                     LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
                     yield return s;
                 }
+
                 if (Cut)
                 {
                     Cut = false;
@@ -308,6 +307,7 @@ public partial class ErgoSolver : IDisposable
             {
                 return (goal, matches);
             }
+
             var isDynamic = false;
             if (!goal.IsQualified)
             {
@@ -320,6 +320,7 @@ public partial class ErgoSolver : IDisposable
                         return (qualified, matches);
                     }
                 }
+
                 if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
                 {
                     if (goal.TryQualify(clause.DeclaringModule, out qualified)
@@ -333,6 +334,7 @@ public partial class ErgoSolver : IDisposable
                     }
                 }
             }
+
             var signature = goal.GetSignature();
             var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
             if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
@@ -343,6 +345,7 @@ public partial class ErgoSolver : IDisposable
                     return (goal, Enumerable.Empty<KnowledgeBase.Match>());
                 }
             }
+
             return (goal, Enumerable.Empty<KnowledgeBase.Match>());
         }
     }
@@ -356,6 +359,7 @@ public partial class ErgoSolver : IDisposable
             yield return new Solution(subs.ToArray());
             yield break;
         }
+
         var goals = query.Contents;
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
@@ -368,6 +372,7 @@ public partial class ErgoSolver : IDisposable
             {
                 yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
             }
+
             if (Cut)
             {
                 yield break;
@@ -375,11 +380,7 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
-    {
-        return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
-    }
-
+    public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default) => Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
 
     public void Dispose()
     {

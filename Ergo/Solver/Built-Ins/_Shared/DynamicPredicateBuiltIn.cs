@@ -16,7 +16,8 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Predicate, arg.Explain());
         }
-        pred = pred.Qualified().AsDynamic();
+
+        pred = pred.Qualified().Dynamic();
         return pred;
     }
 
@@ -27,6 +28,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         {
             return false;
         }
+
         if (!z)
         {
             solver.KnowledgeBase.AssertA(pred);
@@ -35,6 +37,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         {
             solver.KnowledgeBase.AssertZ(pred);
         }
+
         return true;
     }
 
@@ -48,6 +51,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
                 return false;
             }
         }
+
         var removed = 0;
         foreach (var dyn in dynPreds)
         {
@@ -55,14 +59,17 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
             {
                 throw new SolverException(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), solver.InterpreterScope.Module.Explain(), dyn.Predicate.DeclaringModule.Explain());
             }
+
             solver.Interpreter.TryRemoveDynamicPredicate(dyn);
             solver.KnowledgeBase.Retract(dyn.Predicate.Head);
             if (!all)
             {
                 return true;
             }
+
             ++removed;
         }
+
         return removed > 0;
     }
 }

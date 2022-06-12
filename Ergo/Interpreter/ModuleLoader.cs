@@ -41,11 +41,13 @@ public class ModuleLoader
         {
             throw new FileNotFoundException(fileName);
         }
+
         fileName = Path.ChangeExtension(Path.Combine(dir, fileName), "ergo");
         if (!OpenStreams.TryGetValue(fileName, out var fs))
         {
             fs = OpenStreams[fileName] = FileStreamUtils.EncodedFileStream(File.OpenRead(fileName), closeStream: true);
         }
+
         fs.Seek(0, SeekOrigin.Begin);
         return fs;
     }
@@ -74,6 +76,7 @@ public class ModuleLoader
             CloseStream(_fn);
             throw new InterpreterException(InterpreterError.CouldNotLoadFile, Scope);
         }
+
         var directives = program.Directives.Select(d =>
         {
             if (Interpreter.Directives.TryGetValue(d.Body.GetSignature(), out var directive))
@@ -84,12 +87,14 @@ public class ModuleLoader
         {
             Builtin.Execute(Interpreter, ref Scope, ((Complex)Ast.Body).Arguments);
         }
+
         var module = Scope.Modules[Scope.Module]
             .WithProgram(program);
         foreach (Atom import in module.Imports.Contents)
         {
             LoadImport(import);
         }
+
         _fs.Seek(0, SeekOrigin.Begin);
         return module;
 
@@ -101,6 +106,7 @@ public class ModuleLoader
                 importedModule = LoadDirectives(Interpreter, ref importScope, import.Explain());
                 Scope = Scope.WithModule(importedModule);
             }
+
             foreach (Atom innerImport in importedModule.Imports.Contents)
             {
                 if (Scope.Modules.ContainsKey(innerImport)) continue;
@@ -136,6 +142,7 @@ public class ModuleLoader
                 Scope = Scope.WithModule(importModule);
             }
         }
+
         var lexer = new Lexer(_fs, _fn, Scope.Operators.Value);
         var parser = new Parser(lexer);
         if (!parser.TryParseProgram(out var program))
@@ -143,6 +150,7 @@ public class ModuleLoader
             CloseStream(_fn);
             throw new InterpreterException(InterpreterError.CouldNotLoadFile, Scope);
         }
+
         CloseStream(_fn);
         Scope = Scope.WithModule(module = module.WithProgram(program));
         return module;

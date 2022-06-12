@@ -54,7 +54,7 @@ public sealed class PersonGenerator
     private static readonly string[] LastNames = new[] { "Ross", "Smith", "Giovinazzo", "Messina", "Veneruso" };
 
     private T Choose<T>(T[] arr) => arr[Rng.Next(arr.Length)];
-    private string RandomDigits(int len) => String.Join("", Enumerable.Range(0, len).Select(i => Rng.Next(10)));
+    private string RandomDigits(int len) => string.Join("", Enumerable.Range(0, len).Select(i => Rng.Next(10)));
 
     public async IAsyncEnumerable<Person> Generate()
     {
@@ -64,14 +64,7 @@ public sealed class PersonGenerator
         var email = $"{firstName.ToLower()}.{lastName.ToLower()}@company.com";
         var phone = $"+{RandomDigits(2)} {RandomDigits(10)}";
         var birthDate = DateTime.Now.AddYears(-100 + Rng.Next(81)).AddDays(Rng.Next(366 * 10)).ToShortDateString();
-        yield return new Person(
-            firstName,
-            lastName,
-            email,
-            phone,
-            birthDate,
-            gender
-        );
+        yield return new Person(firstName, lastName, email, phone, birthDate, gender);
         await foreach (var p in Generate()) { yield return p; }
     }
 }

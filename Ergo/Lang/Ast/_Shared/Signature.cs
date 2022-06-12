@@ -25,6 +25,7 @@ public readonly struct Signature
         {
             return $"{module}{tag}{{}}/{arity}";
         }
+
         return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.SignatureTag.First().Explain() : null)}{tag}/{arity}";
     }
 
@@ -34,26 +35,17 @@ public readonly struct Signature
         {
             return false;
         }
+
         return Functor.Equals(other.Functor)
             && (!Arity.HasValue || !other.Arity.HasValue || Arity.Equals(other.Arity))
             && Module.Equals(other.Module);
     }
 
-    public static bool operator ==(Signature left, Signature right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Signature left, Signature right) => left.Equals(right);
 
-    public static bool operator !=(Signature left, Signature right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Signature left, Signature right) => !(left == right);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
-    }
-
+    public override int GetHashCode() => HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
 
     public static bool TryUnfold(ITerm term, out Signature sig)
     {
@@ -66,9 +58,11 @@ public readonly struct Signature
                 sig = new((Atom)d.Arguments[0], Maybe.Some(match.Arity), Maybe.Some(qm), Maybe.Some((Atom)d.Arguments[1]));
                 return true;
             }
+
             sig = new((Atom)qs, Maybe.Some(match.Arity), Maybe.Some(qm), Maybe<Atom>.None);
             return true;
         }
+
         sig = default;
         return false;
     }

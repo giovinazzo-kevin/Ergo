@@ -12,7 +12,6 @@ public readonly partial struct Complex : ITerm
     public readonly Maybe<OperatorAffix> Affix;
     public readonly bool IsParenthesized { get; }
 
-
     public readonly Atom Functor;
     public readonly ITerm[] Arguments;
     public readonly int Arity => Arguments.Length;
@@ -45,6 +44,7 @@ public readonly partial struct Complex : ITerm
         {
             return $"({Inner(this)})";
         }
+
         return Inner(this);
 
         string Inner(Complex c)
@@ -58,7 +58,7 @@ public readonly partial struct Complex : ITerm
                 OperatorAffix.Infix => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",
                 OperatorAffix.Postfix => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.Explain(canonical)}",
                 _ when !canonical && c.Affix.HasValue => $"{c.Functor.Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
-                _ => $"{c.Functor.Explain(canonical)}({String.Join(',', c.Arguments.Select(arg => arg.Explain(canonical)))})",
+                _ => $"{c.Functor.Explain(canonical)}({string.Join(',', c.Arguments.Select(arg => arg.Explain(canonical)))})",
             };
         }
     }
@@ -69,30 +69,23 @@ public readonly partial struct Complex : ITerm
         {
             return s.Rhs;
         }
+
         var newArgs = new ITerm[Arguments.Length];
         for (var i = 0; i < newArgs.Length; i++)
         {
             newArgs[i] = Arguments[i].Substitute(s);
         }
+
         return WithArguments(newArgs);
     }
 
     public IEnumerable<Variable> Variables => Arguments.SelectMany(arg => arg.Variables);
 
-    public Complex WithFunctor(Atom functor)
-    {
-        return new Complex(Affix, IsParenthesized, functor, Arguments);
-    }
+    public Complex WithFunctor(Atom functor) => new(Affix, IsParenthesized, functor, Arguments);
 
-    public Complex WithArguments(params ITerm[] args)
-    {
-        return new Complex(Affix, IsParenthesized, Functor, args);
-    }
+    public Complex WithArguments(params ITerm[] args) => new(Affix, IsParenthesized, Functor, args);
 
-    public bool Matches(Complex other)
-    {
-        return Equals(Functor, other.Functor) && Arity == other.Arity;
-    }
+    public bool Matches(Complex other) => Equals(Functor, other.Functor) && Arity == other.Arity;
 
     public override bool Equals(object obj)
     {
@@ -100,15 +93,13 @@ public readonly partial struct Complex : ITerm
         {
             return false;
         }
+
         var args = Arguments;
         return Matches(other) && Enumerable.Range(0, Arity).All(i => Equals(args[i], other.Arguments[i]));
     }
     public bool Equals(ITerm obj) => Equals((object)obj);
 
-    public override int GetHashCode()
-    {
-        return HashCode;
-    }
+    public override int GetHashCode() => HashCode;
 
     public int CompareTo(ITerm o)
     {
@@ -125,18 +116,9 @@ public readonly partial struct Complex : ITerm
             .FirstOrDefault(cmp => cmp != 0);
     }
 
-    public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
-    {
-        return new Complex(Affix, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
-    }
+    public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) => new Complex(Affix, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
 
-    public static bool operator ==(Complex left, Complex right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 
-    public static bool operator !=(Complex left, Complex right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Complex left, Complex right) => !(left == right);
 }

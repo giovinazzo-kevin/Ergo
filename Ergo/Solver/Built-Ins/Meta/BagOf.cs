@@ -20,9 +20,11 @@ public sealed class BagOf : SolutionAggregationBuiltIn
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
+
             yield return new(WellKnown.Literals.True, listSubs.Concat(instSubs).ToArray());
             any = true;
         }
+
         if (!any)
         {
             yield return new(WellKnown.Literals.False);

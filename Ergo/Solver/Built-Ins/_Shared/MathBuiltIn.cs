@@ -13,7 +13,9 @@ public abstract class MathBuiltIn : BuiltIn
     public dynamic Evaluate(ITerm t, InterpreterScope s)
     {
         if (t is Atom a) { return a.Value is double d ? d : Throw(a); }
+
         if (t is not Complex c) { Throw(t); }
+
         return c.Functor switch
         {
             var f when c.Arguments.Length == 1 && f.Equals(Signature.Functor)
@@ -81,9 +83,6 @@ public abstract class MathBuiltIn : BuiltIn
             ,
             _ => Throw(c)
         };
-        double Throw(ITerm t)
-        {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, s, Types.Number, t.Explain());
-        }
+        double Throw(ITerm t) => throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, s, Types.Number, t.Explain());
     }
 }

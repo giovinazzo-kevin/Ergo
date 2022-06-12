@@ -36,7 +36,7 @@ public readonly partial struct Dict : ITerm
                     .AsOperator(OperatorAffix.Infix))
             .OrderBy(o => o)
             .ToArray();
-        IsGround = Functor.IsA ? KeyValuePairs.All(x => x.IsGround) : false;
+        IsGround = Functor.IsA && KeyValuePairs.All(x => x.IsGround);
         IsQualified = false;
         IsParenthesized = false;
         CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).Root });
@@ -47,7 +47,7 @@ public readonly partial struct Dict : ITerm
         Functor = functor;
         Dictionary = dict;
         KeyValuePairs = kvp;
-        IsGround = Functor.IsA ? KeyValuePairs.All(x => x.IsGround) : false;
+        IsGround = Functor.IsA && KeyValuePairs.All(x => x.IsGround);
         IsQualified = false;
         IsParenthesized = false;
         CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).Root });
@@ -90,7 +90,7 @@ public readonly partial struct Dict : ITerm
         if (canonical)
             return CanonicalForm.Explain(true);
         var functor = Functor.Reduce(a => a.Explain(false), b => b.Explain(false));
-        var joinedArgs = String.Join(",", KeyValuePairs.Select(kv => kv.Explain(false)));
+        var joinedArgs = string.Join(",", KeyValuePairs.Select(kv => kv.Explain(false)));
         return $"{functor}{{{joinedArgs}}}";
     }
 
@@ -106,6 +106,7 @@ public readonly partial struct Dict : ITerm
         {
             return s.Rhs;
         }
+
         var functor = Functor.Reduce(a => a, v => v.Substitute(s));
         var newFunctor = functor switch
         {
@@ -118,18 +119,9 @@ public readonly partial struct Dict : ITerm
         return new Dict(newFunctor, newArgs);
     }
 
-    public override int GetHashCode()
-    {
-        return HashCode;
-    }
+    public override int GetHashCode() => HashCode;
 
-    public static bool operator ==(Dict left, Dict right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Dict left, Dict right) => left.Equals(right);
 
-    public static bool operator !=(Dict left, Dict right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Dict left, Dict right) => !(left == right);
 }

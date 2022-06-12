@@ -15,6 +15,7 @@ public sealed class TermMarshall
             resolver = (ITypeResolver)Activator.CreateInstance(typeof(PositionalPropertyTypeResolver<>).MakeGenericType(t));
             PositionalResolvers.AddOrUpdate(t, resolver, (t, r) => r);
         }
+
         return resolver;
     }
 
@@ -25,6 +26,7 @@ public sealed class TermMarshall
             resolver = (ITypeResolver)Activator.CreateInstance(typeof(NamedPropertyTypeResolver<>).MakeGenericType(t));
             NamedResolvers.AddOrUpdate(t, resolver, (t, r) => r);
         }
+
         return resolver;
     }
 

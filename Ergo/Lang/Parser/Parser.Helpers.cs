@@ -7,7 +7,7 @@ namespace Ergo.Lang;
 public partial class Parser
 {
     protected static bool IsPunctuation(Lexer.Token token, [NotNull] string p) => token.Type == Lexer.TokenType.Punctuation && p.Equals(token.Value);
-    protected static bool IsVariableIdentifier(string s) => s[0] == '_' || Char.IsLetter(s[0]) && Char.IsUpper(s[0]);
+    protected static bool IsVariableIdentifier(string s) => s[0] == '_' || char.IsLetter(s[0]) && char.IsUpper(s[0]);
     protected static bool IsAtomIdentifier(string s) => !IsVariableIdentifier(s);
     protected bool Fail(Lexer.StreamState s)
     {
@@ -22,6 +22,7 @@ public partial class Parser
         {
             return Fail(pos);
         }
+
         value = t;
         return true;
     }
@@ -36,6 +37,7 @@ public partial class Parser
             value = res;
             return true;
         }
+
         return Fail(pos);
     }
     protected void Throw(Lexer.StreamState s, ErrorType error, params object[] args)
@@ -64,6 +66,7 @@ public partial class Parser
             {
                 return Fail(pos);
             }
+
             if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out var _))
             {
                 // Empty list
@@ -81,20 +84,16 @@ public partial class Parser
                     Throw(pos, ErrorType.ExpectedArgumentDelimiterOrClosedParens, separator, closingDelim);
                 return Fail(pos);
             }
+
             if (closingDelim != null && q == closingDelim)
             {
                 break;
             }
         }
         // Special case: when the delimiter is a comma, and the expression is not parenthesized, we need to unfold the underlying expression
-        if (isSeparatorComma && args.Count == 1 && args.Single() is { } arg && !arg.Parens && CommaSequence.TryUnfold(arg.Term, out var comma))
-        {
-            seq = new UntypedSequence(functor, emptyElement, comma.Contents, false);
-        }
-        else
-        {
-            seq = new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args.Select(a => a.Term)), false);
-        }
+        seq = isSeparatorComma && args.Count == 1 && args.Single() is { } arg && !arg.Parens && CommaSequence.TryUnfold(arg.Term, out var comma)
+            ? new UntypedSequence(functor, emptyElement, comma.Contents, false)
+            : new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args.Select(a => a.Term)), false);
         return true;
 
         bool ExpectDelimiter(Func<string, bool> condition, out string d)
@@ -104,10 +103,12 @@ public partial class Parser
             {
                 return true;
             }
+
             if (Expect(Lexer.TokenType.Operator, condition, out d))
             {
                 return true;
             }
+
             return Fail(pos);
         }
     }

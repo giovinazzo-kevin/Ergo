@@ -33,13 +33,14 @@ public abstract class WriteBuiltIn : BuiltIn
     {
         if (CommaSequence.TryUnfold(args[0], out var comma))
         {
-            Console.Write(String.Join(String.Empty, comma.Contents.Select(x =>
+            Console.Write(string.Join(string.Empty, comma.Contents.Select(x =>
                 AsQuoted(x, Quoted).Explain(canonical: Canonical))));
         }
         else
         {
             Console.Write(AsQuoted(args[0], Quoted).Explain(Canonical));
         }
+
         yield return new(WellKnown.Literals.True);
     }
 }

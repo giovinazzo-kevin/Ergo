@@ -27,9 +27,11 @@ public partial class CommandDispatcher
                 {
                     yield return newScope;
                 }
+
                 yield break;
             }
         }
+
         DefaultDispatcher(input);
     }
 
@@ -44,8 +46,5 @@ public partial class CommandDispatcher
         return true;
     }
 
-    public bool Remove(string name)
-    {
-        return CommandList.RemoveAll(d => d.Names.Contains(name)) > 0;
-    }
+    public bool Remove(string name) => CommandList.RemoveAll(d => d.Names.Contains(name)) > 0;
 }

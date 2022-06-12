@@ -16,14 +16,16 @@ public abstract class ErgoPropertyResolver<T> : ErgoTypeResolver<T>
         var sb = new StringBuilder();
         for (var i = 0; i < s.Length; ++i)
         {
-            var isUpper = Char.IsUpper(s[i]);
+            var isUpper = char.IsUpper(s[i]);
             if (i > 0 && !wasUpper && isUpper)
             {
                 sb.Append("_");
             }
-            sb.Append(Char.ToLower(s[i]));
+
+            sb.Append(char.ToLower(s[i]));
             wasUpper = isUpper;
         }
+
         return sb.ToString();
     }
 

@@ -14,12 +14,13 @@ public sealed class Pull : BuiltIn
         var any = false;
         await foreach (var item in solver.GetDataSourceMatches(args[0]))
         {
-            if (Predicate.TryUnify(args[0], item.Rhs, out var subs))
+            if (item.Rhs.Unify(args[0]).TryGetValue(out var subs))
             {
                 any = true;
                 yield return new(WellKnown.Literals.True, subs.ToArray());
             }
         }
+
         if (!any)
         {
             yield return new(WellKnown.Literals.False);

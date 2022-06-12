@@ -22,9 +22,9 @@ public readonly struct Atom : ITerm
             && s != (string)WellKnown.Literals.EmptyCommaExpression.Value
             && (
                 // And if this is not a string that can be confused with a variable name
-                Char.IsUpper(s.FirstOrDefault())
+                char.IsUpper(s.FirstOrDefault())
                 // Or if this is a string that contains spaces or weird punctuation
-                || s.Any(c => Char.IsWhiteSpace(c)
+                || s.Any(c => char.IsWhiteSpace(c)
                     || !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c))
             ));
     }
@@ -42,12 +42,14 @@ public readonly struct Atom : ITerm
             {
                 return s;
             }
+
             return $"'{Escape(s)}'";
         }
         else
         {
             return Value.ToString();
         }
+
         static string Escape(string s) => s
             .Replace("'", "\\'")
             .Replace("\r", "\\r")
@@ -70,19 +72,17 @@ public readonly struct Atom : ITerm
         {
             return false;
         }
+
         if (other.Value is double n && Value is double m)
         {
             return m - n == 0d;
         }
+
         return Equals(Value, other.Value);
     }
     public bool Equals(ITerm obj) => Equals((object)obj);
 
-
-    public override int GetHashCode()
-    {
-        return HashCode;
-    }
+    public override int GetHashCode() => HashCode;
 
     public int CompareTo(ITerm o)
     {
@@ -94,26 +94,19 @@ public readonly struct Atom : ITerm
         {
             return d.CompareTo(e);
         }
+
         if (Value is string s && other.Value is string t)
         {
             return s.CompareTo(t);
         }
+
         return Explain().CompareTo(other.Explain());
     }
 
-    public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
-    {
-        return this;
-    }
+    public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) => this;
 
-    public static bool operator ==(Atom left, Atom right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Atom left, Atom right) => left.Equals(right);
 
-    public static bool operator !=(Atom left, Atom right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Atom left, Atom right) => !(left == right);
 }
 

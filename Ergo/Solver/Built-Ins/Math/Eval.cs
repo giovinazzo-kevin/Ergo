@@ -13,6 +13,7 @@ public sealed class Eval : MathBuiltIn
         {
             yield return value;
         }
+
         yield return new Evaluation(WellKnown.Literals.False);
     }
 }

@@ -14,20 +14,11 @@ public readonly struct Substitution
         Rhs = rhs;
     }
 
-    public Substitution WithRhs(ITerm newRhs)
-    {
-        return new Substitution(Lhs, newRhs);
-    }
+    public Substitution WithRhs(ITerm newRhs) => new(Lhs, newRhs);
 
-    public Substitution WithLhs(ITerm newLhs)
-    {
-        return new Substitution(newLhs, Rhs);
-    }
+    public Substitution WithLhs(ITerm newLhs) => new(newLhs, Rhs);
 
-    public static Variable[] Variables(Substitution eq)
-    {
-        return eq.Lhs.Variables.Concat(eq.Rhs.Variables).ToArray();
-    }
+    public static Variable[] Variables(Substitution eq) => eq.Lhs.Variables.Concat(eq.Rhs.Variables).ToArray();
 
     public void Deconstruct(out ITerm lhs, out ITerm rhs)
     {
@@ -48,6 +39,7 @@ public readonly struct Substitution
             if (!Unify(x, y))
                 return default;
         }
+
         return Maybe.Some(S.AsEnumerable());
 
         void ApplySubstitution(Substitution s)
@@ -97,6 +89,7 @@ public readonly struct Substitution
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -113,6 +106,7 @@ public readonly struct Substitution
             {
                 E.Add(new Substitution(dx.Dictionary[key], dy.Dictionary[key]));
             }
+
             return true;
         }
 
@@ -122,10 +116,12 @@ public readonly struct Substitution
             {
                 return false;
             }
+
             for (var i = 0; i < cx.Arguments.Length; i++)
             {
                 E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
             }
+
             return true;
         }
     }
@@ -136,18 +132,13 @@ public readonly struct Substitution
         {
             return eq.Lhs.Equals(Lhs) && eq.Rhs.Equals(Rhs);
         }
+
         return false;
     }
 
     public Substitution Inverted() => new(Rhs, Lhs);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Lhs, Rhs);
-    }
+    public override int GetHashCode() => HashCode.Combine(Lhs, Rhs);
 
-    public string Explain()
-    {
-        return $"{Lhs.Explain()}/{Rhs.Explain()}";
-    }
+    public string Explain() => $"{Lhs.Explain()}/{Rhs.Explain()}";
 }

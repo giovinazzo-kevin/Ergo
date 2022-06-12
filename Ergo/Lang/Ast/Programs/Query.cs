@@ -7,8 +7,5 @@ public readonly struct Query
 {
     public readonly CommaSequence Goals;
 
-    public Query(CommaSequence goals)
-    {
-        Goals = goals;
-    }
+    public Query(CommaSequence goals) => Goals = goals;
 }

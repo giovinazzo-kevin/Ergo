@@ -1,8 +1,12 @@
 ﻿:- module(dict, [
-
+	dummy/1
 ]).
-%: Expansion rule that evaluates the expression `dict(_, _).Key` as the value associated with that key
-:- expand('.'(dict(Tag, Args), Key), dict_key_value(dict(Tag, Args), Key, _Eval)).
+
 :- op(1000, xfx, [':']).
+:- op(40, yfx, ['@']).
+
+:- expand('@'(dict(Tag, Args), Key), dict_key_value(dict(Tag, Args), Key, _Eval)).
 
 %: Get all K/V pairs: dict(_, _Args), member(_Arg, _Args), named_arg(_Arg, Name, Value).
+
+dummy.

@@ -56,8 +56,8 @@ namespace Ergo.Lang.Ast
         public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Expansions, DynamicPredicates, Program, Runtime);
         public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), Expansions, DynamicPredicates, Program, Runtime);
         public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Expansions, DynamicPredicates, Program, Runtime);
-        public Module WithLiterals(ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
-        public Module WithLiteral(ITerm key, ITerm value)
+        public Module WithExpansions(ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
+        public Module WithExpansion(ITerm key, ITerm value)
         {
             var signature = key.GetSignature();
             if(!Expansions.TryGetValue(signature, out var arr)) {

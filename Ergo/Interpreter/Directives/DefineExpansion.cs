@@ -34,7 +34,7 @@ namespace Ergo.Interpreter.Directives
                 throw new InterpreterException(InterpreterError.LiteralCyclicDefinition, scope, args[0].Explain(), args[1].Explain());
             }
             scope = scope.WithModule(scope.Modules[scope.Module]
-                .WithLiteral(args[0], args[1]));
+                .WithExpansion(args[0], args[1]));
             return true;
 
             bool CyclicDefinition(ITerm start, ITerm t)

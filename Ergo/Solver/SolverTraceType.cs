@@ -1,11 +1,10 @@
-﻿namespace Ergo.Solver
+﻿namespace Ergo.Solver;
+
+public enum SolverTraceType
 {
-    public enum SolverTraceType
-    {
-        Retn,
-        Resv,
-        Call,
-        Exit,
-        Fail
-    }
+    Retn,
+    Resv,
+    Call,
+    Exit,
+    Fail
 }

@@ -1,11 +1,10 @@
-﻿namespace Ergo.Lang
+﻿namespace Ergo.Lang;
+
+public partial class Lexer
 {
-    public partial class Lexer
+    public enum ErrorType
     {
-        public enum ErrorType
-        {
-            UnrecognizedOperator,
-            UnrecognizedPunctuation
-        }
+        UnrecognizedOperator,
+        UnrecognizedPunctuation
     }
 }

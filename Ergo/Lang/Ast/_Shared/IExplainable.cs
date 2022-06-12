@@ -1,7 +1,6 @@
-﻿namespace Ergo.Lang.Ast
+﻿namespace Ergo.Lang.Ast;
+
+public interface IExplainable
 {
-    public interface IExplainable
-    {
-        string Explain(bool canonical = false);
-    }
+    string Explain(bool canonical = false);
 }

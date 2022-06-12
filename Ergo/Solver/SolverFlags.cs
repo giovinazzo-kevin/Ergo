@@ -1,12 +1,9 @@
-﻿using System;
+﻿namespace Ergo.Solver;
 
-namespace Ergo.Solver
+[Flags]
+public enum SolverFlags
 {
-    [Flags]
-    public enum SolverFlags
-    {
-        Default = ThrowOnPredicateNotFound
-        , None = 0
-        , ThrowOnPredicateNotFound = 1
-    }
+    Default = ThrowOnPredicateNotFound
+    , None = 0
+    , ThrowOnPredicateNotFound = 1
 }

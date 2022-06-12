@@ -1,18 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Ergo.Solver
+namespace Ergo.Solver;
+
+public static class AsyncEnumerableExtensions
 {
-    public static class AsyncEnumerableExtensions
+    public static async Task<List<T>> CollectAsync<T>(this IAsyncEnumerable<T> solutions)
     {
-        public static async Task<List<T>> CollectAsync<T>(this IAsyncEnumerable<T> solutions)
+        var bag = new List<T>();
+        await foreach (var item in solutions)
         {
-            var bag = new List<T>();
-            await foreach (var item in solutions)
-            {
-                bag.Add(item);
-            }
-            return bag;
+            bag.Add(item);
         }
+        return bag;
     }
 }

@@ -1,10 +1,9 @@
-﻿namespace Ergo.Lang.Ast
-{
-    public enum OperatorAssociativity
-    {
-        None,
-        Left,
-        Right
-    }
+﻿namespace Ergo.Lang.Ast;
 
+public enum OperatorAssociativity
+{
+    None,
+    Left,
+    Right
 }
+

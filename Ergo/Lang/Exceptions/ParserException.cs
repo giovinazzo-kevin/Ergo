@@ -1,16 +1,14 @@
 ﻿using Ergo.Lang.Utils;
-using System;
 
-namespace Ergo.Lang.Exceptions
+namespace Ergo.Lang.Exceptions;
+
+public class ParserException : Exception
 {
-    public class ParserException : Exception
-    {
-        public readonly Parser.ErrorType Kind;
+    public readonly Parser.ErrorType Kind;
 
-        public ParserException(Parser.ErrorType error, Lexer.StreamState state, params object[] args)
-            : base(ExceptionUtils.GetMessage(state, ExceptionUtils.GetParserError(error, args)))
-        {
-            Kind = error;
-        }
+    public ParserException(Parser.ErrorType error, Lexer.StreamState state, params object[] args)
+        : base(ExceptionUtils.GetMessage(state, ExceptionUtils.GetParserError(error, args)))
+    {
+        Kind = error;
     }
 }

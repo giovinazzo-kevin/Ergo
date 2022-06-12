@@ -1,28 +1,23 @@
-﻿using Ergo.Lang;
-using Ergo.Lang.Ast;
-using System.Collections.Generic;
+﻿namespace Ergo.Solver.BuiltIns;
 
-namespace Ergo.Solver.BuiltIns
+public sealed class Retract : DynamicPredicateBuiltIn
 {
-    public sealed class Retract : DynamicPredicateBuiltIn
+    public Retract()
+        : base("", new("retract"), Maybe.Some(1))
     {
-        public Retract()
-            : base("", new("retract"), Maybe.Some(1))
-        {
-        }
+    }
 
-        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    {
+        var any = false;
+        while (Retract(solver, scope, arguments[0], all: false))
         {
-            var any = false;
-            while (Retract(solver, scope, arguments[0], all: false))
-            {
-                yield return new(WellKnown.Literals.True);
-                any = true;
-            }
-            if(!any)
-            {
-                yield return new(WellKnown.Literals.False);
-            }
+            yield return new(WellKnown.Literals.True);
+            any = true;
+        }
+        if (!any)
+        {
+            yield return new(WellKnown.Literals.False);
         }
     }
 }

@@ -1,21 +1,19 @@
-﻿namespace Ergo.Lang
-{
+﻿namespace Ergo.Lang;
 
-    public partial class Parser
+public partial class Parser
+{
+    public enum ErrorType
     {
-        public enum ErrorType
-        {
-            UnexpectedEndOfFile
-            , PredicateHasSingletonVariables
-            , ExpectedArgumentDelimiterOrClosedParens
-            , ExpectedPredicateDelimiterOrTerminator
-            , ExpectedClauseList
-            , KeyExpected
-            , UnterminatedClauseList
-            , ComplexHasNoArguments
-            , OperatorDoesNotExist
-            , TermHasIllegalName
-            , MismatchedParentheses
-        }
+        UnexpectedEndOfFile
+        , PredicateHasSingletonVariables
+        , ExpectedArgumentDelimiterOrClosedParens
+        , ExpectedPredicateDelimiterOrTerminator
+        , ExpectedClauseList
+        , KeyExpected
+        , UnterminatedClauseList
+        , ComplexHasNoArguments
+        , OperatorDoesNotExist
+        , TermHasIllegalName
+        , MismatchedParentheses
     }
 }

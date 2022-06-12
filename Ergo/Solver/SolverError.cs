@@ -1,10 +1,9 @@
-﻿namespace Ergo.Solver
+﻿namespace Ergo.Solver;
+
+public enum SolverError
 {
-    public enum SolverError
-    {
-        TermNotSufficientlyInstantiated
-        , ExpectedTermOfTypeAt
-        , CannotRetractImportedPredicate
-        , UndefinedPredicate
-    }
+    TermNotSufficientlyInstantiated
+    , ExpectedTermOfTypeAt
+    , CannotRetractImportedPredicate
+    , UndefinedPredicate
 }

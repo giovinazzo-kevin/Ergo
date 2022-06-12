@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics;
 
-namespace Ergo.Lang.Ast
+namespace Ergo.Lang.Ast;
+
+[DebuggerDisplay("{ Explain() }")]
+public readonly struct Directive : IExplainable
 {
-    [DebuggerDisplay("{ Explain() }")]
-    public readonly struct Directive : IExplainable
+    public readonly ITerm Body;
+
+    public Directive(ITerm body)
     {
-        public readonly ITerm Body;
-
-        public Directive(ITerm body)
-        {
-            Body = body; 
-        }
-
-        public Directive WithBody(ITerm newBody) => new(newBody);
-
-        public string Explain(bool canonical) => $"← {Body.Explain(canonical)}.";
+        Body = body;
     }
+
+    public Directive WithBody(ITerm newBody) => new(newBody);
+
+    public string Explain(bool canonical) => $"← {Body.Explain(canonical)}.";
 }

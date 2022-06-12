@@ -1,81 +1,75 @@
-﻿using Ergo.Lang;
-using Ergo.Lang.Ast;
-using Ergo.Lang.Extensions;
-using System;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 
-namespace Ergo.Lang.Ast
+namespace Ergo.Lang.Ast;
+
+[DebuggerDisplay("{ Explain() }")]
+public readonly struct Signature
 {
-    [DebuggerDisplay("{ Explain() }")]
-    public readonly struct Signature
+    public readonly Atom Functor;
+    public readonly Maybe<Atom> Module;
+    public readonly Maybe<Atom> Tag;
+    public readonly Maybe<int> Arity;
+
+    public Signature(Atom a, Maybe<int> arity, Maybe<Atom> module, Maybe<Atom> tag) => (Functor, Arity, Module, Tag) = (a, arity, module, tag);
+    public Signature WithFunctor(Atom functor) => new(functor, Arity, Module, Tag);
+    public Signature WithArity(Maybe<int> arity) => new(Functor, arity, Module, Tag);
+    public Signature WithModule(Maybe<Atom> module) => new(Functor, Arity, module, Tag);
+    public Signature WithTag(Maybe<Atom> tag) => new(Functor, Arity, Module, tag);
+
+    public string Explain()
     {
-        public readonly Atom Functor;
-        public readonly Maybe<Atom> Module;
-        public readonly Maybe<Atom> Tag;
-        public readonly Maybe<int> Arity;
-
-        public Signature(Atom a, Maybe<int> arity, Maybe<Atom> module, Maybe<Atom> tag) => (Functor, Arity, Module, Tag) = (a, arity, module, tag);
-        public Signature WithFunctor(Atom functor) => new(functor, Arity, Module, Tag);
-        public Signature WithArity(Maybe<int> arity) => new(Functor, arity, Module, Tag);
-        public Signature WithModule(Maybe<Atom> module) => new(Functor, Arity, module, Tag);
-        public Signature WithTag(Maybe<Atom> tag) => new(Functor, Arity, Module, tag);
-
-        public string Explain()
+        var module = Module.Reduce(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}", () => "");
+        var tag = Tag.Reduce(some => some.Explain(), () => null);
+        var arity = Arity.Reduce(some => some.ToString(), () => "*");
+        if (WellKnown.Functors.Dict.Contains(Functor) && tag != null)
         {
-            var module = Module.Reduce(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}", () => "");
-            var tag = Tag.Reduce(some => some.Explain(), () => null);
-            var arity = Arity.Reduce(some => some.ToString(), () => "*");
-            if(WellKnown.Functors.Dict.Contains(Functor) && tag != null)
-            {
-                return $"{module}{tag}{{}}/{arity}";
-            }
-            return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.SignatureTag.First().Explain() : null)}{tag}/{arity}";
+            return $"{module}{tag}{{}}/{arity}";
         }
+        return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.SignatureTag.First().Explain() : null)}{tag}/{arity}";
+    }
 
-        public override bool Equals(object obj)
+    public override bool Equals(object obj)
+    {
+        if (obj is not Signature other)
         {
-            if (obj is not Signature other)
-            {
-                return false;
-            }
-            return Functor.Equals(other.Functor) 
-                && (!Arity.HasValue || !other.Arity.HasValue || Arity.Equals(other.Arity))
-                && Module.Equals(other.Module);
-        }
-
-        public static bool operator ==(Signature left, Signature right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Signature left, Signature right)
-        {
-            return !(left == right);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
-        }
-
-
-        public static bool TryUnfold(ITerm term, out Signature sig)
-        {
-            if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
-                && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
-            {
-                c.Arguments[0].TryGetQualification(out var qm, out var qs);
-                if(qs is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
-                {
-                    sig = new((Atom)d.Arguments[0], Maybe.Some(match.Arity), Maybe.Some(qm), Maybe.Some((Atom)d.Arguments[1]));
-                    return true;
-                }
-                sig = new((Atom)qs, Maybe.Some(match.Arity), Maybe.Some(qm), Maybe<Atom>.None);
-                return true;
-            }
-            sig = default;
             return false;
         }
+        return Functor.Equals(other.Functor)
+            && (!Arity.HasValue || !other.Arity.HasValue || Arity.Equals(other.Arity))
+            && Module.Equals(other.Module);
+    }
+
+    public static bool operator ==(Signature left, Signature right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Signature left, Signature right)
+    {
+        return !(left == right);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
+    }
+
+
+    public static bool TryUnfold(ITerm term, out Signature sig)
+    {
+        if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
+            && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+        {
+            c.Arguments[0].TryGetQualification(out var qm, out var qs);
+            if (qs is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
+            {
+                sig = new((Atom)d.Arguments[0], Maybe.Some(match.Arity), Maybe.Some(qm), Maybe.Some((Atom)d.Arguments[1]));
+                return true;
+            }
+            sig = new((Atom)qs, Maybe.Some(match.Arity), Maybe.Some(qm), Maybe<Atom>.None);
+            return true;
+        }
+        sig = default;
+        return false;
     }
 }

@@ -1,25 +1,23 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang;
-using Ergo.Lang.Ast;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace Ergo.Solver.BuiltIns
+namespace Ergo.Solver.BuiltIns;
+
+public sealed class Unify : BuiltIn
 {
-    public sealed class Unify : BuiltIn
+    public Unify()
+        : base("", new("unify"), Maybe<int>.Some(2), Modules.Prologue)
     {
-        public Unify()
-            : base("", new("unify"), Maybe<int>.Some(2), Modules.Prologue)
-        {
-        }
+    }
 
-        public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    {
+        if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
         {
-            if (new Substitution(arguments[0], arguments[1]).TryUnify(out var subs))
-            {
-                yield return new(WellKnown.Literals.True, subs.ToArray());
-            }
-            else yield return new(WellKnown.Literals.False);
+            yield return new(WellKnown.Literals.True, subs.ToArray());
+        }
+        else
+        {
+            yield return new(WellKnown.Literals.False);
         }
     }
 }

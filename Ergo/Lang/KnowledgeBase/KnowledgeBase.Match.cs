@@ -1,24 +1,19 @@
-﻿using Ergo.Lang.Ast;
-using System.Collections.Generic;
-using System.Linq;
+﻿namespace Ergo.Lang;
 
-namespace Ergo.Lang
+public partial class KnowledgeBase
 {
-    public partial class KnowledgeBase
+    public readonly struct Match
     {
-        public readonly struct Match
-        {
-            public readonly ITerm Lhs;
-            public readonly Predicate Rhs;
-            public readonly Substitution[] Substitutions;
+        public readonly ITerm Lhs;
+        public readonly Predicate Rhs;
+        public readonly Substitution[] Substitutions;
 
-            public Match(ITerm lhs, Predicate rhs, IEnumerable<Substitution> substitutions)
-            {
-                Lhs = lhs;
-                Rhs = rhs;
-                Substitutions = substitutions.ToArray();
-            }
+        public Match(ITerm lhs, Predicate rhs, IEnumerable<Substitution> substitutions)
+        {
+            Lhs = lhs;
+            Rhs = rhs;
+            Substitutions = substitutions.ToArray();
         }
     }
-
 }
+

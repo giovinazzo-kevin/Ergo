@@ -1,16 +1,15 @@
-﻿namespace Ergo.Lang
+﻿namespace Ergo.Lang;
+
+public partial class Lexer
 {
-    public partial class Lexer
+    public enum TokenType
     {
-        public enum TokenType
-        {
-              String
-            , Number
-            , Keyword
-            , Term
-            , Punctuation
-            , Operator
-            , Comment
-        }
+        String
+        , Number
+        , Keyword
+        , Term
+        , Punctuation
+        , Operator
+        , Comment
     }
 }

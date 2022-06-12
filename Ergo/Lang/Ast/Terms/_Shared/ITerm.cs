@@ -1,83 +1,78 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿namespace Ergo.Lang.Ast;
 
-namespace Ergo.Lang.Ast
+public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
-    public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
+    bool IsGround { get; }
+    bool IsQualified { get; }
+    bool IsParenthesized { get; }
+    IEnumerable<Variable> Variables { get; }
+
+    Maybe<Atom> GetFunctor() => this switch
     {
-        bool IsGround { get; }
-        bool IsQualified { get; }
-        bool IsParenthesized { get; }
-        IEnumerable<Variable> Variables { get; }
+        Atom a => Maybe.Some(a),
+        Complex c => Maybe.Some(c.Functor),
+        Dict d => Maybe.Some(WellKnown.Functors.Dict.First()),
+        _ => Maybe<Atom>.None
+    };
 
-        Maybe<Atom> GetFunctor() => this switch
-        {
-            Atom a => Maybe.Some(a),
-            Complex c => Maybe.Some(c.Functor),
-            Dict d => Maybe.Some(WellKnown.Functors.Dict.First()),
-            _ => Maybe<Atom>.None
-        };
+    ITerm WithFunctor(Atom newFunctor) => this switch
+    {
+        Atom => newFunctor,
+        Variable v => v,
+        Complex c => c.WithFunctor(newFunctor),
+        Dict d => d.WithFunctor(newFunctor),
+        var x => x
+    };
 
-        ITerm WithFunctor(Atom newFunctor) => this switch
+    bool TryQualify(Atom m, out ITerm qualified)
+    {
+        if (IsQualified)
         {
-            Atom => newFunctor,
-            Variable v => v,
-            Complex c => c.WithFunctor(newFunctor),
-            Dict d => d.WithFunctor(newFunctor),
-            var x => x
-        };
-
-        bool TryQualify(Atom m, out ITerm qualified)
-        {
-            if(IsQualified)
-            {
-                qualified = this;
-                return false;
-            }
-            qualified = new Complex(WellKnown.Functors.Module.First(), m, this)
-                .AsOperator(OperatorAffix.Infix);
-            return true;
+            qualified = this;
+            return false;
         }
-        bool TryGetQualification(out Atom module, out ITerm value)
+        qualified = new Complex(WellKnown.Functors.Module.First(), m, this)
+            .AsOperator(OperatorAffix.Infix);
+        return true;
+    }
+    bool TryGetQualification(out Atom module, out ITerm value)
+    {
+        if (!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module_)
         {
-            if(!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module_)
-            {
-                module = default;
-                value = this;
-                return false;
-            }
-            module = module_;
-            value = cplx.Arguments[1];
-            return true;
+            module = default;
+            value = this;
+            return false;
         }
-
-        ITerm Substitute(Substitution s);
-        ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
-        ITerm Concat(params ITerm[] next)
-        {
-            if (this is Complex cplx)
-                return cplx.WithArguments(cplx.Arguments.Concat(next).ToArray());
-            if (this is Atom a)
-                return new Complex(a, next);
-            return this;
-        }
-
-        ITerm Substitute(IEnumerable<Substitution> subs)
-        {
-            var steps = subs.ToDictionary(s => s.Lhs);
-            var variables = Variables.Where(var => steps.ContainsKey(var));
-            var @base = this;
-            while (variables.Any())
-            {
-                foreach (var var in variables)
-                {
-                    @base = @base.Substitute(steps[var]);
-                }
-                variables = @base.Variables.Where(var => steps.ContainsKey(var));
-            }
-            return @base;
-        }
+        module = module_;
+        value = cplx.Arguments[1];
+        return true;
     }
 
+    ITerm Substitute(Substitution s);
+    ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
+    ITerm Concat(params ITerm[] next)
+    {
+        if (this is Complex cplx)
+            return cplx.WithArguments(cplx.Arguments.Concat(next).ToArray());
+        if (this is Atom a)
+            return new Complex(a, next);
+        return this;
+    }
+
+    ITerm Substitute(IEnumerable<Substitution> subs)
+    {
+        var steps = subs.ToDictionary(s => s.Lhs);
+        var variables = Variables.Where(var => steps.ContainsKey(var));
+        var @base = this;
+        while (variables.Any())
+        {
+            foreach (var var in variables)
+            {
+                @base = @base.Substitute(steps[var]);
+            }
+            variables = @base.Variables.Where(var => steps.ContainsKey(var));
+        }
+        return @base;
+    }
 }
+

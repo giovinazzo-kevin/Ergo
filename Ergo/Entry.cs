@@ -1,25 +1,17 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang;
-using Ergo.Lang.Ast;
 using Ergo.Shell;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
 
 using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();
 var personGenSource = new DataSource<Person>(
-    source: () => new PersonGenerator().Generate(), 
-    functor: Maybe.Some(new Atom("person_generator")), 
-    dataSemantics: RejectionData.Discard, 
+    source: () => new PersonGenerator().Generate(),
+    functor: Maybe.Some(new Atom("person_generator")),
+    dataSemantics: RejectionData.Discard,
     ctrlSemantics: RejectionControl.Break
 );
 var feedbackSource = new DataSource<Person>(
-    source: () => feedbackSink.Pull(), 
-    functor: Maybe.Some(new Atom("person")), 
+    source: () => feedbackSink.Pull(),
+    functor: Maybe.Some(new Atom("person")),
     dataSemantics: RejectionData.Recycle,
     ctrlSemantics: RejectionControl.Continue
 );
@@ -44,7 +36,7 @@ var shell = new ErgoShell(interpreter =>
 var scope = shell.CreateScope();
 await foreach (var _ in shell.Repl(scope))
 {
-    await foreach(var person in consoleSink.Pull())
+    await foreach (var person in consoleSink.Pull())
     {
         Console.WriteLine($"Received:{person}");
     }
@@ -75,9 +67,9 @@ public sealed class PersonGenerator
         yield return new Person(
             firstName,
             lastName,
-            email, 
-            phone, 
-            birthDate, 
+            email,
+            phone,
+            birthDate,
             gender
         );
         await foreach (var p in Generate()) { yield return p; }

@@ -1,43 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Ergo.WAM;
 
-namespace Ergo.WAM
+public readonly struct HeapRef
 {
-    public readonly struct HeapRef
-    {
-        public readonly ulong Value;
-        public bool IsNull() => Value == 0;
+    public readonly ulong Value;
+    public bool IsNull() => Value == 0;
 
-        public HeapRef(ulong val)
-        {
-            Value = val;
-        }
+    public HeapRef(ulong val)
+    {
+        Value = val;
     }
+}
 
-    public enum HeapTag : byte
+public enum HeapTag : byte
+{
+    REF,
+    STR,
+    CON,
+    LIS
+}
+
+public readonly struct VariableCell
+{
+    public readonly HeapTag Tag;
+    public readonly HeapRef Ref;
+}
+
+public sealed class Heap
+{
+    private readonly VariableCell[] _cells;
+
+    public Heap(long size)
     {
-        REF,
-        STR,
-        CON,
-        LIS
-    }
-
-    public readonly struct VariableCell
-    {
-        public readonly HeapTag Tag;
-        public readonly HeapRef Ref;
-    }
-
-    public sealed class Heap
-    {
-        private readonly VariableCell[] _cells;
-
-        public Heap(long size)
-        {
-            _cells = new VariableCell[size];
-        }
+        _cells = new VariableCell[size];
     }
 }

@@ -1,16 +1,15 @@
-﻿namespace Ergo.Interpreter
+﻿namespace Ergo.Interpreter;
+
+public enum InterpreterError
 {
-    public enum InterpreterError
-    {
-        CouldNotLoadFile
-        , ExpectedTermOfTypeAt
-        , ModuleAlreadyImported
-        , ModuleNameClash
-        , OperatorClash
-        , ExpansionClashWithLiteral
-        , ExpansionClash
-        , LiteralCyclicDefinition
-        , ModuleRedefinition
-        , UndefinedDirective
-    }
+    CouldNotLoadFile
+    , ExpectedTermOfTypeAt
+    , ModuleAlreadyImported
+    , ModuleNameClash
+    , OperatorClash
+    , ExpansionClashWithLiteral
+    , ExpansionClash
+    , LiteralCyclicDefinition
+    , ModuleRedefinition
+    , UndefinedDirective
 }

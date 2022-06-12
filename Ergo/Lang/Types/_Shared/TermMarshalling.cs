@@ -1,8 +1,7 @@
-﻿namespace Ergo.Lang
+﻿namespace Ergo.Lang;
+
+public enum TermMarshalling
 {
-    public enum TermMarshalling
-    {
-        Positional,
-        Named
-    }
+    Positional,
+    Named
 }

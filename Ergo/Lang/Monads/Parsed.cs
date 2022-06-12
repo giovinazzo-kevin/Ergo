@@ -1,7 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-using System.Collections.Immutable;
-
-namespace Ergo.Lang;
+﻿namespace Ergo.Lang;
 
 public readonly struct Parsed<T>
 {
@@ -47,9 +44,9 @@ public readonly struct Parsed<T>
                 (Parser p) => p.TryParseExpression(out var x)
                     ? CommaSequence.TryUnfold(x.Complex, out var expr)
                         ? Box(new Query(expr))
-                        : Box(new Query(new(ImmutableArray<ITerm>.Empty.Add(x.Complex))))
+                        : Box(new Query(x.Complex))
                     : p.TryParseTerm(out var t, out _)
-                        ? Box(new Query(new(ImmutableArray<ITerm>.Empty.Add(t))))
+                        ? Box(new Query(t))
                         : onParseFail(data)
             ,
             _ when typeof(T) == typeof(ErgoProgram) =>

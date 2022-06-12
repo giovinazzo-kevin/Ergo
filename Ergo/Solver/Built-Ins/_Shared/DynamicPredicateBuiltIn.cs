@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -10,7 +9,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
     {
     }
 
-    protected Predicate GetPredicate(ErgoSolver solver, SolverScope scope, ITerm arg)
+    protected static Predicate GetPredicate(ErgoSolver solver, ITerm arg)
     {
         if (!Predicate.TryUnfold(arg, solver.InterpreterScope.Module, out var pred))
         {
@@ -21,9 +20,9 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         return pred;
     }
 
-    protected bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
+    protected static bool Assert(ErgoSolver solver, ITerm arg, bool z)
     {
-        var pred = GetPredicate(solver, scope, arg);
+        var pred = GetPredicate(solver, arg);
         if (!solver.Interpreter.TryAddDynamicPredicate(new(pred.Head.GetSignature(), pred, assertz: z)))
         {
             return false;
@@ -41,7 +40,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         return true;
     }
 
-    protected bool Retract(ErgoSolver solver, SolverScope scope, ITerm term, bool all)
+    protected static bool Retract(ErgoSolver solver, SolverScope scope, ITerm term, bool all)
     {
         var sig = term.GetSignature();
         if (!solver.Interpreter.DynamicPredicates.TryGetValue(sig, out var dynPreds))

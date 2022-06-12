@@ -1,12 +1,6 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 using Ergo.Shell;
 using Ergo.Solver.BuiltIns;
-using System.Collections.Immutable;
-using System.Reactive.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Ergo.Solver;
 
@@ -207,14 +201,14 @@ public partial class ErgoSolver : IDisposable
 
     private void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
 
-    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, Maybe<Atom> entry = default)
+    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term)
     {
         if (term is Variable)
-            return Maybe<ITerm>.None;
+            return default;
         var sig = term.GetSignature();
         // Try all modules in import order
         var modules = InterpreterScope.GetLoadedModules();
-        foreach (var mod in modules)
+        foreach (var mod in modules.Reverse())
         {
             if (!mod.Expansions.TryGetValue(sig, out var expansions))
                 continue;
@@ -222,10 +216,33 @@ public partial class ErgoSolver : IDisposable
             {
                 if (!exp.Head.Unify(term).TryGetValue(out var subs))
                     continue;
+                if (exp.Value.IsGround)
+                    return Maybe.Some(exp.Value);
+                // Assume exp.Value is callable
+                await foreach (var sol in Solve(new Query(exp.Value.Substitute(subs))))
+                {
+                    if (sol.Links.Value.TryGetValue(new Variable("_Eval"), out var eval))
+                        return Maybe.Some(eval);
+                    throw new InvalidOperationException(); // TODO: define appropriate exception
+                }
             }
         }
 
-        return Maybe.Some(term);
+        if (term is Dict dict)
+            return await TryExpandTerm(dict.CanonicalForm);
+        if (term is Complex cplx)
+        {
+            var newArgs = new List<ITerm>();
+            foreach (var arg in cplx.Arguments)
+            {
+                var exp = await TryExpandTerm(arg);
+                newArgs.Add(exp.Reduce(some => some, () => arg));
+            }
+
+            return Maybe.Some<ITerm>(cplx.WithArguments(newArgs.ToArray()));
+        }
+
+        return default;
     }
 
     protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
@@ -380,7 +397,8 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default) => Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
+    public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
+        => Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
 
     public void Dispose()
     {

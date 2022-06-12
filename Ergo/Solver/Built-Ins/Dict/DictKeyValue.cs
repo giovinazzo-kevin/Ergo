@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -27,6 +26,7 @@ public sealed class DictKeyValue : BuiltIn
                 yield break;
             }
 
+            var any = false;
             foreach (var key in dict.Dictionary.Keys)
             {
                 var s1 = args[1].Unify(key).TryGetValue(out var subs);
@@ -35,6 +35,7 @@ public sealed class DictKeyValue : BuiltIn
                     var s2 = args[2].Unify(dict.Dictionary[key]).TryGetValue(out var vSubs);
                     if (s2)
                     {
+                        any = true;
                         yield return new Evaluation(WellKnown.Literals.True, subs.Concat(vSubs).ToArray());
                     }
                     else
@@ -43,6 +44,11 @@ public sealed class DictKeyValue : BuiltIn
                         yield break;
                     }
                 }
+            }
+
+            if (!any)
+            {
+                yield return new Evaluation(WellKnown.Literals.False);
             }
 
             yield break;

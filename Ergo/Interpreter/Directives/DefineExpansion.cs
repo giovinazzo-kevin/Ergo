@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-
-namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Interpreter.Directives;
 
 public class DefineExpansion : InterpreterDirective
 {

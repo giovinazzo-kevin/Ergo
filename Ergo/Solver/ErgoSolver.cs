@@ -216,14 +216,13 @@ public partial class ErgoSolver : IDisposable
             {
                 if (!exp.Head.Unify(term).TryGetValue(out var subs))
                     continue;
-                if (exp.Value.IsGround)
+                if (!exp.Value.Variables.Contains(WellKnown.Literals.ExpansionOutput))
                     return Maybe.Some(exp.Value);
                 // Assume exp.Value is callable
-                await foreach (var sol in Solve(new Query(exp.Value.Substitute(subs))))
+                var query = exp.Value.Substitute(subs);
+                await foreach (var sol in Solve(new Query(query)))
                 {
-                    if (sol.Links.Value.TryGetValue(new Variable("_Eval"), out var eval))
-                        return Maybe.Some(eval);
-                    throw new InvalidOperationException(); // TODO: define appropriate exception
+                    return Maybe.Some(sol.Links.Value[WellKnown.Literals.ExpansionOutput]);
                 }
             }
         }

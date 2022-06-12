@@ -5,6 +5,7 @@ public static partial class WellKnown
     public static class Literals
     {
         public static readonly Variable Discard = new("_");
+        public static readonly Variable ExpansionOutput = new("_Eval");
         public static readonly Atom True = new(true);
         public static readonly Atom False = new(false);
         public static readonly Atom Cut = new("!");

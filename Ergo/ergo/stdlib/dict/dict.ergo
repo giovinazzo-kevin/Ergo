@@ -3,7 +3,7 @@
 ]).
 
 :- op(1000, xfx, [':']).
-:- op(40, yfx, ['@']).
+:- op(2000, yfx, ['@']).
 
 :- expand('@'(dict(Tag, Args), Key), dict_key_value(dict(Tag, Args), Key, _Eval)).
 

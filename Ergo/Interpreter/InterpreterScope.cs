@@ -1,4 +1,4 @@
-﻿using Ergo.Lang.Ast;
+﻿
 using Ergo.Solver.BuiltIns;
 using Ergo.Interpreter.Directives;
 using System.Collections.Generic;
@@ -96,6 +96,25 @@ namespace Ergo.Interpreter
             {
                 if (!operators.Any(other => other.Depth < depth && other.Op.Synonyms.SequenceEqual(op.Synonyms)))
                     yield return op;
+            }
+        }
+
+        public IEnumerable<Module> GetLoadedModules()
+        {
+            return Inner(this, Module);
+            IEnumerable<Module> Inner(InterpreterScope scope, Atom entry, HashSet<Atom> seen = default)
+            {
+                seen ??= new();
+                if (seen.Contains(entry))
+                    yield break;
+                var current = scope.Modules[entry];
+                yield return current;
+                seen.Add(entry);
+                foreach (var import in current.Imports.Contents.Cast<Atom>()
+                    .SelectMany(i => Inner(scope, i, seen)))
+                {
+                    yield return import;
+                }
             }
         }
 

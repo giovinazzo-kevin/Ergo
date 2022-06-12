@@ -40,7 +40,7 @@ public readonly struct ErgoProgram : IExplainable
     public ErgoProgram AsPartial(bool partial) => new(Directives, KnowledgeBase, partial);
 
     public static ErgoProgram Empty(Atom module) => new(
-        new[] { new Directive(new Complex(new DeclareModule().Signature.Functor, module, WellKnown.Literals.EmptyList)) },
+        new[] { new Directive(new Complex(new DeclareModule().Signature.Functor, module, WellKnown.Literals.EmptyList), string.Empty) },
         Array.Empty<Predicate>()
     );
 }

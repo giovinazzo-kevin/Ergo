@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 using Ergo.Shell.Commands;
 using Ergo.Solver;
 using System.IO;
@@ -100,7 +99,7 @@ public partial class ErgoShell
         var module = scope.InterpreterScope.Modules[scope.InterpreterScope.Module];
         // TODO: make it easier to save directives
         var dirs = module.Imports.Contents
-            .Select(m => new Directive(new Complex(new("use_module"), m)))
+            .Select(m => new Directive(new Complex(new("use_module"), m), string.Empty))
             .ToArray();
         var text = new ErgoProgram(dirs, preds.ToArray()).Explain(canonical: false);
         File.WriteAllText(fileName, text);

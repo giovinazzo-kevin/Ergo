@@ -3,7 +3,8 @@
     named_tuple/3
 ]).
 
-:- op(1000, xfx, [':']).
+%: Depends on operators defined in this module.
+:- use_module(dict).
 
 named_arg(Name:Arg, Name, Arg) :- ground(Name).
 

@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Ergo.Lang;
 
@@ -25,6 +23,21 @@ public partial class Parser
 
         value = t;
         return true;
+    }
+    public bool ExpectDelimiter(Func<string, bool> condition, out string d)
+    {
+        var pos = _lexer.State;
+        if (Expect(Lexer.TokenType.Punctuation, condition, out d))
+        {
+            return true;
+        }
+
+        if (Expect(Lexer.TokenType.Operator, condition, out d))
+        {
+            return true;
+        }
+
+        return Fail(pos);
     }
     protected bool Expect<T>(Lexer.TokenType type, out T value) => Expect(type, _ => true, out value);
     protected bool Parenthesized<T>(Func<(bool Parsed, T Result)> tryParse, out T value)
@@ -95,21 +108,5 @@ public partial class Parser
             ? new UntypedSequence(functor, emptyElement, comma.Contents, false)
             : new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args.Select(a => a.Term)), false);
         return true;
-
-        bool ExpectDelimiter(Func<string, bool> condition, out string d)
-        {
-            var pos = _lexer.State;
-            if (Expect(Lexer.TokenType.Punctuation, condition, out d))
-            {
-                return true;
-            }
-
-            if (Expect(Lexer.TokenType.Operator, condition, out d))
-            {
-                return true;
-            }
-
-            return Fail(pos);
-        }
     }
 }

@@ -28,6 +28,7 @@ todo('Exception handling', [global]).
 todo('Strings/Regex', [global]).
 todo('Tabling/memoization', [global]).
 todo('Typesystem', [global]).
+todo('Abstract first class citizens (for Dict and others)', [global]).
 todo('Lambdas/Higher order predicates', [global]).
 todo('Libraries', [modules]).
 todo('First class dictionary terms for named marshalling', [global]).

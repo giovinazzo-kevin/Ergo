@@ -1,6 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
-using System.Collections.Immutable;
 
 namespace Ergo.Lang;
 
@@ -500,6 +498,19 @@ public partial class Parser : IDisposable
     {
         directive = default;
         var pos = _lexer.State;
+        if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
+        {
+            desc = desc[1..].TrimStart();
+            while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
+            {
+                if (!string.IsNullOrEmpty(newDesc))
+                {
+                    desc += "\n" + newDesc[1..].TrimStart();
+                }
+            }
+        }
+
+        desc ??= " ";
         if (!TryParseExpression(out var op))
         {
             return Fail(pos);
@@ -510,7 +521,7 @@ public partial class Parser : IDisposable
             return Fail(pos);
         }
 
-        if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
+        if (!ExpectDelimiter(p => p.Equals("."), out var _))
         {
             Throw(pos, ErrorType.UnterminatedClauseList);
         }
@@ -521,7 +532,7 @@ public partial class Parser : IDisposable
             lhs = expr.Root;
         }
 
-        directive = new(lhs);
+        directive = new(lhs, desc);
         return true;
     }
 
@@ -546,7 +557,7 @@ public partial class Parser : IDisposable
             return Fail(pos);
         if (!TryParseExpression(out var op))
         {
-            if (TryParseTerm(out var head, out _) && Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
+            if (TryParseTerm(out var head, out _) && ExpectDelimiter(p => p.Equals("."), out var _))
             {
                 return MakePredicate(pos, desc, head, new(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)), out predicate);
             }
@@ -554,14 +565,14 @@ public partial class Parser : IDisposable
             Throw(pos, ErrorType.ExpectedClauseList);
         }
 
+        if (!ExpectDelimiter(p => p.Equals("."), out var _))
+        {
+            Throw(pos, ErrorType.UnterminatedClauseList);
+        }
+
         if (!WellKnown.Operators.BinaryHorn.Equals(op.Operator))
         {
             op = new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some<ITerm>(WellKnown.Literals.True), false);
-        }
-
-        if (!Expect(Lexer.TokenType.Punctuation, p => p.Equals("."), out string _))
-        {
-            Throw(pos, ErrorType.UnterminatedClauseList);
         }
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
@@ -616,6 +627,8 @@ public partial class Parser : IDisposable
 
     public bool TryParseProgramDirectives(out ErgoProgram program)
     {
+        var ret = true;
+        program = default;
         var directives = new List<Directive>();
         try
         {
@@ -629,6 +642,8 @@ public partial class Parser : IDisposable
             // The parser reached a point where a newly-declared operator was used. Probably.
         }
 
+        if (!ret)
+            return false;
         program = new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>())
             .AsPartial(true);
         return true;

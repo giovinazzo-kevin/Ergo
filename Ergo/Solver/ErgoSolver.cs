@@ -201,7 +201,7 @@ public partial class ErgoSolver : IDisposable
 
     private void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
 
-    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term)
+    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, SolverScope scope = default)
     {
         if (term is Variable)
             return default;
@@ -212,6 +212,7 @@ public partial class ErgoSolver : IDisposable
         {
             if (!mod.Expansions.TryGetValue(sig, out var expansions))
                 continue;
+            scope = scope.WithModule(mod.Name);
             foreach (var exp in expansions)
             {
                 if (!exp.Head.Unify(term).TryGetValue(out var subs))
@@ -220,21 +221,28 @@ public partial class ErgoSolver : IDisposable
                     return Maybe.Some(exp.Value);
                 // Assume exp.Value is callable
                 var query = exp.Value.Substitute(subs);
-                await foreach (var sol in Solve(new Query(query)))
+                await foreach (var sol in Solve(new Query(query), Maybe.Some(scope)))
                 {
-                    return Maybe.Some(sol.Links.Value[WellKnown.Literals.ExpansionOutput]);
+                    if (!sol.Simplify().Links.Value.TryGetValue(WellKnown.Literals.ExpansionOutput, out var expanded))
+                    {
+                        return sol.Substitutions.Any(s => s.Rhs.Equals(WellKnown.Literals.ExpansionOutput))
+                            ? Maybe.Some<ITerm>(WellKnown.Literals.Discard)
+                            : default; // TODO: Throw?
+                    }
+
+                    return Maybe.Some(expanded);
                 }
             }
         }
 
         if (term is Dict dict)
-            return await TryExpandTerm(dict.CanonicalForm);
+            return await TryExpandTerm(dict.CanonicalForm, scope);
         if (term is Complex cplx)
         {
             var newArgs = new List<ITerm>();
             foreach (var arg in cplx.Arguments)
             {
-                var exp = await TryExpandTerm(arg);
+                var exp = await TryExpandTerm(arg, scope);
                 newArgs.Add(exp.Reduce(some => some, () => arg));
             }
 
@@ -261,7 +269,7 @@ public partial class ErgoSolver : IDisposable
             yield break;
         }
         // Cyclic literal definitions throw an error, so this replacement loop always terminates
-        while (await TryExpandTerm(goal) is { HasValue: true } exp)
+        while (await TryExpandTerm(goal, scope) is { HasValue: true } exp)
         {
             ct.ThrowIfCancellationRequested();
             var newGoal = exp.GetOrDefault();

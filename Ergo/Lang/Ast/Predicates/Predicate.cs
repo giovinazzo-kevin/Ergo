@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -73,15 +72,19 @@ public readonly struct Predicate : IExplainable
 
     public string Explain(bool canonical)
     {
+        string expl;
+        var doc = string.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r));
         if (Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { WellKnown.Literals.True }))
         {
-            return $"{Head.Explain()}.";
+            expl = $"{Head.Explain()}.";
+            if (!canonical && !string.IsNullOrWhiteSpace(Documentation))
+                expl = $"{doc}\r\n{expl}";
         }
-
-        var expl = $"{Head.Explain()}{(canonical ? '←' : " ←\r\n\t")}{string.Join(canonical ? "," : ",\r\n\t", Body.Contents.Select(x => x.Explain(canonical)))}.";
-        if (!canonical && !string.IsNullOrWhiteSpace(Documentation))
+        else
         {
-            expl = $"{string.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r))}\r\n" + expl;
+            expl = $"{Head.Explain()}{(canonical ? '←' : " ←\r\n\t")}{string.Join(canonical ? "," : ",\r\n\t", Body.Contents.Select(x => x.Explain(canonical)))}.";
+            if (!canonical && !string.IsNullOrWhiteSpace(Documentation))
+                expl = $"{doc}\r\n{expl}";
         }
 
         return expl;

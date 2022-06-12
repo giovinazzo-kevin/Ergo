@@ -1,13 +1,23 @@
 ﻿:- module(dict, [
-	dummy/1
+	'$'/2
 ]).
 
-:- expand('@'(dict(Tag, Args), Key), dict_key_value(dict(Tag, Args), Key, _Eval)).
+:- use_module(list).
 
-:- op(1000, xfx, [':']).
-:- op(2000, yfx, ['@']).
+:- op(1000, xfy, [':']).
+ %: TODO: Fix parsing and replace this operator with '.'/2
+:- op(900, xfy, ['$']).
+
+:- expand('$'(dict(Tag, Args), Key), dict_key_value_(dict(Tag, Args), Key, Eval)).
+
+dict_key_value_(dict(Tag, Args), Key, Eval) :- 
+	ground(Key),
+	dict_key_value(dict(Tag, Args), Key, Eval), !.
+dict_key_value_(dict(_, _), Key, _) :- ground(Key).
+
+dict(_, KV)$K:V :- member(K:V, KV).
+
 
 
 %: Get all K/V pairs: dict(_, _Args), member(_Arg, _Args), named_arg(_Arg, Name, Value).
-
 dummy.

@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -92,6 +91,11 @@ public readonly partial struct Complex : ITerm
         if (obj is not Complex other)
         {
             return false;
+        }
+
+        if (obj is Dict d)
+        {
+            other = d.CanonicalForm;
         }
 
         var args = Arguments;

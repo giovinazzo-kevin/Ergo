@@ -21,6 +21,9 @@
     <None Update="ergo\stdlib\dict\dict.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ergo\stdlib\func\func.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\stdlib\string\string.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

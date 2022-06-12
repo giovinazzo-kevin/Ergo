@@ -6,13 +6,21 @@
 ]).
 
 % OPERATOR DECLARATIONS
+:- op(5, xfy, ['::']).
 :- op(20, xfy, ['∧', ',']).
 :- op(30, xfy, ['∨', ';']).
-:- op(50, xfx, ['=']).
-:- op(50, xfx, ['≠', '\\=']).
 :- op(30, xfx, ['->']).
 :- op(30, fx, ['¬', '\\+']).
-:- op(5, xfy, ['::']).
+:- op(50, xfx, ['=']).
+:- op(50, xfx, ['≠', '\\=']).
+:- op(700, xfy, ['??']).
+
+% TERM EXPANSIONS
+
+:- expand('??'(A, B), coalesce(A, B, Eval)).
+
+coalesce(A, _, A) :- ground(A), !.
+coalesce(_, B, B).
 
 % OPERATOR IMPLEMENTATIONS
 

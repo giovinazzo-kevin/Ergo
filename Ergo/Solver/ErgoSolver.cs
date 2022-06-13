@@ -7,6 +7,8 @@ namespace Ergo.Solver;
 public partial class ErgoSolver : IDisposable
 {
     protected volatile bool Cut = false;
+    protected volatile CancellationTokenSource ExceptionCts;
+
     public readonly SolverFlags Flags;
     public readonly ShellScope ShellScope;
     public readonly InterpreterScope InterpreterScope;
@@ -32,7 +34,11 @@ public partial class ErgoSolver : IDisposable
         AddBuiltInsByReflection();
     }
 
-    public void Throw(Exception e) => ShellScope.ExceptionHandler.Throw(ShellScope, e);
+    public void Throw(Exception e)
+    {
+        ShellScope.ExceptionHandler.Throw(ShellScope, e);
+        ExceptionCts.Cancel(false);
+    }
 
     public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
         where T : new()
@@ -177,6 +183,7 @@ public partial class ErgoSolver : IDisposable
         {
             LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
             ct.ThrowIfCancellationRequested();
+            ExceptionCts.Token.ThrowIfCancellationRequested();
             var args = term.Reduce(
                 a => Array.Empty<ITerm>(),
                 v => Array.Empty<ITerm>(),
@@ -201,8 +208,13 @@ public partial class ErgoSolver : IDisposable
 
     private void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
 
-    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, SolverScope scope = default)
+    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, SolverScope scope = default, CancellationToken ct = default)
     {
+        if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+        {
+            return default;
+        }
+
         if (term is Variable)
             return default;
         var sig = term.GetSignature();
@@ -223,11 +235,20 @@ public partial class ErgoSolver : IDisposable
                 var query = exp.Value.Substitute(subs);
                 await foreach (var sol in Solve(new Query(query), Maybe.Some(scope)))
                 {
+                    if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+                    {
+                        return default;
+                    }
+
                     if (!sol.Simplify().Links.Value.TryGetValue(WellKnown.Literals.ExpansionOutput, out var expanded))
                     {
-                        return sol.Substitutions.Any(s => s.Rhs.Equals(WellKnown.Literals.ExpansionOutput))
-                            ? Maybe.Some<ITerm>(WellKnown.Literals.Discard)
-                            : default; // TODO: Throw?
+                        if (!sol.Substitutions.Any(s => s.Rhs.Equals(WellKnown.Literals.ExpansionOutput)))
+                        {
+                            Throw(new SolverException(SolverError.ExpansionLacksEvalVariable, scope));
+                            return default;
+                        }
+
+                        return Maybe.Some<ITerm>(WellKnown.Literals.Discard);
                     }
 
                     return Maybe.Some(expanded);
@@ -254,7 +275,10 @@ public partial class ErgoSolver : IDisposable
 
     protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        ct.ThrowIfCancellationRequested();
+        if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+        {
+            yield break;
+        }
 
         subs ??= new List<Substitution>();
         // Treat comma-expression complex ITerms as proper expressions
@@ -269,11 +293,15 @@ public partial class ErgoSolver : IDisposable
             yield break;
         }
         // Cyclic literal definitions throw an error, so this replacement loop always terminates
-        while (await TryExpandTerm(goal, scope) is { HasValue: true } exp)
+        while (await TryExpandTerm(goal, scope, ct: ct) is { HasValue: true } exp)
         {
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+            {
+                yield break;
+            }
+
             var newGoal = exp.GetOrDefault();
-            if (newGoal.Equals(goal))
+            if (newGoal.Unify(goal).Reduce(some => !some.Any(), () => false))
                 break;
             goal = newGoal;
         }
@@ -281,7 +309,11 @@ public partial class ErgoSolver : IDisposable
         // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
         await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+            {
+                yield break;
+            }
+
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
                 LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
@@ -405,7 +437,10 @@ public partial class ErgoSolver : IDisposable
     }
 
     public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
-        => Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
+    {
+        ExceptionCts = new();
+        return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
+    }
 
     public void Dispose()
     {

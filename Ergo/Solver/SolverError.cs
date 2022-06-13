@@ -3,7 +3,8 @@
 public enum SolverError
 {
     TermNotSufficientlyInstantiated
-    , TermExpansionLacksOutputVariable
+    , ExpansionLacksEvalVariable
+    , KeyNotFound
     , ExpectedTermOfTypeAt
     , CannotRetractImportedPredicate
     , UndefinedPredicate

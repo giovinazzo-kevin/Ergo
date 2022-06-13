@@ -64,6 +64,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
     public virtual ITerm ToTerm(object o, Maybe<Atom> overrideFunctor = default, Maybe<TermMarshalling> overrideMarshalling = default)
     {
+        if (o is null) return WellKnown.Literals.Discard;
         if (o != null && o.GetType() != Type) throw new ArgumentException(null, o.ToString());
         // Check if the [Term] attribute is applied at the type level,
         // If so, assume that's what we want unless overrideFunctor is not None.

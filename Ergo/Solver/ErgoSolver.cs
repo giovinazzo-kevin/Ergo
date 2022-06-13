@@ -257,13 +257,13 @@ public partial class ErgoSolver : IDisposable
         }
 
         if (term is Dict dict)
-            return await TryExpandTerm(dict.CanonicalForm, scope);
+            return await TryExpandTerm(dict.CanonicalForm, scope, ct: ct);
         if (term is Complex cplx)
         {
             var newArgs = new List<ITerm>();
             foreach (var arg in cplx.Arguments)
             {
-                var exp = await TryExpandTerm(arg, scope);
+                var exp = await TryExpandTerm(arg, scope, ct: ct);
                 newArgs.Add(exp.Reduce(some => some, () => arg));
             }
 

@@ -292,19 +292,6 @@ public partial class ErgoSolver : IDisposable
             Cut = false;
             yield break;
         }
-        // Cyclic literal definitions throw an error, so this replacement loop always terminates
-        while (await TryExpandTerm(goal, scope, ct: ct) is { HasValue: true } exp)
-        {
-            if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
-            {
-                yield break;
-            }
-
-            var newGoal = exp.GetOrDefault();
-            if (newGoal.Unify(goal).Reduce(some => !some.Any(), () => false))
-                break;
-            goal = newGoal;
-        }
         // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
         // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
         await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
@@ -332,8 +319,23 @@ public partial class ErgoSolver : IDisposable
 
                 continue;
             }
+
+            var expandedGoal = resolvedGoal.Result;
+            // Cyclic literal definitions throw an error, so this replacement loop always terminates
+            while (await TryExpandTerm(expandedGoal, scope, ct: ct) is { HasValue: true } exp)
+            {
+                if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+                {
+                    yield break;
+                }
+
+                var newGoal = exp.GetOrDefault();
+                if (newGoal.Unify(expandedGoal).Reduce(some => !some.Any(), () => false))
+                    break;
+                expandedGoal = newGoal;
+            }
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-            var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], resolvedGoal.Result);
+            var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], expandedGoal);
             LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
             foreach (var m in matches)
             {

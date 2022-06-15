@@ -11,10 +11,7 @@
 :- expand('$'(dict(Tag, Args), Key), dict_key_value_(dict(Tag, Args), Key, Eval)).
 
 dict_key_value_(dict(Tag, Args), Key, Eval) :- 
-	term_type(Key, atom),
 	dict_key_value(dict(Tag, Args), Key, Eval), !.
-
-dict(_, KV)$K:V :- member(K:V, KV).
 
 
 

@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -29,7 +28,7 @@ public readonly struct List : ISequence
         Tail = tail.Reduce(some => some, () => EmptyLiteral);
         IsParenthesized = parens;
         Root = ISequence.Fold(Functor, Tail, head)
-            .Reduce<ITerm>(a => a, v => v, c => c.AsParenthesized(parens), d => d);
+            .Reduce<ITerm>(a => a, v => v, c => c.AsParenthesized(parens));
     }
     public List(params ITerm[] args) : this(ImmutableArray.CreateRange(args), default, false) { }
     public List(IEnumerable<ITerm> args) : this(ImmutableArray.CreateRange(args), default, false) { }

@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang;
 
-public partial class Parser
+public partial class ErgoParser
 {
     public enum ErrorType
     {

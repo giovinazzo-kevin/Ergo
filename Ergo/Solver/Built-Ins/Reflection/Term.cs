@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
+using Ergo.Lang.Ast.Terms.Abstract;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -15,7 +15,7 @@ public sealed class Term : BuiltIn
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
         if (termArg is not Variable)
         {
-            if (termArg is Dict dict)
+            if (termArg.IsAbstractTerm<Dict>(out var dict))
             {
                 var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
                 if (!functorArg.Unify(new Atom("dict")).TryGetValue(out var funSubs)

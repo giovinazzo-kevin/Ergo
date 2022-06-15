@@ -11,7 +11,6 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     {
         Atom a => Maybe.Some(a),
         Complex c => Maybe.Some(c.Functor),
-        Dict d => Maybe.Some(WellKnown.Functors.Dict.First()),
         _ => Maybe<Atom>.None
     };
 
@@ -20,7 +19,6 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Atom => newFunctor,
         Variable v => v,
         Complex c => c.WithFunctor(newFunctor),
-        Dict d => d.WithFunctor(newFunctor),
         var x => x
     };
 

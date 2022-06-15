@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Lang.Ast.Terms.Abstract;
 using Ergo.Shell;
 using Ergo.Solver.BuiltIns;
 
@@ -45,9 +46,8 @@ public partial class ErgoSolver : IDisposable
     {
         var term = TermMarshall.ToTerm(new T());
         var signature = term.GetSignature();
-        signature = term is Dict
-            ? signature.WithTag(functor)
-            : functor.Reduce(some => signature.WithFunctor(some), () => signature);
+        // TODO: reimplement tag rules for dicts?
+        signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
         return signature;
     }
 
@@ -112,7 +112,7 @@ public partial class ErgoSolver : IDisposable
         {
             foreach (var sig in DataSources.Keys)
             {
-                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOrThrow()));
+                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOrThrow()).CanonicalForm);
                 if (!head.Unify(anon).TryGetValue(out var subs))
                 {
                     continue;
@@ -187,8 +187,7 @@ public partial class ErgoSolver : IDisposable
             var args = term.Reduce(
                 a => Array.Empty<ITerm>(),
                 v => Array.Empty<ITerm>(),
-                c => c.Arguments,
-                d => new ITerm[] { d }
+                c => c.Arguments
             );
             await foreach (var eval in builtIn.Apply(this, scope, args))
             {
@@ -256,8 +255,6 @@ public partial class ErgoSolver : IDisposable
             }
         }
 
-        if (term is Dict dict)
-            return await TryExpandTerm(dict.CanonicalForm, scope, ct: ct);
         if (term is Complex cplx)
         {
             var newArgs = new List<ITerm>();

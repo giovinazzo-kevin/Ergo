@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace Ergo.Solver;
+﻿namespace Ergo.Solver;
 
 public readonly struct Solution
 {
@@ -13,15 +11,15 @@ public readonly struct Solution
     public Solution Simplify()
     {
         return new(Inner(Substitutions)
-            .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false, d => false))
+            .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
             .ToArray())
             ;
         IEnumerable<Substitution> Inner(IEnumerable<Substitution> subs)
         {
             var answers = subs
-                .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false, d => false));
+                .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false));
             var steps = subs
-                .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false, d => false))
+                .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false))
                 .ToDictionary(s => s.Lhs);
             foreach (var ans in answers)
             {

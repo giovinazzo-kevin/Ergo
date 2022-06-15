@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -14,6 +15,7 @@ public readonly partial struct Complex : ITerm
     public readonly Atom Functor;
     public readonly ITerm[] Arguments;
     public readonly int Arity => Arguments.Length;
+    public readonly Maybe<IAbstractTerm> AbstractForm;
 
     private readonly int HashCode;
 
@@ -25,29 +27,34 @@ public readonly partial struct Complex : ITerm
         IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
         Affix = Maybe<OperatorAffix>.None;
         IsParenthesized = false;
+        AbstractForm = default;
     }
 
-    private Complex(Maybe<OperatorAffix> affix, bool parenthesized, Atom functor, params ITerm[] args)
+    private Complex(Maybe<OperatorAffix> affix, bool parenthesized, Atom functor, Maybe<IAbstractTerm> isAbstract, params ITerm[] args)
         : this(functor, args)
     {
         Affix = affix;
         IsParenthesized = parenthesized;
+        AbstractForm = isAbstract;
     }
-    public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, Arguments);
-    public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, Arguments);
-    public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, Arguments);
+    public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
+    public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, AbstractForm, Arguments);
+    public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, AbstractForm, Arguments);
+    public Complex AsAbstract(Maybe<IAbstractTerm> abs) => new(Affix, IsParenthesized, Functor, abs, Arguments);
+    public Complex WithFunctor(Atom functor) => new(Affix, IsParenthesized, functor, AbstractForm, Arguments);
+    public Complex WithArguments(params ITerm[] args) => new(Affix, IsParenthesized, Functor, AbstractForm, args);
 
     public string Explain(bool canonical = false)
     {
         if (!canonical && IsParenthesized)
-        {
-            return $"({Inner(this)})";
-        }
+            return $"({Inner(this, AbstractForm)})";
+        return Inner(this, AbstractForm);
 
-        return Inner(this);
-
-        string Inner(Complex c)
+        string Inner(Complex c, Maybe<IAbstractTerm> absForm)
         {
+            if (!canonical && absForm.HasValue)
+                return absForm.GetOrThrow().Explain();
+            // TODO: REMOVE UNFOLDS
             if (List.TryUnfold(c, out var list))
                 return list.Explain(canonical);
             if (CommaSequence.TryUnfold(c, out var comma))
@@ -80,10 +87,6 @@ public readonly partial struct Complex : ITerm
 
     public IEnumerable<Variable> Variables => Arguments.SelectMany(arg => arg.Variables);
 
-    public Complex WithFunctor(Atom functor) => new(Affix, IsParenthesized, functor, Arguments);
-
-    public Complex WithArguments(params ITerm[] args) => new(Affix, IsParenthesized, Functor, args);
-
     public bool Matches(Complex other) => Equals(Functor, other.Functor) && Arity == other.Arity;
 
     public override bool Equals(object obj)
@@ -91,11 +94,6 @@ public readonly partial struct Complex : ITerm
         if (obj is not Complex other)
         {
             return false;
-        }
-
-        if (obj is Dict d)
-        {
-            other = d.CanonicalForm;
         }
 
         var args = Arguments;
@@ -120,7 +118,8 @@ public readonly partial struct Complex : ITerm
             .FirstOrDefault(cmp => cmp != 0);
     }
 
-    public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null) => new Complex(Affix, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
+    public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+        => new Complex(Affix, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
 
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 

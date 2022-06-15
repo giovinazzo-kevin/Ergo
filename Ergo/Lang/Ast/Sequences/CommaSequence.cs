@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -25,7 +24,7 @@ public readonly struct CommaSequence : ISequence
         Contents = args;
         IsEmpty = args.Length == 0;
         Root = ISequence.Fold(Functor, args)
-            .Reduce<ITerm>(a => a, v => v, c => c.AsParenthesized(parens), d => d);
+            .Reduce<ITerm>(a => a, v => v, c => c.AsParenthesized(parens));
         IsParenthesized = parens;
     }
     public CommaSequence(params ITerm[] args) : this(ImmutableArray.CreateRange(args), false) { }

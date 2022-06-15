@@ -1,7 +1,7 @@
 ﻿using Ergo.Lang.Ast.Terms.Abstract;
 using static Ergo.Lang.ErgoParser;
 
-namespace Ergo.Lang.Parser.Abstract;
+namespace Ergo.Lang.Parser;
 
 public sealed class DictParser : AbstractTermParser<Dict>
 {

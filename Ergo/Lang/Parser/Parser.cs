@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Parser.Abstract;
+using Ergo.Lang.Parser;
 
 namespace Ergo.Lang;
 

@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter.Directives;
-using Ergo.Lang.Parser.Abstract;
+using Ergo.Lang.Parser;
 using Ergo.Solver;
 using System.IO;
 

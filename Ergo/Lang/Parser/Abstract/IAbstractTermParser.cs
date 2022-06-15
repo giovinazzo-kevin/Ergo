@@ -1,6 +1,6 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
 
-namespace Ergo.Lang.Parser.Abstract;
+namespace Ergo.Lang.Parser;
 
 public interface IAbstractTermParser
 {

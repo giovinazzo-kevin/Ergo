@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Shell;
+using Ergo.Solver;
 
 using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();

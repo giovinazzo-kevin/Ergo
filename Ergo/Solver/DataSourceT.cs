@@ -1,8 +1,4 @@
-﻿using Ergo.Solver;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Ergo.Interpreter;
+﻿namespace Ergo.Solver;
 
 public sealed class DataSource<T> : IAsyncEnumerable<ITerm>
     where T : new()

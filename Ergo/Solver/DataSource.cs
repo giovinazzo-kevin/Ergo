@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Ergo.Interpreter;
+namespace Ergo.Solver;
 
 public enum RejectionData
 {

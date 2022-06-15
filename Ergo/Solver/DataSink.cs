@@ -1,9 +1,6 @@
-﻿using Ergo.Solver;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 
-namespace Ergo.Interpreter;
+namespace Ergo.Solver;
 
 public sealed class DataSink<T> : IDisposable
     where T : new()
@@ -39,9 +36,7 @@ public sealed class DataSink<T> : IDisposable
     private void OnDataPushed(ErgoSolver s, ITerm t)
     {
         if (t.GetFunctor().Reduce(some => some.Equals(Functor), () => t is Variable))
-        {
             DataPushed?.Invoke(t);
-        }
     }
 
     private void RegenerateBuffer()
@@ -56,9 +51,7 @@ public sealed class DataSink<T> : IDisposable
         if (_disposed) throw new ObjectDisposedException(nameof(DataSink<T>));
 
         if (!Buffer.Writer.TryComplete())
-        {
             throw new InvalidOperationException();
-        }
 
         await foreach (var item in Buffer.Reader.ReadAllAsync(ct))
         {

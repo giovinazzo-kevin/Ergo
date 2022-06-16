@@ -115,7 +115,7 @@ public partial class ErgoParser : IDisposable
             return Fail(pos);
         }
 
-        var argParse = new ListParser<CommaList>((h, t) => new(h))
+        var argParse = new ListParser<Ast.Tuple>((h, t) => (new(h)))
             .TryParse(this);
         if (!argParse.HasValue)
             return Fail(pos);
@@ -279,7 +279,7 @@ public partial class ErgoParser : IDisposable
         expr = default; var pos = Lexer.State;
         if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
         && TryParseTerm(out var arg, out var parens)
-        && (parens || !CommaList.TryUnfold(arg, out _)))
+        && (parens || !Ast.Tuple.TryUnfold(arg, out _)))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
@@ -292,7 +292,7 @@ public partial class ErgoParser : IDisposable
     {
         expr = default; var pos = Lexer.State;
         if (TryParseTerm(out var arg, out var parens)
-        && (parens || !CommaList.TryUnfold(arg, out _))
+        && (parens || !Ast.Tuple.TryUnfold(arg, out _))
         && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
@@ -496,14 +496,14 @@ public partial class ErgoParser : IDisposable
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
 
-        if (!CommaList.TryUnfold(rhs, out var contents))
+        if (!Ast.Tuple.TryUnfold(rhs, out var contents))
         {
             contents = new[] { rhs };
         }
 
         return MakePredicate(pos, desc, op.Left, new(contents), out predicate);
 
-        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaList body, out Predicate c)
+        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, Ast.Tuple body, out Predicate c)
         {
             var headVars = head.Variables
                 .Where(v => !v.Equals(WellKnown.Literals.Discard));

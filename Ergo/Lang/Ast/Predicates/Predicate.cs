@@ -7,11 +7,11 @@ public readonly struct Predicate : IExplainable
 {
     public readonly Atom DeclaringModule;
     public readonly ITerm Head;
-    public readonly CommaList Body;
+    public readonly Tuple Body;
     public readonly string Documentation;
     public readonly bool IsDynamic;
 
-    public Predicate(string desc, Atom module, ITerm head, CommaList body, bool dynamic = false)
+    public Predicate(string desc, Atom module, ITerm head, Tuple body, bool dynamic = false)
     {
         Documentation = desc;
         DeclaringModule = module;
@@ -27,12 +27,12 @@ public readonly struct Predicate : IExplainable
             Documentation
             , DeclaringModule
             , Head.Instantiate(ctx, vars)
-            , new CommaList(Body.Contents.Select(x => x.Instantiate(ctx, vars)))
+            , new Tuple(Body.Contents.Select(x => x.Instantiate(ctx, vars)))
         );
     }
 
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
-        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), new CommaList(k.Body.Contents.Select(x => x.Substitute(s))));
+        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), new Tuple(k.Body.Contents.Select(x => x.Substitute(s))));
 
     public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body);
     public Predicate Dynamic() => new(Documentation, DeclaringModule, Head, Body, true);
@@ -48,7 +48,7 @@ public readonly struct Predicate : IExplainable
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
         {
             var head_ = c.Arguments[0];
-            var body = CommaList.Unfold(c.Arguments[1])
+            var body = Tuple.Unfold(c.Arguments[1])
                 .Reduce(some => some, () => new[] { c.Arguments[1] });
 
             if (!head_.TryGetQualification(out var module_, out head_))
@@ -56,7 +56,7 @@ public readonly struct Predicate : IExplainable
                 module_ = defaultModule;
             }
 
-            pred = new("(dynamic)", module_, head_, new CommaList(body));
+            pred = new("(dynamic)", module_, head_, new Tuple(body));
             return true;
         }
 
@@ -65,7 +65,7 @@ public readonly struct Predicate : IExplainable
             module = defaultModule;
         }
 
-        pred = new("(dynamic)", module, head, new CommaList(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)));
+        pred = new("(dynamic)", module, head, new Tuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)));
         return true;
     }
 

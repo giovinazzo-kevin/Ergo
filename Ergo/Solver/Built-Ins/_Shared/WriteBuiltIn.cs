@@ -29,7 +29,7 @@ public abstract class WriteBuiltIn : BuiltIn
 
     public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
-        if (args[0].IsAbstractTerm<Lang.Ast.Tuple>(out var comma))
+        if (args[0].IsAbstractTerm<NTuple>(out var comma))
         {
             Console.Write(string.Join(string.Empty, comma.Contents.Select(x =>
                 AsQuoted(x, Quoted).Explain(canonical: Canonical))));

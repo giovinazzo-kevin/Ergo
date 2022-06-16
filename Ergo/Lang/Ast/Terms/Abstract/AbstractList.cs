@@ -70,7 +70,7 @@ public abstract class AbstractList : IAbstractTerm
 
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, params Atom[] functors)
     {
-        if (term.IsAbstractTerm<Tuple>(out var comma))
+        if (term.IsAbstractTerm<NTuple>(out var comma))
             return Maybe.Some(comma.Contents.AsEnumerable());
 
         if (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))

@@ -28,7 +28,7 @@ public sealed class SequenceType : BuiltIn
             }
         }
 
-        if (seq.IsAbstractTerm<Lang.Ast.Tuple>(out _))
+        if (seq.IsAbstractTerm<NTuple>(out _))
         {
             if (type.Unify(new Atom("comma_list")).TryGetValue(out var subs))
             {

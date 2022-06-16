@@ -2,18 +2,18 @@
 
 namespace Ergo.Lang.Ast;
 
-public sealed class Tuple : AbstractList
+public sealed class NTuple : AbstractList
 {
-    public static readonly Tuple Empty = new(ImmutableArray<ITerm>.Empty);
+    public static readonly NTuple Empty = new(ImmutableArray<ITerm>.Empty);
 
-    public Tuple(ImmutableArray<ITerm> head)
+    public NTuple(ImmutableArray<ITerm> head)
         : base(head)
     {
         CanonicalForm = Fold(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
-    public Tuple(IEnumerable<ITerm> contents)
+    public NTuple(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents)) { }
     public override Atom Functor => WellKnown.Functors.CommaList.First();
     public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
@@ -32,5 +32,5 @@ public sealed class Tuple : AbstractList
         return false;
     }
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term) => Unfold(term, WellKnown.Operators.Conjunction.Synonyms);
-    protected override AbstractList Create(ImmutableArray<ITerm> head) => new Tuple(head);
+    protected override AbstractList Create(ImmutableArray<ITerm> head) => new NTuple(head);
 }

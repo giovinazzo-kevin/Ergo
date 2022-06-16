@@ -29,7 +29,7 @@ public sealed class Call : BuiltIn
             yield break;
         }
 
-        if (!goal.IsAbstractTerm<Lang.Ast.Tuple>(out var comma))
+        if (!goal.IsAbstractTerm<NTuple>(out var comma))
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(goal));
         }

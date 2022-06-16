@@ -25,7 +25,7 @@ public sealed class ListParser<L> : AbstractTermParser<L>
                 && WellKnown.Functors.HeadTail.Contains(cplx.Functor))
             {
                 var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                arguments = Ast.Tuple.Unfold(cplx.Arguments[0])
+                arguments = Ast.NTuple.Unfold(cplx.Arguments[0])
                     .Reduce(some => ImmutableArray.CreateRange(some), () => arguments);
                 return Maybe.Some(Constructor(arguments, Maybe.Some(cplx.Arguments[1])));
             }

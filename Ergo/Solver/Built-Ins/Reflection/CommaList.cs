@@ -21,7 +21,7 @@ public sealed class CommaToList : BuiltIn
                 yield break;
             }
 
-            var comma = new Lang.Ast.Tuple(list.Contents);
+            var comma = new NTuple(list.Contents);
             if (!commaArg.Unify(comma.CanonicalForm).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
@@ -34,7 +34,7 @@ public sealed class CommaToList : BuiltIn
 
         if (commaArg is not Variable)
         {
-            if (!commaArg.IsAbstractTerm<Lang.Ast.Tuple>(out var comma))
+            if (!commaArg.IsAbstractTerm<NTuple>(out var comma))
             {
                 solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaList, commaArg.Explain()));
                 yield return new(WellKnown.Literals.False);

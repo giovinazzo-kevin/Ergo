@@ -5,8 +5,8 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Goals.Explain() }")]
 public readonly struct Query
 {
-    public readonly Tuple Goals;
+    public readonly NTuple Goals;
 
-    public Query(Tuple goals) => Goals = goals;
+    public Query(NTuple goals) => Goals = goals;
     public Query(params ITerm[] goals) => Goals = new(goals);
 }

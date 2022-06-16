@@ -18,7 +18,7 @@ public abstract class PredicatesShellCommand : ShellCommand
             .Where(p => !p.Head.IsQualified);
         if (term?.Success ?? false)
         {
-            var parsed = shell.Parse<Lang.Ast.Tuple>(scope, $"{term.Value}, true").Value;
+            var parsed = shell.Parse<NTuple>(scope, $"{term.Value}, true").Value;
             if (!parsed.HasValue)
             {
                 shell.No();

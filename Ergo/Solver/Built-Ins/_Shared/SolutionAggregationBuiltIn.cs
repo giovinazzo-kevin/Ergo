@@ -41,11 +41,11 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             .ToHashSet();
         var listVars = new List(freeVars.Cast<ITerm>());
 
-        var goalClauses = new Lang.Ast.Tuple(new ITerm[] {
+        var goalClauses = new NTuple(new ITerm[] {
             goal,
             new Complex(WellKnown.Functors.Unification.First(),
                 variable,
-                new Lang.Ast.Tuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
+                new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
             .AsOperator(OperatorAffix.Infix)
         });
         var solutions = (await solver.Solve(new(goalClauses), Maybe.Some(scope)).CollectAsync())

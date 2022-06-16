@@ -14,7 +14,6 @@ public sealed class DictParser : AbstractTermParser<Dict>
         else
             return default;
 
-        // TODO: Use a bracy list instead
         var argParse = new ListParser<BracyList>((h, t) => new(h, t))
             .TryParse(parser);
         if (!argParse.HasValue)
@@ -23,21 +22,7 @@ public sealed class DictParser : AbstractTermParser<Dict>
         if (!args.Contents.All(a => WellKnown.Functors.NamedArgument.Contains(a.GetFunctor().GetOrDefault())))
             return default;
 
-        if (!parser.TryParseSequence(
-              WellKnown.Functors.CommaList.First()
-            , WellKnown.Literals.EmptyCommaList
-            , () => parser.TryParseTermOrExpression(out var t, out var p)
-                ? (t is Complex cplx && (WellKnown.Functors.NamedArgument.Contains(cplx.Functor) || WellKnown.Functors.Conjunction.Contains(cplx.Functor)), t, p)
-                : (false, default, p)
-            , "{", WellKnown.Operators.Conjunction, "}"
-            , true
-            , out var inner
-        ))
-        {
-            return default;
-        }
-
-        foreach (var item in inner.Contents)
+        foreach (var item in args.Contents)
         {
             if (item is not Complex)
             {
@@ -50,7 +35,7 @@ public sealed class DictParser : AbstractTermParser<Dict>
             }
         }
 
-        var pairs = inner.Contents.Select(item => new KeyValuePair<Atom, ITerm>((Atom)((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
+        var pairs = args.Contents.Select(item => new KeyValuePair<Atom, ITerm>((Atom)((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
         return Maybe.Some<Dict>(new(functor, pairs));
     }
 }

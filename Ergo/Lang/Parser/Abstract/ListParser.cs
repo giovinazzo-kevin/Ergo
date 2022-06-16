@@ -4,7 +4,7 @@ namespace Ergo.Lang.Parser;
 public sealed class ListParser<L> : AbstractTermParser<L>
     where L : AbstractList
 {
-    protected readonly Func<ImmutableArray<ITerm>, Maybe<ITerm>, L> Constructor;
+    private readonly Func<ImmutableArray<ITerm>, Maybe<ITerm>, L> Constructor;
 
     public ListParser(Func<ImmutableArray<ITerm>, Maybe<ITerm>, L> construct) => Constructor = construct;
 
@@ -20,6 +20,15 @@ public sealed class ListParser<L> : AbstractTermParser<L>
             , out var full
         ))
         {
+            if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
+                && WellKnown.Functors.HeadTail.Contains(cplx.Functor))
+            {
+                var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
+                arguments = CommaList.TryUnfold(cplx.Arguments[0])
+                    .Reduce(some => ImmutableArray.CreateRange(some), () => arguments);
+                return Maybe.Some(Constructor(arguments, Maybe.Some(cplx.Arguments[1])));
+            }
+
             return Maybe.Some(Constructor(full.Contents, default));
         }
 

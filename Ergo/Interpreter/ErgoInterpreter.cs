@@ -28,9 +28,9 @@ public partial class ErgoInterpreter
         {
             // NOTE: Should always add parsers in order of descending complexity
             parser.TryAddAbstractParser(new DictParser());
-            parser.TryAddAbstractParser(new ListParser<BracyList>((h, t) => new(h, t)));
+            parser.TryAddAbstractParser(new ListParser<Set>((h, t) => new(h)));
             parser.TryAddAbstractParser(new ListParser<List>((h, t) => new(h, t)));
-            parser.TryAddAbstractParser(new ListParser<CommaList>((h, t) => new(h, t)));
+            parser.TryAddAbstractParser(new ListParser<CommaList>((h, t) => new(h)));
             configureParser?.Invoke(parser);
         };
         AddDirectivesByReflection();

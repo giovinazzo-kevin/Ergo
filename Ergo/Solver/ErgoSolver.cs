@@ -278,9 +278,9 @@ public partial class ErgoSolver : IDisposable
 
         subs ??= new List<Substitution>();
         // Treat comma-expression complex ITerms as proper expressions
-        if (goal.IsAbstractTerm<CommaList>(out var expr))
+        if (CommaList.TryUnfold(goal, out var expr))
         {
-            await foreach (var s in Solve(scope, expr, subs, ct: ct))
+            await foreach (var s in Solve(scope, new CommaList(expr), subs, ct: ct))
             {
                 yield return s;
             }

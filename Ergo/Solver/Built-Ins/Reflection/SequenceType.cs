@@ -37,7 +37,7 @@ public sealed class SequenceType : BuiltIn
             }
         }
 
-        if (seq.IsAbstractTerm<BracyList>(out _))
+        if (seq.IsAbstractTerm<Set>(out _))
         {
             if (type.Unify(new Atom("bracy_list")).TryGetValue(out var subs))
             {

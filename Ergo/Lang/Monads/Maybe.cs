@@ -56,4 +56,5 @@ public readonly struct Maybe<T>
 
     public static readonly Maybe<T> None = default;
     public static Maybe<T> Some(T value) => new(value);
+    internal object SkipLast(int v) => throw new NotImplementedException();
 }

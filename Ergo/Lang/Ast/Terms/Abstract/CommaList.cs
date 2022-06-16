@@ -1,32 +1,36 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Ast;
 
 public sealed class CommaList : AbstractList
 {
-    public static CommaList Empty => new(ImmutableArray<ITerm>.Empty);
+    public static readonly CommaList Empty = new(ImmutableArray<ITerm>.Empty);
 
-    public CommaList(ImmutableArray<ITerm> head, Maybe<ITerm> tail = default)
-        : base(head, tail) { }
+    public CommaList(ImmutableArray<ITerm> head)
+        : base(head)
+    {
+        CanonicalForm = Fold(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
+            .Reduce<ITerm>(a => a, v => v, c => c)
+            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
+    }
     public CommaList(IEnumerable<ITerm> contents)
-        : this(ImmutableArray.CreateRange(contents), default) { }
+        : this(ImmutableArray.CreateRange(contents)) { }
     public override Atom Functor => WellKnown.Functors.CommaList.First();
     public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
     public override (string Open, string Close) Braces => ("(", ")");
+    public override ITerm CanonicalForm { get; }
 
-    public static Maybe<IEnumerable<ITerm>> TryUnfold(ITerm term)
+    public static bool TryUnfold(ITerm term, out IEnumerable<ITerm> unfolded)
     {
-        if (term is Complex { Arity: 2, Functor: var f } c && WellKnown.Operators.Conjunction.Synonyms.Contains(f))
-            return Maybe.Some(Inner());
-        return default;
-
-        IEnumerable<ITerm> Inner()
+        if (Unfold(term) is { HasValue: true } u)
         {
-            while (term is Complex { Arity: 2, Functor: var f } c && WellKnown.Operators.Conjunction.Synonyms.Contains(f))
-            {
-                yield return c.Arguments[0];
-                term = c.Arguments[1];
-            }
-
-            yield return term;
+            unfolded = u.GetOrThrow();
+            return true;
         }
+
+        unfolded = default;
+        return false;
     }
+    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term) => Unfold(term, WellKnown.Operators.Conjunction.Synonyms);
+    protected override AbstractList Create(ImmutableArray<ITerm> head) => new CommaList(head);
 }

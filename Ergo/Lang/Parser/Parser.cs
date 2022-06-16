@@ -115,7 +115,7 @@ public partial class ErgoParser : IDisposable
             return Fail(pos);
         }
 
-        var argParse = new ListParser<CommaList>((h, t) => new(h, t))
+        var argParse = new ListParser<CommaList>((h, t) => new(h))
             .TryParse(this);
         if (!argParse.HasValue)
             return Fail(pos);
@@ -279,7 +279,7 @@ public partial class ErgoParser : IDisposable
         expr = default; var pos = Lexer.State;
         if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
         && TryParseTerm(out var arg, out var parens)
-        && (parens || !arg.IsAbstractTerm<CommaList>(out _)))
+        && (parens || !CommaList.TryUnfold(arg, out _)))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
@@ -292,7 +292,7 @@ public partial class ErgoParser : IDisposable
     {
         expr = default; var pos = Lexer.State;
         if (TryParseTerm(out var arg, out var parens)
-        && (parens || !arg.IsAbstractTerm<CommaList>(out _))
+        && (parens || !CommaList.TryUnfold(arg, out _))
         && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
@@ -446,10 +446,10 @@ public partial class ErgoParser : IDisposable
         }
 
         var lhs = op.Left;
-        if (lhs.IsAbstractTerm<CommaList>(out var expr))
-        {
-            lhs = expr.CanonicalForm;
-        }
+        //if (CommaList.TryUnfold(lhs, out var expr))
+        //{
+        //    lhs = expr.CanonicalForm;
+        //}
 
         directive = new(lhs, desc);
         return true;
@@ -495,12 +495,13 @@ public partial class ErgoParser : IDisposable
         }
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
-        if (!rhs.IsAbstractTerm<CommaList>(out var expr))
+
+        if (!CommaList.TryUnfold(rhs, out var contents))
         {
-            expr = new(ImmutableArray<ITerm>.Empty.Add(rhs));
+            contents = new[] { rhs };
         }
 
-        return MakePredicate(pos, desc, op.Left, expr, out predicate);
+        return MakePredicate(pos, desc, op.Left, new(contents), out predicate);
 
         bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaList body, out Predicate c)
         {

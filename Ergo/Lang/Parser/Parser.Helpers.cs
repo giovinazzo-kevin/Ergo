@@ -104,7 +104,7 @@ public partial class ErgoParser
         }
 
         // Special case: when the delimiter is a comma, and the expression is not parenthesized, we need to unfold the underlying expression
-        seq = args.Count == 1 && args.Single() is { } arg && !arg.Parens && CommaList.TryUnfold(arg.Term) is { HasValue: true } list
+        seq = args.Count == 1 && args.Single() is { } arg && !arg.Parens && CommaList.Unfold(arg.Term) is { HasValue: true } list
             ? new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(list.GetOrThrow()))
             : new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(args.Select(a => a.Term)));
         return true;

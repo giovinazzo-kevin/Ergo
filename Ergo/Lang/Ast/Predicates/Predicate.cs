@@ -48,17 +48,15 @@ public readonly struct Predicate : IExplainable
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
         {
             var head_ = c.Arguments[0];
-            if (!c.Arguments[1].IsAbstractTerm<CommaList>(out var body))
-            {
-                body = new CommaList(ImmutableArray<ITerm>.Empty.Add(c.Arguments[1]));
-            }
+            var body = CommaList.Unfold(c.Arguments[1])
+                .Reduce(some => some, () => new[] { c.Arguments[1] });
 
             if (!head_.TryGetQualification(out var module_, out head_))
             {
                 module_ = defaultModule;
             }
 
-            pred = new("(dynamic)", module_, head_, body);
+            pred = new("(dynamic)", module_, head_, new CommaList(body));
             return true;
         }
 

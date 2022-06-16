@@ -14,7 +14,7 @@ public sealed class DictParser : AbstractTermParser<Dict>
         else
             return default;
 
-        var argParse = new ListParser<BracyList>((h, t) => new(h, t))
+        var argParse = new ListParser<Set>((h, t) => new(h))
             .TryParse(parser);
         if (!argParse.HasValue)
             return default;

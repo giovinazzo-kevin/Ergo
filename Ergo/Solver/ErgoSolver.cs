@@ -6,9 +6,6 @@ namespace Ergo.Solver;
 
 public partial class ErgoSolver : IDisposable
 {
-    protected volatile bool Cut = false;
-    protected volatile CancellationTokenSource ExceptionCts;
-
     public readonly SolverFlags Flags;
     public readonly ShellScope ShellScope;
     public readonly InterpreterScope InterpreterScope;
@@ -22,6 +19,7 @@ public partial class ErgoSolver : IDisposable
     public event Action<SolverTraceType, string> Trace;
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
+    public event Action<Exception> Throwing;
 
     public ErgoSolver(ErgoInterpreter i, InterpreterScope interpreterScope, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, ShellScope shellScope = default)
     {
@@ -37,7 +35,7 @@ public partial class ErgoSolver : IDisposable
     public void Throw(Exception e)
     {
         ShellScope.ExceptionHandler.Throw(ShellScope, e);
-        ExceptionCts.Cancel(false);
+        Throwing?.Invoke(e);
     }
 
     public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
@@ -157,7 +155,7 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    protected async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm qt, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm qt, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var any = false;
         var sig = qt.GetSignature();
@@ -183,7 +181,6 @@ public partial class ErgoSolver : IDisposable
         {
             LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
             ct.ThrowIfCancellationRequested();
-            ExceptionCts.Token.ThrowIfCancellationRequested();
             var args = term.Reduce(
                 a => Array.Empty<ITerm>(),
                 v => Array.Empty<ITerm>(),
@@ -203,13 +200,12 @@ public partial class ErgoSolver : IDisposable
         if (!any) yield return new(qt);
     }
 
-    private void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
-
-    private void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
+    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
+    public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
 
     public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, SolverScope scope = default, CancellationToken ct = default)
     {
-        if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+        if (ct.IsCancellationRequested)
         {
             return default;
         }
@@ -234,7 +230,7 @@ public partial class ErgoSolver : IDisposable
                 var query = exp.Value.Substitute(subs);
                 await foreach (var sol in Solve(new Query(query), Maybe.Some(scope)))
                 {
-                    if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+                    if (ct.IsCancellationRequested)
                     {
                         return default;
                     }
@@ -270,104 +266,31 @@ public partial class ErgoSolver : IDisposable
         return default;
     }
 
-    protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, ITerm goal, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
+    public (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(SolverScope scope, Module module, ITerm goal)
     {
-        if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
+        var matches = KnowledgeBase.GetMatches(goal);
+        if (matches.Any())
         {
-            yield break;
+            return (goal, matches);
         }
 
-        subs ??= new List<Substitution>();
-        // Treat comma-expression complex ITerms as proper expressions
-        if (NTuple.TryUnfold(goal, out var expr))
+        var isDynamic = false;
+        if (!goal.IsQualified)
         {
-            await foreach (var s in Solve(scope, new NTuple(expr), subs, ct: ct))
+            if (goal.TryQualify(module.Name, out var qualified)
+                && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true))
             {
-                yield return s;
-            }
-
-            Cut = false;
-            yield break;
-        }
-        // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-        // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-        await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
-        {
-            if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
-            {
-                yield break;
-            }
-
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
-            {
-                LogTrace(SolverTraceType.Retn, "⊥", scope.Depth);
-                yield break;
-            }
-
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
-            {
-                LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", scope.Depth);
-                yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
-                if (goal.Equals(WellKnown.Literals.Cut))
+                matches = KnowledgeBase.GetMatches(qualified);
+                if (matches.Any())
                 {
-                    Cut = true;
-                    yield break;
-                }
-
-                continue;
-            }
-
-            var expandedGoal = resolvedGoal.Result;
-            // Cyclic literal definitions throw an error, so this replacement loop always terminates
-            while (await TryExpandTerm(expandedGoal, scope, ct: ct) is { HasValue: true } exp)
-            {
-                if (ct.IsCancellationRequested || ExceptionCts.Token.IsCancellationRequested)
-                {
-                    yield break;
-                }
-
-                var newGoal = exp.GetOrDefault();
-                if (newGoal.Unify(expandedGoal).Reduce(some => !some.Any(), () => false))
-                    break;
-                expandedGoal = newGoal;
-            }
-            // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-            var (qualifiedGoal, matches) = QualifyGoal(InterpreterScope.Modules[InterpreterScope.Module], expandedGoal);
-            LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
-            foreach (var m in matches)
-            {
-                var innerScope = scope.WithDepth(scope.Depth + 1)
-                    .WithModule(m.Rhs.DeclaringModule)
-                    .WithCallee(scope.Callee)
-                    .WithCaller(m.Rhs);
-                var solve = Solve(innerScope, m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                await foreach (var s in solve)
-                {
-                    LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
-                    yield return s;
-                }
-
-                if (Cut)
-                {
-                    Cut = false;
-                    yield break;
+                    return (qualified, matches);
                 }
             }
-        }
 
-        (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(Module module, ITerm goal)
-        {
-            var matches = KnowledgeBase.GetMatches(goal);
-            if (matches.Any())
+            if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
             {
-                return (goal, matches);
-            }
-
-            var isDynamic = false;
-            if (!goal.IsQualified)
-            {
-                if (goal.TryQualify(scope.Module, out var qualified)
-                    && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true))
+                if (goal.TryQualify(clause.DeclaringModule, out qualified)
+                    && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
                 {
                     matches = KnowledgeBase.GetMatches(qualified);
                     if (matches.Any())
@@ -375,71 +298,26 @@ public partial class ErgoSolver : IDisposable
                         return (qualified, matches);
                     }
                 }
-
-                if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
-                {
-                    if (goal.TryQualify(clause.DeclaringModule, out qualified)
-                        && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
-                    {
-                        matches = KnowledgeBase.GetMatches(qualified);
-                        if (matches.Any())
-                        {
-                            return (qualified, matches);
-                        }
-                    }
-                }
             }
-
-            var signature = goal.GetSignature();
-            var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
-            if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
-            {
-                if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
-                {
-                    Throw(new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain()));
-                    return (goal, Enumerable.Empty<KnowledgeBase.Match>());
-                }
-            }
-
-            return (goal, Enumerable.Empty<KnowledgeBase.Match>());
         }
-    }
 
-    // TODO: Figure out cuts once and for all
-    protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, NTuple query, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
-    {
-        subs ??= new List<Substitution>();
-        if (query.IsEmpty)
+        var signature = goal.GetSignature();
+        var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
+        if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
         {
-            yield return new Solution(subs.ToArray());
-            yield break;
-        }
-
-        var goals = query.Contents;
-        var subGoal = goals.First();
-        goals = goals.RemoveAt(0);
-        Cut = false;
-        // Get first solution for the current subgoal
-        await foreach (var s in Solve(scope, subGoal, subs, ct: ct))
-        {
-            var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
-            await foreach (var ss in Solve(scope, rest, subs, ct: ct))
+            if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
             {
-                yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-            }
-
-            if (Cut)
-            {
-                yield break;
+                Throw(new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain()));
+                return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
         }
+
+        return (goal, Enumerable.Empty<KnowledgeBase.Match>());
     }
 
     public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
-    {
-        ExceptionCts = new();
-        return Solve(scope.Reduce(some => some, () => new SolverScope(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)), goal.Goals, ct: ct);
-    }
+        => new SolverContext(this, scope.Reduce(some => some, () => new(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)))
+        .Solve(goal, ct: ct);
 
     public void Dispose()
     {

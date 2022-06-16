@@ -1,22 +1,33 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Parser;
 
 namespace Ergo.Lang;
 
-public partial class Parser : IDisposable
+public partial class ErgoParser : IDisposable
 {
-    private readonly Lexer _lexer;
     private readonly InstantiationContext _discardContext;
 
-    public Parser(Lexer lexer)
+    public readonly Lexer Lexer;
+    protected readonly List<IAbstractTermParser> AbstractTermParsers = new();
+
+    public ErgoParser(Lexer lexer)
     {
-        _lexer = lexer;
+        Lexer = lexer;
         _discardContext = new(string.Empty);
+    }
+
+    public bool TryAddAbstractParser<T>(AbstractTermParser<T> parser)
+        where T : IAbstractTerm
+    {
+        AbstractTermParsers.Add(parser);
+        return true;
     }
 
     public bool TryGetOperatorsFromFunctor(Atom functor, out IEnumerable<Operator> ops)
     {
         ops = default;
-        var match = _lexer.AvailableOperators
+        var match = Lexer.AvailableOperators
             .Where(op => op.Synonyms.Any(s => functor.Equals(s)));
         if (!match.Any())
         {
@@ -30,7 +41,7 @@ public partial class Parser : IDisposable
     public bool TryParseAtom(out Atom atom)
     {
         atom = default;
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (Expect(Lexer.TokenType.String, out string str))
         {
             atom = new Atom(str);
@@ -69,7 +80,7 @@ public partial class Parser : IDisposable
     public bool TryParseVariable(out Variable var)
     {
         var = default;
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (Expect(Lexer.TokenType.Term, out string term))
         {
             if (!IsVariableIdentifier(term))
@@ -96,7 +107,7 @@ public partial class Parser : IDisposable
     public bool TryParseComplex(out Complex cplx)
     {
         cplx = default;
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (!Expect(Lexer.TokenType.Term, out string functor)
             && !Expect(Lexer.TokenType.Operator, out functor)
             && !Expect(Lexer.TokenType.String, out functor))
@@ -104,26 +115,17 @@ public partial class Parser : IDisposable
             return Fail(pos);
         }
 
-        if (!TryParseSequence(
-              CommaSequence.CanonicalFunctor
-            , CommaSequence.EmptyLiteral
-            , () => TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
-            , "(", ",", ")"
-            , true
-            , out var inner
-        ))
-        {
+        var argParse = new ListParser<CommaList>((h, t) => new(h))
+            .TryParse(this);
+        if (!argParse.HasValue)
             return Fail(pos);
-        }
 
-        cplx = !inner.IsParenthesized && CommaSequence.TryUnfold(inner.Root, out _)
-            ? new Complex(new Atom(functor), inner.Contents.ToArray())
-            : new Complex(new Atom(functor), inner.Root);
+        cplx = new Complex(new Atom(functor), argParse.GetOrThrow().Contents.ToArray());
         return true;
     }
     public bool TryParseTermOrExpression(out ITerm term, out bool parenthesized)
     {
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (TryParseExpression(out var expr))
         {
             term = expr.Complex;
@@ -142,7 +144,7 @@ public partial class Parser : IDisposable
     public bool TryParseTerm(out ITerm term, out bool parenthesized)
     {
         term = default; parenthesized = false;
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (Parenthesized(() => TryParseExpression(out var expr) ? (true, expr) : (false, default), out var expr))
         {
             term = expr.Complex.AsParenthesized(true);
@@ -167,15 +169,16 @@ public partial class Parser : IDisposable
 
         bool TryParseTermInner(out ITerm ITerm)
         {
-            if (TryParseDict(out var dict))
+            var pos = Lexer.State;
+            foreach (var abstractParser in AbstractTermParsers)
             {
-                ITerm = dict;
-                return true;
-            }
+                if (abstractParser.TryParse(this) is not { HasValue: true } parsed)
+                {
+                    Fail(pos);
+                    continue;
+                }
 
-            if (TryParseList(out var list))
-            {
-                ITerm = list.Root;
+                ITerm = parsed.GetOrThrow().CanonicalForm;
                 return true;
             }
 
@@ -200,90 +203,6 @@ public partial class Parser : IDisposable
             ITerm = default;
             return false;
         }
-    }
-
-    public bool TryParseList(out List seq)
-    {
-        seq = default;
-        var pos = _lexer.State;
-        if (TryParseSequence(
-              List.CanonicalFunctor
-            , List.EmptyLiteral
-            , () => TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
-            , "[", ",", "]"
-            , true
-            , out var full
-        ))
-        {
-            if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                && WellKnown.Functors.List.Contains(cplx.Functor))
-            {
-                var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                if (CommaSequence.TryUnfold(cplx.Arguments[0], out var comma))
-                {
-                    arguments = comma.Contents;
-                }
-
-                seq = new List(arguments, Maybe.Some(cplx.Arguments[1]));
-                return true;
-            }
-
-            seq = new List(full.Contents);
-            return true;
-        }
-
-        return Fail(pos);
-    }
-
-    public bool TryParseDict(out Dict dict)
-    {
-        dict = default;
-        var pos = _lexer.State;
-
-        var functor = (Either<Atom, Variable>)default;
-        if (TryParseAtom(out var atom))
-        {
-            functor = atom;
-        }
-        else if (TryParseVariable(out var variable))
-        {
-            functor = variable;
-        }
-        else
-        {
-            return Fail(pos);
-        }
-
-        if (!TryParseSequence(
-              CommaSequence.CanonicalFunctor
-            , CommaSequence.EmptyLiteral
-            , () => TryParseTermOrExpression(out var t, out var p)
-                ? (t is Complex cplx && (WellKnown.Functors.NamedArgument.Contains(cplx.Functor) || WellKnown.Functors.Conjunction.Contains(cplx.Functor)), t, p)
-                : (false, default, p)
-            , "{", ",", "}"
-            , true
-            , out var inner
-        ))
-        {
-            return Fail(pos);
-        }
-
-        foreach (var item in inner.Contents)
-        {
-            if (item is not Complex)
-            {
-                throw new ParserException(ErrorType.KeyExpected, _lexer.State, item.Explain());
-            }
-
-            if (item is Complex cplx && cplx.Arguments.First() is not Atom)
-            {
-                throw new ParserException(ErrorType.KeyExpected, _lexer.State, cplx.Arguments.First().Explain());
-            }
-        }
-
-        var pairs = inner.Contents.Select(item => new KeyValuePair<Atom, ITerm>((Atom)((Complex)item).Arguments[0], ((Complex)item).Arguments[1]));
-        dict = new(functor, pairs);
-        return true;
     }
 
     private bool ExpectOperator(Func<Operator, bool> match, out Operator op)
@@ -357,10 +276,10 @@ public partial class Parser : IDisposable
 
     public bool TryParsePrefixExpression(out Expression expr)
     {
-        expr = default; var pos = _lexer.State;
+        expr = default; var pos = Lexer.State;
         if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
         && TryParseTerm(out var arg, out var parens)
-        && (parens || !CommaSequence.TryUnfold(arg, out _)))
+        && (parens || !CommaList.TryUnfold(arg, out _)))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
@@ -371,9 +290,9 @@ public partial class Parser : IDisposable
 
     public bool TryParsePostfixExpression(out Expression expr)
     {
-        expr = default; var pos = _lexer.State;
+        expr = default; var pos = Lexer.State;
         if (TryParseTerm(out var arg, out var parens)
-        && (parens || !CommaSequence.TryUnfold(arg, out _))
+        && (parens || !CommaList.TryUnfold(arg, out _))
         && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
@@ -385,7 +304,7 @@ public partial class Parser : IDisposable
 
     public bool TryParseExpression(out Expression expr)
     {
-        expr = default; var pos = _lexer.State;
+        expr = default; var pos = Lexer.State;
         if (TryParsePrimary(out var lhs, out _))
         {
             if (WithMinPrecedence(lhs, 0, out expr))
@@ -409,7 +328,7 @@ public partial class Parser : IDisposable
 
         bool WithMinPrecedence(ITerm lhs, int minPrecedence, out Expression expr)
         {
-            expr = default; var pos = _lexer.State;
+            expr = default; var pos = Lexer.State;
             if (!TryPeekNextOperator(out var lookahead))
             {
                 return Fail(pos);
@@ -422,7 +341,7 @@ public partial class Parser : IDisposable
 
             while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence)
             {
-                _lexer.TryReadNextToken(out _);
+                Lexer.TryReadNextToken(out _);
                 var op = lookahead;
                 if (!TryParsePrimary(out var rhs, out _))
                 {
@@ -458,7 +377,7 @@ public partial class Parser : IDisposable
 
         bool TryParsePrimary(out ITerm ITerm, out bool parenthesized)
         {
-            ITerm = default; var pos = _lexer.State;
+            ITerm = default; var pos = Lexer.State;
             parenthesized = false;
             if (TryParsePrefixExpression(out var prefix))
             {
@@ -483,7 +402,7 @@ public partial class Parser : IDisposable
         bool TryPeekNextOperator(out Operator op)
         {
             op = default;
-            if (_lexer.TryPeekNextToken(out var lookahead)
+            if (Lexer.TryPeekNextToken(out var lookahead)
             && TryGetOperatorsFromFunctor(new Atom(lookahead.Value), out var ops))
             {
                 op = ops.Where(op => op.Affix == OperatorAffix.Infix).Single();
@@ -497,7 +416,7 @@ public partial class Parser : IDisposable
     public bool TryParseDirective(out Directive directive)
     {
         directive = default;
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
         {
             desc = desc[1..].TrimStart();
@@ -527,10 +446,10 @@ public partial class Parser : IDisposable
         }
 
         var lhs = op.Left;
-        if (CommaSequence.TryUnfold(lhs, out var expr))
-        {
-            lhs = expr.Root;
-        }
+        //if (CommaList.TryUnfold(lhs, out var expr))
+        //{
+        //    lhs = expr.CanonicalForm;
+        //}
 
         directive = new(lhs, desc);
         return true;
@@ -539,7 +458,7 @@ public partial class Parser : IDisposable
     public bool TryParsePredicate(out Predicate predicate)
     {
         predicate = default;
-        var pos = _lexer.State;
+        var pos = Lexer.State;
         if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
         {
             desc = desc[1..].TrimStart();
@@ -553,7 +472,7 @@ public partial class Parser : IDisposable
         }
 
         desc ??= " ";
-        if (_lexer.Eof)
+        if (Lexer.Eof)
             return Fail(pos);
         if (!TryParseExpression(out var op))
         {
@@ -576,14 +495,15 @@ public partial class Parser : IDisposable
         }
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
-        if (!CommaSequence.TryUnfold(rhs, out var expr))
+
+        if (!CommaList.TryUnfold(rhs, out var contents))
         {
-            expr = new(ImmutableArray<ITerm>.Empty.Add(rhs));
+            contents = new[] { rhs };
         }
 
-        return MakePredicate(pos, desc, op.Left, expr, out predicate);
+        return MakePredicate(pos, desc, op.Left, new(contents), out predicate);
 
-        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaSequence body, out Predicate c)
+        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaList body, out Predicate c)
         {
             var headVars = head.Variables
                 .Where(v => !v.Equals(WellKnown.Literals.Discard));
@@ -651,7 +571,7 @@ public partial class Parser : IDisposable
 
     public void Dispose()
     {
-        _lexer.Dispose();
+        Lexer.Dispose();
         GC.SuppressFinalize(this);
     }
 }

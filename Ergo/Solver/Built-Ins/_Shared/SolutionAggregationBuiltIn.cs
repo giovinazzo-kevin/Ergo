@@ -1,6 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
-using System.Collections.Immutable;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -23,7 +21,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
         }
 
-        if (instances is not Variable && !List.TryUnfold(instances, out _))
+        if (instances is not Variable && !instances.IsAbstractTerm<List>(out _))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, instances.Explain());
         }
@@ -43,13 +41,13 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             .ToHashSet();
         var listVars = new List(freeVars.Cast<ITerm>());
 
-        var goalClauses = new CommaSequence(
+        var goalClauses = new CommaList(new ITerm[] {
             goal,
             new Complex(WellKnown.Functors.Unification.First(),
                 variable,
-                new CommaSequence(listVars.Root, template).AsParenthesized(true).Root)
+                new CommaList(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
             .AsOperator(OperatorAffix.Infix)
-        );
+        });
         var solutions = (await solver.Solve(new(goalClauses), Maybe.Some(scope)).CollectAsync())
             .Select(s => s.Simplify());
         foreach (var sol in solutions

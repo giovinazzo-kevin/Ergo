@@ -23,15 +23,13 @@ public abstract class WriteBuiltIn : BuiltIn
             v => v,
             c => c.WithFunctor(c.Functor.AsQuoted(false))
                   .WithArguments(c.Arguments
-                    .Select(a => AsQuoted(a, false)).ToArray()),
-            d => new Dict(d.Functor.Map(a => a.AsQuoted(false), v => v), d.Dictionary
-                .Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key.AsQuoted(false), AsQuoted(kvp.Value, false))))
+                    .Select(a => AsQuoted(a, false)).ToArray())
         );
     }
 
     public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
-        if (CommaSequence.TryUnfold(args[0], out var comma))
+        if (args[0].IsAbstractTerm<CommaList>(out var comma))
         {
             Console.Write(string.Join(string.Empty, comma.Contents.Select(x =>
                 AsQuoted(x, Quoted).Explain(canonical: Canonical))));

@@ -1,7 +1,6 @@
 ﻿using Ergo.Interpreter.Directives;
-using Ergo.Lang.Exceptions;
+using Ergo.Lang.Parser;
 using Ergo.Solver;
-using System.Collections.Immutable;
 using System.IO;
 
 namespace Ergo.Interpreter;
@@ -14,9 +13,26 @@ public partial class ErgoInterpreter
 
     public readonly InterpreterScope StdlibScope;
 
-    public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
+    public readonly Action<ErgoParser> ConfigureParser;
+
+    public Parsed<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
+    {
+        var userDefinedOps = scope.Operators.Value;
+        return new Parsed<T>(data, ConfigureParser, onParseFail, userDefinedOps);
+    }
+
+    public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default, Action<ErgoParser> configureParser = null)
     {
         Flags = flags;
+        ConfigureParser = parser =>
+        {
+            // NOTE: Should always add parsers in order of descending complexity
+            parser.TryAddAbstractParser(new DictParser());
+            parser.TryAddAbstractParser(new ListParser<Set>((h, t) => new(h)));
+            parser.TryAddAbstractParser(new ListParser<List>((h, t) => new(h, t)));
+            parser.TryAddAbstractParser(new ListParser<CommaList>((h, t) => new(h)));
+            configureParser?.Invoke(parser);
+        };
         AddDirectivesByReflection();
 
         var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));

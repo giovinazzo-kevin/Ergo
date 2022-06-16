@@ -45,9 +45,8 @@ public partial class ErgoSolver : IDisposable
     {
         var term = TermMarshall.ToTerm(new T());
         var signature = term.GetSignature();
-        signature = term is Dict
-            ? signature.WithTag(functor)
-            : functor.Reduce(some => signature.WithFunctor(some), () => signature);
+        // TODO: reimplement tag rules for dicts?
+        signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
         return signature;
     }
 
@@ -112,7 +111,7 @@ public partial class ErgoSolver : IDisposable
         {
             foreach (var sig in DataSources.Keys)
             {
-                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOrThrow()));
+                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOrThrow()).CanonicalForm);
                 if (!head.Unify(anon).TryGetValue(out var subs))
                 {
                     continue;
@@ -140,7 +139,7 @@ public partial class ErgoSolver : IDisposable
                         "data source",
                         Modules.CSharp,
                         item.WithFunctor(signature.Tag.Reduce(some => some, () => signature.Functor)),
-                        CommaSequence.Empty,
+                        CommaList.Empty,
                         dynamic: true
                     );
                     if (predicate.Unify(head).TryGetValue(out var matchSubs))
@@ -187,8 +186,7 @@ public partial class ErgoSolver : IDisposable
             var args = term.Reduce(
                 a => Array.Empty<ITerm>(),
                 v => Array.Empty<ITerm>(),
-                c => c.Arguments,
-                d => new ITerm[] { d }
+                c => c.Arguments
             );
             await foreach (var eval in builtIn.Apply(this, scope, args))
             {
@@ -256,8 +254,6 @@ public partial class ErgoSolver : IDisposable
             }
         }
 
-        if (term is Dict dict)
-            return await TryExpandTerm(dict.CanonicalForm, scope, ct: ct);
         if (term is Complex cplx)
         {
             var newArgs = new List<ITerm>();
@@ -282,9 +278,9 @@ public partial class ErgoSolver : IDisposable
 
         subs ??= new List<Substitution>();
         // Treat comma-expression complex ITerms as proper expressions
-        if (CommaSequence.TryUnfold(goal, out var expr))
+        if (CommaList.TryUnfold(goal, out var expr))
         {
-            await foreach (var s in Solve(scope, expr, subs, ct: ct))
+            await foreach (var s in Solve(scope, new CommaList(expr), subs, ct: ct))
             {
                 yield return s;
             }
@@ -409,7 +405,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     // TODO: Figure out cuts once and for all
-    protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
+    protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, CommaList query, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
         subs ??= new List<Substitution>();
         if (query.IsEmpty)
@@ -425,7 +421,7 @@ public partial class ErgoSolver : IDisposable
         // Get first solution for the current subgoal
         await foreach (var s in Solve(scope, subGoal, subs, ct: ct))
         {
-            var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
+            var rest = new CommaList(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(scope, rest, subs, ct: ct))
             {
                 yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());

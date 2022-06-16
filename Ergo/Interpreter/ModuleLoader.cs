@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-using Ergo.Lang.Utils;
+﻿using Ergo.Lang.Utils;
 using System.IO;
 
 namespace Ergo.Interpreter;
@@ -70,7 +69,8 @@ public class ModuleLoader
     {
         var operators = Scope.Operators.Value;
         var lexer = new Lexer(_fs, _fn, Scope.Operators.Value);
-        var parser = new Parser(lexer);
+        var parser = new ErgoParser(lexer);
+        Interpreter.ConfigureParser(parser);
         if (!parser.TryParseProgramDirectives(out var program))
         {
             CloseStream(_fn);
@@ -144,7 +144,9 @@ public class ModuleLoader
         }
 
         var lexer = new Lexer(_fs, _fn, Scope.Operators.Value);
-        var parser = new Parser(lexer);
+        var parser = new ErgoParser(lexer);
+        Interpreter.ConfigureParser(parser);
+
         if (!parser.TryParseProgram(out var program))
         {
             CloseStream(_fn);

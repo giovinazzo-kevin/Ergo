@@ -18,8 +18,8 @@ public sealed class SetOf : SolutionAggregationBuiltIn
                 .Distinct()
                 .OrderBy(x => x));
 
-            if (!ListVars.Root.Unify(ArgVars).TryGetValue(out var listSubs)
-            || !args[2].Unify(setTemplate.Root).TryGetValue(out var instSubs))
+            if (!ListVars.CanonicalForm.Unify(ArgVars).TryGetValue(out var listSubs)
+            || !args[2].Unify(setTemplate.CanonicalForm).TryGetValue(out var instSubs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

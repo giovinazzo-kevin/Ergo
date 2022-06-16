@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -14,7 +15,9 @@ public readonly struct Variable : ITerm
 
     private readonly int HashCode;
 
-    public Variable(string name)
+    public readonly Maybe<IAbstractTerm> AbstractForm { get; }
+
+    public Variable(string name, Maybe<IAbstractTerm> abs = default)
     {
         if (string.IsNullOrWhiteSpace(name) || name[0] != char.ToUpper(name[0]))
         {
@@ -24,9 +27,17 @@ public readonly struct Variable : ITerm
         Name = name;
         Ignored = name.StartsWith('_');
         HashCode = Name.GetHashCode();
+        AbstractForm = abs;
     }
 
-    public string Explain(bool _ = false) => Name;
+    public Variable WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Name, abs);
+
+    public string Explain(bool canonical = false)
+    {
+        if (!canonical && AbstractForm.HasValue)
+            return AbstractForm.GetOrThrow().Explain();
+        return Name;
+    }
 
     public ITerm Substitute(Substitution s)
     {

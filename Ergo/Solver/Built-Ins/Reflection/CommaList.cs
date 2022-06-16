@@ -1,11 +1,10 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class CommaList : BuiltIn
+public sealed class CommaToList : BuiltIn
 {
-    public CommaList()
+    public CommaToList()
         : base("", new("comma_list"), Maybe<int>.Some(2), Modules.Reflection)
     {
     }
@@ -15,15 +14,15 @@ public sealed class CommaList : BuiltIn
         var (commaArg, listArg) = (arguments[0], arguments[1]);
         if (listArg is not Variable)
         {
-            if (!List.TryUnfold(listArg, out var list))
+            if (!listArg.IsAbstractTerm<List>(out var list))
             {
                 solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, listArg.Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
 
-            var comma = new CommaSequence(list.Contents);
-            if (!commaArg.Unify(comma.Root).TryGetValue(out var subs))
+            var comma = new CommaList(list.Contents);
+            if (!commaArg.Unify(comma.CanonicalForm).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;
@@ -35,15 +34,15 @@ public sealed class CommaList : BuiltIn
 
         if (commaArg is not Variable)
         {
-            if (!CommaSequence.TryUnfold(commaArg, out var comma))
+            if (!commaArg.IsAbstractTerm<CommaList>(out var comma))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaSequence, commaArg.Explain()));
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaList, commaArg.Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
 
             var list = new List(comma.Contents);
-            if (!listArg.Unify(list.Root).TryGetValue(out var subs))
+            if (!listArg.Unify(list.CanonicalForm).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

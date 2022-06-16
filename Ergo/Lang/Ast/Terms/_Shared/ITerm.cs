@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Ast;
 
 public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
@@ -6,12 +8,12 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     bool IsQualified { get; }
     bool IsParenthesized { get; }
     IEnumerable<Variable> Variables { get; }
+    Maybe<IAbstractTerm> AbstractForm { get; }
 
     Maybe<Atom> GetFunctor() => this switch
     {
         Atom a => Maybe.Some(a),
         Complex c => Maybe.Some(c.Functor),
-        Dict d => Maybe.Some(WellKnown.Functors.Dict.First()),
         _ => Maybe<Atom>.None
     };
 
@@ -20,7 +22,14 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Atom => newFunctor,
         Variable v => v,
         Complex c => c.WithFunctor(newFunctor),
-        Dict d => d.WithFunctor(newFunctor),
+        var x => x
+    };
+
+    ITerm WithAbstractForm(Maybe<IAbstractTerm> abs) => this switch
+    {
+        Atom a => a.WithAbstractForm(abs),
+        Variable v => v.WithAbstractForm(abs),
+        Complex c => c.WithAbstractForm(abs),
         var x => x
     };
 

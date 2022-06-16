@@ -8,49 +8,57 @@ public readonly struct Parsed<T>
     public readonly Maybe<T> Value => _value.Value;
     public readonly Maybe<T> ValueUnsafe => _valueUnsafe.Value;
 
-    public Parsed(string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
+    public Parsed(string data, Action<ErgoParser> configureParser, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
     {
-        var parser = new Parser(new Lexer(Utils.FileStreamUtils.MemoryStream(data), string.Empty, userOperators));
-        Func<Parser, Maybe<T>> parse = true switch
+        var lexer = new Lexer(Utils.FileStreamUtils.MemoryStream(data), string.Empty, userOperators);
+        var parser = new ErgoParser(lexer);
+        configureParser?.Invoke(parser);
+        Func<ErgoParser, Maybe<T>> parse = true switch
         {
             _ when typeof(T) == typeof(Atom) =>
-            (Parser p) => p.TryParseAtom(out var x) ? Box(x) : onParseFail(data)
+            (ErgoParser p) => p.TryParseAtom(out var x) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Variable) =>
-                (Parser p) => p.TryParseVariable(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParseVariable(out var x) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Complex) =>
-                (Parser p) => p.TryParseComplex(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParseComplex(out var x) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(ITerm) =>
-                (Parser p) => p.TryParseTerm(out var x, out _) ? Box(x) : onParseFail(data)
-            ,
-            _ when typeof(T) == typeof(CommaSequence) =>
-                (Parser p) => p.TryParseExpression(out var x) && CommaSequence.TryUnfold(x.Complex, out var expr) ? Box(expr) : onParseFail(data)
-            ,
-            _ when typeof(T) == typeof(Expression) =>
-                (Parser p) => p.TryParseExpression(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(List) =>
-                (Parser p) => p.TryParseList(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstractTerm<List>(out var expr) ? Box(expr) : onParseFail(data)
+            ,
+            _ when typeof(T) == typeof(CommaList) =>
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && CommaList.TryUnfold(x, out var expr) ? Box(expr) : onParseFail(data)
+            ,
+            _ when typeof(T) == typeof(Set) =>
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstractTerm<Set>(out var expr) ? Box(expr) : onParseFail(data)
+            ,
+            _ when typeof(T) == typeof(Dict) =>
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstractTerm<Dict>(out var expr) ? Box(expr) : onParseFail(data)
+            ,
+            _ when typeof(T) == typeof(Expression) =>
+                (ErgoParser p) => p.TryParseExpression(out var x) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Predicate) =>
-                (Parser p) => p.TryParsePredicate(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParsePredicate(out var x) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Directive) =>
-                (Parser p) => p.TryParseDirective(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParseDirective(out var x) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Query) =>
-                (Parser p) => p.TryParseExpression(out var x)
-                    ? CommaSequence.TryUnfold(x.Complex, out var expr)
-                        ? Box(new Query(expr))
+                (ErgoParser p) => p.TryParseExpression(out var x)
+                    ? CommaList.TryUnfold(x.Complex, out var expr)
+                        ? Box(new Query(new CommaList(expr)))
                         : Box(new Query(x.Complex))
                     : p.TryParseTerm(out var t, out _)
                         ? Box(new Query(t))
                         : onParseFail(data)
             ,
             _ when typeof(T) == typeof(ErgoProgram) =>
-                (Parser p) => p.TryParseProgram(out var x) ? Box(x) : onParseFail(data)
+                (ErgoParser p) => p.TryParseProgram(out var x) ? Box(x) : onParseFail(data)
             ,
             _ =>
                 throw new ArgumentException($"Parsed<T> can't handle type: {typeof(T).Name}")

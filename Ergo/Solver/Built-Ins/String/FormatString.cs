@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Solver.BuiltIns;
@@ -23,9 +22,9 @@ public sealed class FormatString : BuiltIn
             yield break;
         }
 
-        if (!List.TryUnfold(args, out var items))
+        if (!args.IsAbstractTerm<List>(out var items))
         {
-            items = new List(args);
+            items = new List(new[] { args });
         }
 
         if (!result.Matches<string>(out var resultStr))

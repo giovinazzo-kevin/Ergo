@@ -28,17 +28,21 @@ public partial class ErgoShell
                 return Maybe.Some(ret);
             return Maybe<T>.None;
         });
-        var userDefinedOps = scope.InterpreterScope.Operators.Value;
-        return new Parsed<T>(data, onParseFail, userDefinedOps);
+        return Interpreter.Parse(scope.InterpreterScope, data, onParseFail);
     }
 
     // TODO: Extensions
     public IEnumerable<Predicate> GetInterpreterPredicates(ShellScope scope) => SolverBuilder.Build(Interpreter, ref scope).KnowledgeBase.AsEnumerable();
     public IEnumerable<Predicate> GetUserPredicates(ShellScope scope) => scope.InterpreterScope.Modules[Modules.User].Program.KnowledgeBase.AsEnumerable();
 
-    public ErgoShell(Action<ErgoInterpreter> configureInterpreter = null, Action<ErgoSolver> configureSolver = null, Func<LogLine, string> formatter = null)
+    public ErgoShell(
+        Action<ErgoInterpreter> configureInterpreter = null,
+        Action<ErgoSolver> configureSolver = null,
+        Action<ErgoParser> configureParser = null,
+        Func<LogLine, string> formatter = null
+    )
     {
-        Interpreter = new();
+        Interpreter = new(configureParser: configureParser);
         configureInterpreter?.Invoke(Interpreter);
         ConfigureSolver = configureSolver;
         Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));

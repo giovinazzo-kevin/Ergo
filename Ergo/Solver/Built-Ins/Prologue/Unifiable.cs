@@ -17,7 +17,7 @@ public sealed class Unifiable : BuiltIn
             var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Functors.Unification.First(), s.Lhs, s.Rhs)
                 .AsOperator(OperatorAffix.Infix));
             List list = new(ImmutableArray.CreateRange(equations));
-            if (new Substitution(arguments[2], list.Root).Unify().TryGetValue(out subs))
+            if (new Substitution(arguments[2], list.CanonicalForm).Unify().TryGetValue(out subs))
             {
                 yield return new(WellKnown.Literals.True, subs.ToArray());
                 yield break;

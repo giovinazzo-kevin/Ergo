@@ -5,27 +5,27 @@ namespace Ergo.Lang.Utils;
 
 public static class ExceptionUtils
 {
-    public static string GetParserError(Parser.ErrorType error, params object[] args)
+    public static string GetParserError(ErgoParser.ErrorType error, params object[] args)
     {
         var msg = error switch
         {
-            Parser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.')."
+            ErgoParser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.')."
             ,
-            Parser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_')."
+            ErgoParser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_')."
             ,
-            Parser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments."
+            ErgoParser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments."
             ,
-            Parser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}')."
+            ErgoParser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}')."
             ,
-            Parser.ErrorType.ExpectedClauseList => "Expected clause list."
+            ErgoParser.ErrorType.ExpectedClauseList => "Expected clause list."
             ,
-            Parser.ErrorType.UnterminatedClauseList => "Unterminated clause list."
+            ErgoParser.ErrorType.UnterminatedClauseList => "Unterminated clause list."
             ,
-            Parser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file."
+            ErgoParser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file."
             ,
-            Parser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}"
+            ErgoParser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}"
             ,
-            Parser.ErrorType.KeyExpected => "Key expected; found: {0}"
+            ErgoParser.ErrorType.KeyExpected => "Key expected; found: {0}"
             ,
             _ => error.ToString()
         };

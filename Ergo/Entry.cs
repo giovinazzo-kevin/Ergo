@@ -1,5 +1,4 @@
-﻿using Ergo.Interpreter;
-using Ergo.Shell;
+﻿using Ergo.Shell;
 using Ergo.Solver;
 
 using var consoleSink = new DataSink<Person>();
@@ -31,6 +30,10 @@ var shell = new ErgoShell(interpreter =>
     solver.BindDataSource(personGenSource);
     // You can also use a sink as a data source in order to share messages between language domains
     solver.BindDataSource(feedbackSource);
+},
+parser =>
+{
+    // parser.TryAddAbstractParser lets you extend the language with custom abstract terms (such as the built-in Dict)
 });
 // shell.TryAddCommand lets you extend the shell
 

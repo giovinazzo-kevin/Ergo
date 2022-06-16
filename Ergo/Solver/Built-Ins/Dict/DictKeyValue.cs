@@ -18,7 +18,7 @@ public sealed class DictKeyValue : BuiltIn
             yield break;
         }
 
-        if (args[0] is Dict dict || Dict.TryUnfold(args[0], out dict))
+        if (args[0].IsAbstractTerm<Dict>(out var dict))
         {
             if (!dict.Dictionary.Keys.Any())
             {

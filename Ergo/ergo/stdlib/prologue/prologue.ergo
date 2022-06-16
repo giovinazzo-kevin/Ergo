@@ -7,7 +7,6 @@
 
 % OPERATOR DECLARATIONS
 :- op(5, xfy, ['::']).
-:- op(20, xfy, ['∧', ',']).
 :- op(30, xfy, ['∨', ';']).
 :- op(30, xfx, ['->']).
 :- op(30, fx, ['¬', '\\+']).

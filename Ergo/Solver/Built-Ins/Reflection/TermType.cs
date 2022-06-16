@@ -16,7 +16,6 @@ public sealed class TermType : BuiltIn
             Atom => new Atom("atom"),
             Variable => new Atom("variable"),
             Complex => new Atom("complex"),
-            Dict => new Atom("dict"),
             _ => throw new NotSupportedException()
         };
 

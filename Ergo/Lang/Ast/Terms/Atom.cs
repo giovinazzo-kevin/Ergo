@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -12,14 +13,15 @@ public readonly struct Atom : ITerm
     public readonly object Value;
     private readonly int HashCode;
     public readonly bool IsQuoted;
+    public readonly Maybe<IAbstractTerm> AbstractForm { get; }
 
-    public Atom(object value, Maybe<bool> quoted = default)
+    public Atom(object value, Maybe<bool> quoted = default, Maybe<IAbstractTerm> abs = default)
     {
         Value = value;
         HashCode = value?.GetHashCode() ?? 0;
         IsQuoted = quoted.Reduce(some => some, () => value is string s
             && s != (string)WellKnown.Literals.EmptyList.Value
-            && s != (string)WellKnown.Literals.EmptyCommaExpression.Value
+            && s != (string)WellKnown.Literals.EmptyCommaList.Value
             && (
                 // And if this is not a string that can be confused with a variable name
                 char.IsUpper(s.FirstOrDefault())
@@ -27,10 +29,13 @@ public readonly struct Atom : ITerm
                 || s.Any(c => char.IsWhiteSpace(c)
                     || !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c))
             ));
+        AbstractForm = abs;
     }
 
     public string Explain(bool canonical = false)
     {
+        if (!canonical && AbstractForm.HasValue)
+            return AbstractForm.GetOrThrow().Explain();
         if (Value is bool b)
         {
             return b ? "⊤" : "⊥";
@@ -65,6 +70,7 @@ public readonly struct Atom : ITerm
 
     public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
     public Atom AsQuoted(bool quoted) => new(Value, Maybe.Some(quoted));
+    public Atom WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Value, Maybe.Some(IsQuoted), abs);
 
     public override bool Equals(object obj)
     {

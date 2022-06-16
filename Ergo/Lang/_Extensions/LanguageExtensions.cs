@@ -1,31 +1,48 @@
-﻿namespace Ergo.Lang.Extensions;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Extensions;
 
 public static class LanguageExtensions
 {
-    public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex, Func<Dict, T> ifDict)
+    public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
     {
         if (t is Atom a) return ifAtom(a);
         if (t is Variable v) return ifVariable(v);
         if (t is Complex c) return ifComplex(c);
-        if (t is Dict d) return ifDict(d);
         throw new NotSupportedException(t.GetType().Name);
     }
 
-    public static T Map<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex, Func<Dict, T> ifDict)
+    public static T Map<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
     {
         if (t is Atom a) return ifAtom(a);
         if (t is Variable v) return ifVariable(v);
         if (t is Complex c) return ifComplex(c);
-        if (t is Dict d) return ifDict(d);
         throw new NotSupportedException(t.GetType().Name);
     }
 
-    public static bool Is<T>(this ITerm t, out T match, Func<T, bool> filter = null)
+    public static bool IsClr<T>(this ITerm t, out T match, Func<T, bool> filter = null)
     {
         if (t is Atom a && a.Value is T value && (filter?.Invoke(value) ?? true))
         {
             match = value;
             return true;
+        }
+
+        match = default;
+        return false;
+    }
+
+    public static bool IsAbstractTerm<T>(this ITerm t, out T match)
+        where T : IAbstractTerm
+    {
+        if (t.AbstractForm.HasValue)
+        {
+            var abs = t.AbstractForm.GetOrThrow();
+            if (abs is T tAbs)
+            {
+                match = tAbs;
+                return true;
+            }
         }
 
         match = default;
@@ -70,6 +87,15 @@ public static class LanguageExtensions
                 tag = Maybe.Some((Atom)cplx.Arguments[1]);
             }
 
+            if (qv is { AbstractForm: { HasValue: true } abs })
+            {
+                var sig = abs.GetOrThrow().Signature
+                    .WithModule(Maybe.Some(qm));
+                if (tag.HasValue)
+                    return sig.WithTag(tag);
+                return sig;
+            }
+
             return new Signature(
                 qs.Functor,
                 qs.Arity,
@@ -79,10 +105,10 @@ public static class LanguageExtensions
         }
 
         return new Signature(
-            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor, d => d.CanonicalForm.Functor),
-            term.Map(a => Maybe.Some(0), v => Maybe.Some(0), c => Maybe.Some(c.Arity), d => Maybe<int>.None),
+            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
+            term.Map(a => Maybe.Some(0), v => Maybe.Some(0), c => Maybe.Some(c.Arity)),
             Maybe<Atom>.None,
-            term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None, d => d.Functor.Reduce(a => Maybe.Some(a), v => Maybe<Atom>.None))
+            term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)
         );
     }
 

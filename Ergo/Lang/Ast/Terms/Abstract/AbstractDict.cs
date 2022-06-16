@@ -50,4 +50,19 @@ public sealed class Dict : IAbstractTerm
         var joinedArgs = string.Join(",", KeyValuePairs.Select(kv => kv.Explain(false)));
         return $"{functor}{{{joinedArgs}}}";
     }
+
+    public Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other)
+    {
+        if (other is not Dict dict)
+            return default;
+
+        var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
+        var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
+        var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
+        if (!set.Any() && dict.Dictionary.Count != 0 && dict.Dictionary.Count != 0)
+            return default;
+        return Maybe.Some(set
+            .Select(key => new Substitution(Dictionary[key], dict.Dictionary[key]))
+            .Prepend(new Substitution(dxFunctor, dyFunctor)));
+    }
 }

@@ -26,7 +26,7 @@ public partial class ErgoInterpreter
         Flags = flags;
         ConfigureParser = parser =>
         {
-            parser.AbstractTermParsers.Add(new DictParser());
+            parser.TryAddAbstractParser(new DictParser());
             configureParser?.Invoke(parser);
         };
         AddDirectivesByReflection();

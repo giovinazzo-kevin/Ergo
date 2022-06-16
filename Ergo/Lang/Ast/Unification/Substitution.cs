@@ -62,55 +62,31 @@ public readonly struct Substitution
                 }
                 else if (x is Complex cx && y is Complex cy)
                 {
-                    if (!DoComplex(cx, cy))
+                    if (cx.AbstractForm.HasValue && cy.AbstractForm.HasValue)
+                    {
+                        var u = cx.AbstractForm.GetOrThrow().Unify(cy.AbstractForm.GetOrThrow());
+                        if (!u.HasValue)
+                            return false;
+                        E.AddRange(u.GetOrThrow());
+                        return true;
+                    }
+
+                    if (!cx.Matches(cy))
+                    {
                         return false;
+                    }
+
+                    for (var i = 0; i < cx.Arguments.Length; i++)
+                    {
+                        E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
+                    }
+
+                    return true;
                 }
-                //else if (
-                //    (x is Dict || y is Dict)
-                //    && (x is Complex { Functor: { } f } && WellKnown.Functors.Dict.Contains(f)
-                //        || y is Complex { Functor: { } g } && WellKnown.Functors.Dict.Contains(g)))
-                //{
-                //    var cx1 = x is Dict d1 ? d1.CanonicalForm : (Complex)x;
-                //    var cy1 = y is Dict d2 ? d2.CanonicalForm : (Complex)y;
-                //    if (!DoComplex(cx1, cy1))
-                //        return false;
-                //}
                 else
                 {
                     return false;
                 }
-            }
-
-            return true;
-        }
-
-        //bool DoDict(Dict dx, Dict dy)
-        //{
-        //    var dxFunctor = dx.Functor.Reduce(a => (ITerm)a, v => v);
-        //    var dyFunctor = dy.Functor.Reduce(a => (ITerm)a, v => v);
-        //    E.Add(new Substitution(dxFunctor, dyFunctor));
-
-        //    var set = dx.Dictionary.Keys.Intersect(dy.Dictionary.Keys);
-        //    if (!set.Any() && dx.Dictionary.Count != 0 && dy.Dictionary.Count != 0)
-        //        return false;
-        //    foreach (var key in set)
-        //    {
-        //        E.Add(new Substitution(dx.Dictionary[key], dy.Dictionary[key]));
-        //    }
-
-        //    return true;
-        //}
-
-        bool DoComplex(Complex cx, Complex cy)
-        {
-            if (!cx.Matches(cy))
-            {
-                return false;
-            }
-
-            for (var i = 0; i < cx.Arguments.Length; i++)
-            {
-                E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
             }
 
             return true;

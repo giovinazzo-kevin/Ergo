@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
 
 namespace Ergo.Lang;
@@ -8,12 +9,19 @@ public partial class ErgoParser : IDisposable
     private readonly InstantiationContext _discardContext;
 
     public readonly Lexer Lexer;
-    public readonly List<IAbstractTermParser> AbstractTermParsers = new();
+    protected readonly List<IAbstractTermParser> AbstractTermParsers = new();
 
     public ErgoParser(Lexer lexer)
     {
         Lexer = lexer;
         _discardContext = new(string.Empty);
+    }
+
+    public bool TryAddAbstractParser<T>(AbstractTermParser<T> parser)
+        where T : IAbstractTerm
+    {
+        AbstractTermParsers.Add(parser);
+        return true;
     }
 
     public bool TryGetOperatorsFromFunctor(Atom functor, out IEnumerable<Operator> ops)

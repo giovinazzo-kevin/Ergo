@@ -180,7 +180,8 @@ public partial class ErgoSolver : IDisposable
         || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
         {
             LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested)
+                yield break;
             var args = term.Reduce(
                 a => Array.Empty<ITerm>(),
                 v => Array.Empty<ITerm>(),
@@ -189,6 +190,8 @@ public partial class ErgoSolver : IDisposable
             await foreach (var eval in builtIn.Apply(this, scope, args))
             {
                 LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
+                if (ct.IsCancellationRequested)
+                    yield break;
                 ct.ThrowIfCancellationRequested();
                 qt = eval.Result;
                 sig = qt.GetSignature();

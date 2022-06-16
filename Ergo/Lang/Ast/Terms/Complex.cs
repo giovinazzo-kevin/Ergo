@@ -15,7 +15,7 @@ public readonly partial struct Complex : ITerm
     public readonly Atom Functor;
     public readonly ITerm[] Arguments;
     public readonly int Arity => Arguments.Length;
-    public readonly Maybe<IAbstractTerm> AbstractForm;
+    public readonly Maybe<IAbstractTerm> AbstractForm { get; }
 
     private readonly int HashCode;
 
@@ -54,11 +54,8 @@ public readonly partial struct Complex : ITerm
         {
             if (!canonical && absForm.HasValue)
                 return absForm.GetOrThrow().Explain();
-            // TODO: REMOVE UNFOLDS
-            if (List.TryUnfold(c, out var list))
-                return list.Explain(canonical);
-            if (CommaSequence.TryUnfold(c, out var comma))
-                return comma.Explain(canonical);
+            if (c.IsAbstractTerm<List>(out var list))
+                return list.Explain();
             return c.Affix.Reduce(some => canonical ? OperatorAffix.Prefix : some, () => OperatorAffix.Prefix) switch
             {
                 OperatorAffix.Infix => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",

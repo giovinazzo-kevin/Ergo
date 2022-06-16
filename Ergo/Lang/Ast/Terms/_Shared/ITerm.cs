@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Ast;
 
 public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
@@ -6,6 +8,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     bool IsQualified { get; }
     bool IsParenthesized { get; }
     IEnumerable<Variable> Variables { get; }
+    Maybe<IAbstractTerm> AbstractForm { get; }
 
     Maybe<Atom> GetFunctor() => this switch
     {

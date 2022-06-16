@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Ast.Terms.Abstract;
 using Ergo.Shell;
 using Ergo.Solver.BuiltIns;
 
@@ -140,7 +139,7 @@ public partial class ErgoSolver : IDisposable
                         "data source",
                         Modules.CSharp,
                         item.WithFunctor(signature.Tag.Reduce(some => some, () => signature.Functor)),
-                        CommaSequence.Empty,
+                        CommaList.Empty,
                         dynamic: true
                     );
                     if (predicate.Unify(head).TryGetValue(out var matchSubs))
@@ -279,7 +278,7 @@ public partial class ErgoSolver : IDisposable
 
         subs ??= new List<Substitution>();
         // Treat comma-expression complex ITerms as proper expressions
-        if (CommaSequence.TryUnfold(goal, out var expr))
+        if (goal.IsAbstractTerm<CommaList>(out var expr))
         {
             await foreach (var s in Solve(scope, expr, subs, ct: ct))
             {
@@ -406,7 +405,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     // TODO: Figure out cuts once and for all
-    protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, CommaSequence query, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
+    protected async IAsyncEnumerable<Solution> Solve(SolverScope scope, CommaList query, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
         subs ??= new List<Substitution>();
         if (query.IsEmpty)
@@ -422,7 +421,7 @@ public partial class ErgoSolver : IDisposable
         // Get first solution for the current subgoal
         await foreach (var s in Solve(scope, subGoal, subs, ct: ct))
         {
-            var rest = (CommaSequence)new CommaSequence(goals).Substitute(s.Substitutions);
+            var rest = new CommaList(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(scope, rest, subs, ct: ct))
             {
                 yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());

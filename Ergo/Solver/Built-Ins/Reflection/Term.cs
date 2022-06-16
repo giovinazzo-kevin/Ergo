@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Ast.Terms.Abstract;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -19,7 +18,7 @@ public sealed class Term : BuiltIn
             {
                 var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
                 if (!functorArg.Unify(new Atom("dict")).TryGetValue(out var funSubs)
-                || !args.Unify(new List(new[] { tag }.Append(new List(dict.KeyValuePairs).Root)).Root).TryGetValue(out var listSubs))
+                || !args.Unify(new List(new[] { tag }.Append(new List(dict.KeyValuePairs).CanonicalForm)).CanonicalForm).TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;
@@ -32,7 +31,7 @@ public sealed class Term : BuiltIn
             if (termArg is Complex complex)
             {
                 if (!functorArg.Unify(complex.Functor).TryGetValue(out var funSubs)
-                || !args.Unify(new List(complex.Arguments).Root).TryGetValue(out var listSubs))
+                || !args.Unify(new List(complex.Arguments).CanonicalForm).TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;
@@ -70,7 +69,7 @@ public sealed class Term : BuiltIn
             yield break;
         }
 
-        if (!List.TryUnfold(args, out var argsList) || argsList.Contents.Length == 0)
+        if (!args.IsAbstractTerm<List>(out var argsList) || argsList.Contents.Length == 0)
         {
             if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
             {

@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-
-namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Interpreter.Directives;
 
 public class DeclareModule : InterpreterDirective
 {
@@ -20,7 +18,7 @@ public class DeclareModule : InterpreterDirective
             throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Module.Explain(), moduleName.Explain());
         }
 
-        if (!List.TryUnfold(args[1], out var exports))
+        if (!args[1].IsAbstractTerm<List>(out var exports))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[1].Explain());
         }

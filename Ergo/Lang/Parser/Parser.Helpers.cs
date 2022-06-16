@@ -83,7 +83,7 @@ public partial class ErgoParser
             if (closingDelim != null && ExpectDelimiter(p => p == closingDelim, out var _))
             {
                 // Empty list
-                seq = new UntypedSequence(functor, emptyElement, ImmutableArray<ITerm>.Empty, false);
+                seq = new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty);
                 return true;
             }
         }
@@ -104,9 +104,9 @@ public partial class ErgoParser
             }
         }
         // Special case: when the delimiter is a comma, and the expression is not parenthesized, we need to unfold the underlying expression
-        seq = isSeparatorComma && args.Count == 1 && args.Single() is { } arg && !arg.Parens && CommaSequence.TryUnfold(arg.Term, out var comma)
-            ? new UntypedSequence(functor, emptyElement, comma.Contents, false)
-            : new UntypedSequence(functor, emptyElement, ImmutableArray.CreateRange(args.Select(a => a.Term)), false);
+        seq = isSeparatorComma && args.Count == 1 && args.Single() is { } arg && !arg.Parens && arg.Term.IsAbstractTerm<CommaList>(out var comma)
+            ? new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), comma.Contents)
+            : new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(args.Select(a => a.Term)));
         return true;
     }
 }

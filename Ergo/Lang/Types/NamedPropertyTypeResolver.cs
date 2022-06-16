@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Abstract;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Ergo.Lang;
 

@@ -1,12 +1,12 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using System.Diagnostics;
 
-namespace Ergo.Lang.Ast.Terms.Abstract;
+namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain() }")]
 public sealed class Dict : IAbstractTerm
 {
-    public Complex CanonicalForm { get; }
+    public ITerm CanonicalForm { get; }
     public Signature Signature { get; }
 
     public readonly ITerm[] KeyValuePairs;
@@ -23,7 +23,7 @@ public sealed class Dict : IAbstractTerm
                     .AsOperator(OperatorAffix.Infix))
             .OrderBy(o => o)
             .ToArray();
-        CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).Root })
+        CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).CanonicalForm })
             .AsAbstract(Maybe.Some<IAbstractTerm>(this));
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)

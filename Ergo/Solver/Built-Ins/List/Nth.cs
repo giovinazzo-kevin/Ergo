@@ -14,7 +14,7 @@ public abstract class Nth : BuiltIn
         if (args[0].Matches<int>(out var index))
         {
             index -= Offset;
-            if (List.TryUnfold(args[1], out var list) && index >= 0 && index < list.Contents.Length)
+            if (args[1].IsAbstractTerm<List>(out var list) && index >= 0 && index < list.Contents.Length)
             {
                 var elem = list.Contents[index];
                 if (args[2].Unify(elem).TryGetValue(out var subs))
@@ -28,13 +28,13 @@ public abstract class Nth : BuiltIn
                 var contents = Enumerable.Range(0, index)
                     .Select(x => (ITerm)new Variable("_"))
                     .Append(args[2]);
-                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[1], new List(contents.ToArray()).Root));
+                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[1], new List(contents.ToArray()).CanonicalForm));
                 yield break;
             }
         }
         else if (!args[0].IsGround)
         {
-            if (List.TryUnfold(args[1], out var list))
+            if (args[1].IsAbstractTerm<List>(out var list))
             {
                 var any = false;
                 for (var i = 0; i < list.Contents.Length; ++i)

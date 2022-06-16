@@ -96,14 +96,14 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                     var memberValue = o == null ? null : GetMemberValue(m, o);
                     var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling);
                     var member = TransformMember(m, term);
-                    if (List.TryUnfold(member, out var list))
+                    if (member.IsAbstractTerm<List>(out var list))
                     {
                         member = new List(list.Contents.Select(x =>
                         {
                             if (x is Complex cplx)
                                 return cplx.WithFunctor(new(attr?.Functor ?? cplx.Functor.Value));
                             return x;
-                        }).ToArray()).Root;
+                        })).CanonicalForm;
                     }
 
                     return member;
@@ -118,8 +118,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             if (args.Length == 0)
                 return new Atom(functor);
 
-            if (WellKnown.Functors.List.Contains(functor))
-                return new List(args).Root;
+            if (WellKnown.Functors.HeadTail.Contains(functor))
+                return new List(args).CanonicalForm;
 
             return TransformTerm(functor, args);
         }
@@ -161,7 +161,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            if (Type.IsArray && List.TryUnfold(t, out var list))
+            if (Type.IsArray && t.IsAbstractTerm<CommaList>(out var list))
             {
                 var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                 for (var i = 0; i < list.Contents.Length; i++)

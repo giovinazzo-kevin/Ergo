@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using System.Collections.Immutable;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -15,7 +14,7 @@ public sealed class FindAll : BuiltIn
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
             .WithCallee(Maybe.Some(GetStub(args)));
-        if (!CommaSequence.TryUnfold(args[1], out var comma))
+        if (!args[1].IsAbstractTerm<CommaList>(out var comma))
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
         }
@@ -41,13 +40,13 @@ public sealed class FindAll : BuiltIn
         else
         {
             var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))));
-            if (args[2].IsGround && args[2] == list.Root)
+            if (args[2].IsGround && args[2] == list.CanonicalForm)
             {
                 yield return new Evaluation(WellKnown.Literals.True);
             }
             else if (!args[2].IsGround)
             {
-                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], list.Root));
+                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], list.CanonicalForm));
             }
             else
             {

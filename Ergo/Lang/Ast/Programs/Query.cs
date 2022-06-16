@@ -5,8 +5,8 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Goals.Explain() }")]
 public readonly struct Query
 {
-    public readonly CommaSequence Goals;
+    public readonly CommaList Goals;
 
-    public Query(CommaSequence goals) => Goals = goals;
+    public Query(CommaList goals) => Goals = goals;
     public Query(params ITerm[] goals) => Goals = new(goals);
 }

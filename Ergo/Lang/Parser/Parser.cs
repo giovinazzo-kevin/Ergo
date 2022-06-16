@@ -115,21 +115,12 @@ public partial class ErgoParser : IDisposable
             return Fail(pos);
         }
 
-        if (!TryParseSequence(
-              CommaSequence.CanonicalFunctor
-            , CommaSequence.EmptyLiteral
-            , () => TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
-            , "(", ",", ")"
-            , true
-            , out var inner
-        ))
-        {
+        var argParse = new ListParser<CommaList>((h, t) => new(h, t))
+            .TryParse(this);
+        if (!argParse.HasValue)
             return Fail(pos);
-        }
 
-        cplx = !inner.IsParenthesized && CommaSequence.TryUnfold(inner.Root, out _)
-            ? new Complex(new Atom(functor), inner.Contents.ToArray())
-            : new Complex(new Atom(functor), inner.Root);
+        cplx = new Complex(new Atom(functor), argParse.GetOrThrow().Contents.ToArray());
         return true;
     }
     public bool TryParseTermOrExpression(out ITerm term, out bool parenthesized)
@@ -191,12 +182,6 @@ public partial class ErgoParser : IDisposable
                 return true;
             }
 
-            if (TryParseList(out var list))
-            {
-                ITerm = list.Root;
-                return true;
-            }
-
             if (TryParseVariable(out var var))
             {
                 ITerm = var;
@@ -218,39 +203,6 @@ public partial class ErgoParser : IDisposable
             ITerm = default;
             return false;
         }
-    }
-
-    public bool TryParseList(out List seq)
-    {
-        seq = default;
-        var pos = Lexer.State;
-        if (TryParseSequence(
-              List.CanonicalFunctor
-            , List.EmptyLiteral
-            , () => TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
-            , "[", ",", "]"
-            , true
-            , out var full
-        ))
-        {
-            if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                && WellKnown.Functors.List.Contains(cplx.Functor))
-            {
-                var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                if (CommaSequence.TryUnfold(cplx.Arguments[0], out var comma))
-                {
-                    arguments = comma.Contents;
-                }
-
-                seq = new List(arguments, Maybe.Some(cplx.Arguments[1]));
-                return true;
-            }
-
-            seq = new List(full.Contents);
-            return true;
-        }
-
-        return Fail(pos);
     }
 
     private bool ExpectOperator(Func<Operator, bool> match, out Operator op)
@@ -327,7 +279,7 @@ public partial class ErgoParser : IDisposable
         expr = default; var pos = Lexer.State;
         if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
         && TryParseTerm(out var arg, out var parens)
-        && (parens || !CommaSequence.TryUnfold(arg, out _)))
+        && (parens || !arg.IsAbstractTerm<CommaList>(out _)))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
@@ -340,7 +292,7 @@ public partial class ErgoParser : IDisposable
     {
         expr = default; var pos = Lexer.State;
         if (TryParseTerm(out var arg, out var parens)
-        && (parens || !CommaSequence.TryUnfold(arg, out _))
+        && (parens || !arg.IsAbstractTerm<CommaList>(out _))
         && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
@@ -494,9 +446,9 @@ public partial class ErgoParser : IDisposable
         }
 
         var lhs = op.Left;
-        if (CommaSequence.TryUnfold(lhs, out var expr))
+        if (lhs.IsAbstractTerm<CommaList>(out var expr))
         {
-            lhs = expr.Root;
+            lhs = expr.CanonicalForm;
         }
 
         directive = new(lhs, desc);
@@ -543,14 +495,14 @@ public partial class ErgoParser : IDisposable
         }
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
-        if (!CommaSequence.TryUnfold(rhs, out var expr))
+        if (!rhs.IsAbstractTerm<CommaList>(out var expr))
         {
             expr = new(ImmutableArray<ITerm>.Empty.Add(rhs));
         }
 
         return MakePredicate(pos, desc, op.Left, expr, out predicate);
 
-        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaSequence body, out Predicate c)
+        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, CommaList body, out Predicate c)
         {
             var headVars = head.Variables
                 .Where(v => !v.Equals(WellKnown.Literals.Discard));

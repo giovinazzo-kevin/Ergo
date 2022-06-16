@@ -2,7 +2,7 @@
 
 public interface IAbstractTerm : IExplainable
 {
-    Complex CanonicalForm { get; }
+    ITerm CanonicalForm { get; }
     Signature Signature { get; }
 
     Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other);

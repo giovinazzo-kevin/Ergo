@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Ast.Terms.Abstract;
 
 namespace Ergo.Solver.BuiltIns;
 

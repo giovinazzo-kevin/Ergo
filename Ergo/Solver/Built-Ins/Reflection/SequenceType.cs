@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -20,7 +19,7 @@ public sealed class SequenceType : BuiltIn
             yield break;
         }
 
-        if (List.TryUnfold(seq, out _))
+        if (seq.IsAbstractTerm<List>(out _))
         {
             if (type.Unify(new Atom("list")).TryGetValue(out var subs))
             {
@@ -29,9 +28,18 @@ public sealed class SequenceType : BuiltIn
             }
         }
 
-        if (CommaSequence.TryUnfold(seq, out _))
+        if (seq.IsAbstractTerm<CommaList>(out _))
         {
-            if (type.Unify(new Atom("comma")).TryGetValue(out var subs))
+            if (type.Unify(new Atom("comma_list")).TryGetValue(out var subs))
+            {
+                yield return new(WellKnown.Literals.True, subs.ToArray());
+                yield break;
+            }
+        }
+
+        if (seq.IsAbstractTerm<BracyList>(out _))
+        {
+            if (type.Unify(new Atom("bracy_list")).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.True, subs.ToArray());
                 yield break;

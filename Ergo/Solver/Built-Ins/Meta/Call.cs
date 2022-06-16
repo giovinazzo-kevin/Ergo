@@ -1,6 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
-using System.Collections.Immutable;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -31,7 +29,7 @@ public sealed class Call : BuiltIn
             yield break;
         }
 
-        if (!CommaSequence.TryUnfold(goal, out var comma))
+        if (!goal.IsAbstractTerm<CommaList>(out var comma))
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(goal));
         }

@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Abstract;
-using static Ergo.Lang.ErgoParser;
+﻿using static Ergo.Lang.ErgoParser;
 
 namespace Ergo.Lang.Parser;
 
@@ -17,8 +16,8 @@ public sealed class DictParser : AbstractTermParser<Dict>
 
         // TODO: Use a bracy list instead
         if (!parser.TryParseSequence(
-              CommaSequence.CanonicalFunctor
-            , CommaSequence.EmptyLiteral
+              WellKnown.Functors.CommaList.First()
+            , WellKnown.Literals.EmptyCommaList
             , () => parser.TryParseTermOrExpression(out var t, out var p)
                 ? (t is Complex cplx && (WellKnown.Functors.NamedArgument.Contains(cplx.Functor) || WellKnown.Functors.Conjunction.Contains(cplx.Functor)), t, p)
                 : (false, default, p)

@@ -52,6 +52,15 @@ public readonly struct Substitution
         {
             if (!x.Equals(y))
             {
+                if (x.AbstractForm.HasValue && y.AbstractForm.HasValue)
+                {
+                    var u = x.AbstractForm.GetOrThrow().Unify(y.AbstractForm.GetOrThrow());
+                    if (!u.HasValue)
+                        return false;
+                    E.AddRange(u.GetOrThrow());
+                    return true;
+                }
+
                 if (y is Variable)
                 {
                     ApplySubstitution(new Substitution(y, x));
@@ -62,15 +71,6 @@ public readonly struct Substitution
                 }
                 else if (x is Complex cx && y is Complex cy)
                 {
-                    if (cx.AbstractForm.HasValue && cy.AbstractForm.HasValue)
-                    {
-                        var u = cx.AbstractForm.GetOrThrow().Unify(cy.AbstractForm.GetOrThrow());
-                        if (!u.HasValue)
-                            return false;
-                        E.AddRange(u.GetOrThrow());
-                        return true;
-                    }
-
                     if (!cx.Matches(cy))
                     {
                         return false;

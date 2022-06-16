@@ -12,7 +12,7 @@ public static class Types
     public const string Complex = nameof(Complex);
     public const string Sequence = nameof(Sequence);
     public const string Comparison = nameof(Comparison);
-    public const string CommaSequence = nameof(CommaSequence);
+    public const string CommaList = nameof(CommaList);
     public const string List = nameof(List);
     public const string Error = nameof(Error);
     public const string ModuleName = nameof(ModuleName);

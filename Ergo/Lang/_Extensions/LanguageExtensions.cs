@@ -87,11 +87,13 @@ public static class LanguageExtensions
                 tag = Maybe.Some((Atom)cplx.Arguments[1]);
             }
 
-            if (qv is Complex { AbstractForm: { HasValue: true } abs })
+            if (qv is { AbstractForm: { HasValue: true } abs })
             {
-                return abs.GetOrThrow().Signature
-                    .WithModule(Maybe.Some(qm))
-                    .WithTag(tag);
+                var sig = abs.GetOrThrow().Signature
+                    .WithModule(Maybe.Some(qm));
+                if (tag.HasValue)
+                    return sig.WithTag(tag);
+                return sig;
             }
 
             return new Signature(

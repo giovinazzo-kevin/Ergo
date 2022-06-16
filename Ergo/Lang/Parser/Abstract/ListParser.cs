@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Abstract;
-
-namespace Ergo.Lang.Parser;
+﻿namespace Ergo.Lang.Parser;
 
 public sealed class ListParser<L> : AbstractTermParser<L>
     where L : AbstractList

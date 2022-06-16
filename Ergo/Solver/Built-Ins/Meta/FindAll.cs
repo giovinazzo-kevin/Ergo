@@ -14,7 +14,7 @@ public sealed class FindAll : BuiltIn
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
             .WithCallee(Maybe.Some(GetStub(args)));
-        if (!args[1].IsAbstractTerm<CommaList>(out var comma))
+        if (!args[1].IsAbstractTerm<NTuple>(out var comma))
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
         }

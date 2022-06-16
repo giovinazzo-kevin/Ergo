@@ -15,24 +15,17 @@ public sealed class ListParser<L> : AbstractTermParser<L>
               empty.Functor
             , empty.EmptyElement
             , () => parser.TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
-            , empty.Braces.Open, ",", empty.Braces.Close
+            , empty.Braces.Open, WellKnown.Operators.Conjunction, empty.Braces.Close
             , true
             , out var full
         ))
         {
-            if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                && empty.Functor.Equals(cplx.Functor))
-            {
-                var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                if (cplx.Arguments[0].IsAbstractTerm<CommaList>(out var comma))
-                {
-                    arguments = comma.Contents;
-                }
-
-                return Maybe.Some(Constructor(arguments, Maybe.Some(cplx.Arguments[1])));
-            }
-
             return Maybe.Some(Constructor(full.Contents, default));
+        }
+
+        if (parser.TryParseAtom(out var a) && a.Equals(empty.EmptyElement))
+        {
+            return Maybe.Some(Constructor(ImmutableArray<ITerm>.Empty, default));
         }
 
         return default;

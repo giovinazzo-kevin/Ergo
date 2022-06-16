@@ -9,6 +9,6 @@ public sealed class BracyList : AbstractList
     public BracyList(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents), default) { }
     public override Atom Functor => WellKnown.Functors.BracyList.First();
-    public override ITerm EmptyElement => WellKnown.Literals.EmptyBracyList;
+    public override Atom EmptyElement => WellKnown.Literals.EmptyBracyList;
     public override (string Open, string Close) Braces => ("{", "}");
 }

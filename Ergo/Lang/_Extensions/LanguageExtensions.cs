@@ -35,9 +35,9 @@ public static class LanguageExtensions
     public static bool IsAbstractTerm<T>(this ITerm t, out T match)
         where T : IAbstractTerm
     {
-        if (t is Complex c && c.AbstractForm.HasValue)
+        if (t.AbstractForm.HasValue)
         {
-            var abs = c.AbstractForm.GetOrThrow();
+            var abs = t.AbstractForm.GetOrThrow();
             if (abs is T tAbs)
             {
                 match = tAbs;

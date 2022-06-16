@@ -25,6 +25,14 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         var x => x
     };
 
+    ITerm WithAbstractForm(Maybe<IAbstractTerm> abs) => this switch
+    {
+        Atom a => a.WithAbstractForm(abs),
+        Variable v => v.WithAbstractForm(abs),
+        Complex c => c.WithAbstractForm(abs),
+        var x => x
+    };
+
     bool TryQualify(Atom m, out ITerm qualified)
     {
         if (IsQualified)

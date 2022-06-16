@@ -6,25 +6,28 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain() }")]
 public abstract class AbstractList : IAbstractTerm
 {
+    private readonly Lazy<ITerm> _canonical, _tail;
+
     public readonly ImmutableArray<ITerm> Contents;
     public readonly bool IsEmpty;
-    public readonly ITerm Tail;
 
     public abstract Atom Functor { get; }
-    public abstract ITerm EmptyElement { get; }
+    public abstract Atom EmptyElement { get; }
     public abstract (string Open, string Close) Braces { get; }
-
-    private readonly Lazy<ITerm> _canonical;
-    public ITerm CanonicalForm => _canonical.Value;
     public Signature Signature { get; }
+
+    public ITerm CanonicalForm => _canonical.Value;
+    public ITerm Tail => _tail.Value;
 
     public AbstractList(ImmutableArray<ITerm> head, Maybe<ITerm> tail = default)
     {
         Contents = head;
         IsEmpty = head.Length == 0;
-        Tail = tail.Reduce(some => some, () => EmptyElement);
+        _tail = new(() => tail.Reduce(some => some, () => EmptyElement
+            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this))));
         _canonical = new(() => Fold(Functor, Tail, head)
-            .Reduce<ITerm>(a => a, v => v, c => c));
+            .Reduce<ITerm>(a => a, v => v, c => c)
+            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this)));
     }
     public AbstractList(params ITerm[] args) : this(ImmutableArray.CreateRange(args), default) { }
     public AbstractList(IEnumerable<ITerm> args) : this(ImmutableArray.CreateRange(args), default) { }
@@ -33,13 +36,13 @@ public abstract class AbstractList : IAbstractTerm
     {
         if (IsEmpty)
         {
-            return Tail.Explain();
+            return Tail.WithAbstractForm(default).Explain();
         }
 
         var joined = string.Join(',', Contents.Select(t => t.Explain()));
         if (!Tail.Equals(EmptyElement))
         {
-            return $"{Braces.Open}{joined}|{Tail.Explain()}{Braces.Close}";
+            return $"{Braces.Open}{joined}|{Tail.WithAbstractForm(default).Explain()}{Braces.Close}";
         }
 
         return $"{Braces.Open}{joined}{Braces.Close}";

@@ -9,6 +9,6 @@ public sealed class CommaList : AbstractList
     public CommaList(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents), default) { }
     public override Atom Functor => WellKnown.Functors.CommaList.First();
-    public override ITerm EmptyElement => WellKnown.Literals.EmptyCommaList;
+    public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
     public override (string Open, string Close) Braces => ("(", ")");
 }

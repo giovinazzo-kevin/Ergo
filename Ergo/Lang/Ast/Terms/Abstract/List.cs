@@ -10,6 +10,6 @@ public sealed class List : AbstractList
         : this(ImmutableArray.CreateRange(contents), default) { }
 
     public override Atom Functor => WellKnown.Functors.List.First();
-    public override ITerm EmptyElement => WellKnown.Literals.EmptyList;
+    public override Atom EmptyElement => WellKnown.Literals.EmptyList;
     public override (string Open, string Close) Braces => ("[", "]");
 }

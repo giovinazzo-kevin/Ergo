@@ -24,7 +24,7 @@ public sealed class Dict : IAbstractTerm
             .OrderBy(o => o)
             .ToArray();
         CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).CanonicalForm })
-            .AsAbstract(Maybe.Some<IAbstractTerm>(this));
+            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
             Signature = Signature.WithTag(functor.Reduce(a => Maybe.Some(a), v => throw new InvalidOperationException()));
@@ -34,8 +34,8 @@ public sealed class Dict : IAbstractTerm
 
     public string Explain()
     {
-        var functor = Functor.Reduce(a => a.Explain(false), b => b.Explain(false));
-        var joinedArgs = string.Join(",", KeyValuePairs.Select(kv => kv.Explain(false)));
+        var functor = Functor.Reduce(a => a.WithAbstractForm(default).Explain(false), b => b.WithAbstractForm(default).Explain(false));
+        var joinedArgs = string.Join(",", KeyValuePairs.Select(kv => kv.WithAbstractForm(default).Explain(false)));
         return $"{functor}{{{joinedArgs}}}";
     }
 

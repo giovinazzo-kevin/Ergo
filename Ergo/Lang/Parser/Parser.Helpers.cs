@@ -61,10 +61,10 @@ public partial class ErgoParser
     }
     public bool TryParseSequence(
         Atom functor,
-        ITerm emptyElement,
+        Atom emptyElement,
         Func<(bool Success, ITerm Term, bool Parens)> tryParseElement,
         string openingDelim,
-        string separator,
+        Operator separator,
         string closingDelim,
         bool @throw,
         out UntypedSequence seq)
@@ -72,7 +72,6 @@ public partial class ErgoParser
         seq = default;
         var pos = Lexer.State;
         var args = new List<(ITerm Term, bool Parens)>();
-        var isSeparatorComma = WellKnown.Functors.Conjunction.Contains(new Atom(separator));
         if (openingDelim != null)
         {
             if (!ExpectDelimiter(p => p == openingDelim, out var _))
@@ -91,7 +90,7 @@ public partial class ErgoParser
         while (tryParseElement() is (true, var term, var parens))
         {
             args.Add((term, parens));
-            if (!ExpectDelimiter(p => true, out var q) || q != separator && q != closingDelim)
+            if (!ExpectDelimiter(p => true, out var q) || !separator.Synonyms.Any(s => q.Equals(s.Value)) && q != closingDelim)
             {
                 if (@throw)
                     Throw(pos, ErrorType.ExpectedArgumentDelimiterOrClosedParens, separator, closingDelim);
@@ -103,10 +102,23 @@ public partial class ErgoParser
                 break;
             }
         }
-        // Special case: when the delimiter is a comma, and the expression is not parenthesized, we need to unfold the underlying expression
-        seq = isSeparatorComma && args.Count == 1 && args.Single() is { } arg && !arg.Parens && arg.Term.IsAbstractTerm<CommaList>(out var comma)
-            ? new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), comma.Contents)
-            : new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(args.Select(a => a.Term)));
+
+        var argList = new List<ITerm>(args.Select(a => a.Term));
+        // Special case: when the delimiter is a grouping operator and the expression is not parenthesized, we need to unfold the underlying expression
+        if (args.Count == 1)
+        {
+            argList.Clear();
+            var test = args[0].Term;
+            while (test is Complex cplx && separator.Synonyms.Contains(cplx.Functor) && cplx.Arity == 2)
+            {
+                argList.Add(cplx.Arguments[0]);
+                test = cplx.Arguments[1];
+            }
+
+            argList.Add(test);
+        }
+
+        seq = new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(argList));
         return true;
     }
 }

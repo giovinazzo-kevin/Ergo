@@ -161,7 +161,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            if (Type.IsArray && t.IsAbstractTerm<CommaList>(out var list))
+            if (Type.IsArray && t.IsAbstractTerm<List>(out var list))
             {
                 var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                 for (var i = 0; i < list.Contents.Length; i++)

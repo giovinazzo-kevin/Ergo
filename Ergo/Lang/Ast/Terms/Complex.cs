@@ -40,7 +40,7 @@ public readonly partial struct Complex : ITerm
     public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
     public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, AbstractForm, Arguments);
     public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, AbstractForm, Arguments);
-    public Complex AsAbstract(Maybe<IAbstractTerm> abs) => new(Affix, IsParenthesized, Functor, abs, Arguments);
+    public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Affix, IsParenthesized, Functor, abs, Arguments);
     public Complex WithFunctor(Atom functor) => new(Affix, IsParenthesized, functor, AbstractForm, Arguments);
     public Complex WithArguments(params ITerm[] args) => new(Affix, IsParenthesized, Functor, AbstractForm, args);
 

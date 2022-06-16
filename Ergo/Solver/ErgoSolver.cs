@@ -45,8 +45,9 @@ public partial class ErgoSolver : IDisposable
     {
         var term = TermMarshall.ToTerm(new T());
         var signature = term.GetSignature();
-        // TODO: reimplement tag rules for dicts?
-        signature = functor.Reduce(some => signature.WithFunctor(some), () => signature);
+        signature = signature.Tag.HasValue && WellKnown.Functors.Dict.Contains(signature.Functor)
+            ? functor.Reduce(some => signature.WithTag(Maybe.Some(some)), () => signature)
+            : functor.Reduce(some => signature.WithFunctor(some), () => signature);
         return signature;
     }
 

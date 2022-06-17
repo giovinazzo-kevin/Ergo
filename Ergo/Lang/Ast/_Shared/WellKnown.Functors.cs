@@ -5,6 +5,7 @@ public static partial class WellKnown
     public static class Functors
     {
         public static readonly Atom[] Conjunction = new Atom[] { new(","), new("∧") };
+        public static readonly Atom[] Lambda = new Atom[] { new(">>") };
         public static readonly Atom[] HeadTail = new Atom[] { new("|") };
         public static readonly Atom[] List = new Atom[] { new("[|]") };
         public static readonly Atom[] Set = new Atom[] { new("{.}") };

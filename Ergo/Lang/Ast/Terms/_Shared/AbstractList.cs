@@ -28,16 +28,16 @@ public abstract class AbstractList : IAbstractTerm
     public virtual string Explain()
     {
         if (IsEmpty)
-        {
             return EmptyElement.WithAbstractForm(default).Explain();
-        }
 
         var joined = string.Join(',', Contents.Select(t => t.Explain()));
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
     public virtual Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other)
     {
-        if (other is not AbstractList list || list.Braces != Braces)
+        if (other is not AbstractList list)
+            return CanonicalForm.Unify(other.CanonicalForm);
+        if (list.Braces != Braces)
             return default;
         var u = CanonicalForm.WithAbstractForm(default).Unify(list.CanonicalForm.WithAbstractForm(default));
         if (!u.HasValue)
@@ -54,6 +54,14 @@ public abstract class AbstractList : IAbstractTerm
             }
         }
     }
+
+    public virtual IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        vars ??= new();
+        return Create(ImmutableArray.CreateRange(Contents.Select(c => c.Instantiate(ctx, vars))));
+    }
+    public virtual IAbstractTerm Substitute(Substitution s)
+        => Create(ImmutableArray.CreateRange(Contents.Select(c => c.Substitute(s))));
 
     public static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
@@ -88,4 +96,5 @@ public abstract class AbstractList : IAbstractTerm
             yield return term;
         }
     }
+
 }

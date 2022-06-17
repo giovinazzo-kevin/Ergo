@@ -6,10 +6,12 @@ namespace Ergo.Lang;
 
 public partial class ErgoParser : IDisposable
 {
-    private readonly InstantiationContext _discardContext;
+    private InstantiationContext _discardContext;
 
     public readonly Lexer Lexer;
-    protected readonly List<IAbstractTermParser> AbstractTermParsers = new();
+    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
+
+    public ErgoParser Clone() => new(Lexer) { AbstractTermParsers = new(AbstractTermParsers) };
 
     public ErgoParser(Lexer lexer)
     {
@@ -17,10 +19,12 @@ public partial class ErgoParser : IDisposable
         _discardContext = new(string.Empty);
     }
 
+    public bool TryRemoveAbstractParser<T>()
+        where T : IAbstractTerm => AbstractTermParsers.Remove(typeof(T));
     public bool TryAddAbstractParser<T>(AbstractTermParser<T> parser)
         where T : IAbstractTerm
     {
-        AbstractTermParsers.Add(parser);
+        AbstractTermParsers.Add(typeof(T), parser);
         return true;
     }
 
@@ -36,6 +40,17 @@ public partial class ErgoParser : IDisposable
 
         ops = match;
         return true;
+    }
+
+    public bool TryParseAbstract<T>(out T abs)
+        where T : IAbstractTerm
+    {
+        abs = default;
+        if (!AbstractTermParsers.TryGetValue(typeof(T), out var parser))
+            return false;
+        var res = parser.TryParse(this);
+        abs = res.Reduce(some => (T)some, () => default);
+        return res.HasValue;
     }
 
     public bool TryParseAtom(out Atom atom)
@@ -170,7 +185,7 @@ public partial class ErgoParser : IDisposable
         bool TryParseTermInner(out ITerm ITerm)
         {
             var pos = Lexer.State;
-            foreach (var abstractParser in AbstractTermParsers)
+            foreach (var abstractParser in AbstractTermParsers.Values)
             {
                 if (abstractParser.TryParse(this) is not { HasValue: true } parsed)
                 {
@@ -205,7 +220,7 @@ public partial class ErgoParser : IDisposable
         }
     }
 
-    private bool ExpectOperator(Func<Operator, bool> match, out Operator op)
+    public bool ExpectOperator(Func<Operator, bool> match, out Operator op)
     {
         op = default;
         if (Expect(Lexer.TokenType.Operator, str => TryGetOperatorsFromFunctor(new Atom(str), out var _op) && _op.Any(match)

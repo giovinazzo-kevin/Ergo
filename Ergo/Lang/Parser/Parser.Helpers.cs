@@ -12,7 +12,7 @@ public partial class ErgoParser
         Lexer.Seek(s);
         return false;
     }
-    protected bool Expect<T>(Lexer.TokenType type, Func<T, bool> pred, out T value)
+    public bool Expect<T>(Lexer.TokenType type, Func<T, bool> pred, out T value)
     {
         var pos = Lexer.State;
         value = default;
@@ -39,7 +39,7 @@ public partial class ErgoParser
 
         return Fail(pos);
     }
-    protected bool Expect<T>(Lexer.TokenType type, out T value) => Expect(type, _ => true, out value);
+    public bool Expect<T>(Lexer.TokenType type, out T value) => Expect(type, _ => true, out value);
     protected bool Parenthesized<T>(Func<(bool Parsed, T Result)> tryParse, out T value)
     {
         var pos = Lexer.State; value = default;

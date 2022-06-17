@@ -27,6 +27,7 @@ public partial class ErgoInterpreter
         ConfigureParser = parser =>
         {
             // NOTE: Should always add parsers in order of descending complexity
+            parser.TryAddAbstractParser(new LambdaParser());
             parser.TryAddAbstractParser(new DictParser());
             parser.TryAddAbstractParser(new ListParser<Set>((h, t) => new(h)));
             parser.TryAddAbstractParser(new ListParser<List>((h, t) => new(h, t)));

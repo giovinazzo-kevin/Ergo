@@ -41,6 +41,9 @@ public readonly struct Variable : ITerm
 
     public ITerm Substitute(Substitution s)
     {
+        if (AbstractForm.HasValue)
+            return AbstractForm.GetOrThrow().Substitute(s).CanonicalForm;
+
         if (Equals(s.Lhs)) return s.Rhs;
         return this;
     }
@@ -50,6 +53,8 @@ public readonly struct Variable : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
+        if (AbstractForm.HasValue)
+            return AbstractForm.GetOrThrow().Instantiate(ctx, vars).CanonicalForm;
         if (vars.TryGetValue(Name, out var inst))
         {
             return inst;

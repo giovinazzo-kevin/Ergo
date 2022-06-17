@@ -10,3 +10,4 @@
 :- use_module(string).
 :- use_module(meta).
 :- use_module(reflection).
+:- use_module(lambda).

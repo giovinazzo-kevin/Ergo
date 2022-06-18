@@ -6,7 +6,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class Compare : BuiltIn
 {
     public Compare()
-        : base("", new("compare"), Maybe<int>.Some(3), Modules.Reflection)
+        : base("", new("compare"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
@@ -17,7 +17,7 @@ public sealed class Compare : BuiltIn
         {
             if (!arguments[0].Matches<int>(out var result))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Number, arguments[0].Explain()));
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Number, arguments[0].Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }

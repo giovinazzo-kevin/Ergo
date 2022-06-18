@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class CommaToList : BuiltIn
 {
     public CommaToList()
-        : base("", new("comma_list"), Maybe<int>.Some(2), Modules.Reflection)
+        : base("", new("comma_list"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
@@ -16,7 +16,7 @@ public sealed class CommaToList : BuiltIn
         {
             if (!listArg.IsAbstract<List>(out var list))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, listArg.Explain()));
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.List, listArg.Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }
@@ -36,7 +36,7 @@ public sealed class CommaToList : BuiltIn
         {
             if (!commaArg.IsAbstract<NTuple>(out var comma))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaList, commaArg.Explain()));
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.CommaList, commaArg.Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }

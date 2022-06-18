@@ -7,7 +7,7 @@ public abstract class Nth : BuiltIn
     public readonly int Offset;
 
     public Nth(int offset)
-        : base("", new($"nth{offset}"), Maybe<int>.Some(3), Modules.List) => Offset = offset;
+        : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
     public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {

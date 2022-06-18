@@ -23,7 +23,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
 
         if (instances is not Variable && !instances.IsAbstract<List>(out _))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, instances.Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.List, instances.Explain());
         }
 
         var templateVars = Enumerable.Empty<Variable>();

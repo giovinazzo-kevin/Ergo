@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class FindAll : BuiltIn
 {
     public FindAll()
-        : base("", new("findall"), Maybe.Some(3), Modules.Meta)
+        : base("", new("findall"), Maybe.Some(3), WellKnown.Modules.Meta)
     {
     }
 

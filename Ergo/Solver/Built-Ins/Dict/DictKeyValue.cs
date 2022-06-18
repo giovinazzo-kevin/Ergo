@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class DictKeyValue : BuiltIn
 {
     public DictKeyValue()
-        : base("", new($"dict_key_value"), Maybe<int>.Some(3), Modules.Dict)
+        : base("", new($"dict_key_value"), Maybe<int>.Some(3), WellKnown.Modules.Dict)
     {
     }
 

@@ -10,7 +10,7 @@ public abstract class BuiltIn
     public Predicate GetStub(ITerm[] arguments)
     {
         var head = new Complex(Signature.Functor, arguments);
-        return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => Modules.Stdlib), head, NTuple.Empty, dynamic: false);
+        return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => WellKnown.Modules.Stdlib), head, NTuple.Empty, dynamic: false);
     }
 
     public abstract IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);

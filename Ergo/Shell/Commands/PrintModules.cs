@@ -1,5 +1,4 @@
-﻿using Ergo.Interpreter;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -18,7 +17,7 @@ public sealed class PrintModules : ShellCommand
             x => x.Name,
             x => x.Imports.Contents.Select(i => modules[(Atom)i]),
             x => x.Name.Explain(),
-            x => !x.Name.Equals(Modules.Stdlib)
+            x => !x.Name.Equals(WellKnown.Modules.Stdlib)
         );
         yield return scope;
     }

@@ -14,7 +14,7 @@ public class DeclareOperator : InterpreterDirective
     {
         if (!args[0].Matches<int>(out var precedence))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.Integer, args[0].Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Integer, args[0].Explain());
         }
 
         if (!args[1].Matches<OperatorType>(out var type))
@@ -24,7 +24,7 @@ public class DeclareOperator : InterpreterDirective
 
         if (!args[2].Matches<string[]>(out var synonyms))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[2].Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[2].Explain());
         }
 
         var (affix, assoc) = Operator.GetAffixAndAssociativity(type);

@@ -10,17 +10,17 @@ public class DeclareModule : InterpreterDirective
     {
         if (args[0] is not Atom moduleName)
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.String, args[0].Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
-        if (!scope.Runtime && scope.Module != Modules.User)
+        if (!scope.Runtime && scope.Module != WellKnown.Modules.User)
         {
             throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Module.Explain(), moduleName.Explain());
         }
 
         if (!args[1].IsAbstract<List>(out var exports))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.List, args[1].Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[1].Explain());
         }
 
         if (scope.Modules.TryGetValue(moduleName, out var module))
@@ -36,7 +36,7 @@ public class DeclareModule : InterpreterDirective
         {
             module = new Module(moduleName, runtime: scope.Runtime)
                 .WithExports(exports.Contents)
-                .WithImport(Modules.Stdlib);
+                .WithImport(WellKnown.Modules.Stdlib);
         }
 
         scope = scope
@@ -47,7 +47,7 @@ public class DeclareModule : InterpreterDirective
             // make sure that 'item' is in the form 'predicate/arity'
             if (!item.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, Types.Signature, item.Explain());
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Signature, item.Explain());
             }
         }
 

@@ -33,7 +33,7 @@ public partial class ErgoShell
 
     // TODO: Extensions
     public IEnumerable<Predicate> GetInterpreterPredicates(ShellScope scope) => SolverBuilder.Build(Interpreter, ref scope).KnowledgeBase.AsEnumerable();
-    public IEnumerable<Predicate> GetUserPredicates(ShellScope scope) => scope.InterpreterScope.Modules[Modules.User].Program.KnowledgeBase.AsEnumerable();
+    public IEnumerable<Predicate> GetUserPredicates(ShellScope scope) => scope.InterpreterScope.Modules[WellKnown.Modules.User].Program.KnowledgeBase.AsEnumerable();
 
     public ErgoShell(
         Action<ErgoInterpreter> configureInterpreter = null,

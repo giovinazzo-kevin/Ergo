@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public abstract class MathBuiltIn : BuiltIn
 {
     protected MathBuiltIn(string documentation, Atom functor, Maybe<int> arity)
-        : base(documentation, functor, arity, Modules.Math)
+        : base(documentation, functor, arity, WellKnown.Modules.Math)
     {
     }
     public dynamic Evaluate(ErgoSolver solver, ITerm t, InterpreterScope s)
@@ -83,7 +83,7 @@ public abstract class MathBuiltIn : BuiltIn
         };
         double Throw(ITerm t)
         {
-            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, s, Types.Number, t.Explain()));
+            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, s, WellKnown.Types.Number, t.Explain()));
             return 0d;
         }
     }

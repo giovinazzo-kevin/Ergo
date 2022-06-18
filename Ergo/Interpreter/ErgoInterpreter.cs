@@ -35,19 +35,19 @@ public partial class ErgoInterpreter
         };
         AddDirectivesByReflection();
 
-        var stdlibScope = new InterpreterScope(new Module(Modules.Stdlib, runtime: true));
-        Load(ref stdlibScope, Modules.Stdlib.Explain());
+        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
+        Load(ref stdlibScope, WellKnown.Modules.Stdlib.Explain());
         StdlibScope = stdlibScope
-            .WithCurrentModule(Modules.Stdlib)
+            .WithCurrentModule(WellKnown.Modules.Stdlib)
             .WithRuntime(false);
     }
 
     public InterpreterScope CreateScope()
     {
         var scope = StdlibScope
-            .WithModule(new Module(Modules.User, runtime: true)
-                .WithImport(Modules.Stdlib))
-            .WithCurrentModule(Modules.User);
+            .WithModule(new Module(WellKnown.Modules.User, runtime: true)
+                .WithImport(WellKnown.Modules.Stdlib))
+            .WithCurrentModule(WellKnown.Modules.User);
         return scope;
     }
 
@@ -180,7 +180,7 @@ public partial class ErgoInterpreter
                 }
             }
 
-            foreach (var key in DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
+            foreach (var key in DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => WellKnown.Modules.User) == module.Name))
             {
                 foreach (var dyn in DynamicPredicates[key])
                 {

@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class BagOf : SolutionAggregationBuiltIn
 {
     public BagOf()
-        : base("", new("bagof"), Maybe.Some(3), Modules.Meta)
+        : base("", new("bagof"), Maybe.Some(3), WellKnown.Modules.Meta)
     {
     }
 

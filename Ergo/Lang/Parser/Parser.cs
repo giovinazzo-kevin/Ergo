@@ -535,7 +535,7 @@ public partial class ErgoParser : IDisposable
 
             c = new Predicate(
                 desc
-                , Modules.User
+                , WellKnown.Modules.User
                 , head
                 , body
             );

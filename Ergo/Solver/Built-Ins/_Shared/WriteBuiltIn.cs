@@ -8,7 +8,7 @@ public abstract class WriteBuiltIn : BuiltIn
     public readonly bool Quoted;
 
     protected WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon, bool quoted)
-        : base(documentation, functor, arity, Modules.IO)
+        : base(documentation, functor, arity, WellKnown.Modules.IO)
     {
         Canonical = canon;
         Quoted = quoted;

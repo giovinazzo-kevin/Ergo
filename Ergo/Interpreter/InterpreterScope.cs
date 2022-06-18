@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace Ergo.Interpreter;
+﻿namespace Ergo.Interpreter;
 
 public readonly struct InterpreterScope
 {
@@ -43,7 +41,7 @@ public readonly struct InterpreterScope
     public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime);
     public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime);
 
-    public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(Interpreter.Modules.Stdlib, Modules[Interpreter.Modules.Stdlib]), SearchDirectories, Runtime);
+    public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, Runtime);
     public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime);
 
     private static IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Atom defaultModule, ImmutableDictionary<Atom, Module> modules, Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)

@@ -1,11 +1,9 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Lambda : BuiltIn
 {
     public Lambda()
-        : base("", WellKnown.Functors.Lambda.First(), Maybe<int>.None, Modules.Lambda)
+        : base("", WellKnown.Functors.Lambda.First(), Maybe<int>.None, WellKnown.Modules.Lambda)
     {
     }
 
@@ -29,7 +27,7 @@ public sealed class Lambda : BuiltIn
         // parameters is a plain list of variables; We don't need to capture free variables, unlike SWIPL which is compiled.
         if (!parameters.IsAbstract<List>(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
         {
-            solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.LambdaParameters, parameters.Explain()));
+            solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.LambdaParameters, parameters.Explain()));
             yield return new Evaluation(WellKnown.Literals.False);
             yield break;
         }
@@ -41,7 +39,7 @@ public sealed class Lambda : BuiltIn
         {
             if (list.Contents[i].IsGround)
             {
-                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.FreeVariable, list.Contents[i].Explain()));
+                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.FreeVariable, list.Contents[i].Explain()));
                 yield return new Evaluation(WellKnown.Literals.False);
                 yield break;
             }

@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class Term : BuiltIn
 {
     public Term()
-        : base("", new("term"), Maybe<int>.Some(3), Modules.Reflection)
+        : base("", new("term"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
@@ -64,7 +64,7 @@ public sealed class Term : BuiltIn
 
         if (functorArg is not Atom functor)
         {
-            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Atom, functorArg.Explain()));
+            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Atom, functorArg.Explain()));
             yield return new(WellKnown.Literals.False);
             yield break;
         }
@@ -73,7 +73,7 @@ public sealed class Term : BuiltIn
         {
             if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, args.Explain()));
+                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.List, args.Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }

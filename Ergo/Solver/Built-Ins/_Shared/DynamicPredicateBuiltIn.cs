@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public abstract class DynamicPredicateBuiltIn : BuiltIn
 {
     protected DynamicPredicateBuiltIn(string documentation, Atom functor, Maybe<int> arity)
-        : base(documentation, functor, arity, Modules.Prologue)
+        : base(documentation, functor, arity, WellKnown.Modules.Prologue)
     {
     }
 
@@ -13,7 +13,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
     {
         if (!Predicate.FromCanonical(arg, solver.InterpreterScope.Module, out var pred))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Predicate, arg.Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Predicate, arg.Explain());
         }
 
         pred = pred.Qualified().Dynamic();

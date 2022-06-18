@@ -66,7 +66,7 @@ public static class SolverBuilder
                 }
             }
 
-            foreach (var key in i.DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => Modules.User) == module.Name))
+            foreach (var key in i.DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => WellKnown.Modules.User) == module.Name))
             {
                 foreach (var dyn in i.DynamicPredicates[key])
                 {

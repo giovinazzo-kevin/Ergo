@@ -136,7 +136,7 @@ public partial class ErgoSolver : IDisposable
                 {
                     var predicate = new Predicate(
                         "data source",
-                        Modules.CSharp,
+                        WellKnown.Modules.CSharp,
                         item.WithFunctor(signature.Tag.Reduce(some => some, () => signature.Functor)),
                         NTuple.Empty,
                         dynamic: true

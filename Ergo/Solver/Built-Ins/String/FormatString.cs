@@ -1,5 +1,4 @@
-﻿using Ergo.Interpreter;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -8,7 +7,7 @@ public sealed class FormatString : BuiltIn
     private readonly Regex PositionalParamRegex = new(@"(?<!{){(\d+)}(?!})");
 
     public FormatString()
-        : base("", new("str_fmt"), Maybe<int>.Some(3), Modules.String)
+        : base("", new("str_fmt"), Maybe<int>.Some(3), WellKnown.Modules.String)
     {
     }
 
@@ -17,7 +16,7 @@ public sealed class FormatString : BuiltIn
         var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
         if (!format.Matches<string>(out var formatStr))
         {
-            solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain()));
+            solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, format.Explain()));
             yield return new(WellKnown.Literals.False);
             yield break;
         }
@@ -31,7 +30,7 @@ public sealed class FormatString : BuiltIn
         {
             if (result.IsGround)
             {
-                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.String, format.Explain()));
+                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, format.Explain()));
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }

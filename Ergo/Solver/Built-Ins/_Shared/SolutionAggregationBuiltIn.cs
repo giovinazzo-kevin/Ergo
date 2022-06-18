@@ -21,7 +21,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
         }
 
-        if (instances is not Variable && !instances.IsAbstractTerm<List>(out _))
+        if (instances is not Variable && !instances.IsAbstract<List>(out _))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, instances.Explain());
         }

@@ -22,7 +22,7 @@ public sealed class FormatString : BuiltIn
             yield break;
         }
 
-        if (!args.IsAbstractTerm<List>(out var items))
+        if (!args.IsAbstract<List>(out var items))
         {
             items = new List(new[] { args });
         }

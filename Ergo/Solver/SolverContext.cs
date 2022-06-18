@@ -56,9 +56,9 @@ public sealed class SolverContext
 
         subs ??= new List<Substitution>();
         // Treat comma-expression complex ITerms as proper expressions
-        if (NTuple.TryUnfold(goal, out var expr))
+        if (goal.IsAbstract<NTuple>(out var expr))
         {
-            await foreach (var s in Solve(new NTuple(expr), subs, ct: ct))
+            await foreach (var s in Solve(expr, subs, ct: ct))
             {
                 yield return s;
             }

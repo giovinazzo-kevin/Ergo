@@ -9,7 +9,7 @@ public static partial class WellKnown
         public static readonly Atom[] HeadTail = new Atom[] { new("|") };
         public static readonly Atom[] List = new Atom[] { new("[|]") };
         public static readonly Atom[] Set = new Atom[] { new("{.}") };
-        public static readonly Atom[] CommaList = Conjunction;
+        public static readonly Atom[] Tuple = Conjunction;
         public static readonly Atom[] Multiplication = new Atom[] { new("*") };
         public static readonly Atom[] Division = new Atom[] { new("/") };
         public static readonly Atom[] IntDivision = new Atom[] { new("//") };

@@ -19,7 +19,7 @@ public sealed class SequenceType : BuiltIn
             yield break;
         }
 
-        if (seq.IsAbstractTerm<List>(out _))
+        if (seq.IsAbstract<List>(out _))
         {
             if (type.Unify(new Atom("list")).TryGetValue(out var subs))
             {
@@ -28,7 +28,7 @@ public sealed class SequenceType : BuiltIn
             }
         }
 
-        if (seq.IsAbstractTerm<NTuple>(out _))
+        if (seq.IsAbstract<NTuple>(out _))
         {
             if (type.Unify(new Atom("comma_list")).TryGetValue(out var subs))
             {
@@ -37,7 +37,7 @@ public sealed class SequenceType : BuiltIn
             }
         }
 
-        if (seq.IsAbstractTerm<Set>(out _))
+        if (seq.IsAbstract<Set>(out _))
         {
             if (type.Unify(new Atom("bracy_list")).TryGetValue(out var subs))
             {

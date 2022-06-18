@@ -27,7 +27,7 @@ public sealed class Lambda : BuiltIn
         }
 
         // parameters is a plain list of variables; We don't need to capture free variables, unlike SWIPL which is compiled.
-        if (!parameters.IsAbstractTerm<List>(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
+        if (!parameters.IsAbstract<List>(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
         {
             solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.LambdaParameters, parameters.Explain()));
             yield return new Evaluation(WellKnown.Literals.False);

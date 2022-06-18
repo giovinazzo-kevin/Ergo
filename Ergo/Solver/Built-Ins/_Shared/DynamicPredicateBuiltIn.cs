@@ -11,7 +11,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
 
     protected static Predicate GetPredicate(ErgoSolver solver, ITerm arg)
     {
-        if (!Predicate.TryUnfold(arg, solver.InterpreterScope.Module, out var pred))
+        if (!Predicate.FromCanonical(arg, solver.InterpreterScope.Module, out var pred))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.Predicate, arg.Explain());
         }

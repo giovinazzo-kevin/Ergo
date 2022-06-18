@@ -16,8 +16,8 @@ public sealed class List : AbstractList
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
-    public List(IEnumerable<ITerm> contents)
-        : this(ImmutableArray.CreateRange(contents), default) { }
+    public List(IEnumerable<ITerm> contents, Maybe<ITerm> tail = default)
+        : this(ImmutableArray.CreateRange(contents), tail) { }
 
     public override Atom Functor => WellKnown.Functors.List.First();
     public override Atom EmptyElement => WellKnown.Literals.EmptyList;
@@ -43,10 +43,17 @@ public sealed class List : AbstractList
         var joined = string.Join(',', Contents.Select(t => t.Explain()));
         if (!Tail.Equals(EmptyElement))
         {
+            if (Tail.IsAbstract<List>(out var rest))
+            {
+                joined = string.Join(',', Contents.Select(t => t.Explain()).Append(rest.Explain()[1..^1]));
+                return $"{Braces.Open}{joined}{Braces.Close}";
+            }
+
             return $"{Braces.Open}{joined}|{Tail.WithAbstractForm(default).Explain()}{Braces.Close}";
         }
 
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
-    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term) => Unfold(term, WellKnown.Functors.List);
+    public static Maybe<List> FromCanonical(ITerm term) => Unfold(term, last => true, WellKnown.Functors.List)
+        .Map(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
 }

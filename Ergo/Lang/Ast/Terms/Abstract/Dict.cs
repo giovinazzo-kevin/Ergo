@@ -76,4 +76,17 @@ public sealed class Dict : IAbstractTerm
             throw new InvalidOperationException();
         return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp);
     }
+
+    public static Maybe<Dict> FromCanonical(ITerm canonical)
+    {
+        if (canonical is not Complex c || !WellKnown.Functors.Dict.Contains(c.Functor) || c.Arguments.Length != 2)
+            return default;
+        var functor = c.Arguments[0].Reduce<Either<Atom, Variable>>(a => a, v => v, c => throw new NotSupportedException());
+        if (!c.Arguments[1].IsAbstract<List>(out var list))
+            return default;
+        if (!list.Contents.All(x => x is Complex d && WellKnown.Functors.NamedArgument.Contains(d.Functor) && d.Arguments.Length == 2 && d.Arguments[0] is Atom))
+            return default;
+        var args = list.Contents.Cast<Complex>().Select(c => new KeyValuePair<Atom, ITerm>((Atom)c.Arguments[0], c.Arguments[1]));
+        return Maybe.Some<Dict>(new(functor, args));
+    }
 }

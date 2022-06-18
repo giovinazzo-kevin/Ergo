@@ -21,4 +21,6 @@ public sealed class Set : AbstractList
     public override ITerm CanonicalForm { get; }
 
     protected override AbstractList Create(ImmutableArray<ITerm> head) => new Set(head);
+    public static Maybe<Set> FromCanonical(ITerm term)
+        => Unfold(term, tail => tail.Equals(Empty.CanonicalForm), WellKnown.Functors.Set).Map(some => new Set(some.SkipLast(1)));
 }

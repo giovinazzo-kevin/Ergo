@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Parser;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Parser;
 
 public sealed class ListParser<L> : AbstractTermParser<L>
     where L : AbstractList
@@ -19,14 +21,22 @@ public sealed class ListParser<L> : AbstractTermParser<L>
             , out var full
         ))
         {
-            if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                && WellKnown.Functors.HeadTail.Contains(cplx.Functor)
-                && typeof(L) == typeof(List))
+            if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx)
             {
-                var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                arguments = NTuple.Unfold(cplx.Arguments[0])
-                    .Reduce(some => ImmutableArray.CreateRange(some), () => arguments);
-                return Maybe.Some(Constructor(arguments, Maybe.Some(cplx.Arguments[1])));
+                if (cplx.IsAbstract<NTuple>(out var tuple))
+                {
+                    if (typeof(L) == typeof(NTuple))
+                        return Maybe.Some((L)(IAbstractTerm)tuple);
+                    return Maybe.Some(Constructor(tuple.Contents, default));
+                }
+
+                if (typeof(L) == typeof(List) && WellKnown.Functors.HeadTail.Contains(cplx.Functor))
+                {
+                    var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
+                    arguments = NTuple.FromQuasiCanonical(cplx.Arguments[0], Maybe.Some(false), Maybe.Some(false)) is { HasValue: true } tup
+                        ? tup.GetOrThrow().Contents : arguments;
+                    return Maybe.Some(Constructor(arguments, Maybe.Some(cplx.Arguments[1])));
+                }
             }
 
             return Maybe.Some(Constructor(full.Contents, default));

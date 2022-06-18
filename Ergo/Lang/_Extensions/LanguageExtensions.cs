@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Reflection;
 
 namespace Ergo.Lang.Extensions;
 
@@ -32,20 +33,55 @@ public static class LanguageExtensions
         return false;
     }
 
-    public static bool IsAbstractTerm<T>(this ITerm t, out T match)
-        where T : IAbstractTerm
+    public static bool IsAbstract(this ITerm t, Type type, out IAbstractTerm match)
     {
+        match = default;
         if (t.AbstractForm.HasValue)
         {
-            var abs = t.AbstractForm.GetOrThrow();
-            if (abs is T tAbs)
-            {
-                match = tAbs;
-                return true;
-            }
+            match = t.AbstractForm.GetOrThrow();
+            return match.GetType().Equals(type);
         }
 
+        // It could be that 't' is the canonical form of an abstract term but that it wasn't recognized as abstract on creation.
+        // It's a bit unclear when exactly this happens, but two reasons are:
+        // - When parsing the canonical form of an abstract type;
+        // - When unifying an abstract term with a matching non-abstract canonical form.
+
+        if (AbstractTermCache.IsNot(t, type))
+            return false;
+        if (AbstractTermCache.TryGet(t, type, out match))
+            return true;
+
+        // If the abstract type implements a static Maybe<T> FromCanonical(ITerm t) method, try calling it and caching the result.
+        var resultType = typeof(Maybe<>).MakeGenericType(type);
+        if (type.GetMethods(BindingFlags.Public | BindingFlags.Static).SingleOrDefault(m =>
+            m.Name.Equals("FromCanonical") && m.GetParameters().Length == 1 && m.ReturnType.Equals(resultType)) is { } unfold)
+        {
+            var result = unfold.Invoke(null, new[] { t });
+            if (resultType.GetField("HasValue")?.GetValue(result) is not true)
+            {
+                AbstractTermCache.Miss(t, type);
+                return false;
+            }
+
+            match = (IAbstractTerm)resultType.GetMethod("GetOrThrow").Invoke(result, new object[] { null });
+            AbstractTermCache.Set(t, match);
+            return true;
+        }
+
+        return false;
+    }
+
+    public static bool IsAbstract<T>(this ITerm t, out T match)
+        where T : IAbstractTerm
+    {
         match = default;
+        if (IsAbstract(t, typeof(T), out var untyped))
+        {
+            match = (T)untyped;
+            return true;
+        }
+
         return false;
     }
 

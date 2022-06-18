@@ -130,7 +130,7 @@ public partial class ErgoParser : IDisposable
             return Fail(pos);
         }
 
-        var argParse = new ListParser<Ast.NTuple>((h, t) => (new(h)))
+        var argParse = new ListParser<NTuple>((h, t) => (new(h)))
             .TryParse(this);
         if (!argParse.HasValue)
             return Fail(pos);
@@ -145,6 +145,8 @@ public partial class ErgoParser : IDisposable
         {
             term = expr.Complex;
             parenthesized = expr.Complex.IsParenthesized;
+            if (NTuple.FromQuasiCanonical(term, Maybe.Some(parenthesized), hasEmptyElement: Maybe.Some(false)) is { HasValue: true } tuple)
+                term = tuple.GetOrThrow().CanonicalForm;
             return true;
         }
 
@@ -294,7 +296,7 @@ public partial class ErgoParser : IDisposable
         expr = default; var pos = Lexer.State;
         if (ExpectOperator(op => op.Affix == OperatorAffix.Prefix, out var op)
         && TryParseTerm(out var arg, out var parens)
-        && (parens || !Ast.NTuple.TryUnfold(arg, out _)))
+        && (parens || !arg.IsAbstract<NTuple>(out _)))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
             return true;
@@ -307,7 +309,7 @@ public partial class ErgoParser : IDisposable
     {
         expr = default; var pos = Lexer.State;
         if (TryParseTerm(out var arg, out var parens)
-        && (parens || !Ast.NTuple.TryUnfold(arg, out _))
+        && (parens || !arg.IsAbstract<NTuple>(out _))
         && ExpectOperator(op => op.Affix == OperatorAffix.Postfix, out var op))
         {
             expr = BuildExpression(op, arg, exprParenthesized: parens);
@@ -511,12 +513,12 @@ public partial class ErgoParser : IDisposable
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
 
-        if (!Ast.NTuple.TryUnfold(rhs, out var contents))
+        if (NTuple.FromQuasiCanonical(rhs, default, hasEmptyElement: Maybe.Some(false)) is not { HasValue: true } contents)
         {
-            contents = new[] { rhs };
+            contents = Maybe.Some(new NTuple(new[] { rhs }));
         }
 
-        return MakePredicate(pos, desc, op.Left, new(contents), out predicate);
+        return MakePredicate(pos, desc, op.Left, contents.GetOrThrow(), out predicate);
 
         bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, Ast.NTuple body, out Predicate c)
         {

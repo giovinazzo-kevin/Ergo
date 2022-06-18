@@ -9,7 +9,7 @@ public class DeclareDynamicPredicate : InterpreterDirective
 
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
-        if (!Signature.TryUnfold(args[0], out var sig))
+        if (!Signature.FromCanonical(args[0], out var sig))
         {
             sig = args[0].GetSignature();
         }

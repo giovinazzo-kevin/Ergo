@@ -40,19 +40,17 @@ public abstract class AbstractList : IAbstractTerm
         if (list.Braces != Braces)
             return default;
         var u = CanonicalForm.WithAbstractForm(default).Unify(list.CanonicalForm.WithAbstractForm(default));
-        if (!u.HasValue)
-            return default;
-        return Maybe.Some(Inner());
-        IEnumerable<Substitution> Inner()
-        {
-            foreach (var sub in u.GetOrThrow())
-            {
-                if (Unfold(sub.Rhs, Functor) is { HasValue: true } unfold)
-                    yield return sub.WithRhs(Create(ImmutableArray.CreateRange(unfold.GetOrThrow().SkipLast(1))).CanonicalForm);
-                else
-                    yield return sub;
-            }
-        }
+        return u;
+        //IEnumerable<Substitution> Inner()
+        //{
+        //    foreach (var sub in u.GetOrThrow())
+        //    {
+        //        var ret = sub;
+        //        if (Unfold(ret.Rhs, Functor) is { HasValue: true } unfold)
+        //            ret = ret.WithRhs(Create(ImmutableArray.CreateRange(unfold.GetOrThrow())).CanonicalForm);
+        //        yield return ret;
+        //    }
+        //}
     }
 
     public virtual IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
@@ -63,7 +61,7 @@ public abstract class AbstractList : IAbstractTerm
     public virtual IAbstractTerm Substitute(Substitution s)
         => Create(ImmutableArray.CreateRange(Contents.Select(c => c.Substitute(s))));
 
-    public static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    protected static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
         if (args.Length == 0)
             return emptyElement;
@@ -76,24 +74,28 @@ public abstract class AbstractList : IAbstractTerm
                 .AsOperator(OperatorAffix.Infix));
     }
 
-    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, params Atom[] functors)
+    protected static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, params Atom[] functors)
     {
-        if (term.IsAbstractTerm<NTuple>(out var comma))
-            return Maybe.Some(comma.Contents.AsEnumerable());
-
         if (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
             return Maybe.Some(Inner());
         return default;
 
         IEnumerable<ITerm> Inner()
         {
+            var list = new List<ITerm>();
             while (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
             {
-                yield return c.Arguments[0];
+                list.Add(c.Arguments[0]);
                 term = c.Arguments[1];
             }
 
-            yield return term;
+            if (!matchTail(term))
+            {
+                return Enumerable.Empty<ITerm>();
+            }
+
+            list.Add(term);
+            return list;
         }
     }
 

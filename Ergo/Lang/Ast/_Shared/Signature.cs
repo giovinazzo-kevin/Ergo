@@ -47,7 +47,7 @@ public readonly struct Signature
 
     public override int GetHashCode() => HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
 
-    public static bool TryUnfold(ITerm term, out Signature sig)
+    public static bool FromCanonical(ITerm term, out Signature sig)
     {
         if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
             && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))

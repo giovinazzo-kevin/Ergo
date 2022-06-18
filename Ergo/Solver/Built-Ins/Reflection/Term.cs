@@ -14,7 +14,7 @@ public sealed class Term : BuiltIn
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
         if (termArg is not Variable)
         {
-            if (termArg.IsAbstractTerm<Dict>(out var dict))
+            if (termArg.IsAbstract<Dict>(out var dict))
             {
                 var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
                 if (!functorArg.Unify(new Atom("dict")).TryGetValue(out var funSubs)
@@ -69,7 +69,7 @@ public sealed class Term : BuiltIn
             yield break;
         }
 
-        if (!args.IsAbstractTerm<List>(out var argsList) || argsList.Contents.Length == 0)
+        if (!args.IsAbstract<List>(out var argsList) || argsList.Contents.Length == 0)
         {
             if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
             {

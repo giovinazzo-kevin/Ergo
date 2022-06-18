@@ -14,7 +14,7 @@ public sealed class CommaToList : BuiltIn
         var (commaArg, listArg) = (arguments[0], arguments[1]);
         if (listArg is not Variable)
         {
-            if (!listArg.IsAbstractTerm<List>(out var list))
+            if (!listArg.IsAbstract<List>(out var list))
             {
                 solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.List, listArg.Explain()));
                 yield return new(WellKnown.Literals.False);
@@ -34,7 +34,7 @@ public sealed class CommaToList : BuiltIn
 
         if (commaArg is not Variable)
         {
-            if (!commaArg.IsAbstractTerm<NTuple>(out var comma))
+            if (!commaArg.IsAbstract<NTuple>(out var comma))
             {
                 solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, Types.CommaList, commaArg.Explain()));
                 yield return new(WellKnown.Literals.False);

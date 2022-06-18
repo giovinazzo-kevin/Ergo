@@ -44,20 +44,21 @@ public readonly struct Predicate : IExplainable
         return new(Documentation, DeclaringModule, head, Body);
     }
 
-    public static bool TryUnfold(ITerm term, Atom defaultModule, out Predicate pred)
+    // TODO: Conform to abstract term method FromCanonical
+    public static bool FromCanonical(ITerm term, Atom defaultModule, out Predicate pred)
     {
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
         {
             var head_ = c.Arguments[0];
-            var body = NTuple.Unfold(c.Arguments[1])
-                .Reduce(some => some, () => new[] { c.Arguments[1] });
+            var body = c.Arguments[1].IsAbstract<NTuple>(out var tuple)
+                ? tuple : new NTuple(new[] { c.Arguments[1] });
 
             if (!head_.TryGetQualification(out var module_, out head_))
             {
                 module_ = defaultModule;
             }
 
-            pred = new("(dynamic)", module_, head_, new NTuple(body));
+            pred = new("(dynamic)", module_, head_, body);
             return true;
         }
 

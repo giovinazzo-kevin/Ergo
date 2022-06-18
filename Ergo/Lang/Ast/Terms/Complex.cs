@@ -54,7 +54,7 @@ public readonly partial struct Complex : ITerm
         {
             if (!canonical && absForm.HasValue)
                 return absForm.GetOrThrow().Explain();
-            if (c.IsAbstractTerm<List>(out var list))
+            if (c.IsAbstract<List>(out var list))
                 return list.Explain();
             return c.Affix.Reduce(some => canonical ? OperatorAffix.Prefix : some, () => OperatorAffix.Prefix) switch
             {

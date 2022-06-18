@@ -28,16 +28,16 @@ public readonly struct Parsed<T>
                 (ErgoParser p) => p.TryParseTerm(out var x, out _) ? Box(x) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(List) =>
-                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstractTerm<List>(out var expr) ? Box(expr) : onParseFail(data)
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstract<List>(out var expr) ? Box(expr) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(NTuple) =>
-                (ErgoParser p) => p.TryParseTerm(out var x, out _) && NTuple.TryUnfold(x, out var expr) ? Box(expr) : onParseFail(data)
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstract<NTuple>(out var expr) ? Box(expr) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Set) =>
-                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstractTerm<Set>(out var expr) ? Box(expr) : onParseFail(data)
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstract<Set>(out var expr) ? Box(expr) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Dict) =>
-                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstractTerm<Dict>(out var expr) ? Box(expr) : onParseFail(data)
+                (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstract<Dict>(out var expr) ? Box(expr) : onParseFail(data)
             ,
             _ when typeof(T) == typeof(Expression) =>
                 (ErgoParser p) => p.TryParseExpression(out var x) ? Box(x) : onParseFail(data)
@@ -50,8 +50,8 @@ public readonly struct Parsed<T>
             ,
             _ when typeof(T) == typeof(Query) =>
                 (ErgoParser p) => p.TryParseExpression(out var x)
-                    ? NTuple.TryUnfold(x.Complex, out var expr)
-                        ? Box(new Query(new NTuple(expr)))
+                    ? x.Complex.IsAbstract<NTuple>(out var expr)
+                        ? Box(new Query(expr))
                         : Box(new Query(x.Complex))
                     : p.TryParseTerm(out var t, out _)
                         ? Box(new Query(t))

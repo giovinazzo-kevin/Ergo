@@ -45,7 +45,7 @@ public sealed class FormatString : BuiltIn
         {
             var argIndex = int.Parse(match.Groups[1].Value);
             var item = items.Contents.ElementAtOrDefault(argIndex);
-            return item?.Explain() ?? string.Empty;
+            return item?.Reduce<ITerm>(a => a.AsQuoted(false), v => v, c => c)?.Explain(canonical: false) ?? string.Empty;
         });
 
         if (result.IsGround && testStr.Equals(resultStr))

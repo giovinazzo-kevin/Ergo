@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class Lambda : BuiltIn
 {
     public Lambda()
-        : base("", WellKnown.Functors.Lambda.First(), Maybe<int>.None, Modules.Meta)
+        : base("", WellKnown.Functors.Lambda.First(), Maybe<int>.None, Modules.Lambda)
     {
     }
 
@@ -26,17 +26,17 @@ public sealed class Lambda : BuiltIn
             yield break;
         }
 
-        // parameters is a term in the form {Free}/[List]
-        if (parameters is not Complex p
-            || !WellKnown.Functors.Division.Contains(p.Functor)
-            || !p.Arguments[0].IsAbstractTerm<Set>(out var free)
-            || !p.Arguments[1].IsAbstractTerm<List>(out var list))
+        // parameters is a plain list of variables; We don't need to capture free variables, unlike SWIPL which is compiled.
+        if (!parameters.IsAbstractTerm<List>(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
         {
             solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, Types.LambdaParameters, parameters.Explain()));
             yield return new Evaluation(WellKnown.Literals.False);
             yield break;
         }
 
+        var (ctx, vars) = (new InstantiationContext("L"), new Dictionary<string, Variable>());
+        list = (List)list.Instantiate(ctx, vars);
+        lambda = lambda.Instantiate(ctx, vars);
         for (var i = 0; i < Math.Min(rest.Length, list.Contents.Length); i++)
         {
             if (list.Contents[i].IsGround)
@@ -46,10 +46,13 @@ public sealed class Lambda : BuiltIn
                 yield break;
             }
 
-            lambda = lambda.Substitute(rest[i].Unify(list.Contents[i]).GetOrThrow());
+            var newSubs = rest[i].Unify(list.Contents[i]).GetOrThrow();
+            lambda = lambda.Substitute(newSubs);
         }
 
-        await foreach (var eval in new Call().Apply(solver, scope, new[] { lambda }))
+        var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : Array.Empty<ITerm>();
+
+        await foreach (var eval in new Call().Apply(solver, scope, new[] { lambda }.Concat(extraArgs).ToArray()))
         {
             yield return eval;
         }

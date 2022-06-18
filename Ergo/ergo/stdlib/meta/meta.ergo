@@ -2,7 +2,7 @@
 	ignore/1,
 	once/1, repeat/2, forever/1,
 	forall/2,
-	maplist/2, maplist/3
+	maplist/2, maplist/3, maplist/4, maplist/5
 ]).
 
 ignore(Goal) :- Goal, !.

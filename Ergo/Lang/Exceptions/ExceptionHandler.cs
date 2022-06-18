@@ -1,7 +1,6 @@
 ﻿using Ergo.Shell;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Threading.Tasks;
 
 namespace Ergo.Lang.Exceptions;
 

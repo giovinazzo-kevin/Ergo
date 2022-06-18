@@ -57,7 +57,8 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     public IEnumerable<Match> GetMatches(ITerm goal)
     {
         // Instantiate goal
-        if (!goal.Instantiate(Context).Unify(goal).TryGetValue(out var subs))
+        var inst = goal.Instantiate(Context);
+        if (!inst.Unify(goal).TryGetValue(out var subs))
         {
             yield break;
         }

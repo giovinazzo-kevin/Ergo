@@ -182,7 +182,9 @@ public partial class ErgoSolver : IDisposable
             LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
             if (ct.IsCancellationRequested)
                 yield break;
-            var args = term.Reduce(
+            if (!qt.TryGetQualification(out _, out var qv))
+                qv = qt;
+            var args = qv.Reduce(
                 a => Array.Empty<ITerm>(),
                 v => Array.Empty<ITerm>(),
                 c => c.Arguments
@@ -192,15 +194,19 @@ public partial class ErgoSolver : IDisposable
                 LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
                 if (ct.IsCancellationRequested)
                     yield break;
-                ct.ThrowIfCancellationRequested();
                 qt = eval.Result;
                 sig = qt.GetSignature();
-                yield return eval;
+                await foreach (var inner in ResolveGoal(eval.Result, scope, ct))
+                {
+                    yield return new(inner.Result, inner.Substitutions.Concat(eval.Substitutions).Distinct().ToArray());
+                }
+
                 any = true;
             }
         }
 
-        if (!any) yield return new(qt);
+        if (!any)
+            yield return new(qt);
     }
 
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
@@ -269,7 +275,7 @@ public partial class ErgoSolver : IDisposable
         return default;
     }
 
-    public (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(SolverScope scope, Module module, ITerm goal)
+    public (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(SolverScope scope, ITerm goal)
     {
         var matches = KnowledgeBase.GetMatches(goal);
         if (matches.Any())
@@ -280,8 +286,8 @@ public partial class ErgoSolver : IDisposable
         var isDynamic = false;
         if (!goal.IsQualified)
         {
-            if (goal.TryQualify(module.Name, out var qualified)
-                && ((isDynamic |= module.DynamicPredicates.Contains(qualified.GetSignature())) || true))
+            if (goal.TryQualify(scope.Module, out var qualified)
+                && ((isDynamic |= InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true))
             {
                 matches = KnowledgeBase.GetMatches(qualified);
                 if (matches.Any())

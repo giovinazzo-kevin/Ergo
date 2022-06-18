@@ -16,6 +16,7 @@ public static class Types
     public const string List = nameof(List);
     public const string Error = nameof(Error);
     public const string ModuleName = nameof(ModuleName);
+    public const string LambdaParameters = nameof(LambdaParameters);
     public const string Signature = nameof(Signature);
     public const string Predicate = nameof(Predicate);
 }

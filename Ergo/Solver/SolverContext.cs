@@ -109,7 +109,7 @@ public sealed class SolverContext
                 expandedGoal = newGoal;
             }
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-            var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, Solver.InterpreterScope.Modules[Solver.InterpreterScope.Module], expandedGoal);
+            var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, expandedGoal);
             Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
             foreach (var m in matches)
             {

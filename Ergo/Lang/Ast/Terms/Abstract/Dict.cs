@@ -42,7 +42,7 @@ public sealed class Dict : IAbstractTerm
     public Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other)
     {
         if (other is not Dict dict)
-            return default;
+            return CanonicalForm.Unify(other.CanonicalForm);
 
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
@@ -52,5 +52,28 @@ public sealed class Dict : IAbstractTerm
         return Maybe.Some(set
             .Select(key => new Substitution(Dictionary[key], dict.Dictionary[key]))
             .Prepend(new Substitution(dxFunctor, dyFunctor)));
+    }
+
+    public IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        vars ??= new();
+        var newFunctor = Functor.Reduce(
+            a => a.Instantiate(ctx, vars),
+            v => v.Instantiate(ctx, vars));
+        var newKvp = Dictionary.Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key, kvp.Value.Instantiate(ctx, vars)));
+        if (newFunctor is not Variable and not Atom)
+            throw new InvalidOperationException();
+        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp);
+    }
+
+    public IAbstractTerm Substitute(Substitution s)
+    {
+        var newFunctor = Functor.Reduce(
+            a => ((ITerm)a).Substitute(s),
+            v => ((ITerm)v).Substitute(s));
+        var newKvp = Dictionary.Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key, kvp.Value.Substitute(s)));
+        if (newFunctor is not Variable and not Atom)
+            throw new InvalidOperationException();
+        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp);
     }
 }

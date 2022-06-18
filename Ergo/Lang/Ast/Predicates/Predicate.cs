@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -32,7 +33,7 @@ public readonly struct Predicate : IExplainable
     }
 
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
-        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), new NTuple(k.Body.Contents.Select(x => x.Substitute(s))));
+        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)((IAbstractTerm)k.Body).Substitute(s));
 
     public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body);
     public Predicate Dynamic() => new(Documentation, DeclaringModule, Head, Body, true);

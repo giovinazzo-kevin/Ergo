@@ -68,6 +68,9 @@ public readonly partial struct Complex : ITerm
 
     public ITerm Substitute(Substitution s)
     {
+        if (AbstractForm.HasValue)
+            return AbstractForm.GetOrThrow().Substitute(s).CanonicalForm;
+
         if (Equals(s.Lhs))
         {
             return s.Rhs;
@@ -116,8 +119,12 @@ public readonly partial struct Complex : ITerm
     }
 
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
-        => new Complex(Affix, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
-
+    {
+        vars ??= new();
+        if (AbstractForm.HasValue)
+            return AbstractForm.GetOrThrow().Instantiate(ctx, vars).CanonicalForm;
+        return new Complex(Affix, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
+    }
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 
     public static bool operator !=(Complex left, Complex right) => !(left == right);

@@ -11,7 +11,7 @@ public sealed class List : AbstractList
     {
         Tail = tail.Reduce(
             some => some,
-            () => EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)));
+            () => EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty ?? this)));
         CanonicalForm = Fold(Functor, Tail, contents)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
@@ -24,6 +24,14 @@ public sealed class List : AbstractList
     public override (string Open, string Close) Braces => ("[", "]");
     public override ITerm CanonicalForm { get; }
     protected override AbstractList Create(ImmutableArray<ITerm> contents) => new List(contents);
+
+    public override IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        vars ??= new();
+        return new List(ImmutableArray.CreateRange(Contents.Select(c => c.Instantiate(ctx, vars))), Maybe.Some(Tail.Instantiate(ctx, vars)));
+    }
+    public override IAbstractTerm Substitute(Substitution s)
+        => new List(ImmutableArray.CreateRange(Contents.Select(c => c.Substitute(s))), Maybe.Some(Tail.Substitute(s)));
 
     public override string Explain()
     {
@@ -40,4 +48,5 @@ public sealed class List : AbstractList
 
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
+    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term) => Unfold(term, WellKnown.Functors.List);
 }

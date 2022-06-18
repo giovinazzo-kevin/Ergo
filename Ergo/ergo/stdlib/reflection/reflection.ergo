@@ -2,7 +2,8 @@
 	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2,
 	'?='/2, '/'/2, '=..'/2,
 
-	functor/3, arg/3
+	functor/3, arg/3,
+	atom_concat/3
 ]).
 
 :- op(51, xfy, ['@>']).
@@ -38,3 +39,8 @@ functor(Term, Name, Arity) :-
 arg(Arg, Term, Value) :-
 	Term =.. [_|Args],
 	nth1(Arg, Args, Value).
+
+atom_concat(A, B, C) :-
+	term_type(A, atom),
+	term_type(B, atom),
+	str_fmt('{0}{1}', [A, B], C).

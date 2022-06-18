@@ -20,10 +20,11 @@ public sealed class ListParser<L> : AbstractTermParser<L>
         ))
         {
             if (full.Contents.Length == 1 && full.Contents[0] is Complex cplx
-                && WellKnown.Functors.HeadTail.Contains(cplx.Functor))
+                && WellKnown.Functors.HeadTail.Contains(cplx.Functor)
+                && typeof(L) == typeof(List))
             {
                 var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                arguments = Ast.NTuple.Unfold(cplx.Arguments[0])
+                arguments = NTuple.Unfold(cplx.Arguments[0])
                     .Reduce(some => ImmutableArray.CreateRange(some), () => arguments);
                 return Maybe.Some(Constructor(arguments, Maybe.Some(cplx.Arguments[1])));
             }

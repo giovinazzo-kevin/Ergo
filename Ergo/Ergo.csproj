@@ -6,6 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Lang\Ast\Maps\**" />
+    <EmbeddedResource Remove="Lang\Ast\Maps\**" />
+    <None Remove="Lang\Ast\Maps\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Lang\Ast\Terms\Abstract\Lambda.cs~RF2a7ac930.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0-1.final" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
@@ -22,6 +32,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ergo\stdlib\func\func.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ergo\stdlib\lambda\lambda.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ergo\stdlib\string\string.ergo">
@@ -60,10 +73,6 @@
     <None Update="ergo\stdlib\prologue\prologue.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Lang\Ast\Maps\" />
   </ItemGroup>
 
 </Project>

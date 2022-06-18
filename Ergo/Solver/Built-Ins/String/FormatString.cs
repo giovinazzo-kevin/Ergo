@@ -27,7 +27,7 @@ public sealed class FormatString : BuiltIn
             items = new List(new[] { args });
         }
 
-        if (!result.Matches<string>(out var resultStr))
+        if (result is not Atom resultStr)
         {
             if (result.IsGround)
             {
@@ -37,11 +37,11 @@ public sealed class FormatString : BuiltIn
             }
             else
             {
-                resultStr = formatStr;
+                resultStr = new(formatStr);
             }
         }
 
-        var testStr = PositionalParamRegex.Replace(resultStr, match =>
+        var testStr = PositionalParamRegex.Replace(resultStr.AsQuoted(false).Explain(), match =>
         {
             var argIndex = int.Parse(match.Groups[1].Value);
             var item = items.Contents.ElementAtOrDefault(argIndex);

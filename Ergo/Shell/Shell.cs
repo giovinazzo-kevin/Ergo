@@ -126,8 +126,9 @@ public partial class ErgoShell
 
     public virtual async IAsyncEnumerable<ShellScope> Repl(ShellScope scope, Func<string, bool> exit = null)
     {
-        Out = new StreamWriter(Console.OpenStandardOutput(), new UnicodeEncoding(false, false));
-        In = new StreamReader(Console.OpenStandardInput(), new UnicodeEncoding(false, false));
+        var encoding = new UnicodeEncoding(false, false);
+        Out = new StreamWriter(Console.OpenStandardOutput(), encoding);
+        In = new StreamReader(Console.OpenStandardInput(), encoding);
 
         Console.SetOut(Out);
         Console.SetIn(In);

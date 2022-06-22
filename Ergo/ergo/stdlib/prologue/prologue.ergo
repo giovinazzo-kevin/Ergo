@@ -12,14 +12,6 @@
 :- op(30, fx, ['¬', '\\+']).
 :- op(50, xfx, ['=']).
 :- op(50, xfx, ['≠', '\\=']).
-:- op(700, xfy, ['??']).
-
-% TERM EXPANSIONS
-
-:- expand([O] >> (A ?? B :- coalesce(A, B, O))).
-
-coalesce(A, _, A) :- ground(A), !.
-coalesce(_, B, B).
 
 % OPERATOR IMPLEMENTATIONS
 

@@ -56,6 +56,16 @@ public sealed class SolverContext
 
         subs ??= new List<Substitution>();
 
+        // Treat comma-expression complex ITerms as proper expressions
+        if (NTuple.FromQuasiCanonical(goal, default, default) is { HasValue: true } expr)
+        {
+            await foreach (var s in Solve(expr.GetOrThrow(), subs, ct: ct))
+                yield return s;
+
+            Scope = Scope.WithChoicePoint();
+            yield break;
+        }
+
         await foreach (var exp in Solver.ExpandTerm(goal, Scope, ct: ct))
         {
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
@@ -64,16 +74,6 @@ public sealed class SolverContext
             {
                 if (ct.IsCancellationRequested)
                     yield break;
-                // Treat comma-expression complex ITerms as proper expressions
-                if (NTuple.FromQuasiCanonical(resolvedGoal.Result, default, default) is { HasValue: true } expr)
-                {
-                    await foreach (var s in Solve(expr.GetOrThrow(), subs, ct: ct))
-                        yield return s;
-
-                    Scope = Scope.WithChoicePoint();
-                    yield break;
-                }
-
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
                     Solver.LogTrace(SolverTraceType.Retn, "⊥", Scope.Depth);

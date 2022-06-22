@@ -140,22 +140,26 @@ public abstract class SolveShellCommand : ShellCommand
         }
         else
         {
+            var rowsDict = (await solutions.CollectAsync())
+                .Select(s => s.Simplify()
+                    .Substitutions
+                    .ToDictionary(r => r.Lhs.Explain(), r => r.Rhs.Explain()))
+                .ToArray();
+
             var cols = query.Goals
                 .Contents
                 .SelectMany(t => t.Variables)
-                .Where(v => !v.Ignored)
+                .Where(v => !v.Ignored && rowsDict.Any(x => x.ContainsKey(v.Name)))
                 .Select(v => v.Name)
                 .Distinct()
                 .ToArray();
 
-            var rows = (await solutions.CollectAsync())
-                .Select(s => s.Simplify()
-                    .Substitutions
-                    .Select(r => r.Rhs.Explain())
+            var rows = rowsDict
+                .Select(d => cols.Select(c => d.TryGetValue(c, out var v) ? v : "_")
                     .ToArray())
                 .ToArray();
 
-            if (rows.Length > 0 && rows[0].Length == cols.Length)
+            if (rowsDict.Length > 0 && rows[0].Length == cols.Length)
             {
                 shell.WriteTable(cols, rows, accent);
                 shell.Yes();

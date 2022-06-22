@@ -17,7 +17,7 @@ public partial class ErgoSolver : IDisposable
     public readonly HashSet<Atom> DataSinks = new();
     public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
-    public event Action<TraceType, string> Trace;
+    public event Action<SolverTraceType, string> Trace;
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
     public event Action<Exception> Throwing;
@@ -189,7 +189,7 @@ public partial class ErgoSolver : IDisposable
                 v => Array.Empty<ITerm>(),
                 c => c.Arguments
             );
-            LogTrace(TraceType.BuiltInResolution, $"{qt.Explain()}", scope.Depth);
+            LogTrace(SolverTraceType.BuiltInResolution, $"{qt.Explain()}", scope.Depth);
             await foreach (var eval in builtIn.Apply(this, scope, args))
             {
                 if (ct.IsCancellationRequested)
@@ -209,8 +209,8 @@ public partial class ErgoSolver : IDisposable
             yield return new(qt);
     }
 
-    public void LogTrace(TraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
-    public void LogTrace(TraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");
+    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
+    public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");
 
     public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
     {
@@ -274,7 +274,7 @@ public partial class ErgoSolver : IDisposable
                         continue;
 
                     var pred = Predicate.Substitute(exp.Predicate, subs).Qualified();
-                    LogTrace(TraceType.Expansion, $"{pred.Head.Explain()}", scope.Depth);
+                    LogTrace(SolverTraceType.Expansion, $"{pred.Head.Explain()}", scope.Depth);
                     await foreach (var sol in Solve(new Query(pred.Body), Maybe.Some(scope), ct))
                     {
                         if (ct.IsCancellationRequested)

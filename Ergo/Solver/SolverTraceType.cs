@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver;
 
-public enum TraceType
+public enum SolverTraceType
 {
     [Description("Expn")] Expansion,
     [Description("Resv")] BuiltInResolution,

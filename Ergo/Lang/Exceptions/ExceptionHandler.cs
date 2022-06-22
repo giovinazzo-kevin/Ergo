@@ -1,23 +1,27 @@
-﻿using Ergo.Shell;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.ExceptionServices;
 
 namespace Ergo.Lang.Exceptions;
-
-public readonly struct ExceptionHandler
+public struct ExceptionHandler
 {
-    public readonly Action<ShellScope, Exception> Catch;
+    public readonly Action<ErgoException> Catch;
     public readonly Action Finally;
 
-    public ExceptionHandler(Action<ShellScope, Exception> @catch, Action @finally = null)
+    public event Action<ExceptionDispatchInfo> Throwing;
+    public event Action<ExceptionDispatchInfo> Caught;
+
+    public ExceptionHandler(Action<ErgoException> @catch, Action @finally = null)
     {
         Catch = @catch;
         Finally = @finally;
+        Throwing = _ => { };
+        Caught = _ => { };
     }
 
-    public void Throw(ShellScope scope, Exception e) => Try(scope, () => throw e);
+    public void Throw(ErgoException e) => Try(() => throw e);
 
-    public bool Try(ShellScope scope, [NotNull] Action action)
+    public bool Try([NotNull] Action action)
     {
         Contract.Requires(action is { });
 
@@ -25,10 +29,17 @@ public readonly struct ExceptionHandler
         {
             action();
         }
+        catch (ErgoException e)
+        {
+            Catch?.Invoke(e);
+            Caught?.Invoke(ExceptionDispatchInfo.Capture(e));
+            return false;
+        }
         catch (Exception e)
         {
-            Catch?.Invoke(scope, e);
-            return false;
+            var dispatch = ExceptionDispatchInfo.Capture(e);
+            Throwing?.Invoke(dispatch);
+            dispatch.Throw();
         }
         finally
         {
@@ -38,7 +49,7 @@ public readonly struct ExceptionHandler
         return true;
     }
 
-    public async Task<bool> TryAsync(ShellScope scope, [NotNull] Func<Task> action)
+    public async Task<bool> TryAsync([NotNull] Func<Task> action)
     {
         Contract.Requires(action is { });
 
@@ -46,10 +57,17 @@ public readonly struct ExceptionHandler
         {
             await action();
         }
+        catch (ErgoException e)
+        {
+            Catch?.Invoke(e);
+            Caught?.Invoke(ExceptionDispatchInfo.Capture(e));
+            return false;
+        }
         catch (Exception e)
         {
-            Catch?.Invoke(scope, e);
-            return false;
+            var dispatch = ExceptionDispatchInfo.Capture(e);
+            Throwing?.Invoke(dispatch);
+            dispatch.Throw();
         }
         finally
         {
@@ -59,43 +77,56 @@ public readonly struct ExceptionHandler
         return true;
     }
 
-    public bool TryGet<T>(ShellScope scope, [NotNull] Func<T> func, out T value)
+    public Maybe<T> TryGet<T>([NotNull] Func<T> func)
     {
         Contract.Requires(func is { });
         try
         {
-            value = func();
+            return Maybe.Some(func());
+        }
+        catch (ErgoException e)
+        {
+            Catch?.Invoke(e);
+            Caught?.Invoke(ExceptionDispatchInfo.Capture(e));
         }
         catch (Exception e)
         {
-            Catch?.Invoke(scope, e);
-            value = default;
-            return false;
+            var dispatch = ExceptionDispatchInfo.Capture(e);
+            Throwing?.Invoke(dispatch);
+            dispatch.Throw();
         }
         finally
         {
             Finally?.Invoke();
         }
 
-        return true;
+        return default;
     }
 
-    public async Task<Maybe<T>> TryGetAsync<T>(ShellScope scope, [NotNull] Func<Task<T>> func)
+    public async Task<Maybe<T>> TryGetAsync<T>([NotNull] Func<Task<T>> func)
     {
         Contract.Requires(func is { });
         try
         {
             return Maybe.Some(await func());
         }
+        catch (ErgoException e)
+        {
+            Catch?.Invoke(e);
+            Caught?.Invoke(ExceptionDispatchInfo.Capture(e));
+        }
         catch (Exception e)
         {
-            Catch?.Invoke(scope, e);
-            return Maybe.None<T>();
+            var dispatch = ExceptionDispatchInfo.Capture(e);
+            Throwing?.Invoke(dispatch);
+            dispatch.Throw();
         }
         finally
         {
             Finally?.Invoke();
         }
+
+        return Maybe.None<T>();
     }
 }
 

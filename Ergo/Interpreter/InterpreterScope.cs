@@ -6,6 +6,7 @@ public readonly struct InterpreterScope
     public readonly ImmutableDictionary<Atom, Module> Modules;
     public readonly ImmutableArray<string> SearchDirectories;
     public readonly Lazy<Operator[]> Operators;
+    public readonly ExceptionHandler ExceptionHandler;
 
     public readonly Atom Module;
 
@@ -20,29 +21,34 @@ public readonly struct InterpreterScope
             .Add("./ergo/user/");
         Runtime = userModule.Runtime;
         Operators = new(() => GetOperators(module, modules).ToArray(), true);
+        ExceptionHandler = default;
     }
 
     private InterpreterScope(
         Atom currentModule,
         ImmutableDictionary<Atom, Module> modules,
         ImmutableArray<string> dirs,
-        bool runtime)
+        bool runtime,
+        ExceptionHandler handler)
     {
         Modules = modules;
         SearchDirectories = dirs;
         Module = currentModule;
         Runtime = runtime;
         Operators = new(() => GetOperators(currentModule, modules).ToArray());
+        ExceptionHandler = handler;
     }
 
-    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime);
-    public InterpreterScope WithModule(Module m) => new(Module, Modules.SetItem(m.Name, m), SearchDirectories, Runtime);
-    public InterpreterScope WithoutModule(Atom m) => new(Module, Modules.Remove(m), SearchDirectories, Runtime);
-    public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime);
-    public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime);
+    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime, ExceptionHandler);
+    public InterpreterScope WithModule(Module m) => new(Module, Modules.SetItem(m.Name, m), SearchDirectories, Runtime, ExceptionHandler);
+    public InterpreterScope WithoutModule(Atom m) => new(Module, Modules.Remove(m), SearchDirectories, Runtime, ExceptionHandler);
+    public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime, ExceptionHandler);
+    public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime, ExceptionHandler);
+    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Module, Modules, SearchDirectories, Runtime, newHandler);
+    public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, Runtime, ExceptionHandler);
+    public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime, ExceptionHandler);
 
-    public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, Runtime);
-    public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime);
+    public void Throw(InterpreterError error, params object[] args) => ExceptionHandler.Throw(new InterpreterException(error, this, args));
 
     private static IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Atom defaultModule, ImmutableDictionary<Atom, Module> modules, Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)
     {

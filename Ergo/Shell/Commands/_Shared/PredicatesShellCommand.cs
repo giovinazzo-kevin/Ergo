@@ -26,7 +26,7 @@ public abstract class PredicatesShellCommand : ShellCommand
                 yield break;
             }
 
-            if (!scope.ExceptionHandler.TryGet(scope, () =>
+            var yes = scope.InterpreterScope.ExceptionHandler.TryGet(() =>
             {
                 var matches = shell.Interpreter.GetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First());
                 if (matches.Any())
@@ -38,7 +38,9 @@ public abstract class PredicatesShellCommand : ShellCommand
                 }
 
                 return false;
-            }, out var yes) || !yes)
+            });
+
+            if (!yes.GetOrDefault())
             {
                 shell.No();
                 scope = shellScope;

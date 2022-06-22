@@ -1,7 +1,4 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class AnonymousComplex : BuiltIn
 {
@@ -15,8 +12,7 @@ public sealed class AnonymousComplex : BuiltIn
     {
         if (!args[1].Matches<int>(out var arity))
         {
-            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Number, args[1].Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1].Explain());
             yield break;
         }
 
@@ -32,8 +28,7 @@ public sealed class AnonymousComplex : BuiltIn
                 }
             }
 
-            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Functor, args[0].Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());
             yield break;
         }
 

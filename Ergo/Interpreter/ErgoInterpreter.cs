@@ -36,7 +36,7 @@ public partial class ErgoInterpreter
         AddDirectivesByReflection();
 
         var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
-        Load(ref stdlibScope, WellKnown.Modules.Stdlib.Explain());
+        TryLoad(ref stdlibScope, WellKnown.Modules.Stdlib.Explain());
         StdlibScope = stdlibScope
             .WithCurrentModule(WellKnown.Modules.Stdlib)
             .WithRuntime(false);
@@ -87,21 +87,34 @@ public partial class ErgoInterpreter
         return true;
     }
 
-    public Module Load(ref InterpreterScope scope, string name) => ModuleLoader.Load(this, ref scope, name);
-    public Module Load(ref InterpreterScope scope, Stream stream, string fn = "") => ModuleLoader.Load(this, ref scope, fn, stream);
+    public Maybe<Module> TryLoad(ref InterpreterScope scope, string name)
+    {
+        var copy = scope;
+        var ret = copy.ExceptionHandler.TryGet(() => ModuleLoader.Load(this, ref copy, name));
+        scope = copy;
+        return ret;
+    }
+    public Maybe<Module> TryLoad(ref InterpreterScope scope, Stream stream, string fn = "")
+    {
+        var copy = scope;
+        var ret = copy.ExceptionHandler.TryGet(() => ModuleLoader.Load(this, ref copy, fn, stream));
+        scope = copy;
+        return ret;
+    }
 
     public Module EnsureModule(ref InterpreterScope scope, Atom name)
     {
+        var copy = scope;
         if (!scope.Modules.TryGetValue(name, out var module))
         {
             try
             {
-                scope = scope
-                    .WithModule(module = Load(ref scope, name.Explain()));
+                scope = TryLoad(ref copy, name.Explain())
+                    .Reduce(some => copy.WithModule(module = some), () => copy);
             }
             catch (FileNotFoundException)
             {
-                scope = scope
+                scope = copy
                     .WithModule(module = new Module(name, runtime: true));
             }
         }
@@ -151,6 +164,7 @@ public partial class ErgoInterpreter
 
         void LoadModule(ref InterpreterScope scope, Module module, HashSet<Atom> added)
         {
+            var copy = scope;
             if (added.Contains(module.Name))
                 return;
             added.Add(module.Name);
@@ -158,19 +172,20 @@ public partial class ErgoInterpreter
             {
                 if (added.Contains(subModule))
                     continue;
-                if (!scope.Modules.TryGetValue(subModule, out var import))
+                if (!copy.Modules.TryGetValue(subModule, out var import))
                 {
-                    var importScope = scope;
-                    scope = scope.WithModule(import = Load(ref importScope, subModule.Explain()));
+                    var importScope = copy;
+                    scope = TryLoad(ref importScope, subModule.Explain())
+                        .Reduce(some => copy.WithModule(import = some), () => copy);
                 }
 
-                LoadModule(ref scope, import, added);
+                LoadModule(ref copy, import, added);
             }
 
             foreach (var pred in module.Program.KnowledgeBase)
             {
                 var sig = pred.Head.GetSignature();
-                if (module.Name == scope.Module || module.ContainsExport(sig))
+                if (module.Name == copy.Module || module.ContainsExport(sig))
                 {
                     kb.AssertZ(pred.WithModuleName(module.Name));
                 }
@@ -194,6 +209,8 @@ public partial class ErgoInterpreter
                     }
                 }
             }
+
+            scope = copy;
         }
     }
 

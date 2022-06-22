@@ -11,7 +11,8 @@ public sealed class SolverContext
         Solver = solver;
         Scope = scope;
 
-        Solver.Throwing += _ => ExceptionCts.Cancel(false);
+        Scope.InterpreterScope.ExceptionHandler.Throwing += _ => ExceptionCts.Cancel(false);
+        Scope.InterpreterScope.ExceptionHandler.Caught += _ => ExceptionCts.Cancel(false);
     }
 
     public IAsyncEnumerable<Solution> Solve(Query goal, CancellationToken ct = default) => Solve(goal.Goals, ct: ct);

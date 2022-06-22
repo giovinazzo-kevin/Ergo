@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Call : BuiltIn
 {
@@ -16,16 +14,14 @@ public sealed class Call : BuiltIn
             .WithCallee(Maybe.Some(GetStub(args)));
         if (args.Length == 0)
         {
-            solver.Throw(new SolverException(SolverError.UndefinedPredicate, scope, Signature.WithArity(Maybe<int>.Some(0)).Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(0)).Explain());
             yield break;
         }
 
         var goal = args.Aggregate((a, b) => a.Concat(b));
         if (goal is Variable)
         {
-            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, goal.Explain());
             yield break;
         }
 

@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class DictKeyValue : BuiltIn
 {
@@ -13,8 +11,7 @@ public sealed class DictKeyValue : BuiltIn
     {
         if (args[0] is Variable)
         {
-            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, args[0].Explain()));
-            yield return new Evaluation(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, args[0].Explain());
             yield break;
         }
 
@@ -50,8 +47,7 @@ public sealed class DictKeyValue : BuiltIn
 
             if (!anyKey)
             {
-                solver.Throw(new SolverException(SolverError.KeyNotFound, scope, args[1].Explain()));
-                yield return new Evaluation(WellKnown.Literals.False);
+                yield return scope.ThrowFalse(SolverError.KeyNotFound, args[1].Explain());
                 yield break;
             }
 

@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -17,17 +16,17 @@ public sealed class ExecuteDirective : ShellCommand
         var currentModule = interpreterScope.Modules[scope.InterpreterScope.Module];
         var parsed = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
         var directive = parsed.GetOrDefault();
-        var success = scope.ExceptionHandler.TryGet(scope, () => shell.Interpreter.RunDirective(ref interpreterScope, directive), out var ret);
-        if (success && ret)
+        var ret = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Interpreter.RunDirective(ref interpreterScope, directive));
+        if (ret.GetOrDefault())
         {
             yield return scope.WithInterpreterScope(interpreterScope);
             yield break;
         }
-        else if (!success)
+        else if (!ret.HasValue)
         {
             yield break;
         }
 
-        scope.ExceptionHandler.Throw(scope, new ShellException($"'{dir}' does not resolve to a directive."));
+        scope.Throw($"'{dir}' does not resolve to a directive.");
     }
 }

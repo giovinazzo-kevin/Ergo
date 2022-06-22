@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang.Exceptions;
 
-public class LexerException : Exception
+public class LexerException : ErgoException
 {
     public readonly Lexer.ErrorType ErrorType;
 

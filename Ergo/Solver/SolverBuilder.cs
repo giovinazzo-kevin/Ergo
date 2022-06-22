@@ -1,8 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Shell;
 using System.Collections.Concurrent;
-using System.Reactive.Linq;
-using System.Threading;
 
 namespace Ergo.Solver;
 
@@ -50,7 +48,9 @@ public static class SolverBuilder
                 if (!scope.Modules.TryGetValue(subModule, out var import))
                 {
                     var importScope = scope;
-                    scope = scope.WithModule(import = i.Load(ref importScope, subModule.Explain()));
+                    var copy = scope;
+                    scope = i.TryLoad(ref importScope, subModule.Explain())
+                        .Reduce(some => copy.WithModule(import = some), () => copy);
                 }
 
                 LoadModule(ref scope, kb, import, added);

@@ -16,8 +16,7 @@ public sealed class FormatString : BuiltIn
         var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
         if (!format.Matches<string>(out var formatStr))
         {
-            solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, format.Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
             yield break;
         }
 
@@ -30,8 +29,7 @@ public sealed class FormatString : BuiltIn
         {
             if (result.IsGround)
             {
-                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, format.Explain()));
-                yield return new(WellKnown.Literals.False);
+                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
                 yield break;
             }
             else

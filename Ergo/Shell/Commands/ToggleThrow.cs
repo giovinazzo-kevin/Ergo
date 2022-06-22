@@ -11,8 +11,12 @@ public sealed class ToggleThrow : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
-        scope = scope.WithExceptionThrowing(!scope.ExceptionThrowingEnabled);
-        shell.WriteLine($"Throw mode {(scope.ExceptionThrowingEnabled ? "enabled" : "disabled")}.", LogLevel.Inf);
+        var throwingEnabled = scope.InterpreterScope.ExceptionHandler.Equals(shell.ThrowingExceptionHandler);
+        var handler = throwingEnabled
+            ? shell.LoggingExceptionHandler : shell.ThrowingExceptionHandler;
+
+        scope = scope.WithInterpreterScope(scope.InterpreterScope.WithExceptionHandler(handler));
+        shell.WriteLine($"Throw mode {(!throwingEnabled ? "enabled" : "disabled")}.", LogLevel.Inf);
         yield return scope;
     }
 }

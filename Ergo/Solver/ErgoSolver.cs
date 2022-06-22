@@ -1,6 +1,7 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Shell;
 using Ergo.Solver.BuiltIns;
+using System.ComponentModel;
 
 namespace Ergo.Solver;
 
@@ -16,7 +17,7 @@ public partial class ErgoSolver : IDisposable
     public readonly HashSet<Atom> DataSinks = new();
     public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
 
-    public event Action<SolverTraceType, string> Trace;
+    public event Action<TraceType, string> Trace;
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
     public event Action<Exception> Throwing;
@@ -179,7 +180,6 @@ public partial class ErgoSolver : IDisposable
         while (BuiltIns.TryGetValue(sig, out var builtIn)
         || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
         {
-            LogTrace(SolverTraceType.Resv, $"{{{sig.Explain()}}} {qt.Explain()}", scope.Depth);
             if (ct.IsCancellationRequested)
                 yield break;
             if (!qt.TryGetQualification(out _, out var qv))
@@ -189,9 +189,9 @@ public partial class ErgoSolver : IDisposable
                 v => Array.Empty<ITerm>(),
                 c => c.Arguments
             );
+            LogTrace(TraceType.BuiltInResolution, $"{qt.Explain()}", scope.Depth);
             await foreach (var eval in builtIn.Apply(this, scope, args))
             {
-                LogTrace(SolverTraceType.Resv, $"\t-> {eval.Result.Explain()} {{{string.Join("; ", eval.Substitutions.Select(s => s.Explain()))}}}", scope.Depth);
                 if (ct.IsCancellationRequested)
                     yield break;
                 qt = eval.Result;
@@ -209,8 +209,8 @@ public partial class ErgoSolver : IDisposable
             yield return new(qt);
     }
 
-    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
-    public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
+    public void LogTrace(TraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
+    public void LogTrace(TraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");
 
     public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
     {
@@ -273,14 +273,15 @@ public partial class ErgoSolver : IDisposable
                     if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
                         continue;
 
-                    var pred = Predicate.Substitute(exp.Predicate, subs);
+                    var pred = Predicate.Substitute(exp.Predicate, subs).Qualified();
+                    LogTrace(TraceType.Expansion, $"{pred.Head.Explain()}", scope.Depth);
                     await foreach (var sol in Solve(new Query(pred.Body), Maybe.Some(scope), ct))
                     {
                         if (ct.IsCancellationRequested)
                             yield break;
 
                         if (!sol.Simplify().Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
-                            yield return WellKnown.Literals.Discard;
+                            yield return expanded = WellKnown.Literals.Discard;
                         else yield return expanded;
 
                         if (sol.Scope.IsCutRequested)

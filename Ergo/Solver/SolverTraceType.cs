@@ -1,10 +1,11 @@
-﻿namespace Ergo.Solver;
+﻿using System.ComponentModel;
 
-public enum SolverTraceType
+namespace Ergo.Solver;
+
+public enum TraceType
 {
-    Retn,
-    Resv,
-    Call,
-    Exit,
-    Fail
+    [Description("Expn")] Expansion,
+    [Description("Resv")] BuiltInResolution,
+    [Description("Call")] Call,
+    [Description("Exit")] Exit,
 }

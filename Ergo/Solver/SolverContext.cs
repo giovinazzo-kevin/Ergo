@@ -68,6 +68,8 @@ public sealed class SolverContext
             yield break;
         }
 
+        // If a goal is expanded, all of its possible expansions are enumerated.
+        // If a goal has no expansions, it is returned as-is.
         await foreach (var exp in Solver.ExpandTerm(goal, Scope, ct: ct))
         {
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
@@ -99,7 +101,7 @@ public sealed class SolverContext
                     yield break;
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-                var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, exp);
+                var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, resolvedGoal.Result);
                 Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
                 foreach (var m in matches)
                 {

@@ -66,17 +66,17 @@ public partial class ErgoShell
         return lvl switch
         {
             LogLevel.Wrn => (ConsoleColor.DarkYellow, ConsoleColor.White),
-            LogLevel.Err => (ConsoleColor.Red, ConsoleColor.White),
             LogLevel.Inf => (ConsoleColor.DarkCyan, ConsoleColor.White),
             LogLevel.Ans => (ConsoleColor.DarkBlue, ConsoleColor.White),
             LogLevel.Cmt => (ConsoleColor.DarkGreen, ConsoleColor.White),
             LogLevel.Dbg => (ConsoleColor.DarkGray, ConsoleColor.White),
+            LogLevel.Err => (ConsoleColor.Red, ConsoleColor.White),
             LogLevel.Trc => trc switch
             {
                 Solver.TraceType.Call => (ConsoleColor.Black, ConsoleColor.White),
                 Solver.TraceType.Exit => (ConsoleColor.DarkGray, ConsoleColor.White),
-                Solver.TraceType.Expansion => (ConsoleColor.DarkMagenta, ConsoleColor.White),
-                Solver.TraceType.BuiltInResolution => (ConsoleColor.DarkCyan, ConsoleColor.White),
+                Solver.TraceType.Expansion => (ConsoleColor.DarkGreen, ConsoleColor.White),
+                Solver.TraceType.BuiltInResolution => (ConsoleColor.DarkYellow, ConsoleColor.White),
                 _ => (ConsoleColor.Black, ConsoleColor.White),
             },
             _ => (Console.ForegroundColor, Console.BackgroundColor),

@@ -1,6 +1,5 @@
 ﻿using Ergo.Solver;
 using System.Text.RegularExpressions;
-using System.Threading;
 
 namespace Ergo.Shell.Commands;
 
@@ -48,9 +47,31 @@ public abstract class SolveShellCommand : ShellCommand
 
         var query = parsed.GetOrDefault();
         shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
+        var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
         if (scope.TraceEnabled)
         {
-            solver.Trace += (type, trace) => shell.WriteLine(trace, LogLevel.Trc, type);
+            shell.WriteLine("Press: spacebar to creep through; 'c' to continue until the next solution; any other key to abort.", LogLevel.Inf, overrideFg: ConsoleColor.DarkMagenta);
+            solver.Trace += (type, trace) =>
+            {
+                shell.Write(trace, LogLevel.Trc, type);
+                shell.Write("? ", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
+                switch (char.ToLower(nonInteractiveTrace ? ' ' : shell.ReadChar(true)))
+                {
+                    case 'c':
+                        shell.Write("continue", LogLevel.Rpl, overrideFg: ConsoleColor.Magenta);
+                        nonInteractiveTrace = true;
+                        break;
+                    case ' ':
+                        shell.Write("creep", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
+                        break;
+                    default:
+                        shell.Write("abort", LogLevel.Rpl, overrideFg: ConsoleColor.Red);
+                        requestCancel.Cancel();
+                        break;
+                }
+
+                shell.WriteLine();
+            };
         }
 
         var solutions = solver.Solve(query, ct: requestCancel.Token); // Solution graph is walked lazily
@@ -66,7 +87,7 @@ public abstract class SolveShellCommand : ShellCommand
 
         if (Interactive)
         {
-            shell.WriteLine("Press space to yield more solutions:", LogLevel.Inf);
+            shell.WriteLine("Press: spacebar to yield the next solution; 'c' to enumerate solutions automatically; any other key to abort.", LogLevel.Inf);
             var any = false;
             await foreach (var s in solutions)
             {
@@ -97,10 +118,20 @@ public abstract class SolveShellCommand : ShellCommand
                     shell.Yes(nl: false, LogLevel.Rpl);
                 }
 
-                if (shell.ReadChar(true) != ' ')
+                switch (char.ToLower(nonInteractiveSolve ? ' ' : shell.ReadChar(true)))
                 {
-                    break;
+                    case 'c':
+                        nonInteractiveSolve = true;
+                        break;
+                    case ' ':
+                        break;
+                    default:
+                        requestCancel.Cancel();
+                        break;
                 }
+
+                if (!nonInteractiveSolve)
+                    nonInteractiveTrace = false;
             }
 
             if (!any) shell.No(nl: false, LogLevel.Rpl);

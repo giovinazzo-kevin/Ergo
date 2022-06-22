@@ -103,6 +103,8 @@ public sealed class SolverContext
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, resolvedGoal.Result);
                 Solver.LogTrace(TraceType.Call, qualifiedGoal, Scope.Depth);
+                if (ct.IsCancellationRequested)
+                    yield break;
                 foreach (var m in matches)
                 {
                     var innerScope = Scope.WithDepth(Scope.Depth + 1)

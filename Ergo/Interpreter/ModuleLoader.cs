@@ -68,8 +68,15 @@ public class ModuleLoader
     public virtual Module LoadDirectives()
     {
         var operators = Scope.Operators.Value;
-        var lexer = new Lexer(_fs, _fn, Scope.Operators.Value);
+        var lexer = new Lexer(_fs, _fn, operators);
+        var pos = lexer.State;
         var parser = new ErgoParser(lexer);
+        Interpreter.ConfigureParser(parser);
+        // Bootstrap a new parser by first loading the operator symbols defined in this module
+        var newOperators = parser.ParseOperatorDeclarations();
+        lexer.Seek(pos);
+        lexer = new Lexer(_fs, _fn, operators.Concat(newOperators).Distinct());
+        parser = new ErgoParser(lexer);
         Interpreter.ConfigureParser(parser);
         if (!parser.TryParseProgramDirectives(out var program))
         {

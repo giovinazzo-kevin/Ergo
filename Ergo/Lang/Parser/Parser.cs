@@ -1,5 +1,4 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang.Ast.Terms.Interfaces;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
 
 namespace Ergo.Lang;
@@ -269,12 +268,12 @@ public partial class ErgoParser : IDisposable
                 return false;
             if (!TryGetOperatorsFromFunctor(cplx.Functor, out var ops))
                 return false;
-            var op = ops.Single(op => cplx.Arity switch
+            var op = ops.Where(op => cplx.Arity switch
             {
                 1 => op.Affix != OperatorAffix.Infix
                 ,
                 _ => op.Affix == OperatorAffix.Infix
-            });
+            }).MinBy(x => x.Precedence);
             if (cplx.Arguments.Length == 1)
             {
                 expr = BuildExpression(op, cplx.Arguments[0], exprParenthesized: exprParenthesized);
@@ -422,7 +421,7 @@ public partial class ErgoParser : IDisposable
             if (Lexer.TryPeekNextToken(out var lookahead)
             && TryGetOperatorsFromFunctor(new Atom(lookahead.Value), out var ops))
             {
-                op = ops.Where(op => op.Affix == OperatorAffix.Infix).Single();
+                op = ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence);
                 return true;
             }
 
@@ -560,6 +559,39 @@ public partial class ErgoParser : IDisposable
         program = new ErgoProgram(directives.ToArray(), predicates.ToArray())
             .AsPartial(false);
         return true;
+    }
+
+    public IEnumerable<Operator> ParseOperatorDeclarations()
+    {
+        var moduleName = WellKnown.Modules.Stdlib;
+        var ret = new List<Operator>();
+        try
+        {
+            while (TryParseDirective(out var directive))
+            {
+                if (directive.Body is not Complex cplx)
+                    continue;
+                if (cplx.Functor.Equals(new Atom("module")))
+                    moduleName = (Atom)cplx.Arguments[0];
+
+                if (cplx.Functor.Equals(new Atom("op")))
+                {
+                    if (!cplx.Arguments[0].Matches<int>(out var precedence))
+                        continue;
+                    if (!cplx.Arguments[1].Matches<OperatorType>(out var type))
+                        continue;
+                    if (!cplx.Arguments[2].IsAbstract<List>(out var syns))
+                        continue;
+                    ret.Add(new(moduleName, type, precedence, syns.Contents.Cast<Atom>().ToArray()));
+                }
+            }
+        }
+        catch
+        {
+            // The parser reached a point where a newly-declared operator was used. Probably.
+        }
+
+        return ret;
     }
 
     public bool TryParseProgramDirectives(out ErgoProgram program)

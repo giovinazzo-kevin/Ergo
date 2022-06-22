@@ -2,12 +2,12 @@
 
 public readonly struct Expansion
 {
-    public readonly ITerm Head;
-    public readonly ITerm Value;
+    public readonly Variable OutputVariable;
+    public readonly Predicate Predicate;
 
-    public Expansion(ITerm key, ITerm value)
+    public Expansion(Variable outVar, Predicate pred)
     {
-        Head = key;
-        Value = value;
+        Predicate = pred;
+        OutputVariable = outVar;
     }
 }

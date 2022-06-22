@@ -1,8 +1,9 @@
 ﻿:- module(stdlib, []).
+:- use_module(math).
+:- use_module(lambda).
 :- use_module(prologue).
 :- use_module(csharp).
 :- use_module(func).
-:- use_module(math).
 :- use_module(io).
 :- use_module(list).
 :- use_module(dict).
@@ -10,4 +11,3 @@
 :- use_module(string).
 :- use_module(meta).
 :- use_module(reflection).
-:- use_module(lambda).

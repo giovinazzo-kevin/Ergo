@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -54,15 +53,15 @@ public readonly struct Module
     public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), Expansions, DynamicPredicates, Program, Runtime);
     public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Expansions, DynamicPredicates, Program, Runtime);
     public Module WithExpansions(ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
-    public Module WithExpansion(ITerm key, ITerm value)
+    public Module WithExpansion(Variable outVar, Predicate pred)
     {
-        var signature = key.GetSignature();
+        var signature = pred.Head.GetSignature();
         if (!Expansions.TryGetValue(signature, out var arr))
         {
             arr = ImmutableArray<Expansion>.Empty;
         }
 
-        var newLiterals = Expansions.SetItem(signature, arr.Add(new Expansion(key, value)));
+        var newLiterals = Expansions.SetItem(signature, arr.Add(new Expansion(outVar, pred)));
         return new(Name, Imports, Exports, Operators, newLiterals, DynamicPredicates, Program, Runtime);
     }
     public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Expansions, predicates, Program, Runtime);

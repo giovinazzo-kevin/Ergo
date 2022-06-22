@@ -17,7 +17,7 @@ public sealed class ListParser<L> : AbstractTermParser<L>
             , empty.EmptyElement
             , () => parser.TryParseTermOrExpression(out var t, out var p) ? (true, t, p) : (false, default, p)
             , empty.Braces.Open, WellKnown.Operators.Conjunction, empty.Braces.Close
-            , true
+            , false
             , out var full
         ))
         {

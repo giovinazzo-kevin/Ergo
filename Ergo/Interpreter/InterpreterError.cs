@@ -8,6 +8,8 @@ public enum InterpreterError
     , ModuleNameClash
     , OperatorClash
     , ExpansionClashWithLiteral
+    , ExpansionLambdaShouldHaveOneVariable
+    , ExpansionIsNotUsingLambdaVariable
     , ExpansionClash
     , LiteralCyclicDefinition
     , ModuleRedefinition

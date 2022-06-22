@@ -2,6 +2,7 @@
 
 public readonly struct Solution
 {
+    public readonly SolverScope Scope;
     public readonly Substitution[] Substitutions;
     public readonly Lazy<ImmutableDictionary<ITerm, ITerm>> Links;
 
@@ -10,7 +11,7 @@ public readonly struct Solution
     /// </summary>
     public Solution Simplify()
     {
-        return new(Inner(Substitutions)
+        return new(Scope, Inner(Substitutions)
             .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
             .ToArray())
             ;
@@ -41,8 +42,9 @@ public readonly struct Solution
             }
         }
     }
-    public Solution(params Substitution[] subs)
+    public Solution(SolverScope scope, params Substitution[] subs)
     {
+        Scope = scope;
         Substitutions = subs;
         Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty
             .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs))), true);

@@ -265,7 +265,7 @@ public partial class ErgoSolver : IDisposable
                 foreach (var exp in expansions)
                 {
                     // Expansions are defined as a 1ary lambda over a predicate definition.
-                    // The head or body of the predicate MUST reference the lambda variable. (this is checked by the directive)
+                    // The head or body of the predicate MUST reference the lambda variable. (this is already checked by the directive)
                     // The head of the predicate is unified with the current term, then the body is solved.
                     // The lambda argument is unified with the outcome of the expansion and yielded.
 
@@ -273,16 +273,8 @@ public partial class ErgoSolver : IDisposable
                     if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
                         continue;
 
-                    var allVariables = exp.Predicate.Head.Variables.Concat(exp.Predicate.Body.CanonicalForm.Variables)
-                        .ToHashSet();
-                    if (!allVariables.Contains(exp.OutputVariable))
-                    {
-                        Throw(new SolverException(SolverError.ExpansionLacksEvalVariable, scope));
-                        yield break;
-                    }
-
                     var pred = Predicate.Substitute(exp.Predicate, subs);
-                    await foreach (var sol in Solve(new Query(pred.Body), Maybe.Some(scope)))
+                    await foreach (var sol in Solve(new Query(pred.Body), Maybe.Some(scope), ct))
                     {
                         if (ct.IsCancellationRequested)
                             yield break;
@@ -290,6 +282,9 @@ public partial class ErgoSolver : IDisposable
                         if (!sol.Simplify().Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
                             yield return WellKnown.Literals.Discard;
                         else yield return expanded;
+
+                        if (sol.Scope.IsCutRequested)
+                            break;
                     }
                 }
             }

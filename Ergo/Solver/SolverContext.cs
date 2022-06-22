@@ -21,7 +21,7 @@ public sealed class SolverContext
         subs ??= new List<Substitution>();
         if (query.IsEmpty)
         {
-            yield return new Solution(subs.ToArray());
+            yield return new Solution(Scope, subs.ToArray());
             yield break;
         }
 
@@ -35,10 +35,12 @@ public sealed class SolverContext
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, subs, ct: ct))
             {
-                yield return new Solution(s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                yield return new Solution(Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                if (ss.Scope.IsCutRequested)
+                    break;
             }
 
-            if (Scope.IsCutRequested)
+            if (Scope.IsCutRequested || s.Scope.IsCutRequested)
             {
                 yield break;
             }
@@ -83,14 +85,14 @@ public sealed class SolverContext
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
                 {
                     Solver.LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
-                    yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
-                    if (goal.Equals(WellKnown.Literals.Cut))
-                    {
+                    if (exp.Equals(WellKnown.Literals.Cut))
                         Scope.Cut();
-                        yield break;
-                    }
 
-                    continue;
+                    yield return new Solution(Scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
+
+                    if (Scope.IsCutRequested)
+                        yield break;
+                    else continue;
                 }
 
                 if (ct.IsCancellationRequested)

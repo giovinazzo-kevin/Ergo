@@ -25,6 +25,7 @@ public abstract class SolveShellCommand : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        var executionAbortedCtrlC = false;
         var requestCancel = new CancellationTokenSource();
         Console.CancelKeyPress += RequestCancel;
         var userQuery = m.Groups["query"].Value;
@@ -165,12 +166,18 @@ public abstract class SolveShellCommand : ShellCommand
             }
         }
 
+        if (requestCancel.IsCancellationRequested && executionAbortedCtrlC)
+        {
+            shell.WriteLine("Execution terminated by the user.", LogLevel.Err);
+        }
+
         Console.CancelKeyPress -= RequestCancel;
         yield return scope;
         yield break;
         void RequestCancel(object _, ConsoleCancelEventArgs args)
         {
             requestCancel.Cancel();
+            executionAbortedCtrlC = true;
             args.Cancel = true;
         }
     }

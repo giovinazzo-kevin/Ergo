@@ -231,8 +231,11 @@ public partial class ErgoSolver : IDisposable
             scope = scope.WithModule(mod.Name);
             foreach (var exp in expansions)
             {
-                if (!exp.Head.Unify(term).TryGetValue(out var subs))
+                // The expansion is a predicate defined as a lambda over the output variable.
+                // [Output] >> (head :- body).
+                if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
                     continue;
+
                 if (!exp.Value.Variables.Contains(WellKnown.Literals.ExpansionOutput))
                     return Maybe.Some(exp.Value);
                 // Assume exp.Value is callable

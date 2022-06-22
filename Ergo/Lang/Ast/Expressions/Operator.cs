@@ -21,6 +21,14 @@ public readonly partial struct Operator
         CanonicalFunctor = Synonyms.First();
         Precedence = precedence;
     }
+    public Operator(Atom module, OperatorType type, int precedence, params Atom[] functors)
+    {
+        DeclaringModule = module;
+        (Affix, Associativity) = GetAffixAndAssociativity(type);
+        Synonyms = functors;
+        CanonicalFunctor = Synonyms.First();
+        Precedence = precedence;
+    }
 
     public static (OperatorAffix, OperatorAssociativity) GetAffixAndAssociativity(OperatorType type)
     {

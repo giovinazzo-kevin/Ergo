@@ -55,82 +55,72 @@ public sealed class SolverContext
         }
 
         subs ??= new List<Substitution>();
-        // Treat comma-expression complex ITerms as proper expressions
-        if (goal.IsAbstract<NTuple>(out var expr))
+
+        await foreach (var exp in Solver.ExpandTerm(goal, Scope, ct: ct))
         {
-            await foreach (var s in Solve(expr, subs, ct: ct))
-            {
-                yield return s;
-            }
-
-            Scope = Scope.WithChoicePoint();
-            yield break;
-        }
-        // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-        // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-        await foreach (var resolvedGoal in Solver.ResolveGoal(goal, Scope, ct: ct))
-        {
-            if (ct.IsCancellationRequested)
-            {
-                yield break;
-            }
-
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
-            {
-                Solver.LogTrace(SolverTraceType.Retn, "⊥", Scope.Depth);
-                yield break;
-            }
-
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
-            {
-                Solver.LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
-                yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
-                if (goal.Equals(WellKnown.Literals.Cut))
-                {
-                    Scope.Cut();
-                    yield break;
-                }
-
-                continue;
-            }
-
-            var expandedGoal = resolvedGoal.Result;
-            // Cyclic literal definitions throw an error, so this replacement loop always terminates
-            while (await Solver.TryExpandTerm(expandedGoal, Scope, ct: ct) is { HasValue: true } exp)
+            // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
+            // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
+            await foreach (var resolvedGoal in Solver.ResolveGoal(exp, Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested)
-                {
                     yield break;
-                }
-
-                var newGoal = exp.GetOrDefault();
-                if (newGoal.Unify(expandedGoal).Reduce(some => !some.Any(), () => false))
-                    break;
-                expandedGoal = newGoal;
-            }
-            // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-            var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, expandedGoal);
-            Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
-            foreach (var m in matches)
-            {
-                var innerScope = Scope.WithDepth(Scope.Depth + 1)
-                    .WithModule(m.Rhs.DeclaringModule)
-                    .WithCallee(Scope.Callee)
-                    .WithCaller(m.Rhs);
-                var innerContext = new SolverContext(Solver, innerScope);
-                var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                await foreach (var s in solve)
+                // Treat comma-expression complex ITerms as proper expressions
+                if (NTuple.FromQuasiCanonical(resolvedGoal.Result, default, default) is { HasValue: true } expr)
                 {
-                    Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
-                    yield return s;
-                }
+                    await foreach (var s in Solve(expr.GetOrThrow(), subs, ct: ct))
+                        yield return s;
 
-                if (innerScope.IsCutRequested)
-                {
                     Scope = Scope.WithChoicePoint();
                     yield break;
                 }
+
+                if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
+                {
+                    Solver.LogTrace(SolverTraceType.Retn, "⊥", Scope.Depth);
+                    yield break;
+                }
+
+                if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
+                {
+                    Solver.LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
+                    yield return new Solution(subs.Concat(resolvedGoal.Substitutions).ToArray());
+                    if (goal.Equals(WellKnown.Literals.Cut))
+                    {
+                        Scope.Cut();
+                        yield break;
+                    }
+
+                    continue;
+                }
+
+                if (ct.IsCancellationRequested)
+                    yield break;
+
+                // Attempts qualifying a goal with a module, then finds matches in the knowledge base
+                var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, exp);
+                Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
+                foreach (var m in matches)
+                {
+                    var innerScope = Scope.WithDepth(Scope.Depth + 1)
+                        .WithModule(m.Rhs.DeclaringModule)
+                        .WithCallee(Scope.Callee)
+                        .WithCaller(m.Rhs);
+                    var innerContext = new SolverContext(Solver, innerScope);
+                    var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
+                    await foreach (var s in solve)
+                    {
+                        Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
+                        yield return s;
+                    }
+
+                    if (innerScope.IsCutRequested)
+                    {
+                        Scope = Scope.WithChoicePoint();
+                        yield break;
+                    }
+                }
             }
         }
+
     }
 }

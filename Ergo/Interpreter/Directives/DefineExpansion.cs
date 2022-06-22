@@ -3,44 +3,36 @@
 public class DefineExpansion : InterpreterDirective
 {
     public DefineExpansion()
-        : base("", new("expand"), Maybe.Some(2), 20)
+        : base("", new("expand"), Maybe.Some(1), 20)
     {
     }
 
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
-        var module = scope.Modules[scope.Module];
-        var allLiterals = scope.Modules.Values
-            .Where(x => module.Imports.Contents.Contains(x.Name))
+        var allExpansions = scope.GetLoadedModules()
             .SelectMany(x => x.Expansions)
             .ToLookup(l => l.Key);
-        if (WellKnown.Literals.DefinedLiterals.Any(l => l.IsGround && l.Equals(args[0])))
-        {
-            throw new InterpreterException(InterpreterError.ExpansionClashWithLiteral, scope, args[0].Explain());
-        }
-
         var signature = args[0].GetSignature();
-        if (scope.Modules[scope.Module].Expansions.TryGetValue(signature, out var expansions) && expansions.Any(a => a.Head.Equals(args[0])))
+        if (WellKnown.Functors.Lambda.Contains(signature.Functor) && signature.Arity.GetOrDefault() == 2 && args[0] is Complex cplx)
         {
-            throw new InterpreterException(InterpreterError.ExpansionClash, scope, args[0].Explain());
+            // The lambda must have one variable and its body must be a predicate definition that uses that variable.
+            if (!cplx.Arguments[0].IsAbstract<List>(out var lambdaArgs))
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, cplx.Arguments[0].Explain());
+
+            if (lambdaArgs.Contents.Length != 1 || lambdaArgs.Contents[0] is not Variable lambdaVariable)
+                throw new InterpreterException(InterpreterError.ExpansionLambdaShouldHaveOneVariable, scope, cplx.Arguments[0].Explain());
+
+            if (!Predicate.FromCanonical(cplx.Arguments[1], scope.Module, out var pred))
+                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
+
+            if (!pred.Body.CanonicalForm.Variables.Any(v => v.Equals(lambdaVariable)))
+                throw new InterpreterException(InterpreterError.ExpansionIsNotUsingLambdaVariable, scope, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
+
+            scope = scope.WithModule(scope.Modules[scope.Module]
+                .WithExpansion(lambdaVariable, pred));
+            return true;
         }
 
-        if (CyclicDefinition(args[0], args[1]))
-        {
-            throw new InterpreterException(InterpreterError.LiteralCyclicDefinition, scope, args[0].Explain(), args[1].Explain());
-        }
-
-        scope = scope.WithModule(scope.Modules[scope.Module]
-            .WithExpansion(args[0], args[1]));
-        return true;
-
-        bool CyclicDefinition(ITerm start, ITerm t)
-        {
-            if (start.IsGround && start.Equals(t)) return true;
-            var sig = t.GetSignature();
-            foreach (var l in allLiterals[sig].SelectMany(l => l.Value))
-                if (CyclicDefinition(start, l.Value)) return true;
-            return false;
-        }
+        throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Lambda, args[0].Explain());
     }
 }

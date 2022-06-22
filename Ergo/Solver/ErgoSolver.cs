@@ -212,70 +212,89 @@ public partial class ErgoSolver : IDisposable
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
     public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type}: ({depth:00}) {s}");
 
-    public async Task<Maybe<ITerm>> TryExpandTerm(ITerm term, SolverScope scope = default, CancellationToken ct = default)
+    public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        if (ct.IsCancellationRequested)
+        var any = false;
+        await foreach (var exp in Inner(term, scope, ct))
         {
-            return default;
+            any = true;
+            yield return exp;
         }
 
-        if (term is Variable)
-            return default;
-        var sig = term.GetSignature();
-        // Try all modules in import order
-        var modules = InterpreterScope.GetLoadedModules();
-        foreach (var mod in modules.Reverse())
+        if (any)
+            yield break;
+
+        // If this is a complex term, expand all of its arguments recursively and produce a combination of all solutions
+        if (term is Complex cplx)
         {
-            if (!mod.Expansions.TryGetValue(sig, out var expansions))
-                continue;
-            scope = scope.WithModule(mod.Name);
-            foreach (var exp in expansions)
+            var expansions = new List<ITerm>[cplx.Arity];
+            for (var i = 0; i < cplx.Arity; i++)
             {
-                // The expansion is a predicate defined as a lambda over the output variable.
-                // [Output] >> (head :- body).
-                if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
+                expansions[i] = new();
+                await foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope, ct))
+                    expansions[i].Add(argExp);
+            }
+
+            var cartesian = expansions.CartesianProduct();
+            foreach (var argList in cartesian)
+            {
+                any = true;
+                // TODO: This might mess with abstract forms!
+                yield return cplx.WithArguments(argList.ToArray());
+            }
+
+        }
+
+        if (any)
+            yield break;
+
+        yield return term;
+
+        async IAsyncEnumerable<ITerm> Inner(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            if (ct.IsCancellationRequested || term is Variable)
+                yield break;
+            var sig = term.GetSignature();
+            // Try all modules in import order
+            var modules = InterpreterScope.GetLoadedModules();
+            foreach (var mod in modules.Reverse())
+            {
+                if (!mod.Expansions.TryGetValue(sig, out var expansions))
                     continue;
-
-                if (!exp.Value.Variables.Contains(WellKnown.Literals.ExpansionOutput))
-                    return Maybe.Some(exp.Value);
-                // Assume exp.Value is callable
-                var query = exp.Value.Substitute(subs);
-                await foreach (var sol in Solve(new Query(query), Maybe.Some(scope)))
+                scope = scope.WithModule(mod.Name);
+                foreach (var exp in expansions)
                 {
-                    if (ct.IsCancellationRequested)
+                    // Expansions are defined as a 1ary lambda over a predicate definition.
+                    // The head or body of the predicate MUST reference the lambda variable. (this is checked by the directive)
+                    // The head of the predicate is unified with the current term, then the body is solved.
+                    // The lambda argument is unified with the outcome of the expansion and yielded.
+
+                    // [Output] >> (head :- body(Output)).
+                    if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
+                        continue;
+
+                    var allVariables = exp.Predicate.Head.Variables.Concat(exp.Predicate.Body.CanonicalForm.Variables)
+                        .ToHashSet();
+                    if (!allVariables.Contains(exp.OutputVariable))
                     {
-                        return default;
+                        Throw(new SolverException(SolverError.ExpansionLacksEvalVariable, scope));
+                        yield break;
                     }
 
-                    if (!sol.Simplify().Links.Value.TryGetValue(WellKnown.Literals.ExpansionOutput, out var expanded))
+                    var pred = Predicate.Substitute(exp.Predicate, subs);
+                    await foreach (var sol in Solve(new Query(pred.Body), Maybe.Some(scope)))
                     {
-                        if (!sol.Substitutions.Any(s => s.Rhs.Equals(WellKnown.Literals.ExpansionOutput)))
-                        {
-                            Throw(new SolverException(SolverError.ExpansionLacksEvalVariable, scope));
-                            return default;
-                        }
+                        if (ct.IsCancellationRequested)
+                            yield break;
 
-                        return Maybe.Some<ITerm>(WellKnown.Literals.Discard);
+                        if (!sol.Simplify().Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
+                            yield return WellKnown.Literals.Discard;
+                        else yield return expanded;
                     }
-
-                    return Maybe.Some(expanded);
                 }
             }
         }
 
-        if (term is Complex cplx)
-        {
-            var newArgs = new List<ITerm>();
-            foreach (var arg in cplx.Arguments)
-            {
-                var exp = await TryExpandTerm(arg, scope, ct: ct);
-                newArgs.Add(exp.Reduce(some => some, () => arg));
-            }
-
-            return Maybe.Some<ITerm>(cplx.WithArguments(newArgs.ToArray()));
-        }
-
-        return default;
     }
 
     public (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(SolverScope scope, ITerm goal)

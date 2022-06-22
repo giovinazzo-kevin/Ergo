@@ -2,7 +2,6 @@
 using System.Reflection;
 
 namespace Ergo.Lang.Extensions;
-
 public static class LanguageExtensions
 {
     public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)

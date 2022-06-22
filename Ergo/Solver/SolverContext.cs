@@ -80,13 +80,13 @@ public sealed class SolverContext
                     yield break;
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
-                    Solver.LogTrace(SolverTraceType.Retn, "⊥", Scope.Depth);
+                    // Solver.LogTrace(TraceType.Return, "⊥", Scope.Depth);
                     yield break;
                 }
 
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
                 {
-                    Solver.LogTrace(SolverTraceType.Retn, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
+                    // Solver.LogTrace(TraceType.Return, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
                     if (exp.Equals(WellKnown.Literals.Cut))
                         Scope.Cut();
 
@@ -102,7 +102,9 @@ public sealed class SolverContext
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, resolvedGoal.Result);
-                Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
+                Solver.LogTrace(TraceType.Call, qualifiedGoal, Scope.Depth);
+                if (ct.IsCancellationRequested)
+                    yield break;
                 foreach (var m in matches)
                 {
                     var innerScope = Scope.WithDepth(Scope.Depth + 1)
@@ -113,7 +115,7 @@ public sealed class SolverContext
                     var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                     await foreach (var s in solve)
                     {
-                        Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
+                        Solver.LogTrace(TraceType.Exit, m.Rhs.Head, innerScope.Depth);
                         yield return s;
                     }
 

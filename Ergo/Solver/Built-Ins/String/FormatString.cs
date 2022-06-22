@@ -40,14 +40,14 @@ public sealed class FormatString : BuiltIn
             }
         }
 
-        var testStr = PositionalParamRegex.Replace(resultStr.AsQuoted(false).Explain(), match =>
+        var testStr = PositionalParamRegex.Replace(formatStr, match =>
         {
             var argIndex = int.Parse(match.Groups[1].Value);
             var item = items.Contents.ElementAtOrDefault(argIndex);
             return item?.Reduce<ITerm>(a => a.AsQuoted(false), v => v, c => c)?.Explain(canonical: false) ?? string.Empty;
         });
 
-        if (result.IsGround && testStr.Equals(resultStr))
+        if (result.IsGround && testStr.Equals(resultStr.AsQuoted(false).Explain(canonical: false)))
         {
             yield return new(WellKnown.Literals.True);
         }

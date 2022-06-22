@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Interpreter;
+using Ergo.Solver.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Solver;
 
@@ -11,26 +13,35 @@ public readonly struct SolverScope
     public readonly Atom Module;
     public readonly ImmutableArray<Predicate> Callers;
     public readonly Maybe<Predicate> Callee;
+    public readonly InterpreterScope InterpreterScope;
 
-    public SolverScope(int depth, Atom module, Maybe<Predicate> callee, ImmutableArray<Predicate> callers, CancellationTokenSource cut = null)
+    public SolverScope(InterpreterScope interp, int depth, Atom module, Maybe<Predicate> callee, ImmutableArray<Predicate> callers, CancellationTokenSource cut = null)
     {
         Depth = depth;
         Module = module;
         Callers = callers;
         Callee = callee;
         _cut = cut ?? new();
+        InterpreterScope = interp;
     }
 
-    public SolverScope WithModule(Atom module) => new(Depth, module, Callee, Callers);
-    public SolverScope WithDepth(int depth) => new(depth, Module, Callee, Callers);
+    public SolverScope WithModule(Atom module) => new(InterpreterScope, Depth, module, Callee, Callers);
+    public SolverScope WithDepth(int depth) => new(InterpreterScope, depth, Module, Callee, Callers);
     public SolverScope WithCaller(Maybe<Predicate> caller)
     {
         var _callers = Callers;
-        return new(Depth, Module, Callee, caller.Reduce(some => _callers.Add(some), () => _callers));
+        return new(InterpreterScope, Depth, Module, Callee, caller.Reduce(some => _callers.Add(some), () => _callers));
     }
-    public SolverScope WithCaller(Predicate caller) => new(Depth, Module, Callee, Callers.Add(caller));
-    public SolverScope WithCallee(Maybe<Predicate> callee) => new(Depth, Module, callee, Callers);
-    public SolverScope WithChoicePoint() => new(Depth, Module, Callee, Callers, cut: null);
+    public SolverScope WithCaller(Predicate caller) => new(InterpreterScope, Depth, Module, Callee, Callers.Add(caller));
+    public SolverScope WithCallee(Maybe<Predicate> callee) => new(InterpreterScope, Depth, Module, callee, Callers);
+    public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: null);
+
+    public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
+    public Evaluation ThrowFalse(SolverError error, params object[] args)
+    {
+        InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
+        return new Evaluation(WellKnown.Literals.False);
+    }
 
     public bool IsCutRequested => _cut.IsCancellationRequested;
     public bool Cut()

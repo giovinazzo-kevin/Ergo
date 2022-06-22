@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang.Exceptions;
 
-public class ParserException : Exception
+public class ParserException : ErgoException
 {
     public readonly ErgoParser.ErrorType ErrorType;
 

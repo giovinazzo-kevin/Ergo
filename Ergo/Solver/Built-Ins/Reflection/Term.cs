@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Term : BuiltIn
 {
@@ -57,15 +55,13 @@ public sealed class Term : BuiltIn
 
         if (functorArg is Variable)
         {
-            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, functorArg.Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, functorArg.Explain());
             yield break;
         }
 
         if (functorArg is not Atom functor)
         {
-            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Atom, functorArg.Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Atom, functorArg.Explain());
             yield break;
         }
 
@@ -73,8 +69,7 @@ public sealed class Term : BuiltIn
         {
             if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.List, args.Explain()));
-                yield return new(WellKnown.Literals.False);
+                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, args.Explain());
                 yield break;
             }
 

@@ -1,7 +1,4 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Push : BuiltIn
 {
@@ -14,7 +11,7 @@ public sealed class Push : BuiltIn
     {
         if (!args[0].IsGround)
         {
-            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, args[0].Explain(true)));
+            scope.Throw(SolverError.TermNotSufficientlyInstantiated, args[0].Explain(true));
             yield return new(WellKnown.Literals.False);
             yield break;
         }

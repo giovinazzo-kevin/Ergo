@@ -20,7 +20,6 @@ public partial class ErgoSolver : IDisposable
     public event Action<SolverTraceType, string> Trace;
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
-    public event Action<Exception> Throwing;
 
     public ErgoSolver(ErgoInterpreter i, InterpreterScope interpreterScope, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, ShellScope shellScope = default)
     {
@@ -31,12 +30,6 @@ public partial class ErgoSolver : IDisposable
         ShellScope = shellScope;
         BuiltIns = new();
         AddBuiltInsByReflection();
-    }
-
-    public void Throw(Exception e)
-    {
-        ShellScope.ExceptionHandler.Throw(ShellScope, e);
-        Throwing?.Invoke(e);
     }
 
     public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
@@ -334,7 +327,7 @@ public partial class ErgoSolver : IDisposable
         {
             if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
             {
-                Throw(new SolverException(SolverError.UndefinedPredicate, scope, signature.Explain()));
+                scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
                 return (goal, Enumerable.Empty<KnowledgeBase.Match>());
             }
         }
@@ -343,7 +336,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
-        => new SolverContext(this, scope.Reduce(some => some, () => new(0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)))
+        => new SolverContext(this, scope.Reduce(some => some, () => new(InterpreterScope, 0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)))
         .Solve(goal, ct: ct);
 
     public void Dispose()

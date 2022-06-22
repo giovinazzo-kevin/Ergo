@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class SequenceType : BuiltIn
 {
@@ -14,8 +12,7 @@ public sealed class SequenceType : BuiltIn
         var (type, seq) = (arguments[1], arguments[0]);
         if (seq is Variable)
         {
-            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, seq.Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, seq.Explain());
             yield break;
         }
 

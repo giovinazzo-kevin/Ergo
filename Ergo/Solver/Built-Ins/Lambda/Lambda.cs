@@ -11,24 +11,21 @@ public sealed class Lambda : BuiltIn
     {
         if (args.Length < 2)
         {
-            solver.Throw(new SolverException(SolverError.UndefinedPredicate, scope, Signature.WithArity(Maybe<int>.Some(args.Length)).Explain()));
-            yield return new(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(args.Length)).Explain());
             yield break;
         }
 
         var (parameters, lambda, rest) = (args[0], args[1], args[2..]);
         if (parameters is Variable)
         {
-            solver.Throw(new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, parameters.Explain()));
-            yield return new Evaluation(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, parameters.Explain());
             yield break;
         }
 
         // parameters is a plain list of variables; We don't need to capture free variables, unlike SWIPL which is compiled.
         if (!parameters.IsAbstract<List>(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
         {
-            solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.LambdaParameters, parameters.Explain()));
-            yield return new Evaluation(WellKnown.Literals.False);
+            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.LambdaParameters, parameters.Explain());
             yield break;
         }
 
@@ -39,8 +36,7 @@ public sealed class Lambda : BuiltIn
         {
             if (list.Contents[i].IsGround)
             {
-                solver.Throw(new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.FreeVariable, list.Contents[i].Explain()));
-                yield return new Evaluation(WellKnown.Literals.False);
+                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.FreeVariable, list.Contents[i].Explain());
                 yield break;
             }
 

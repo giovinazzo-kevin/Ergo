@@ -1,7 +1,4 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang.Exceptions;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Compare : BuiltIn
 {
@@ -17,7 +14,7 @@ public sealed class Compare : BuiltIn
         {
             if (!arguments[0].Matches<int>(out var result))
             {
-                solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Number, arguments[0].Explain()));
+                scope.Throw(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, arguments[0].Explain());
                 yield return new(WellKnown.Literals.False);
                 yield break;
             }

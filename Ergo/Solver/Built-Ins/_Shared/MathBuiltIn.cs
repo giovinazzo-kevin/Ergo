@@ -83,7 +83,7 @@ public abstract class MathBuiltIn : BuiltIn
         };
         double Throw(ITerm t)
         {
-            solver.Throw(new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, s, WellKnown.Types.Number, t.Explain()));
+            s.Throw(InterpreterError.ExpectedTermOfTypeAt, WellKnown.Types.Number, t.Explain());
             return 0d;
         }
     }

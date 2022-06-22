@@ -12,21 +12,21 @@ public partial class ErgoShell
     public readonly ErgoInterpreter Interpreter;
     public readonly CommandDispatcher Dispatcher;
     public readonly Func<LogLine, string> LineFormatter;
-    public readonly ExceptionHandler DefaultExceptionHandler;
+    public readonly ExceptionHandler LoggingExceptionHandler;
+    public readonly ExceptionHandler ThrowingExceptionHandler;
     public readonly Action<ErgoSolver> ConfigureSolver;
 
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
 
-    public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true), DefaultExceptionHandler, false, false);
+    public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true).WithExceptionHandler(LoggingExceptionHandler), false);
 
     public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
     {
         onParseFail ??= (str =>
         {
-            if (scope.ExceptionHandler.TryGet<T>(scope, () => throw new ShellException($"Could not parse '{data}' as {typeof(T).Name}"), out var ret))
-                return Maybe.Some(ret);
-            return Maybe<T>.None;
+            scope.Throw($"Could not parse '{data}' as {typeof(T).Name}");
+            return default;
         });
         return Interpreter.Parse(scope.InterpreterScope, data, onParseFail);
     }
@@ -47,14 +47,11 @@ public partial class ErgoShell
         ConfigureSolver = configureSolver;
         Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
         LineFormatter = formatter ?? DefaultLineFormatter;
-        DefaultExceptionHandler = new ExceptionHandler((scope, ex) =>
+        LoggingExceptionHandler = new ExceptionHandler((ex) =>
         {
             WriteLine(ex.Message, LogLevel.Err);
-            if (scope.ExceptionThrowingEnabled && !(ex is ShellException || ex is InterpreterException || ex is ParserException || ex is LexerException))
-            {
-                ExceptionDispatchInfo.Capture(ex).Throw();
-            }
         });
+        ThrowingExceptionHandler = new ExceptionHandler((ex) => ExceptionDispatchInfo.Capture(ex).Throw());
         AddCommandsByReflection();
         Console.InputEncoding = Encoding.Unicode;
         Console.OutputEncoding = Encoding.Unicode;
@@ -112,16 +109,19 @@ public partial class ErgoShell
 
     public virtual void Load(ref ShellScope scope, string fileName)
     {
-        var preds = GetInterpreterPredicates(scope);
+        var copy = scope;
+        var preds = GetInterpreterPredicates(copy);
         var oldPredicates = preds.Count();
-        var interpreterScope = scope.InterpreterScope;
-        if (scope.ExceptionHandler.Try(scope, () => Interpreter.Load(ref interpreterScope, fileName)))
+        var interpreterScope = copy.InterpreterScope;
+        var loaded = Interpreter.TryLoad(ref interpreterScope, fileName);
+        loaded.Do(some =>
         {
             var newPredicates = preds.Count();
             var delta = newPredicates - oldPredicates;
             WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
-            scope = scope.WithInterpreterScope(interpreterScope);
-        }
+            copy = copy.WithInterpreterScope(interpreterScope);
+        });
+        scope = copy;
     }
 
     public virtual async IAsyncEnumerable<ShellScope> Repl(ShellScope scope, Func<string, bool> exit = null)

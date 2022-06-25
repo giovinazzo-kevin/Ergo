@@ -26,7 +26,7 @@ public class DeclareOperator : InterpreterDirective
         }
 
         var (affix, assoc) = Operator.GetAffixAndAssociativity(type);
-        var existingOperators = scope.Operators(scope.Module);
+        var existingOperators = scope.GetOperators();
         foreach (var op in existingOperators.Where(x => x.Affix == affix))
         {
             var intersectingSynonyms = op.Synonyms.Select(x => x.Explain()).Intersect(synonyms);

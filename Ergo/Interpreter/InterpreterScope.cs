@@ -5,7 +5,6 @@ public readonly struct InterpreterScope
     public readonly bool Runtime;
     public readonly ImmutableDictionary<Atom, Module> Modules;
     public readonly ImmutableArray<string> SearchDirectories;
-    public readonly Func<Atom, Operator[]> Operators;
     public readonly ExceptionHandler ExceptionHandler;
 
     public readonly Atom Module;
@@ -20,7 +19,6 @@ public readonly struct InterpreterScope
             .Add("./ergo/stdlib/")
             .Add("./ergo/user/");
         Runtime = userModule.Runtime;
-        Operators = (a) => GetOperators(a, modules).ToArray();
         ExceptionHandler = default;
     }
 
@@ -35,7 +33,6 @@ public readonly struct InterpreterScope
         SearchDirectories = dirs;
         Module = currentModule;
         Runtime = runtime;
-        Operators = (a) => GetOperators(a, modules).ToArray();
         ExceptionHandler = handler;
     }
 
@@ -84,9 +81,9 @@ public readonly struct InterpreterScope
         }
     }
 
-    private static IEnumerable<Operator> GetOperators(Atom module, ImmutableDictionary<Atom, Module> modules)
+    public IEnumerable<Operator> GetOperators()
     {
-        var operators = GetOperatorsInner(module, modules)
+        var operators = GetOperatorsInner(Module, Modules)
             .ToList();
         foreach (var (op, depth) in operators)
         {

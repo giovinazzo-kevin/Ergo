@@ -79,7 +79,7 @@ public partial class ErgoInterpreter
         => LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
     public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
     {
-        var operators = scope.Operators(scope.Module);
+        var operators = scope.GetOperators();
         var parser = Facade.BuildParser(stream, operators);
         var pos = parser.Lexer.State;
         // Bootstrap a new parser by first loading the operator symbols defined in this module
@@ -146,7 +146,7 @@ public partial class ErgoInterpreter
             }
         }
 
-        var parser = Facade.BuildParser(stream, scope.Operators(scope.Module));
+        var parser = Facade.BuildParser(stream, scope.GetOperators());
         if (!parser.TryParseProgram(out var program))
         {
             stream.Dispose();

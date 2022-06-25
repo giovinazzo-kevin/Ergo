@@ -16,8 +16,10 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope.InterpreterScope, WellKnown.Types.Predicate, arg.Explain());
         }
 
-        pred = pred.Qualified().Dynamic();
-        return pred;
+        pred = pred.Dynamic();
+        if (scope.InterpreterScope.Modules[scope.InterpreterScope.Module].ContainsExport(pred.Head.GetSignature()))
+            pred = pred.Exported();
+        return pred.Qualified();
     }
 
     protected static bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
@@ -37,37 +39,35 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
 
     protected static bool Retract(ErgoSolver solver, SolverScope scope, ITerm term, bool all)
     {
-        var sig = term.GetSignature();
-        if (!solver.KnowledgeBase.TryGet(sig, out var preds))
-            return false;
-
         var removed = 0;
-        foreach (var dyn in preds.ToHashSet())
+        var sig = term.GetSignature();
+        if (!term.IsQualified)
+            term.TryQualify(scope.Module, out term);
+        var toRemove = new List<ITerm>();
+        foreach (var match in solver.KnowledgeBase.GetMatches(term, desugar: true))
         {
-            if (!dyn.IsDynamic)
+            if (!match.Rhs.IsDynamic)
             {
                 scope.Throw(SolverError.CannotRetractStaticPredicate, scope, sig.Explain());
                 return false;
             }
 
-            if (scope.InterpreterScope.Module != dyn.DeclaringModule)
+            if (scope.InterpreterScope.Module != match.Rhs.DeclaringModule)
             {
-                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Module.Explain(), dyn.DeclaringModule.Explain());
+                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Module.Explain(), match.Rhs.DeclaringModule.Explain());
                 return false;
             }
 
-            if (!dyn.Head.Unify(term).HasValue)
-                continue;
+            toRemove.Add(match.Rhs.Head);
 
-            preds.Remove(dyn);
             if (!all)
-            {
-                return true;
-            }
+                break;
 
-            ++removed;
         }
 
-        return removed > 0;
+        foreach (var item in toRemove)
+            solver.KnowledgeBase.Retract(item);
+
+        return toRemove.Count > 0;
     }
 }

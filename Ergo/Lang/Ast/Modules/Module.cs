@@ -68,10 +68,10 @@ public readonly struct Module
     public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates.Add(predicate.WithModule(Maybe.Some(Name))), Program, Runtime);
     public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, p, Runtime);
 
-    public bool ContainsExport(Signature sig)
+    public bool ContainsExport(Signature sign)
     {
-        return Exports.Contents.Any(t => t.Matches(out var m, new { P = default(string), A = default(int) })
-            && m.P == sig.Functor.Explain()
-            && (!sig.Arity.HasValue || m.A == sig.Arity.Reduce(x => x, () => 0)));
+        var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow()))
+            .AsOperator(OperatorAffix.Infix);
+        return Exports.Contents.Any(t => t.Equals(form));
     }
 }

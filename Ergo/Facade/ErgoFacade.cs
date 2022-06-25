@@ -121,7 +121,7 @@ public readonly struct ErgoFacade
     private ErgoSolver ConfigureSolver(ErgoSolver solver)
     {
         foreach (var builtIn in _builtIns)
-            solver.TryAddBuiltIn(builtIn);
+            solver.AddBuiltIn(builtIn);
         foreach (var (type, sources) in _dataSources)
         {
             foreach (var source in sources)

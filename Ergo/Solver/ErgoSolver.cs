@@ -20,14 +20,6 @@ public partial class ErgoSolver : IDisposable
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
 
-    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
-    {
-        Facade = facade;
-        Flags = flags;
-        KnowledgeBase = kb;
-        BuiltIns = new();
-    }
-
     public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
         where T : new()
     {
@@ -38,6 +30,22 @@ public partial class ErgoSolver : IDisposable
             : functor.Reduce(some => signature.WithFunctor(some), () => signature);
         return signature;
     }
+
+    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
+    {
+        Facade = facade;
+        Flags = flags;
+        KnowledgeBase = kb;
+        BuiltIns = new();
+    }
+    public SolverScope CreateScope(InterpreterScope interpreterScope)
+        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: null);
+    public void AddBuiltIn(SolverBuiltIn b)
+    {
+        if (!BuiltIns.TryAdd(b.Signature, b))
+            throw new NotSupportedException("A builtin with the same signature was already added");
+    }
+    public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
     public void BindDataSource<T>(DataSource<T> data)
         where T : new()
@@ -76,10 +84,6 @@ public partial class ErgoSolver : IDisposable
 
         return false;
     }
-
-    public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
-
-    public bool TryAddBuiltIn(SolverBuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
 
     public async IAsyncEnumerable<KBMatch> GetDataSourceMatches(ITerm head)
     {
@@ -187,9 +191,6 @@ public partial class ErgoSolver : IDisposable
             yield return new(qt);
     }
 
-    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
-    public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");
-
     public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var any = false;
@@ -259,7 +260,7 @@ public partial class ErgoSolver : IDisposable
                             yield break;
 
                         if (!sol.Simplify().Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
-                            yield return expanded = WellKnown.Literals.Discard;
+                            yield return WellKnown.Literals.Discard;
                         else yield return expanded;
 
                         if (sol.Scope.IsCutRequested)
@@ -320,11 +321,11 @@ public partial class ErgoSolver : IDisposable
         return (goal, Enumerable.Empty<KBMatch>());
     }
 
-    public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: null);
-
     public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
         => new SolverContext(this, scope).Solve(goal, ct: ct);
+
+    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
+    public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");
 
     public void Dispose()
     {

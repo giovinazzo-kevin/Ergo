@@ -14,7 +14,8 @@ public abstract class PredicatesShellCommand : ShellCommand
         var term = m.Groups["term"];
         var shellScope = scope;
         var interpreterScope = scope.InterpreterScope;
-        var predicates = shell.GetInterpreterPredicates(scope)
+        var knowledgeBase = interpreterScope.BuildKnowledgeBase();
+        var predicates = knowledgeBase
             .Where(p => !p.Head.IsQualified);
         if (term?.Success ?? false)
         {
@@ -26,9 +27,9 @@ public abstract class PredicatesShellCommand : ShellCommand
                 yield break;
             }
 
-            var yes = scope.InterpreterScope.ExceptionHandler.TryGet(() =>
+            var yes = interpreterScope.ExceptionHandler.TryGet(() =>
             {
-                var matches = shell.Interpreter.GetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First());
+                var matches = knowledgeBase.GetMatches(parsed.GetOrDefault().Contents.First(), desugar: true);
                 if (matches.Any())
                 {
                     predicates = predicates.Where(p =>

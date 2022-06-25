@@ -2,32 +2,27 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public abstract class DynamicPredicateBuiltIn : BuiltIn
+public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
 {
     protected DynamicPredicateBuiltIn(string documentation, Atom functor, Maybe<int> arity)
         : base(documentation, functor, arity, WellKnown.Modules.Prologue)
     {
     }
 
-    protected static Predicate GetPredicate(ErgoSolver solver, ITerm arg)
+    protected static Predicate GetPredicate(SolverScope scope, ITerm arg)
     {
-        if (!Predicate.FromCanonical(arg, solver.InterpreterScope.Module, out var pred))
+        if (!Predicate.FromCanonical(arg, scope.InterpreterScope.Module, out var pred))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.Predicate, arg.Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope.InterpreterScope, WellKnown.Types.Predicate, arg.Explain());
         }
 
         pred = pred.Qualified().Dynamic();
         return pred;
     }
 
-    protected static bool Assert(ErgoSolver solver, ITerm arg, bool z)
+    protected static bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
     {
-        var pred = GetPredicate(solver, arg);
-        if (!solver.Interpreter.TryAddDynamicPredicate(new(pred.Head.GetSignature(), pred, assertz: z)))
-        {
-            return false;
-        }
-
+        var pred = GetPredicate(scope, arg);
         if (!z)
         {
             solver.KnowledgeBase.AssertA(pred);
@@ -43,24 +38,28 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
     protected static bool Retract(ErgoSolver solver, SolverScope scope, ITerm term, bool all)
     {
         var sig = term.GetSignature();
-        if (!solver.Interpreter.DynamicPredicates.TryGetValue(sig, out var dynPreds))
-        {
-            if (!term.IsQualified && term.TryQualify(scope.Module, out term) && !solver.Interpreter.DynamicPredicates.TryGetValue(term.GetSignature(), out dynPreds))
-            {
-                return false;
-            }
-        }
+        if (!solver.KnowledgeBase.TryGet(sig, out var preds))
+            return false;
 
         var removed = 0;
-        foreach (var dyn in dynPreds)
+        foreach (var dyn in preds.ToHashSet())
         {
-            if (solver.InterpreterScope.Module != dyn.Predicate.DeclaringModule)
+            if (!dyn.IsDynamic)
             {
-                throw new SolverException(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), solver.InterpreterScope.Module.Explain(), dyn.Predicate.DeclaringModule.Explain());
+                scope.Throw(SolverError.CannotRetractStaticPredicate, scope, sig.Explain());
+                return false;
             }
 
-            solver.Interpreter.TryRemoveDynamicPredicate(dyn);
-            solver.KnowledgeBase.Retract(dyn.Predicate.Head);
+            if (scope.InterpreterScope.Module != dyn.DeclaringModule)
+            {
+                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Module.Explain(), dyn.DeclaringModule.Explain());
+                return false;
+            }
+
+            if (!dyn.Head.Unify(term).HasValue)
+                continue;
+
+            preds.Remove(dyn);
             if (!all)
             {
                 return true;

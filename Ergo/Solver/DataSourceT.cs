@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver;
 
-public sealed class DataSource<T> : IAsyncEnumerable<ITerm>
+public sealed class DataSource<T> : IDataSource
     where T : new()
 {
     public readonly Atom Functor;

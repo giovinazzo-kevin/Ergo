@@ -54,8 +54,19 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return false;
     }
 
-    public IEnumerable<Match> GetMatches(ITerm goal)
+    public IEnumerable<Match> GetMatches(ITerm goal, bool desugar)
     {
+        if (desugar)
+        {
+            // if head is in the form predicate/arity (or its built-in equivalent),
+            // do some syntactic de-sugaring and convert it into an actual anonymous complex
+            if (goal is Complex c
+                && WellKnown.Functors.Division.Contains(c.Functor)
+                && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            {
+                goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
+            }
+        }
         // Instantiate goal
         var inst = goal.Instantiate(Context);
         if (!inst.Unify(goal).TryGetValue(out var subs))

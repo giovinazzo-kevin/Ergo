@@ -1,5 +1,4 @@
-﻿using Ergo.Solver;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -15,8 +14,7 @@ public sealed class PrintDataSources : ShellCommand
     {
         var match = m.Groups["term"];
         var sources = new List<Signature>();
-        var solver = new ErgoSolver(default, default, default);
-        shell.ConfigureSolver(solver);
+        var solver = shell.Facade.BuildSolver();
         var parsed = shell.Parse<ITerm>(scope, match.Success ? match.Value : "_").Value;
         if (!parsed.HasValue)
         {

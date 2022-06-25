@@ -38,7 +38,7 @@ public abstract class SolveShellCommand : ShellCommand
             userQuery += '.';
         }
 
-        using var solver = shell.CreateSolver(ref scope); ;
+        using var solver = shell.Facade.BuildSolver(scope.InterpreterScope.BuildKnowledgeBase());
         var parsed = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Parse<Query>(scope, userQuery).ValueUnsafe);
         if (!parsed.HasValue)
         {
@@ -75,7 +75,7 @@ public abstract class SolveShellCommand : ShellCommand
             };
         }
 
-        var solutions = solver.Solve(query, ct: requestCancel.Token); // Solution graph is walked lazily
+        var solutions = solver.Solve(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);

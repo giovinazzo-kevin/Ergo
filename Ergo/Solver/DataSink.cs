@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver;
 
-public sealed class DataSink<T> : IDisposable
+public sealed class DataSink<T> : IDataSink, IDisposable
     where T : new()
 {
     private bool _disposed;
@@ -21,13 +21,13 @@ public sealed class DataSink<T> : IDisposable
         RegenerateBuffer();
     }
 
-    internal void Connect(ErgoSolver solver)
+    public void Connect(ErgoSolver solver)
     {
         solver.DataPushed += OnDataPushed;
         _solvers.Add(solver);
     }
 
-    internal void Disconnect(ErgoSolver solver)
+    public void Disconnect(ErgoSolver solver)
     {
         solver.DataPushed -= OnDataPushed;
         _solvers.Remove(solver);
@@ -84,4 +84,6 @@ public sealed class DataSink<T> : IDisposable
 
         _disposed = true;
     }
+
+    IAsyncEnumerable<object> IDataSink.Pull(CancellationToken ct) => Pull(ct).Select(x => (object)x);
 }

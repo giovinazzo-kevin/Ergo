@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class AnonymousComplex : BuiltIn
+public sealed class AnonymousComplex : SolverBuiltIn
 {
     // TODO: Remove once Reflection module is up and running
     public AnonymousComplex()

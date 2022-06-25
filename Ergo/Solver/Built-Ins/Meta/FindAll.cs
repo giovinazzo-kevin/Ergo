@@ -1,8 +1,6 @@
-﻿using Ergo.Interpreter;
+﻿namespace Ergo.Solver.BuiltIns;
 
-namespace Ergo.Solver.BuiltIns;
-
-public sealed class FindAll : BuiltIn
+public sealed class FindAll : SolverBuiltIn
 {
     public FindAll()
         : base("", new("findall"), Maybe.Some(3), WellKnown.Modules.Meta)
@@ -19,7 +17,7 @@ public sealed class FindAll : BuiltIn
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
         }
 
-        var solutions = (await solver.Solve(new(comma), Maybe.Some(scope)).CollectAsync())
+        var solutions = (await solver.Solve(new(comma), scope).CollectAsync())
             .Select(s => s.Simplify())
             .ToArray();
         if (solutions.Length == 0)

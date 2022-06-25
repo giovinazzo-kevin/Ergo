@@ -1,6 +1,7 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Facade;
+using Ergo.Interpreter.Directives;
 using Ergo.Lang.Parser;
-using Ergo.Solver;
+using Ergo.Lang.Utils;
 using System.IO;
 
 namespace Ergo.Interpreter;
@@ -9,42 +10,35 @@ public partial class ErgoInterpreter
 {
     public readonly InterpreterFlags Flags;
     public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
-    public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates = new();
 
-    public readonly InterpreterScope StdlibScope;
-
-    public readonly Action<ErgoParser> ConfigureParser;
+    public readonly ErgoFacade Facade;
+    // public readonly InterpreterScope StdlibScope;
 
     public Parsed<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
     {
-        var userDefinedOps = scope.Operators.Value;
-        return new Parsed<T>(data, ConfigureParser, onParseFail, userDefinedOps);
+        var userDefinedOps = scope.Operators(scope.Module);
+        return new Parsed<T>(Facade, data, onParseFail, userDefinedOps);
     }
 
-    public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default, Action<ErgoParser> configureParser = null)
+    internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
         Flags = flags;
-        ConfigureParser = parser =>
-        {
-            // NOTE: Should always add parsers in order of descending complexity
-            parser.TryAddAbstractParser(new DictParser());
-            parser.TryAddAbstractParser(new ListParser<Set>((h, t) => new(h)));
-            parser.TryAddAbstractParser(new ListParser<List>((h, t) => new(h, t)));
-            parser.TryAddAbstractParser(new ListParser<NTuple>((h, t) => new(h)));
-            configureParser?.Invoke(parser);
-        };
-        AddDirectivesByReflection();
-
-        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
-        TryLoad(ref stdlibScope, WellKnown.Modules.Stdlib.Explain());
-        StdlibScope = stdlibScope
-            .WithCurrentModule(WellKnown.Modules.Stdlib)
-            .WithRuntime(false);
+        Facade = facade
+            .AddParser(new DictParser())
+            .AddParser(new ListParser<Set>((h, t) => new(h)))
+            .AddParser(new ListParser<List>((h, t) => new(h, t)))
+            .AddParser(new ListParser<NTuple>((h, t) => new(h)))
+            ;
     }
 
     public InterpreterScope CreateScope()
     {
-        var scope = StdlibScope
+
+        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
+        Load(ref stdlibScope, WellKnown.Modules.Stdlib);
+        var scope = stdlibScope
+            .WithCurrentModule(WellKnown.Modules.Stdlib)
+            .WithRuntime(false)
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
                 .WithImport(WellKnown.Modules.Stdlib))
             .WithCurrentModule(WellKnown.Modules.User);
@@ -53,55 +47,6 @@ public partial class ErgoInterpreter
 
     public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
 
-    protected void AddDirectivesByReflection()
-    {
-        var assembly = typeof(UseModule).Assembly;
-        foreach (var type in assembly.GetTypes())
-        {
-            if (!type.IsAssignableTo(typeof(InterpreterDirective))) continue;
-            if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            var inst = (InterpreterDirective)Activator.CreateInstance(type);
-            Directives[inst.Signature] = inst;
-        }
-    }
-
-    public bool TryAddDynamicPredicate(DynamicPredicate d)
-    {
-        if (!DynamicPredicates.TryGetValue(d.Signature, out var hashSet))
-        {
-            hashSet = DynamicPredicates[d.Signature] = new() { };
-        }
-
-        hashSet.Add(d);
-        return true;
-    }
-
-    public bool TryRemoveDynamicPredicate(DynamicPredicate d)
-    {
-        if (!DynamicPredicates.TryGetValue(d.Signature, out var hashSet))
-        {
-            return false;
-        }
-
-        hashSet.Remove(d);
-        return true;
-    }
-
-    public Maybe<Module> TryLoad(ref InterpreterScope scope, string name)
-    {
-        var copy = scope;
-        var ret = copy.ExceptionHandler.TryGet(() => ModuleLoader.Load(this, ref copy, name));
-        scope = copy;
-        return ret;
-    }
-    public Maybe<Module> TryLoad(ref InterpreterScope scope, Stream stream, string fn = "")
-    {
-        var copy = scope;
-        var ret = copy.ExceptionHandler.TryGet(() => ModuleLoader.Load(this, ref copy, fn, stream));
-        scope = copy;
-        return ret;
-    }
-
     public Module EnsureModule(ref InterpreterScope scope, Atom name)
     {
         var copy = scope;
@@ -109,7 +54,7 @@ public partial class ErgoInterpreter
         {
             try
             {
-                scope = TryLoad(ref copy, name.Explain())
+                scope = Load(ref copy, name)
                     .Reduce(some => copy.WithModule(module = some), () => copy);
             }
             catch (FileNotFoundException)
@@ -120,21 +65,6 @@ public partial class ErgoInterpreter
         }
 
         return module;
-    }
-
-    public IEnumerable<KnowledgeBase.Match> GetMatches(ref InterpreterScope scope, ITerm head)
-    {
-        // if head is in the form predicate/arity (or its built-in equivalent),
-        // do some syntactic de-sugaring and convert it into an actual anonymous complex
-        if (head is Complex c
-            && WellKnown.Functors.Division.Contains(c.Functor)
-            && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
-        {
-            head = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
-        }
-        // if head matches the signature of any data source, 
-        return SolverBuilder.Build(this, ref scope).KnowledgeBase
-            .GetMatches(head);
     }
 
     public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
@@ -152,66 +82,88 @@ public partial class ErgoInterpreter
         return false;
     }
 
-    public void LoadScope(ref InterpreterScope scope, KnowledgeBase kb)
+    public Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom module)
+        => LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
     {
-        kb.Clear();
-        var added = new HashSet<Atom>();
-        LoadModule(ref scope, scope.Modules[scope.Module], added);
-        foreach (var module in scope.Modules.Values)
+        var operators = scope.Operators(scope.Module);
+        var parser = Facade.BuildParser(stream, operators);
+        var pos = parser.Lexer.State;
+        // Bootstrap a new parser by first loading the operator symbols defined in this module
+        var newOperators = parser.ParseOperatorDeclarations();
+        parser.Lexer.Seek(pos);
+        parser = Facade.BuildParser(stream, operators.Concat(newOperators).Distinct());
+
+        if (!parser.TryParseProgramDirectives(out var program))
         {
-            LoadModule(ref scope, module, added);
+            stream.Dispose();
+            scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            return default;
         }
 
-        void LoadModule(ref InterpreterScope scope, Module module, HashSet<Atom> added)
+        var directives = program.Directives.Select(d =>
         {
-            var copy = scope;
-            if (added.Contains(module.Name))
-                return;
-            added.Add(module.Name);
-            foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
-            {
-                if (added.Contains(subModule))
-                    continue;
-                if (!copy.Modules.TryGetValue(subModule, out var import))
-                {
-                    var importScope = copy;
-                    scope = TryLoad(ref importScope, subModule.Explain())
-                        .Reduce(some => copy.WithModule(import = some), () => copy);
-                }
-
-                LoadModule(ref copy, import, added);
-            }
-
-            foreach (var pred in module.Program.KnowledgeBase)
-            {
-                var sig = pred.Head.GetSignature();
-                if (module.Name == copy.Module || module.ContainsExport(sig))
-                {
-                    kb.AssertZ(pred.WithModuleName(module.Name));
-                }
-                else
-                {
-                    kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
-                }
-            }
-
-            foreach (var key in DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => WellKnown.Modules.User) == module.Name))
-            {
-                foreach (var dyn in DynamicPredicates[key])
-                {
-                    if (!dyn.AssertZ)
-                    {
-                        kb.AssertA(dyn.Predicate);
-                    }
-                    else
-                    {
-                        kb.AssertZ(dyn.Predicate);
-                    }
-                }
-            }
-
-            scope = copy;
+            if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
+                return (Ast: d, Builtin: directive, Defined: true);
+            return (Ast: d, Builtin: default, Defined: false);
+        });
+        foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
+        {
+            scope.Throw(InterpreterError.UndefinedDirective, Ast.Explain(false));
+            return default;
         }
+
+        foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.Priority))
+        {
+            Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments);
+        }
+
+        var module = scope.Modules[scope.Module]
+            .WithProgram(program);
+        foreach (Atom import in module.Imports.Contents)
+        {
+            if (scope.Modules.TryGetValue(import, out var importedModule))
+                continue;
+            var importScope = scope;
+            if (!LoadDirectives(ref importScope, import).TryGetValue(out importedModule))
+                continue;
+            scope = scope.WithModule(importedModule);
+        }
+
+        stream.Seek(0, SeekOrigin.Begin);
+        return Maybe.Some(module);
+    }
+
+    public Maybe<Module> Load(ref InterpreterScope scope, Atom module)
+        => Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+
+    public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream)
+    {
+        if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
+            return default;
+        // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
+        foreach (Atom import in module.Imports.Contents)
+        {
+            if (scope.Modules[import].Program.IsPartial)
+            {
+                var importScope = scope.WithoutModule(import);
+                if (!Load(ref importScope, import).TryGetValue(out var importModule))
+                    return default;
+                scope = scope.WithModule(importModule);
+            }
+        }
+
+        var parser = Facade.BuildParser(stream, scope.Operators(scope.Module));
+        if (!parser.TryParseProgram(out var program))
+        {
+            stream.Dispose();
+            scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            return default;
+        }
+
+        stream.Dispose();
+        scope = scope.WithModule(module = module.WithProgram(program));
+        return Maybe.Some(module);
     }
 
 }

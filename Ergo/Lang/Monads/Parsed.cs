@@ -1,4 +1,7 @@
-﻿namespace Ergo.Lang;
+﻿using Ergo.Facade;
+using Ergo.Lang.Utils;
+
+namespace Ergo.Lang;
 
 public readonly struct Parsed<T>
 {
@@ -8,11 +11,9 @@ public readonly struct Parsed<T>
     public readonly Maybe<T> Value => _value.Value;
     public readonly Maybe<T> ValueUnsafe => _valueUnsafe.Value;
 
-    public Parsed(string data, Action<ErgoParser> configureParser, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
+    public Parsed(ErgoFacade facade, string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
     {
-        var lexer = new Lexer(Utils.FileStreamUtils.MemoryStream(data), string.Empty, userOperators);
-        var parser = new ErgoParser(lexer);
-        configureParser?.Invoke(parser);
+        var parser = facade.BuildParser(FileStreamUtils.MemoryStream(data), userOperators);
         Func<ErgoParser, Maybe<T>> parse = true switch
         {
             _ when typeof(T) == typeof(Atom) =>

@@ -7,5 +7,6 @@ public enum SolverError
     , KeyNotFound
     , ExpectedTermOfTypeAt
     , CannotRetractImportedPredicate
+    , CannotRetractStaticPredicate
     , UndefinedPredicate
 }

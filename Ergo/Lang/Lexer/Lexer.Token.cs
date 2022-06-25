@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang;
 
-public partial class Lexer
+public partial class ErgoLexer
 {
     public readonly ref struct Token
     {

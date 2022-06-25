@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class Unify : BuiltIn
+public sealed class Unify : SolverBuiltIn
 {
     public Unify()
         : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)

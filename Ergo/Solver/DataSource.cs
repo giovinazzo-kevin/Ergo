@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace Ergo.Solver;
+﻿namespace Ergo.Solver;
 
 public enum RejectionData
 {
@@ -31,7 +28,7 @@ public enum RejectionControl
     Break
 }
 
-public sealed class DataSource : IAsyncEnumerable<ITerm>
+public sealed class DataSource : IDataSource
 {
     private readonly (Queue<ITerm> Front, Queue<ITerm> Back) _queues = (new(), new());
     private readonly Func<IAsyncEnumerable<ITerm>> Source;

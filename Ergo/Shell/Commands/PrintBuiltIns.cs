@@ -1,5 +1,4 @@
-﻿using Ergo.Solver;
-using Ergo.Solver.BuiltIns;
+﻿using Ergo.Solver.BuiltIns;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
@@ -14,8 +13,8 @@ public sealed class PrintBuiltIns : ShellCommand
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
         var match = m.Groups["term"];
-        var builtins = new List<BuiltIn>();
-        using var solver = SolverBuilder.Build(shell.Interpreter, ref scope);
+        var builtins = new List<SolverBuiltIn>();
+        using var solver = shell.Facade.BuildSolver();
         if (match?.Success ?? false)
         {
             var parsed = shell.Parse<ITerm>(scope, match.Value).Value;

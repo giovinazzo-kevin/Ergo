@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class TermType : BuiltIn
+public sealed class TermType : SolverBuiltIn
 {
     public TermType()
         : base("", new("term_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)

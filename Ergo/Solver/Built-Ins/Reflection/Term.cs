@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class Term : BuiltIn
+public sealed class Term : SolverBuiltIn
 {
     public Term()
         : base("", new("term"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)

@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class SequenceType : BuiltIn
+public sealed class SequenceType : SolverBuiltIn
 {
     public SequenceType()
         : base("", new("seq_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)

@@ -4,15 +4,15 @@ namespace Ergo.Lang;
 
 public partial class ErgoParser
 {
-    protected static bool IsPunctuation(Lexer.Token token, [NotNull] string p) => token.Type == Lexer.TokenType.Punctuation && p.Equals(token.Value);
+    protected static bool IsPunctuation(ErgoLexer.Token token, [NotNull] string p) => token.Type == ErgoLexer.TokenType.Punctuation && p.Equals(token.Value);
     protected static bool IsVariableIdentifier(string s) => s[0] == '_' || char.IsLetter(s[0]) && char.IsUpper(s[0]);
     protected static bool IsAtomIdentifier(string s) => !IsVariableIdentifier(s);
-    protected bool Fail(Lexer.StreamState s)
+    protected bool Fail(ErgoLexer.StreamState s)
     {
         Lexer.Seek(s);
         return false;
     }
-    public bool Expect<T>(Lexer.TokenType type, Func<T, bool> pred, out T value)
+    public bool Expect<T>(ErgoLexer.TokenType type, Func<T, bool> pred, out T value)
     {
         var pos = Lexer.State;
         value = default;
@@ -27,25 +27,25 @@ public partial class ErgoParser
     public bool ExpectDelimiter(Func<string, bool> condition, out string d)
     {
         var pos = Lexer.State;
-        if (Expect(Lexer.TokenType.Punctuation, condition, out d))
+        if (Expect(ErgoLexer.TokenType.Punctuation, condition, out d))
         {
             return true;
         }
 
-        if (Expect(Lexer.TokenType.Operator, condition, out d))
+        if (Expect(ErgoLexer.TokenType.Operator, condition, out d))
         {
             return true;
         }
 
         return Fail(pos);
     }
-    public bool Expect<T>(Lexer.TokenType type, out T value) => Expect(type, _ => true, out value);
+    public bool Expect<T>(ErgoLexer.TokenType type, out T value) => Expect(type, _ => true, out value);
     protected bool Parenthesized<T>(Func<(bool Parsed, T Result)> tryParse, out T value)
     {
         var pos = Lexer.State; value = default;
-        if (Expect(Lexer.TokenType.Punctuation, str => str.Equals("("), out string _)
+        if (Expect(ErgoLexer.TokenType.Punctuation, str => str.Equals("("), out string _)
         && tryParse() is (true, var res)
-        && Expect(Lexer.TokenType.Punctuation, str => str.Equals(")"), out string _))
+        && Expect(ErgoLexer.TokenType.Punctuation, str => str.Equals(")"), out string _))
         {
             value = res;
             return true;
@@ -53,7 +53,7 @@ public partial class ErgoParser
 
         return Fail(pos);
     }
-    protected void Throw(Lexer.StreamState s, ErrorType error, params object[] args)
+    protected void Throw(ErgoLexer.StreamState s, ErrorType error, params object[] args)
     {
         var old = Lexer.State;
         Lexer.Seek(s);

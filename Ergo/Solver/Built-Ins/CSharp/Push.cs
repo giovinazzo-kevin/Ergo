@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class Push : BuiltIn
+public sealed class Push : SolverBuiltIn
 {
     public Push()
         : base("", new("push_data"), Maybe<int>.Some(1), WellKnown.Modules.CSharp)

@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-
-namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Interpreter.Directives;
 
 public class UseModule : InterpreterDirective
 {
@@ -24,7 +22,8 @@ public class UseModule : InterpreterDirective
         if (!scope.Modules.TryGetValue(moduleName, out var module))
         {
             var importScope = scope;
-            module = ModuleLoader.LoadDirectives(interpreter, ref importScope, moduleName.Explain());
+            if (!interpreter.LoadDirectives(ref importScope, moduleName).TryGetValue(out module))
+                return false;
         }
 
         scope = scope

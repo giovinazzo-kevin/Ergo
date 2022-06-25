@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class CommaToList : BuiltIn
+public sealed class CommaToList : SolverBuiltIn
 {
     public CommaToList()
         : base("", new("comma_list"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)

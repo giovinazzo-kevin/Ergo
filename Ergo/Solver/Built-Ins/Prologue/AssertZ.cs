@@ -9,7 +9,7 @@ public sealed class AssertZ : DynamicPredicateBuiltIn
 
     public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
     {
-        if (Assert(solver, arguments[0], z: true))
+        if (Assert(solver, scope, arguments[0], z: true))
         {
             yield return new(WellKnown.Literals.True);
         }

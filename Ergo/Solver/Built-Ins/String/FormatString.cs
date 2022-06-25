@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class FormatString : BuiltIn
+public sealed class FormatString : SolverBuiltIn
 {
     private readonly Regex PositionalParamRegex = new(@"(?<!{){(\d+)}(?!})");
 

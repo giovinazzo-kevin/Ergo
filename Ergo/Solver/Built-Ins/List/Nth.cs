@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public abstract class Nth : BuiltIn
+public abstract class Nth : SolverBuiltIn
 {
     public readonly int Offset;
 

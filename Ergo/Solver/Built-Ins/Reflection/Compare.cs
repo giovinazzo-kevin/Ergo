@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class Compare : BuiltIn
+public sealed class Compare : SolverBuiltIn
 {
     public Compare()
         : base("", new("compare"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)

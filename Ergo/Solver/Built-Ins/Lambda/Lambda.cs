@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class Lambda : BuiltIn
+public sealed class Lambda : SolverBuiltIn
 {
     public Lambda()
         : base("", WellKnown.Functors.Lambda.First(), Maybe<int>.None, WellKnown.Modules.Lambda)

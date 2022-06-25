@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public abstract class SolutionAggregationBuiltIn : BuiltIn
+public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 {
     protected SolutionAggregationBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
         : base(documentation, functor, arity, module)
@@ -23,7 +23,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
 
         if (instances is not Variable && !instances.IsAbstract<List>(out _))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.List, instances.Explain());
+            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope.InterpreterScope, WellKnown.Types.List, instances.Explain());
         }
 
         var templateVars = Enumerable.Empty<Variable>();
@@ -48,7 +48,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
                 new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
             .AsOperator(OperatorAffix.Infix)
         });
-        var solutions = (await solver.Solve(new(goalClauses), Maybe.Some(scope)).CollectAsync())
+        var solutions = (await solver.Solve(new(goalClauses), scope).CollectAsync())
             .Select(s => s.Simplify());
         foreach (var sol in solutions
             .Select(sol =>

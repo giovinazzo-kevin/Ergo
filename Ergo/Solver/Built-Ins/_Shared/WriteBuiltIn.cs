@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public abstract class WriteBuiltIn : BuiltIn
+public abstract class WriteBuiltIn : SolverBuiltIn
 {
     public readonly bool Canonical;
     public readonly bool Quoted;

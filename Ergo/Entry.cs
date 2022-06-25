@@ -1,4 +1,4 @@
-﻿using Ergo.Shell;
+﻿using Ergo.Facade;
 using Ergo.Solver;
 
 using var consoleSink = new DataSink<Person>();
@@ -15,30 +15,16 @@ var feedbackSource = new DataSource<Person>(
     dataSemantics: RejectionData.Recycle,
     ctrlSemantics: RejectionControl.Continue
 );
-var shell = new ErgoShell(interpreter =>
-{
-    // interpreter.TryAddDirective lets you extend the interpreter
-    // interpreter.TryAddDynamicPredicate lets you add native Ergo predicates to the interpreter programmatically
 
-}, solver =>
-{
-    // solver.TryAddBuiltIn lets you extend the solver
-    // solver.BindDataSink lets you "push" terms from Ergo to a C# IAsyncEnumerable/Event
-    solver.BindDataSink(consoleSink);
-    solver.BindDataSink(feedbackSink);
-    // solver.BindDataSource lets you "pull" objects from a C# IEnumerable/IAsyncEnumerable to Ergo
-    solver.BindDataSource(personGenSource);
-    // You can also use a sink as a data source in order to share messages between language domains
-    solver.BindDataSource(feedbackSource);
-},
-parser =>
-{
-    // parser.TryAddAbstractParser lets you extend the language with custom abstract terms (such as the built-in Dict)
-});
-// shell.TryAddCommand lets you extend the shell
+var facade = ErgoFacade.Default
+    .AddDataSink(consoleSink)
+    .AddDataSink(feedbackSink)
+    .AddDataSource(personGenSource)
+    .AddDataSource(feedbackSource)
+    ;
 
-var scope = shell.CreateScope();
-await foreach (var _ in shell.Repl(scope))
+var shell = facade.BuildShell();
+await foreach (var _ in shell.Repl(shell.CreateScope()))
 {
     await foreach (var person in consoleSink.Pull())
     {

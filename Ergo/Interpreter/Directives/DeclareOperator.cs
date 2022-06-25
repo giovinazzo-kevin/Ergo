@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-
-namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Interpreter.Directives;
 
 public class DeclareOperator : InterpreterDirective
 {
@@ -28,7 +26,7 @@ public class DeclareOperator : InterpreterDirective
         }
 
         var (affix, assoc) = Operator.GetAffixAndAssociativity(type);
-        var existingOperators = scope.Operators.Value;
+        var existingOperators = scope.Operators(scope.Module);
         foreach (var op in existingOperators.Where(x => x.Affix == affix))
         {
             var intersectingSynonyms = op.Synonyms.Select(x => x.Explain()).Intersect(synonyms);

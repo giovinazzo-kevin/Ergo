@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public sealed class Call : BuiltIn
+public sealed class Call : SolverBuiltIn
 {
     public Call()
         : base("", new("call"), Maybe<int>.None, WellKnown.Modules.Meta)
@@ -31,7 +31,7 @@ public sealed class Call : BuiltIn
         }
 
         var any = false;
-        await foreach (var solution in solver.Solve(new(comma), Maybe.Some(scope)))
+        await foreach (var solution in solver.Solve(new(comma), scope))
         {
             yield return new Evaluation(WellKnown.Literals.True, solution.Substitutions);
             any = true;

@@ -5,7 +5,7 @@ public readonly struct InterpreterScope
     public readonly bool Runtime;
     public readonly ImmutableDictionary<Atom, Module> Modules;
     public readonly ImmutableArray<string> SearchDirectories;
-    public readonly Lazy<Operator[]> Operators;
+    public readonly Func<Atom, Operator[]> Operators;
     public readonly ExceptionHandler ExceptionHandler;
 
     public readonly Atom Module;
@@ -20,7 +20,7 @@ public readonly struct InterpreterScope
             .Add("./ergo/stdlib/")
             .Add("./ergo/user/");
         Runtime = userModule.Runtime;
-        Operators = new(() => GetOperators(module, modules).ToArray(), true);
+        Operators = (a) => GetOperators(a, modules).ToArray();
         ExceptionHandler = default;
     }
 
@@ -35,7 +35,7 @@ public readonly struct InterpreterScope
         SearchDirectories = dirs;
         Module = currentModule;
         Runtime = runtime;
-        Operators = new(() => GetOperators(currentModule, modules).ToArray());
+        Operators = (a) => GetOperators(a, modules).ToArray();
         ExceptionHandler = handler;
     }
 
@@ -84,9 +84,9 @@ public readonly struct InterpreterScope
         }
     }
 
-    private static IEnumerable<Operator> GetOperators(Atom defaultModule, ImmutableDictionary<Atom, Module> modules)
+    private static IEnumerable<Operator> GetOperators(Atom module, ImmutableDictionary<Atom, Module> modules)
     {
-        var operators = GetOperatorsInner(defaultModule, modules)
+        var operators = GetOperatorsInner(module, modules)
             .ToList();
         foreach (var (op, depth) in operators)
         {
@@ -134,5 +134,25 @@ public readonly struct InterpreterScope
         }
 
         return false;
+    }
+
+    public KnowledgeBase BuildKnowledgeBase()
+    {
+        var kb = new KnowledgeBase();
+        foreach (var module in GetLoadedModules())
+        {
+            foreach (var pred in module.Program.KnowledgeBase)
+            {
+                var sig = pred.Head.GetSignature();
+                // TODO: Don't assert twice, this is awful. Match correctly instead.
+                kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
+                if (module.Name == Module || module.ContainsExport(sig))
+                {
+                    kb.AssertZ(pred.WithModuleName(module.Name));
+                }
+            }
+        }
+
+        return kb;
     }
 }

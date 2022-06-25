@@ -1,5 +1,5 @@
-﻿using Ergo.Interpreter;
-using Ergo.Shell;
+﻿using Ergo.Facade;
+using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
 using System.ComponentModel;
 
@@ -8,11 +8,9 @@ namespace Ergo.Solver;
 public partial class ErgoSolver : IDisposable
 {
     public readonly SolverFlags Flags;
-    public readonly ShellScope ShellScope;
-    public readonly InterpreterScope InterpreterScope;
-    public readonly Dictionary<Signature, BuiltIn> BuiltIns;
-    public readonly ErgoInterpreter Interpreter;
+    public readonly Dictionary<Signature, SolverBuiltIn> BuiltIns;
 
+    public readonly ErgoFacade Facade;
     public readonly KnowledgeBase KnowledgeBase;
     public readonly HashSet<Atom> DataSinks = new();
     public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
@@ -21,15 +19,12 @@ public partial class ErgoSolver : IDisposable
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
 
-    public ErgoSolver(ErgoInterpreter i, InterpreterScope interpreterScope, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, ShellScope shellScope = default)
+    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
     {
-        Interpreter = i;
+        Facade = facade;
         Flags = flags;
         KnowledgeBase = kb;
-        InterpreterScope = interpreterScope;
-        ShellScope = shellScope;
         BuiltIns = new();
-        AddBuiltInsByReflection();
     }
 
     public static Signature GetDataSignature<T>(Maybe<Atom> functor = default)
@@ -83,19 +78,7 @@ public partial class ErgoSolver : IDisposable
 
     public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
-    public bool TryAddBuiltIn(BuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
-
-    protected void AddBuiltInsByReflection()
-    {
-        var assembly = typeof(Write).Assembly;
-        foreach (var type in assembly.GetTypes())
-        {
-            if (!type.IsAssignableTo(typeof(BuiltIn))) continue;
-            if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            var inst = (BuiltIn)Activator.CreateInstance(type);
-            BuiltIns[inst.Signature] = inst;
-        }
-    }
+    public bool TryAddBuiltIn(SolverBuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
 
     public async IAsyncEnumerable<KnowledgeBase.Match> GetDataSourceMatches(ITerm head)
     {
@@ -158,7 +141,7 @@ public partial class ErgoSolver : IDisposable
             // Try resolving the built-in's module automatically
             foreach (var key in BuiltIns.Keys)
             {
-                if (!InterpreterScope.IsModuleVisible(key.Module.GetOrDefault()))
+                if (!scope.InterpreterScope.IsModuleVisible(key.Module.GetOrDefault()))
                     continue;
                 var withoutModule = key.WithModule(default);
                 if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
@@ -249,7 +232,7 @@ public partial class ErgoSolver : IDisposable
                 yield break;
             var sig = term.GetSignature();
             // Try all modules in import order
-            var modules = InterpreterScope.GetLoadedModules();
+            var modules = scope.InterpreterScope.GetLoadedModules();
             foreach (var mod in modules.Reverse())
             {
                 if (!mod.Expansions.TryGetValue(sig, out var expansions))
@@ -268,7 +251,7 @@ public partial class ErgoSolver : IDisposable
 
                     var pred = Predicate.Substitute(exp.Predicate, subs).Qualified();
                     LogTrace(SolverTraceType.Expansion, $"{pred.Head.Explain()}", scope.Depth);
-                    await foreach (var sol in Solve(new Query(pred.Body), Maybe.Some(scope), ct))
+                    await foreach (var sol in Solve(new Query(pred.Body), scope, ct))
                     {
                         if (ct.IsCancellationRequested)
                             yield break;
@@ -288,7 +271,7 @@ public partial class ErgoSolver : IDisposable
 
     public (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(SolverScope scope, ITerm goal)
     {
-        var matches = KnowledgeBase.GetMatches(goal);
+        var matches = KnowledgeBase.GetMatches(goal, desugar: false);
         if (matches.Any())
         {
             return (goal, matches);
@@ -298,9 +281,9 @@ public partial class ErgoSolver : IDisposable
         if (!goal.IsQualified)
         {
             if (goal.TryQualify(scope.Module, out var qualified)
-                && ((isDynamic |= InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true))
+                && ((isDynamic |= scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true))
             {
-                matches = KnowledgeBase.GetMatches(qualified);
+                matches = KnowledgeBase.GetMatches(qualified, desugar: false);
                 if (matches.Any())
                 {
                     return (qualified, matches);
@@ -310,9 +293,9 @@ public partial class ErgoSolver : IDisposable
             if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
             {
                 if (goal.TryQualify(clause.DeclaringModule, out qualified)
-                    && ((isDynamic |= InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
+                    && ((isDynamic |= scope.InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
                 {
-                    matches = KnowledgeBase.GetMatches(qualified);
+                    matches = KnowledgeBase.GetMatches(qualified, desugar: false);
                     if (matches.Any())
                     {
                         return (qualified, matches);
@@ -323,7 +306,7 @@ public partial class ErgoSolver : IDisposable
 
         var signature = goal.GetSignature();
         var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
-        if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
+        if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= scope.InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
         {
             if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
             {
@@ -335,9 +318,11 @@ public partial class ErgoSolver : IDisposable
         return (goal, Enumerable.Empty<KnowledgeBase.Match>());
     }
 
-    public IAsyncEnumerable<Solution> Solve(Query goal, Maybe<SolverScope> scope = default, CancellationToken ct = default)
-        => new SolverContext(this, scope.Reduce(some => some, () => new(InterpreterScope, 0, InterpreterScope.Module, default, ImmutableArray<Predicate>.Empty)))
-        .Solve(goal, ct: ct);
+    public SolverScope CreateScope(InterpreterScope interpreterScope)
+        => new(interpreterScope, 0, interpreterScope.Module, default, ImmutableArray<Predicate>.Empty, cut: null);
+
+    public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
+        => new SolverContext(this, scope).Solve(goal, ct: ct);
 
     public void Dispose()
     {

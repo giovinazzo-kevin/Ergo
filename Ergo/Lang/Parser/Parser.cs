@@ -1,4 +1,5 @@
-﻿using Ergo.Lang.Ast.Terms.Interfaces;
+﻿using Ergo.Facade;
+using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
 
 namespace Ergo.Lang;
@@ -7,13 +8,14 @@ public partial class ErgoParser : IDisposable
 {
     private InstantiationContext _discardContext;
 
-    public readonly Lexer Lexer;
+    public readonly ErgoLexer Lexer;
+    public readonly ErgoFacade Facade;
+
     protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
 
-    public ErgoParser Clone() => new(Lexer) { AbstractTermParsers = new(AbstractTermParsers) };
-
-    public ErgoParser(Lexer lexer)
+    internal ErgoParser(ErgoFacade facade, ErgoLexer lexer)
     {
+        Facade = facade;
         Lexer = lexer;
         _discardContext = new(string.Empty);
     }
@@ -56,28 +58,28 @@ public partial class ErgoParser : IDisposable
     {
         atom = default;
         var pos = Lexer.State;
-        if (Expect(Lexer.TokenType.String, out string str))
+        if (Expect(ErgoLexer.TokenType.String, out string str))
         {
             atom = new Atom(str);
             return true;
         }
-        else if (Expect(Lexer.TokenType.Number, out double dec))
+        else if (Expect(ErgoLexer.TokenType.Number, out double dec))
         {
             atom = new Atom(dec);
             return true;
         }
-        else if (Expect(Lexer.TokenType.Keyword, kw => Lexer.BooleanSymbols.Contains(kw), out string kw))
+        else if (Expect(ErgoLexer.TokenType.Keyword, kw => ErgoLexer.BooleanSymbols.Contains(kw), out string kw))
         {
-            atom = new Atom(Lexer.TrueSymbols.Contains(kw));
+            atom = new Atom(ErgoLexer.TrueSymbols.Contains(kw));
             return true;
         }
-        else if (Expect(Lexer.TokenType.Keyword, kw => Lexer.CutSymbols.Contains(kw), out kw))
+        else if (Expect(ErgoLexer.TokenType.Keyword, kw => ErgoLexer.CutSymbols.Contains(kw), out kw))
         {
             atom = WellKnown.Literals.Cut;
             return true;
         }
 
-        if (Expect(Lexer.TokenType.Term, out string ITerm))
+        if (Expect(ErgoLexer.TokenType.Term, out string ITerm))
         {
             if (!IsAtomIdentifier(ITerm))
             {
@@ -95,7 +97,7 @@ public partial class ErgoParser : IDisposable
     {
         var = default;
         var pos = Lexer.State;
-        if (Expect(Lexer.TokenType.Term, out string term))
+        if (Expect(ErgoLexer.TokenType.Term, out string term))
         {
             if (!IsVariableIdentifier(term))
             {
@@ -122,9 +124,9 @@ public partial class ErgoParser : IDisposable
     {
         cplx = default;
         var pos = Lexer.State;
-        if (!Expect(Lexer.TokenType.Term, out string functor)
-            && !Expect(Lexer.TokenType.Operator, out functor)
-            && !Expect(Lexer.TokenType.String, out functor))
+        if (!Expect(ErgoLexer.TokenType.Term, out string functor)
+            && !Expect(ErgoLexer.TokenType.Operator, out functor)
+            && !Expect(ErgoLexer.TokenType.String, out functor))
         {
             return Fail(pos);
         }
@@ -224,7 +226,7 @@ public partial class ErgoParser : IDisposable
     public bool ExpectOperator(Func<Operator, bool> match, out Operator op)
     {
         op = default;
-        if (Expect(Lexer.TokenType.Operator, str => TryGetOperatorsFromFunctor(new Atom(str), out var _op) && _op.Any(match)
+        if (Expect(ErgoLexer.TokenType.Operator, str => TryGetOperatorsFromFunctor(new Atom(str), out var _op) && _op.Any(match)
         , out string str)
             && TryGetOperatorsFromFunctor(new Atom(str), out var ops))
         {
@@ -433,10 +435,10 @@ public partial class ErgoParser : IDisposable
     {
         directive = default;
         var pos = Lexer.State;
-        if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
+        if (Expect(ErgoLexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
         {
             desc = desc[1..].TrimStart();
-            while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
+            while (Expect(ErgoLexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
             {
                 if (!string.IsNullOrEmpty(newDesc))
                 {
@@ -475,10 +477,10 @@ public partial class ErgoParser : IDisposable
     {
         predicate = default;
         var pos = Lexer.State;
-        if (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
+        if (Expect(ErgoLexer.TokenType.Comment, p => p.StartsWith(":"), out string desc))
         {
             desc = desc[1..].TrimStart();
-            while (Expect(Lexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
+            while (Expect(ErgoLexer.TokenType.Comment, p => p.StartsWith(":"), out string newDesc))
             {
                 if (!string.IsNullOrEmpty(newDesc))
                 {
@@ -519,7 +521,7 @@ public partial class ErgoParser : IDisposable
 
         return MakePredicate(pos, desc, op.Left, contents.GetOrThrow(), out predicate);
 
-        bool MakePredicate(Lexer.StreamState pos, string desc, ITerm head, Ast.NTuple body, out Predicate c)
+        bool MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, Ast.NTuple body, out Predicate c)
         {
             var headVars = head.Variables
                 .Where(v => !v.Equals(WellKnown.Literals.Discard));
@@ -606,7 +608,7 @@ public partial class ErgoParser : IDisposable
                 directives.Add(directive);
             }
         }
-        catch (LexerException le) when (le.ErrorType == Lexer.ErrorType.UnrecognizedOperator)
+        catch (LexerException le) when (le.ErrorType == ErgoLexer.ErrorType.UnrecognizedOperator)
         {
             // The parser reached a point where a newly-declared operator was used. Probably.
         }

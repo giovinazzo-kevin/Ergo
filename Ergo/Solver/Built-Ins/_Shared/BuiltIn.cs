@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public abstract class SolverBuiltIn
 {
@@ -10,7 +8,7 @@ public abstract class SolverBuiltIn
     public Predicate GetStub(ITerm[] arguments)
     {
         var head = new Complex(Signature.Functor, arguments);
-        return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => WellKnown.Modules.Stdlib), head, NTuple.Empty, dynamic: false);
+        return new Predicate(Documentation, Signature.Module.Reduce(some => some, () => WellKnown.Modules.Stdlib), head, NTuple.Empty, dynamic: false, exported: true);
     }
 
     public abstract IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);

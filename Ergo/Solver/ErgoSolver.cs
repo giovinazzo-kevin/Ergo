@@ -80,7 +80,7 @@ public partial class ErgoSolver : IDisposable
 
     public bool TryAddBuiltIn(SolverBuiltIn b) => BuiltIns.TryAdd(b.Signature, b);
 
-    public async IAsyncEnumerable<KnowledgeBase.Match> GetDataSourceMatches(ITerm head)
+    public async IAsyncEnumerable<KBMatch> GetDataSourceMatches(ITerm head)
     {
         // Allow enumerating all data sources by binding to a variable
         if (head is Variable)
@@ -116,12 +116,13 @@ public partial class ErgoSolver : IDisposable
                         WellKnown.Modules.CSharp,
                         item.WithFunctor(signature.Tag.Reduce(some => some, () => signature.Functor)),
                         NTuple.Empty,
-                        dynamic: true
+                        dynamic: true,
+                        exported: false
                     );
                     if (predicate.Unify(head).TryGetValue(out var matchSubs))
                     {
                         predicate = Predicate.Substitute(predicate, matchSubs);
-                        yield return new KnowledgeBase.Match(head, predicate, matchSubs);
+                        yield return new KBMatch(head, predicate, matchSubs);
                     }
                     else if (source.Reject(item))
                     {
@@ -269,7 +270,7 @@ public partial class ErgoSolver : IDisposable
 
     }
 
-    public (ITerm Qualified, IEnumerable<KnowledgeBase.Match> Matches) QualifyGoal(SolverScope scope, ITerm goal)
+    public (ITerm Qualified, IEnumerable<KBMatch> Matches) QualifyGoal(SolverScope scope, ITerm goal)
     {
         var matches = KnowledgeBase.GetMatches(goal, desugar: false);
         if (matches.Any())
@@ -311,11 +312,11 @@ public partial class ErgoSolver : IDisposable
             if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
             {
                 scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                return (goal, Enumerable.Empty<KnowledgeBase.Match>());
+                return (goal, Enumerable.Empty<KBMatch>());
             }
         }
 
-        return (goal, Enumerable.Empty<KnowledgeBase.Match>());
+        return (goal, Enumerable.Empty<KBMatch>());
     }
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)

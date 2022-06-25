@@ -92,12 +92,11 @@ public readonly partial struct Complex : ITerm
     public override bool Equals(object obj)
     {
         if (obj is not Complex other)
-        {
             return false;
-        }
-
+        if (!Matches(other))
+            return false;
         var args = Arguments;
-        return Matches(other) && Enumerable.Range(0, Arity).All(i => Equals(args[i], other.Arguments[i]));
+        return args.SequenceEqual(other.Arguments);
     }
     public bool Equals(ITerm obj) => Equals((object)obj);
 

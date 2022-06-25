@@ -6,13 +6,14 @@ public readonly struct InterpreterScope
     public readonly ImmutableDictionary<Atom, Module> Modules;
     public readonly ImmutableArray<string> SearchDirectories;
     public readonly ExceptionHandler ExceptionHandler;
+    public readonly KnowledgeBase KnowledgeBase;
 
     public readonly Atom Module;
 
     public InterpreterScope(Module userModule)
     {
-        var module = Module = userModule.Name;
-        var modules = Modules = ImmutableDictionary.Create<Atom, Module>()
+        Module = userModule.Name;
+        Modules = ImmutableDictionary.Create<Atom, Module>()
             .Add(userModule.Name, userModule);
         SearchDirectories = ImmutableArray<string>.Empty
             .Add(string.Empty)
@@ -20,6 +21,7 @@ public readonly struct InterpreterScope
             .Add("./ergo/user/");
         Runtime = userModule.Runtime;
         ExceptionHandler = default;
+        KnowledgeBase = null;
     }
 
     private InterpreterScope(
@@ -27,23 +29,41 @@ public readonly struct InterpreterScope
         ImmutableDictionary<Atom, Module> modules,
         ImmutableArray<string> dirs,
         bool runtime,
-        ExceptionHandler handler)
+        ExceptionHandler handler,
+        KnowledgeBase kb)
     {
         Modules = modules;
         SearchDirectories = dirs;
         Module = currentModule;
         Runtime = runtime;
         ExceptionHandler = handler;
+        KnowledgeBase = kb ?? new();
+        if (kb is null)
+        {
+            foreach (var module in GetLoadedModules())
+            {
+                foreach (var pred in module.Program.KnowledgeBase)
+                {
+                    var newPred = pred.WithModuleName(module.Name);
+                    if (!pred.IsExported)
+                    {
+                        newPred = newPred.Qualified();
+                    }
+
+                    KnowledgeBase.AssertZ(newPred);
+                }
+            }
+        }
     }
 
-    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime, ExceptionHandler);
-    public InterpreterScope WithModule(Module m) => new(Module, Modules.SetItem(m.Name, m), SearchDirectories, Runtime, ExceptionHandler);
-    public InterpreterScope WithoutModule(Atom m) => new(Module, Modules.Remove(m), SearchDirectories, Runtime, ExceptionHandler);
-    public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime, ExceptionHandler);
-    public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime, ExceptionHandler);
-    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Module, Modules, SearchDirectories, Runtime, newHandler);
-    public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, Runtime, ExceptionHandler);
-    public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime, ExceptionHandler);
+    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, Runtime, ExceptionHandler, KnowledgeBase);
+    public InterpreterScope WithModule(Module m) => new(Module, Modules.SetItem(m.Name, m), SearchDirectories, Runtime, ExceptionHandler, null);
+    public InterpreterScope WithoutModule(Atom m) => new(Module, Modules.Remove(m), SearchDirectories, Runtime, ExceptionHandler, null);
+    public InterpreterScope WithSearchDirectory(string s) => new(Module, Modules, SearchDirectories.Add(s), Runtime, ExceptionHandler, KnowledgeBase);
+    public InterpreterScope WithRuntime(bool runtime) => new(Module, Modules, SearchDirectories, runtime, ExceptionHandler, KnowledgeBase);
+    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Module, Modules, SearchDirectories, Runtime, newHandler, KnowledgeBase);
+    public InterpreterScope WithoutModules() => new(Module, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, Runtime, ExceptionHandler, null);
+    public InterpreterScope WithoutSearchDirectories() => new(Module, Modules, ImmutableArray<string>.Empty, Runtime, ExceptionHandler, KnowledgeBase);
 
     public void Throw(InterpreterError error, params object[] args) => ExceptionHandler.Throw(new InterpreterException(error, this, args));
 
@@ -98,7 +118,7 @@ public readonly struct InterpreterScope
         IEnumerable<Module> Inner(InterpreterScope scope, Atom entry, HashSet<Atom> seen = default)
         {
             seen ??= new();
-            if (seen.Contains(entry))
+            if (seen.Contains(entry) || !scope.Modules.ContainsKey(entry))
                 yield break;
             var current = scope.Modules[entry];
             yield return current;
@@ -131,25 +151,5 @@ public readonly struct InterpreterScope
         }
 
         return false;
-    }
-
-    public KnowledgeBase BuildKnowledgeBase()
-    {
-        var kb = new KnowledgeBase();
-        foreach (var module in GetLoadedModules())
-        {
-            foreach (var pred in module.Program.KnowledgeBase)
-            {
-                var sig = pred.Head.GetSignature();
-                // TODO: Don't assert twice, this is awful. Match correctly instead.
-                kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
-                if (module.Name == Module || module.ContainsExport(sig))
-                {
-                    kb.AssertZ(pred.WithModuleName(module.Name));
-                }
-            }
-        }
-
-        return kb;
     }
 }

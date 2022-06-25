@@ -30,11 +30,10 @@ public partial class ErgoInterpreter
         var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
         Load(ref stdlibScope, WellKnown.Modules.Stdlib);
         var scope = stdlibScope
-            .WithCurrentModule(WellKnown.Modules.Stdlib)
             .WithRuntime(false)
+            .WithCurrentModule(WellKnown.Modules.User)
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
-                .WithImport(WellKnown.Modules.Stdlib))
-            .WithCurrentModule(WellKnown.Modules.User);
+                .WithImport(WellKnown.Modules.Stdlib));
         return scope;
     }
 

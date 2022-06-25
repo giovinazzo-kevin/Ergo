@@ -16,6 +16,7 @@ namespace Ergo.Shell;
 public partial class ErgoShell
 {
     public readonly ErgoInterpreter Interpreter;
+
     public readonly CommandDispatcher Dispatcher;
     public readonly Func<LogLine, string> LineFormatter;
     public readonly ExceptionHandler LoggingExceptionHandler;

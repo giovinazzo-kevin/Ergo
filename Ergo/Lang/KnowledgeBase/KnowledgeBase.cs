@@ -54,7 +54,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return false;
     }
 
-    public IEnumerable<Match> GetMatches(ITerm goal, bool desugar)
+    public IEnumerable<KBMatch> GetMatches(ITerm goal, bool desugar)
     {
         if (desugar)
         {
@@ -70,14 +70,18 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         // Instantiate goal
         var inst = goal.Instantiate(Context);
         if (!inst.Unify(goal).TryGetValue(out var subs))
-        {
-            yield break;
-        }
+            return Enumerable.Empty<KBMatch>();
 
         var head = goal.Substitute(subs);
-        var signature = head.GetSignature();
         // Return predicate matches
-        if (TryGet(signature, out var list))
+        if (TryGet(head.GetSignature(), out var list))
+            return Inner(list);
+
+        if (head.IsQualified && head.TryGetQualification(out var module, out head) && TryGet(head.GetSignature(), out list))
+            return Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module));
+
+        return Enumerable.Empty<KBMatch>();
+        IEnumerable<KBMatch> Inner(List<Predicate> list)
         {
             foreach (var k in list)
             {
@@ -85,7 +89,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 if (predicate.Unify(head).TryGetValue(out var matchSubs))
                 {
                     predicate = Predicate.Substitute(predicate, matchSubs);
-                    yield return new Match(goal, predicate, matchSubs.Concat(subs));
+                    yield return new KBMatch(head, predicate, matchSubs.Concat(subs));
                 }
             }
         }

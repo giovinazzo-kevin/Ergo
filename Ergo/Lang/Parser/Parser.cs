@@ -539,6 +539,8 @@ public partial class ErgoParser : IDisposable
                 , WellKnown.Modules.User
                 , head
                 , body
+                , false
+                , false
             );
             return true;
         }
@@ -558,7 +560,25 @@ public partial class ErgoParser : IDisposable
             predicates.Add(predicate);
         }
 
-        program = new ErgoProgram(directives.ToArray(), predicates.ToArray())
+        var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOrDefault().Equals(new Atom("module")))
+            .Body.GetArguments().GetOrThrow();
+
+        if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>(out var exported))
+        {
+            exported = List.Empty;
+        }
+
+        var exportedPredicates = predicates.Select(p =>
+        {
+            var sign = p.Head.GetSignature();
+            var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow()))
+                .AsOperator(OperatorAffix.Infix);
+            if (exported.Contents.Any(x => x.Equals(form)))
+                return p.Exported();
+            return p;
+        });
+
+        program = new ErgoProgram(directives.ToArray(), exportedPredicates.ToArray())
             .AsPartial(false);
         return true;
     }

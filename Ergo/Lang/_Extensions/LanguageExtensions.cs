@@ -4,6 +4,15 @@ using System.Reflection;
 namespace Ergo.Lang.Extensions;
 public static class LanguageExtensions
 {
+    public static bool IsNumericType(this object o)
+    {
+        return Type.GetTypeCode(o.GetType()) switch
+        {
+            TypeCode.Byte or TypeCode.SByte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.Decimal or TypeCode.Double or TypeCode.Single => true,
+            _ => false,
+        };
+    }
+
     public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
     {
         if (t is Atom a) return ifAtom(a);

@@ -18,6 +18,8 @@ public readonly struct Atom : ITerm
     public Atom(object value, Maybe<bool> quoted = default, Maybe<IAbstractTerm> abs = default)
     {
         Value = value;
+        if (Value?.IsNumericType() ?? false)
+            Value = Convert.ToDecimal(value);
         HashCode = value?.GetHashCode() ?? 0;
         IsQuoted = quoted.Reduce(some => some, () => value is string s
             && s != (string)WellKnown.Literals.EmptyList.Value

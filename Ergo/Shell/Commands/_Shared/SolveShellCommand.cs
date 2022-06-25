@@ -39,14 +39,14 @@ public abstract class SolveShellCommand : ShellCommand
         }
 
         using var solver = shell.Facade.BuildSolver(scope.InterpreterScope.BuildKnowledgeBase());
-        var parsed = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Parse<Query>(scope, userQuery).ValueUnsafe);
+        var parsed = shell.Parse<Query>(scope, userQuery).Value;
         if (!parsed.HasValue)
         {
             yield return scope;
             yield break;
         }
 
-        var query = parsed.GetOrDefault().GetOrDefault();
+        var query = parsed.GetOrDefault();
         shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
         var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
         if (scope.TraceEnabled)

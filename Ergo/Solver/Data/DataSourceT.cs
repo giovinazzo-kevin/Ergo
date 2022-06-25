@@ -1,4 +1,7 @@
-﻿namespace Ergo.Solver;
+﻿using Ergo.Solver.DataBindings;
+using Ergo.Solver.DataBindings.Interfaces;
+
+namespace Ergo.Solver;
 
 public sealed class DataSource<T> : IDataSource
     where T : new()

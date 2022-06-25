@@ -13,7 +13,7 @@ public sealed class ExecuteDirective : ShellCommand
     {
         var dir = m.Groups["dir"].Value;
         var interpreterScope = scope.InterpreterScope;
-        var currentModule = interpreterScope.Modules[scope.InterpreterScope.Module];
+        var currentModule = interpreterScope.EntryModule;
         var parsed = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
         var directive = parsed.GetOrDefault();
         var ret = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Interpreter.RunDirective(ref interpreterScope, directive));

@@ -7,6 +7,8 @@ using Ergo.Shell;
 using Ergo.Shell.Commands;
 using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
+using Ergo.Solver.DataBindings;
+using Ergo.Solver.DataBindings.Interfaces;
 using System.Reflection;
 
 namespace Ergo.Facade;
@@ -20,6 +22,10 @@ public readonly struct ErgoFacade
         .AddBuiltInsByReflection(typeof(AssertZ).Assembly)
         .AddDirectivesByReflection(typeof(UseModule).Assembly)
         .AddCommandsByReflection(typeof(Save).Assembly)
+        .AddParser(new DictParser())
+        .AddParser(new ListParser<Set>((h, t) => new(h)))
+        .AddParser(new ListParser<List>((h, t) => new(h, t)))
+        .AddParser(new ListParser<NTuple>((h, t) => new(h)))
         ;
 
     private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(ErgoParser).GetMethod(nameof(ErgoParser.TryAddAbstractParser));
@@ -134,7 +140,7 @@ public readonly struct ErgoFacade
     private ErgoInterpreter ConfigureInterpreter(ErgoInterpreter interpreter)
     {
         foreach (var directive in _directives)
-            interpreter.TryAddDirective(directive);
+            interpreter.AddDirective(directive);
         return interpreter;
     }
 
@@ -162,6 +168,6 @@ public readonly struct ErgoFacade
         => ConfigureInterpreter(new(this, flags));
     public ErgoSolver BuildSolver(KnowledgeBase kb = null, SolverFlags flags = SolverFlags.Default)
         => ConfigureSolver(new(this, kb ?? new(), flags));
-    public ErgoShell BuildShell(Func<ErgoShell.LogLine, string> formatter = null)
+    public ErgoShell BuildShell(Func<LogLine, string> formatter = null)
         => ConfigureShell(new(this, formatter));
 }

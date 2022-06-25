@@ -9,7 +9,7 @@ public class DefineExpansion : InterpreterDirective
 
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
-        var allExpansions = scope.GetLoadedModules()
+        var allExpansions = scope.GetVisibleModules()
             .SelectMany(x => x.Expansions)
             .ToLookup(l => l.Key);
         var signature = args[0].GetSignature();
@@ -22,13 +22,13 @@ public class DefineExpansion : InterpreterDirective
             if (lambdaArgs.Contents.Length != 1 || lambdaArgs.Contents[0] is not Variable lambdaVariable)
                 throw new InterpreterException(InterpreterError.ExpansionLambdaShouldHaveOneVariable, scope, cplx.Arguments[0].Explain());
 
-            if (!Predicate.FromCanonical(cplx.Arguments[1], scope.Module, out var pred))
+            if (!Predicate.FromCanonical(cplx.Arguments[1], scope.Entry, out var pred))
                 throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
 
             if (!pred.Body.CanonicalForm.Variables.Any(v => v.Equals(lambdaVariable)))
                 throw new InterpreterException(InterpreterError.ExpansionIsNotUsingLambdaVariable, scope, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
 
-            scope = scope.WithModule(scope.Modules[scope.Module]
+            scope = scope.WithModule(scope.EntryModule
                 .WithExpansion(lambdaVariable, pred));
             return true;
         }

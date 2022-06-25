@@ -1,4 +1,4 @@
-﻿namespace Ergo.Solver;
+﻿namespace Ergo.Solver.DataBindings.Interfaces;
 
 public interface IDataSink
 {

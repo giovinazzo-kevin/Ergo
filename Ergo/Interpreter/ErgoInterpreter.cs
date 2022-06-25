@@ -1,6 +1,5 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter.Directives;
-using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 using System.IO;
 
@@ -8,36 +7,37 @@ namespace Ergo.Interpreter;
 
 public partial class ErgoInterpreter
 {
-    public readonly InterpreterFlags Flags;
-    public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
-
     public readonly ErgoFacade Facade;
+    public readonly InterpreterFlags Flags;
 
+    private readonly Dictionary<Signature, InterpreterDirective> _directives = new();
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
         Flags = flags;
-        Facade = facade
-            .AddParser(new DictParser())
-            .AddParser(new ListParser<Set>((h, t) => new(h)))
-            .AddParser(new ListParser<List>((h, t) => new(h, t)))
-            .AddParser(new ListParser<NTuple>((h, t) => new(h)))
-            ;
+        Facade = facade;
     }
 
-    public InterpreterScope CreateScope()
+    public void AddDirective(InterpreterDirective d)
     {
-
-        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
-        Load(ref stdlibScope, WellKnown.Modules.Stdlib);
-        var scope = stdlibScope
-            .WithRuntime(false)
-            .WithCurrentModule(WellKnown.Modules.User)
-            .WithModule(new Module(WellKnown.Modules.User, runtime: true)
-                .WithImport(WellKnown.Modules.Stdlib));
-        return scope;
+        if (_directives.ContainsKey(d.Signature))
+            throw new NotSupportedException($"Another directive with the same signature was already added");
+        _directives[d.Signature] = d;
     }
 
-    public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
+    public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
+    {
+        if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
+        {
+            return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
+        }
+
+        if (Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
+        {
+            throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain(canonical: false));
+        }
+
+        return false;
+    }
 
     public Module EnsureModule(ref InterpreterScope scope, Atom name)
     {
@@ -57,21 +57,6 @@ public partial class ErgoInterpreter
         }
 
         return module;
-    }
-
-    public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
-    {
-        if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
-        {
-            return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
-        }
-
-        if (Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
-        {
-            throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain(canonical: false));
-        }
-
-        return false;
     }
 
     public Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom module)
@@ -95,7 +80,7 @@ public partial class ErgoInterpreter
 
         var directives = program.Directives.Select(d =>
         {
-            if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
+            if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
                 return (Ast: d, Builtin: directive, Defined: true);
             return (Ast: d, Builtin: default, Defined: false);
         });
@@ -110,7 +95,7 @@ public partial class ErgoInterpreter
             Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments);
         }
 
-        var module = scope.Modules[scope.Module]
+        var module = scope.EntryModule
             .WithProgram(program);
         foreach (Atom import in module.Imports.Contents)
         {
@@ -128,7 +113,6 @@ public partial class ErgoInterpreter
 
     public Maybe<Module> Load(ref InterpreterScope scope, Atom module)
         => Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
-
     public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream)
     {
         if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
@@ -156,6 +140,18 @@ public partial class ErgoInterpreter
         stream.Dispose();
         scope = scope.WithModule(module = module.WithProgram(program));
         return Maybe.Some(module);
+    }
+
+    public InterpreterScope CreateScope()
+    {
+        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
+        Load(ref stdlibScope, WellKnown.Modules.Stdlib);
+        var scope = stdlibScope
+            .WithRuntime(false)
+            .WithCurrentModule(WellKnown.Modules.User)
+            .WithModule(new Module(WellKnown.Modules.User, runtime: true)
+                .WithImport(WellKnown.Modules.Stdlib));
+        return scope;
     }
 
 }

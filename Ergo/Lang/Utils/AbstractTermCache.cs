@@ -1,7 +1,7 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using System.Collections.Concurrent;
 
-namespace Ergo.Lang.Extensions;
+namespace Ergo.Lang.Utils;
 
 // TODO: Refactor into non static class
 internal static class AbstractTermCache

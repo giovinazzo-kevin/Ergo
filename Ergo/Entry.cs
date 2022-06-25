@@ -1,5 +1,6 @@
 ﻿using Ergo.Facade;
 using Ergo.Solver;
+using Ergo.Solver.DataBindings;
 
 using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();

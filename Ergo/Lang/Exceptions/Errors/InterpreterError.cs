@@ -1,4 +1,4 @@
-﻿namespace Ergo.Interpreter;
+﻿namespace Ergo.Lang.Exceptions;
 
 public enum InterpreterError
 {

@@ -41,8 +41,8 @@ public class DeclareOperator : InterpreterDirective
         }
 
         var synonymAtoms = synonyms.Select(x => new Atom(x)).ToArray();
-        scope = scope.WithModule(scope.Modules[scope.Module]
-            .WithOperator(new(scope.Module, affix, assoc, precedence, synonymAtoms)));
+        scope = scope.WithModule(scope.EntryModule
+            .WithOperator(new(scope.Entry, affix, assoc, precedence, synonymAtoms)));
         return true;
     }
 }

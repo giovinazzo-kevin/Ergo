@@ -1,5 +1,6 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
+using Ergo.Lang.Exceptions.Handler;
 using Ergo.Shell.Commands;
 using System.IO;
 using System.Runtime.ExceptionServices;
@@ -116,7 +117,7 @@ public partial class ErgoShell
 
         while (true)
         {
-            Write($"{scope.InterpreterScope.Module.Explain()}> ");
+            Write($"{scope.InterpreterScope.Entry.Explain()}> ");
             var prompt = Prompt();
             if (exit != null && exit(prompt)) break;
             await foreach (var result in DoAsync(scope, prompt))

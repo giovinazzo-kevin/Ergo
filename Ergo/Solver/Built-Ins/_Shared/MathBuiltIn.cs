@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿
+
+namespace Ergo.Solver.BuiltIns;
 
 public abstract class MathBuiltIn : SolverBuiltIn
 {

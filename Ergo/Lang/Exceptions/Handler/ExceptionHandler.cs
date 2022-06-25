@@ -2,7 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.Runtime.ExceptionServices;
 
-namespace Ergo.Lang.Exceptions;
+namespace Ergo.Lang.Exceptions.Handler;
 public struct ExceptionHandler
 {
     public readonly Action<ErgoException> Catch;

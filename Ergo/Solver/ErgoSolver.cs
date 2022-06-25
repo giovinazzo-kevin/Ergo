@@ -1,6 +1,7 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
+using Ergo.Solver.DataBindings;
 using System.ComponentModel;
 
 namespace Ergo.Solver;
@@ -233,7 +234,7 @@ public partial class ErgoSolver : IDisposable
                 yield break;
             var sig = term.GetSignature();
             // Try all modules in import order
-            var modules = scope.InterpreterScope.GetLoadedModules();
+            var modules = scope.InterpreterScope.GetVisibleModules();
             foreach (var mod in modules.Reverse())
             {
                 if (!mod.Expansions.TryGetValue(sig, out var expansions))
@@ -320,7 +321,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, 0, interpreterScope.Module, default, ImmutableArray<Predicate>.Empty, cut: null);
+        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: null);
 
     public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
         => new SolverContext(this, scope).Solve(goal, ct: ct);

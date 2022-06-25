@@ -6,7 +6,7 @@ public sealed class SolverContext
     public readonly ErgoSolver Solver;
     public SolverScope Scope { get; private set; }
 
-    public SolverContext(ErgoSolver solver, SolverScope scope)
+    internal SolverContext(ErgoSolver solver, SolverScope scope)
     {
         Solver = solver;
         Scope = scope;

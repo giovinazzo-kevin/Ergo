@@ -12,7 +12,7 @@ public readonly struct Module
     public readonly ImmutableDictionary<Signature, ImmutableArray<Expansion>> Expansions;
     public readonly ImmutableHashSet<Signature> DynamicPredicates;
     public readonly ErgoProgram Program;
-    public readonly bool Runtime;
+    public readonly bool IsRuntime;
 
     public Module(Atom name, bool runtime)
         : this(name, List.Empty, List.Empty, ImmutableArray<Operator>.Empty, ImmutableDictionary<Signature, ImmutableArray<Expansion>>.Empty, ImmutableHashSet<Signature>.Empty, ErgoProgram.Empty(name), runtime)
@@ -37,7 +37,7 @@ public readonly struct Module
         Operators = operators;
         Expansions = literals;
         Program = program;
-        Runtime = runtime;
+        IsRuntime = runtime;
         DynamicPredicates = dynamicPredicates;
     }
 
@@ -47,12 +47,12 @@ public readonly struct Module
         return expl;
     }
 
-    public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Expansions, DynamicPredicates, Program, Runtime);
-    public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Expansions, DynamicPredicates, Program, Runtime);
-    public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Expansions, DynamicPredicates, Program, Runtime);
-    public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), Expansions, DynamicPredicates, Program, Runtime);
-    public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Expansions, DynamicPredicates, Program, Runtime);
-    public Module WithExpansions(ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, Runtime);
+    public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Expansions, DynamicPredicates, Program, IsRuntime);
+    public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Expansions, DynamicPredicates, Program, IsRuntime);
+    public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Expansions, DynamicPredicates, Program, IsRuntime);
+    public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), Expansions, DynamicPredicates, Program, IsRuntime);
+    public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Expansions, DynamicPredicates, Program, IsRuntime);
+    public Module WithExpansions(ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, Program, IsRuntime);
     public Module WithExpansion(Variable outVar, Predicate pred)
     {
         var signature = pred.Head.GetSignature();
@@ -62,11 +62,11 @@ public readonly struct Module
         }
 
         var newLiterals = Expansions.SetItem(signature, arr.Add(new Expansion(outVar, pred)));
-        return new(Name, Imports, Exports, Operators, newLiterals, DynamicPredicates, Program, Runtime);
+        return new(Name, Imports, Exports, Operators, newLiterals, DynamicPredicates, Program, IsRuntime);
     }
-    public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Expansions, predicates, Program, Runtime);
-    public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates.Add(predicate.WithModule(Maybe.Some(Name))), Program, Runtime);
-    public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, p, Runtime);
+    public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Expansions, predicates, Program, IsRuntime);
+    public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates.Add(predicate.WithModule(Maybe.Some(Name))), Program, IsRuntime);
+    public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, p, IsRuntime);
 
     public bool ContainsExport(Signature sign)
     {

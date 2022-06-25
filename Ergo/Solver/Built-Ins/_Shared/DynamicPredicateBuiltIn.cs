@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
 {
@@ -11,13 +9,13 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
 
     protected static Predicate GetPredicate(SolverScope scope, ITerm arg)
     {
-        if (!Predicate.FromCanonical(arg, scope.InterpreterScope.Module, out var pred))
+        if (!Predicate.FromCanonical(arg, scope.InterpreterScope.Entry, out var pred))
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope.InterpreterScope, WellKnown.Types.Predicate, arg.Explain());
         }
 
         pred = pred.Dynamic();
-        if (scope.InterpreterScope.Modules[scope.InterpreterScope.Module].ContainsExport(pred.Head.GetSignature()))
+        if (scope.InterpreterScope.EntryModule.ContainsExport(pred.Head.GetSignature()))
             pred = pred.Exported();
         return pred.Qualified();
     }
@@ -52,9 +50,9 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
                 return false;
             }
 
-            if (scope.InterpreterScope.Module != match.Rhs.DeclaringModule)
+            if (scope.InterpreterScope.Entry != match.Rhs.DeclaringModule)
             {
-                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Module.Explain(), match.Rhs.DeclaringModule.Explain());
+                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Entry.Explain(), match.Rhs.DeclaringModule.Explain());
                 return false;
             }
 

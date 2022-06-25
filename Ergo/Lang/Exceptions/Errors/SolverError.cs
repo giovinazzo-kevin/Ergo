@@ -1,4 +1,4 @@
-﻿namespace Ergo.Solver;
+﻿namespace Ergo.Lang.Exceptions;
 
 public enum SolverError
 {

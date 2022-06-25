@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+
 using Ergo.Solver.BuiltIns;
 using System.Diagnostics;
 

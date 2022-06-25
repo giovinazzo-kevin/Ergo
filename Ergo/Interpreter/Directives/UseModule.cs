@@ -14,7 +14,7 @@ public class UseModule : InterpreterDirective
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
-        if (moduleName == scope.Module || scope.Modules[scope.Module].Imports.Contents.Contains(moduleName))
+        if (moduleName == scope.Entry || scope.EntryModule.Imports.Contents.Contains(moduleName))
         {
             throw new InterpreterException(InterpreterError.ModuleAlreadyImported, scope, args[0].Explain());
         }
@@ -28,7 +28,7 @@ public class UseModule : InterpreterDirective
 
         scope = scope
             .WithModule(module)
-            .WithModule(scope.Modules[scope.Module]
+            .WithModule(scope.Modules[scope.Entry]
                 .WithImport(moduleName));
         return true;
     }

@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver;
+﻿using Ergo.Solver.DataBindings.Interfaces;
+
+namespace Ergo.Solver.DataBindings;
 
 public enum RejectionData
 {

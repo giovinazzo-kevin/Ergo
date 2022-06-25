@@ -31,9 +31,7 @@ public readonly struct Solution
                     ret = ret.WithRhs(vars.Aggregate(ret.Rhs, (a, b) => steps.ContainsKey(b) ? a.Substitute(steps[b]) : a));
                     var newVars = ret.Rhs.Variables.ToArray();
                     if (newVars.Where(v => vars.Contains(v)).Any())
-                    {
                         break;
-                    }
 
                     vars = newVars;
                 }

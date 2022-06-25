@@ -1,6 +1,7 @@
-﻿using System.Threading.Channels;
+﻿using Ergo.Solver.DataBindings.Interfaces;
+using System.Threading.Channels;
 
-namespace Ergo.Solver;
+namespace Ergo.Solver.DataBindings;
 
 public sealed class DataSink<T> : IDataSink, IDisposable
     where T : new()

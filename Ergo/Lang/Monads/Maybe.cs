@@ -26,6 +26,13 @@ public readonly struct Maybe<T>
         return Maybe<U>.None;
     }
 
+    public T Or(T other)
+    {
+        if (HasValue)
+            return Value;
+        return other;
+    }
+
     public U Reduce<U>(Func<T, U> some, Func<U> none)
     {
         if (HasValue)

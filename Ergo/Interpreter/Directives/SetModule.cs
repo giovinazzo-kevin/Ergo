@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Exceptions;
-
-namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Interpreter.Directives;
 
 public class SetModule : InterpreterDirective
 {
@@ -16,7 +14,7 @@ public class SetModule : InterpreterDirective
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
-        if (!scope.Runtime)
+        if (!scope.IsRuntime)
         {
             return new DeclareModule().Execute(interpreter, ref scope, args[0], WellKnown.Literals.EmptyList);
         }

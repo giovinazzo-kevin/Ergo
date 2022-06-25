@@ -12,13 +12,6 @@ public partial class ErgoInterpreter
     public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
 
     public readonly ErgoFacade Facade;
-    // public readonly InterpreterScope StdlibScope;
-
-    public Parsed<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
-    {
-        var userDefinedOps = scope.Operators(scope.Module);
-        return new Parsed<T>(Facade, data, onParseFail, userDefinedOps);
-    }
 
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {

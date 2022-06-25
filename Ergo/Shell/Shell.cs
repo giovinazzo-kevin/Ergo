@@ -34,7 +34,8 @@ public partial class ErgoShell
             scope.Throw($"Could not parse '{data}' as {typeof(T).Name}");
             return default;
         });
-        return Interpreter.Parse(scope.InterpreterScope, data, onParseFail);
+        var userDefinedOps = scope.InterpreterScope.Operators(scope.InterpreterScope.Module);
+        return new Parsed<T>(Facade, data, onParseFail, userDefinedOps);
     }
 
     internal ErgoShell(

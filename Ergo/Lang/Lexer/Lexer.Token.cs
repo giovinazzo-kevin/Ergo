@@ -2,7 +2,7 @@
 
 public partial class ErgoLexer
 {
-    public readonly ref struct Token
+    public readonly struct Token
     {
         public readonly TokenType Type;
         public readonly object Value;

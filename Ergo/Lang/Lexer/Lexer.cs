@@ -40,17 +40,11 @@ public partial class ErgoLexer : IDisposable
             .ToArray();
     }
 
-    public bool TryPeekNextToken(out Token next)
+    public Maybe<Token> PeekNext()
     {
         var s = State;
-        if (TryReadNextToken(out next))
-        {
-            Seek(s);
-            return true;
-        }
-
-        Seek(s);
-        return false;
+        return ReadNext()
+            .Do(_ => Seek(s));
     }
 
     public static string Unescape(string s)
@@ -118,51 +112,44 @@ public partial class ErgoLexer : IDisposable
         return sb.ToString();
     }
 
-    public bool TryReadNextToken(out Token next)
+    public Maybe<Token> ReadNext()
     {
-        next = default;
         SkipWhitespace();
         SkipComments();
-        if (Eof) return false;
+        if (Eof) return default;
 
         var ch = Peek();
         if (IsStringDelimiter(ch))
         {
-            next = ReadString(ch);
-            return true;
+            return ReadString(ch);
         }
 
         if (IsNumberStart(ch))
         {
-            next = ReadNumber();
-            return true;
+            return ReadNumber();
         }
 
         if (IsIdentifierStart(ch))
         {
-            next = ReadIdentifier();
-            return true;
+            return ReadIdentifier();
         }
 
         if (IsOperatorPiece(ch, 0))
         {
-            next = ReadOperator();
-            return true;
+            return ReadOperator();
         }
 
         if (IsPunctuationPiece(ch))
         {
-            next = ReadPunctuation();
-            return true;
+            return ReadPunctuation();
         }
 
         if (IsSingleLineCommentStart(ch))
         {
-            next = ReadSingleLineComment();
-            return true;
+            return ReadSingleLineComment();
         }
 
-        return false;
+        return default;
 
         // ------------------- Helpers -------------------
         static char ReadUTF8Char(Stream s)

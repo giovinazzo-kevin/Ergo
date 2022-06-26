@@ -15,12 +15,10 @@ public partial class ErgoParser
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type, Func<T, bool> pred)
     {
         var pos = Lexer.State;
-        if (!Lexer.TryReadNextToken(out var token) || token.Type != type || token.Value is not T t || !pred(t))
-        {
-            return Fail<T>(pos);
-        }
-
-        return t;
+        return Lexer.ReadNext()
+            .Where(token => token.Type == type && token.Value is T t && pred(t))
+            .Select(token => (T)token.Value)
+            .Or(() => Fail<T>(pos));
     }
     public Maybe<string> ExpectDelimiter(Func<string, bool> condition)
     {

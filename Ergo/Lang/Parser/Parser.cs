@@ -245,7 +245,7 @@ public partial class ErgoParser : IDisposable
             var expr = default(Expression);
             while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence)
             {
-                Lexer.TryReadNextToken(out _);
+                Lexer.ReadNext();
                 var op = lookahead;
 
                 if (!Primary().TryGetValue(out var rhs))
@@ -291,13 +291,9 @@ public partial class ErgoParser : IDisposable
 
         Maybe<Operator> PeekNextOperator()
         {
-            if (Lexer.TryPeekNextToken(out var lookahead))
-            {
-                return GetOperatorsFromFunctor(new Atom(lookahead.Value))
-                    .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence));
-            }
-
-            return default;
+            return Lexer.PeekNext()
+                .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value))
+                    .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence)));
         }
     }
 

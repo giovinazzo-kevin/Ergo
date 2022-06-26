@@ -104,7 +104,7 @@ public sealed class SolverContext
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var anyQualified = false;
-                foreach (var qualifiedGoal in Solver.GetImplicitGoalQualifications(Scope, resolvedGoal.Result))
+                foreach (var qualifiedGoal in ErgoSolver.GetImplicitGoalQualifications(Scope, resolvedGoal.Result))
                 {
                     var matches = Solver.KnowledgeBase.GetMatches(qualifiedGoal, desugar: false);
                     Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);

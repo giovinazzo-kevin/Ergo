@@ -281,7 +281,7 @@ public partial class ErgoSolver : IDisposable
     /// <summary>
     /// Enumerates all implicit qualifications of 'goal' that are worth trying in the current scope.
     /// </summary>
-    public IEnumerable<ITerm> GetImplicitGoalQualifications(SolverScope scope, ITerm goal)
+    public static IEnumerable<ITerm> GetImplicitGoalQualifications(SolverScope scope, ITerm goal)
     {
         yield return goal;
         var isDynamic = false;

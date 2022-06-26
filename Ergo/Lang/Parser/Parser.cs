@@ -145,7 +145,7 @@ public partial class ErgoParser : IDisposable
         {
             term = expr.Complex;
             parenthesized = expr.Complex.IsParenthesized;
-            if (!NTuple.FromPseudoCanonical(term, parenthesized, hasEmptyElement: false).TryGetValue(out var tuple))
+            if (NTuple.FromPseudoCanonical(term, parenthesized, hasEmptyElement: false).TryGetValue(out var tuple))
                 term = tuple.CanonicalForm;
             return true;
         }

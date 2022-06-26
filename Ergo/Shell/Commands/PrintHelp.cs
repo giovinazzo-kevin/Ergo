@@ -23,7 +23,7 @@ public sealed class PrintHelp : ShellCommand
 
         var dispatchers = dispatchersQuery
             .OrderByDescending(d => d.Priority)
-            .Select(d => new[] { string.Join(", ", d.Names), d.Priority.ToString(), d.Description })
+            .Select(d => new[] { d.Names.Join(), d.Priority.ToString(), d.Description })
             .ToArray();
         if (dispatchers.Length == 0)
         {

@@ -35,7 +35,7 @@ public sealed class Dict : IAbstractTerm
     public string Explain()
     {
         var functor = Functor.Reduce(a => a.WithAbstractForm(default).Explain(false), b => b.WithAbstractForm(default).Explain(false));
-        var joinedArgs = string.Join(",", KeyValuePairs.Select(kv => kv.WithAbstractForm(default).Explain(false)));
+        var joinedArgs = KeyValuePairs.Join(kv => kv.WithAbstractForm(default).Explain(false));
         return $"{functor}{{{joinedArgs}}}";
     }
 

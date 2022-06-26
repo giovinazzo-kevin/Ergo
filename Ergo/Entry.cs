@@ -47,7 +47,7 @@ public sealed class PersonGenerator
     private static readonly string[] LastNames = new[] { "Ross", "Smith", "Giovinazzo", "Messina", "Veneruso" };
 
     private T Choose<T>(T[] arr) => arr[Rng.Next(arr.Length)];
-    private string RandomDigits(int len) => string.Join("", Enumerable.Range(0, len).Select(i => Rng.Next(10)));
+    private string RandomDigits(int len) => Enumerable.Range(0, len).Select(i => Rng.Next(10)).Join("");
 
     public async IAsyncEnumerable<Person> Generate()
     {

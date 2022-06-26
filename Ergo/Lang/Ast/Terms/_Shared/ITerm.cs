@@ -39,6 +39,13 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Complex c => c.WithAbstractForm(abs),
         var x => x
     };
+    ITerm AsParenthesized(bool parens) => this switch
+    {
+        Atom a => a,
+        Variable v => v,
+        Complex c => c.AsParenthesized(parens),
+        var x => x
+    };
 
     bool TryQualify(Atom m, out ITerm qualified)
     {

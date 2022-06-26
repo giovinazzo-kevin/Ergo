@@ -172,6 +172,12 @@ public partial class ErgoSolver : IDisposable
                 c => c.Arguments
             );
             LogTrace(SolverTraceType.BuiltInResolution, $"{qt.Explain()}", scope.Depth);
+            if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
+            {
+                scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(Maybe.Some(args.Length)).Explain());
+                yield break;
+            }
+
             await foreach (var eval in builtIn.Apply(this, scope, args))
             {
                 if (ct.IsCancellationRequested)

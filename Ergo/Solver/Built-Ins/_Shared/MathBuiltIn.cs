@@ -1,5 +1,4 @@
 ﻿
-
 namespace Ergo.Solver.BuiltIns;
 
 public abstract class MathBuiltIn : SolverBuiltIn
@@ -14,7 +13,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
         dynamic Evaluate(ErgoSolver solver, ITerm t)
         {
 
-            if (t is Atom a) { return a.Value is double d ? d : Throw(a); }
+            if (t is Atom a) { return a.Value is decimal d ? d : Throw(a); }
 
             if (t is not Complex c) { return Throw(t); }
 

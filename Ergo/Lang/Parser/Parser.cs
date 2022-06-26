@@ -146,7 +146,7 @@ public partial class ErgoParser : IDisposable
         {
             term = expr.Complex;
             parenthesized = expr.Complex.IsParenthesized;
-            if (NTuple.FromQuasiCanonical(term, Maybe.Some(parenthesized), hasEmptyElement: Maybe.Some(false)) is { HasValue: true } tuple)
+            if (NTuple.FromPseudoCanonical(term, Maybe.Some(parenthesized), hasEmptyElement: Maybe.Some(false)) is { HasValue: true } tuple)
                 term = tuple.GetOrThrow().CanonicalForm;
             return true;
         }
@@ -514,7 +514,7 @@ public partial class ErgoParser : IDisposable
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
 
-        if (NTuple.FromQuasiCanonical(rhs, default, hasEmptyElement: Maybe.Some(false)) is not { HasValue: true } contents)
+        if (NTuple.FromPseudoCanonical(rhs, default, hasEmptyElement: Maybe.Some(false)) is not { HasValue: true } contents)
         {
             contents = Maybe.Some(new NTuple(new[] { rhs }));
         }
@@ -531,7 +531,7 @@ public partial class ErgoParser : IDisposable
                 .Select(v => v.Explain());
             if (singletons.Any())
             {
-                Throw(pos, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), string.Join(", ", singletons));
+                Throw(pos, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), singletons.Join());
             }
 
             c = new Predicate(

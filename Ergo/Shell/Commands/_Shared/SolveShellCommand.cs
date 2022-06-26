@@ -12,7 +12,7 @@ public abstract class SolveShellCommand : ShellCommand
         var colorMap = Enum.GetNames(typeof(ConsoleColor))
             .Select(v => v.ToString())
             .ToList();
-        return string.Join('|', colorMap);
+        return colorMap.Join("|");
     }
 
     protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor)
@@ -106,7 +106,7 @@ public abstract class SolveShellCommand : ShellCommand
                 yield return scope;
                 if (s.Substitutions.Any())
                 {
-                    var join = string.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
+                    var join = s.Simplify().Substitutions.Join(s => s.Explain());
                     shell.Write($"{join}", LogLevel.Ans);
                     if (scope_.TraceEnabled)
                     {

@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class BagOf : SolutionAggregationBuiltIn
 {
@@ -14,7 +12,7 @@ public sealed class BagOf : SolutionAggregationBuiltIn
         var any = false;
         await foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(solver, scope, args))
         {
-            if (!ListVars.CanonicalForm.Unify(ArgVars).TryGetValue(out var listSubs)
+            if (!ListVars.Unify(ArgVars).TryGetValue(out var listSubs)
             || !args[2].Unify(ListTemplate.CanonicalForm).TryGetValue(out var instSubs))
             {
                 yield return new(WellKnown.Literals.False);

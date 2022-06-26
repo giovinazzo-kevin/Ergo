@@ -30,7 +30,7 @@ public abstract class AbstractList : IAbstractTerm
         if (IsEmpty)
             return EmptyElement.WithAbstractForm(default).Explain();
 
-        var joined = string.Join(',', Contents.Select(t => t.Explain()));
+        var joined = Contents.Join(t => t.Explain());
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
     public virtual Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other)
@@ -61,6 +61,9 @@ public abstract class AbstractList : IAbstractTerm
     public virtual IAbstractTerm Substitute(Substitution s)
         => Create(ImmutableArray.CreateRange(Contents.Select(c => c.Substitute(s))));
 
+    /// <summary>
+    /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
+    /// </summary>
     protected static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
         if (args.Length == 0)
@@ -69,6 +72,23 @@ public abstract class AbstractList : IAbstractTerm
             return new Complex(functor, args[0], emptyElement);
         return args
             .Append(emptyElement)
+            .Reverse()
+            .Aggregate((a, b) => new Complex(functor, b, a)
+                .AsOperator(OperatorAffix.Infix));
+    }
+
+    /// <summary>
+    /// Folds a list in a non-canonical way that omits the trailing empty element. 
+    /// Note that the empty element is still returned for 0-length lists.
+    /// </summary>
+    protected static ITerm FoldNoEmptyTail(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    {
+        // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
+        if (args.Length == 0)
+            return emptyElement;
+        if (args.Length == 1)
+            return new Complex(functor, args[0]);
+        return args
             .Reverse()
             .Aggregate((a, b) => new Complex(functor, b, a)
                 .AsOperator(OperatorAffix.Infix));

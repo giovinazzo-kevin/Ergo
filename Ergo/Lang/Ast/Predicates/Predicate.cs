@@ -79,7 +79,7 @@ public readonly struct Predicate : IExplainable
     public string Explain(bool canonical)
     {
         string expl;
-        var doc = string.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r));
+        var doc = Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r).Join("\r\n");
         if (Body.IsEmpty || Body.Contents.SequenceEqual(new ITerm[] { WellKnown.Literals.True }))
         {
             expl = $"{Head.Explain()}.";
@@ -88,7 +88,7 @@ public readonly struct Predicate : IExplainable
         }
         else
         {
-            expl = $"{Head.Explain()}{(canonical ? '←' : " ←\r\n\t")}{string.Join(canonical ? "," : ",\r\n\t", Body.Contents.Select(x => x.Explain(canonical)))}.";
+            expl = $"{Head.Explain()}{(canonical ? '←' : " ←\r\n\t")}{Body.Contents.Join(x => x.Explain(canonical), canonical ? "," : ",\r\n\t")}.";
             if (!canonical && !string.IsNullOrWhiteSpace(Documentation))
                 expl = $"{doc}\r\n{expl}";
         }

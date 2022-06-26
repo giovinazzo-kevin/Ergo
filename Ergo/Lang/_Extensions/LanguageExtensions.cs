@@ -5,6 +5,13 @@ using System.Reflection;
 namespace Ergo.Lang.Extensions;
 public static class LanguageExtensions
 {
+    public static string Join<T>(this IEnumerable<T> source, Func<T, string> toString, string separator = ",")
+    {
+        toString ??= t => t?.ToString() ?? string.Empty;
+        return string.Join(separator, source.Select(toString));
+    }
+    public static string Join<T>(this IEnumerable<T> source, string separator = ",") => Join(source, null, separator);
+
     public static bool IsNumericType(this object o)
     {
         return Type.GetTypeCode(o.GetType()) switch

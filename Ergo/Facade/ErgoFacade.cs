@@ -136,7 +136,7 @@ public readonly struct ErgoFacade
         foreach (var type in lookInAssembly.GetTypes())
         {
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            if (type.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == typeof(IAbstractTermParser<>)) is not { } inter) continue;
+            if (type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAbstractTermParser<>)) is not { } inter) continue;
             var inst = Activator.CreateInstance(type);
             newFacade = (ErgoFacade)This_AddParser.MakeGenericMethod(inter.GetGenericArguments().Single()).Invoke(newFacade, new object[] { inst });
         }
@@ -173,7 +173,7 @@ public readonly struct ErgoFacade
     private ErgoShell ConfigureShell(ErgoShell shell)
     {
         foreach (var command in _commands)
-            shell.TryAddCommand(command);
+            shell.AddCommand(command);
         return shell;
     }
 

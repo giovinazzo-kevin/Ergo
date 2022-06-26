@@ -1,5 +1,4 @@
-﻿using Ergo.Shell;
-using Ergo.Solver;
+﻿using Ergo.Solver;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -156,7 +155,7 @@ public partial class ErgoShell
             var cycle = seen.Contains(key);
             if (cycle && !shouldPrintCyclicTerm(node.Value))
                 return;
-            var spaces = string.Join("", Enumerable.Range(0, indent).Select(_ => "   "));
+            var spaces = Enumerable.Range(0, indent).Join(_ => "   ", "");
             //if (indent > 0) spaces = $"{spaces}│    ";
             var connector = new string('─', 2);
             Write(spaces);

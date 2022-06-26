@@ -25,7 +25,7 @@ public sealed class PrintOperators : ShellCommand
             .Select(r => new[] {
                 r.Precedence.ToString(),
                 Operator.GetOperatorType(r.Affix, r.Associativity).ToString(),
-                $"[{string.Join(",",r.Synonyms.Select(x => x.AsQuoted(true).Explain(true)))}]",
+                $"[{r.Synonyms.Join(x => x.AsQuoted(true).Explain(true))}]",
                 r.DeclaringModule.Explain() })
             .ToArray();
 

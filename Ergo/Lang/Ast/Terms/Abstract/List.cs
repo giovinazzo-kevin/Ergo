@@ -40,12 +40,12 @@ public sealed class List : AbstractList
             return Tail.WithAbstractForm(default).Explain();
         }
 
-        var joined = string.Join(',', Contents.Select(t => t.Explain()));
+        var joined = Contents.Join(t => t.Explain());
         if (!Tail.Equals(EmptyElement))
         {
             if (Tail.IsAbstract<List>(out var rest))
             {
-                joined = string.Join(',', Contents.Select(t => t.Explain()).Append(rest.Explain()[1..^1]));
+                joined = Contents.Select(t => t.Explain()).Append(rest.Explain()[1..^1]).Join();
                 return $"{Braces.Open}{joined}{Braces.Close}";
             }
 

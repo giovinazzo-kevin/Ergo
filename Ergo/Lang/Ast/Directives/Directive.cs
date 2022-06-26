@@ -13,7 +13,7 @@ public readonly struct Directive : IExplainable
 
     public string Explain(bool canonical)
     {
-        var doc = string.Join("\r\n", Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r));
+        var doc = Documentation.Replace("\r", "").Split('\n').AsEnumerable().Select(r => "%: " + r).Join("\r\n");
         var expl = $"← {Body.Explain(canonical)}";
         if (!canonical && !string.IsNullOrWhiteSpace(Documentation))
         {

@@ -7,7 +7,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
     {
     }
 
-    protected async IAsyncEnumerable<(ITerm ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    protected async IAsyncEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         var (template, goal, instances) = (args[0], args[1], args[2]);
         scope = scope.WithDepth(scope.Depth + 1)
@@ -17,11 +17,6 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
         if (goal is Variable)
         {
             throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
-        }
-
-        if (instances is not Variable && !instances.IsAbstract<List>(out _))
-        {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope.InterpreterScope, WellKnown.Types.List, instances.Explain());
         }
 
         var templateVars = Enumerable.Empty<Variable>();
@@ -66,9 +61,10 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 
                 argVars = argVars.Substitute(subTmpl);
                 argTmpl = argTmpl.Substitute(subTmpl);
-                return (argVars, argTmpl);
+                argVars.IsAbstract<List>(out var argList);
+                return (argList, argTmpl);
             })
-            .ToLookup(sol => sol.argVars, sol => sol.argTmpl)
+            .ToLookup(sol => sol.argList, sol => sol.argTmpl)
             .Select(kv => (kv.Key, new List(kv), listVars)))
         {
             yield return sol;

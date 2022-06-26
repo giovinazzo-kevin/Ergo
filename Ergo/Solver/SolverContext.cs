@@ -30,6 +30,7 @@ public sealed class SolverContext
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
         Scope = Scope.WithChoicePoint();
+
         // Get first solution for the current subgoal
         await foreach (var s in Solve(subGoal, subs, ct: ct))
         {
@@ -60,7 +61,7 @@ public sealed class SolverContext
         subs ??= new List<Substitution>();
 
         // Treat comma-expression complex ITerms as proper expressions
-        if (NTuple.FromQuasiCanonical(goal, default, default) is { HasValue: true } expr)
+        if (NTuple.FromPseudoCanonical(goal, default, default) is { HasValue: true } expr)
         {
             await foreach (var s in Solve(expr.GetOrThrow(), subs, ct: ct))
                 yield return s;

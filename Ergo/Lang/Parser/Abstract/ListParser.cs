@@ -9,7 +9,9 @@ public sealed class ListParser : AbstractListParser<List>
             if (WellKnown.Functors.HeadTail.Contains(cplx.Functor))
             {
                 var arguments = ImmutableArray<ITerm>.Empty.Add(cplx.Arguments[0]);
-                arguments = NTuple.FromPseudoCanonical(cplx.Arguments[0], false, false).GetOr(arguments);
+                arguments = NTuple.FromPseudoCanonical(cplx.Arguments[0], false, false)
+                    .Select(x => x.Contents)
+                    .GetOr(arguments);
                 return new List(arguments, Maybe.Some(cplx.Arguments[1]));
             }
         }

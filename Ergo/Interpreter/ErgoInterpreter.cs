@@ -41,17 +41,18 @@ public partial class ErgoInterpreter
 
     public Module EnsureModule(ref InterpreterScope scope, Atom name)
     {
-        var copy = scope;
         if (!scope.Modules.TryGetValue(name, out var module))
         {
             try
             {
-                scope = Load(ref copy, name)
-                    .Reduce(some => copy.WithModule(module = some), () => copy);
+                if (Load(ref scope, name).TryGetValue(out module))
+                {
+                    scope = scope.WithModule(module);
+                }
             }
             catch (FileNotFoundException)
             {
-                scope = copy
+                scope = scope
                     .WithModule(module = new Module(name, runtime: true));
             }
         }

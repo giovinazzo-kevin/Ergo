@@ -56,7 +56,7 @@ public readonly partial struct Complex : ITerm
                 return abs.Explain();
             if (c.IsAbstract<List>(out var list))
                 return list.Explain();
-            return c.Affix.Reduce(some => canonical ? OperatorAffix.Prefix : some, () => OperatorAffix.Prefix) switch
+            return c.Affix.Select(some => canonical ? OperatorAffix.Prefix : some).GetOr(OperatorAffix.Prefix) switch
             {
                 OperatorAffix.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",
                 OperatorAffix.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.Explain(canonical)}",

@@ -103,7 +103,7 @@ public readonly struct InterpreterScope
         {
             added ??= new();
             var currentModule = defaultModule;
-            var entryModule = entry.Reduce(some => some, () => currentModule);
+            var entryModule = entry.GetOr(currentModule);
             if (added.Contains(entryModule) || !modules.TryGetValue(entryModule, out var module))
             {
                 yield break;

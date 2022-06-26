@@ -139,7 +139,7 @@ public sealed class SolverContext
                 if (!anyQualified)
                 {
                     var signature = resolvedGoal.Result.GetSignature();
-                    var dynModule = signature.Module.Reduce(some => some, () => Scope.Module);
+                    var dynModule = signature.Module.GetOr(Scope.Module);
                     if (!Solver.KnowledgeBase.TryGet(signature, out var predicates)
                         && !(Scope.InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
                     {

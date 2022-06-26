@@ -36,7 +36,7 @@ public sealed class DataSink<T> : IDataSink, IDisposable
 
     private void OnDataPushed(ErgoSolver s, ITerm t)
     {
-        if (t.GetFunctor().Reduce(some => some.Equals(Functor), () => t is Variable))
+        if (t.GetFunctor().Select(some => some.Equals(Functor)).GetOr(t is Variable))
             DataPushed?.Invoke(t);
     }
 

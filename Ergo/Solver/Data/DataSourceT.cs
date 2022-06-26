@@ -37,14 +37,14 @@ public sealed class DataSource<T> : IDataSource
     public DataSource(Func<IEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData rejectSemantics = RejectionData.Discard, RejectionControl enumSemantics = RejectionControl.Continue)
     {
         var signature = ErgoSolver.GetDataSignature<T>(functor);
-        Functor = signature.Tag.Reduce(some => some, () => signature.Functor);
+        Functor = signature.Tag.GetOr(signature.Functor);
         Source = new(() => FromEnumerable(source), rejectSemantics, enumSemantics);
     }
 
     public DataSource(Func<IAsyncEnumerable<T>> source, Maybe<Atom> functor = default, RejectionData dataSemantics = RejectionData.Discard, RejectionControl ctrlSemantics = RejectionControl.Continue)
     {
         var signature = ErgoSolver.GetDataSignature<T>(functor);
-        Functor = signature.Tag.Reduce(some => some, () => signature.Functor);
+        Functor = signature.Tag.GetOr(signature.Functor);
         Source = new(() => FromAsyncEnumerable(source), dataSemantics, ctrlSemantics);
     }
 }

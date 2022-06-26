@@ -27,12 +27,12 @@ public sealed class NTuple : AbstractList
             return default;
 
         return Unfold(term, tail => true, WellKnown.Functors.Conjunction)
-            .Reduce(some =>
+            .Map(some =>
             {
                 var last = some.Last();
                 if (hasEmptyElement.TryGetValue(out var empty) && last.Equals(Empty.CanonicalForm) != empty)
                     return default;
-                return new NTuple(some);
+                return Maybe.Some(new NTuple(some));
             }, () => default);
     }
 }

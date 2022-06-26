@@ -41,14 +41,10 @@ public readonly struct Maybe<T>
         return Maybe<U>.None;
     }
 
-    public U Reduce<U>(Func<T, U> some, Func<U> none)
+    public IEnumerable<T> AsEnumerable()
     {
         if (HasValue)
-        {
-            return some(Value);
-        }
-
-        return none();
+            yield return Value;
     }
 
     public bool TryGetValue(out T value)
@@ -63,6 +59,12 @@ public readonly struct Maybe<T>
         if (HasValue)
             return Value;
         return other;
+    }
+    public T GetOrThrow(Exception ex)
+    {
+        if (HasValue)
+            return Value;
+        throw ex;
     }
     public Either<T, U> GetOr<U>(U other)
     {

@@ -9,9 +9,7 @@ public sealed class List : AbstractList
     public List(ImmutableArray<ITerm> contents, Maybe<ITerm> tail = default)
         : base(contents)
     {
-        Tail = tail.Reduce(
-            some => some,
-            () => EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty ?? this)));
+        Tail = tail.GetOr((ITerm)EmptyElement.WithAbstractForm(Empty ?? this));
         CanonicalForm = Fold(Functor, Tail, contents)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));

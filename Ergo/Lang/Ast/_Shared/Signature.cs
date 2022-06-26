@@ -18,15 +18,24 @@ public readonly struct Signature
 
     public string Explain()
     {
-        var module = Module.Reduce(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}", () => "");
-        var tag = Tag.Reduce(some => some.Explain(), () => null);
-        var arity = Arity.Reduce(some => some.ToString(), () => "*");
-        if (WellKnown.Functors.Dict.Contains(Functor) && tag != null)
+        var module = Module
+            .Select(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}")
+            .GetOr("");
+        var tag = Tag
+            .Select(some => some.Explain())
+            .GetOr("");
+        var arity = Arity
+            .Select(some => some.ToString())
+            .GetOr("*");
+        if (WellKnown.Functors.Dict.Contains(Functor))
         {
-            return $"{module}{tag}{{}}/{arity}";
+            return $"{module}{tag}{{}}{WellKnown.Functors.Arity.First().Explain()}{arity}";
         }
 
-        return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.SignatureTag.First().Explain() : null)}{tag}/{arity}";
+        var tagSign = Tag
+            .Select(_ => WellKnown.Functors.SignatureTag.First().Explain())
+            .GetOr("");
+        return $"{module}{Functor.Explain()}{tagSign}{tag}{WellKnown.Functors.Arity.First().Explain()}{arity}";
     }
 
     public override bool Equals(object obj)

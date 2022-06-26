@@ -64,18 +64,21 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
     public virtual ITerm ToTerm(object o, Maybe<Atom> overrideFunctor = default, Maybe<TermMarshalling> overrideMarshalling = default)
     {
-        if (o is null) return WellKnown.Literals.Discard;
-        if (o != null && o.GetType() != Type) throw new ArgumentException(null, o.ToString());
+        if (o is null)
+            return WellKnown.Literals.Discard;
+        if (o != null && o.GetType() != Type)
+            throw new ArgumentException(null, o.ToString());
         // Check if the [Term] attribute is applied at the type level,
         // If so, assume that's what we want unless overrideFunctor is not None.
         var attr = Type.GetCustomAttribute<TermAttribute>();
-        var functor = overrideFunctor.Reduce(
-            some => !Type.IsArray ? some : GetFunctor(o),
-            () => !Type.IsArray && attr?.Functor is { } f ? new Atom(f) : GetFunctor(o)
+        var functor = overrideFunctor.Map(
+            some => !Type.IsArray ? Maybe.Some(some) : default,
+            () => !Type.IsArray && attr?.Functor is { } f ? Maybe.Some(new Atom(f)) : default
         );
-        var marshalling = overrideMarshalling.Reduce(some => some, () => Marshalling);
+        var marshalling = overrideMarshalling.GetOr(Marshalling);
 
-        if (IsAtomic.Value) return functor;
+        if (IsAtomic.Value)
+            return functor.GetOr(GetFunctor(o));
 
         ITerm[] args;
         if (Type.IsArray)
@@ -111,7 +114,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             ).ToArray();
         }
 
-        return TransformTermInternal(functor, args);
+        return TransformTermInternal(functor.GetOr(GetFunctor(o)), args);
 
         ITerm TransformTermInternal(Atom functor, ITerm[] args)
         {

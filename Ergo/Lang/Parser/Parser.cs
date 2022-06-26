@@ -238,10 +238,9 @@ public partial class ErgoParser : IDisposable
 
     public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool exprParenthesized = false)
     {
-        return maybeRhs.Reduce(
-            rhs => Associate(lhs, rhs),
-            () => new Expression(op, lhs, Maybe<ITerm>.None, lhs.IsParenthesized || exprParenthesized)
-        );
+        return maybeRhs
+            .Select(rhs => Associate(lhs, rhs))
+            .GetOr(new Expression(op, lhs, Maybe<ITerm>.None, lhs.IsParenthesized || exprParenthesized));
 
         Expression Associate(ITerm lhs, ITerm rhs)
         {
@@ -254,7 +253,7 @@ public partial class ErgoParser : IDisposable
             && lhsExpr.Operator.Precedence == op.Precedence)
             {
                 // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
-                var lhsRhs = lhsExpr.Right.Reduce(x => x, () => throw new InvalidOperationException());
+                var lhsRhs = lhsExpr.Right.GetOrThrow(new InvalidOperationException());
                 var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
                 return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
             }
@@ -511,7 +510,7 @@ public partial class ErgoParser : IDisposable
             op = new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some<ITerm>(WellKnown.Literals.True), false);
         }
 
-        var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
+        var rhs = op.Right.GetOrThrow(new InvalidOperationException());
 
         if (!NTuple.FromPseudoCanonical(rhs, default, hasEmptyElement: false).TryGetValue(out var contents))
         {
@@ -570,7 +569,7 @@ public partial class ErgoParser : IDisposable
         var exportedPredicates = predicates.Select(p =>
         {
             var sign = p.Head.GetSignature();
-            var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOr(default)))
+            var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow(new NotSupportedException())))
                 .AsOperator(OperatorAffix.Infix);
             if (exported.Contents.Any(x => x.Equals(form)))
                 return p.Exported();

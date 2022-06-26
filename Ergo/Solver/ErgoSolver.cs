@@ -26,8 +26,8 @@ public partial class ErgoSolver : IDisposable
         var term = TermMarshall.ToTerm(new T());
         var signature = term.GetSignature();
         signature = signature.Tag.TryGetValue(out _) && WellKnown.Functors.Dict.Contains(signature.Functor)
-            ? functor.Reduce(some => signature.WithTag(some), () => signature)
-            : functor.Reduce(some => signature.WithFunctor(some), () => signature);
+            ? functor.Select(some => signature.WithTag(some)).GetOr(signature)
+            : functor.Select(some => signature.WithFunctor(some)).GetOr(signature);
         return signature;
     }
 
@@ -92,7 +92,9 @@ public partial class ErgoSolver : IDisposable
         {
             foreach (var sig in DataSources.Keys)
             {
-                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOr(WellKnown.Literals.Discard)).CanonicalForm);
+                var anon = sig.Arity
+                    .Select(some => sig.Functor.BuildAnonymousTerm(some))
+                    .GetOr(new Dict(sig.Tag.GetOr(WellKnown.Literals.Discard)).CanonicalForm);
                 if (!head.Unify(anon).TryGetValue(out var subs))
                 {
                     continue;
@@ -119,7 +121,7 @@ public partial class ErgoSolver : IDisposable
                     var predicate = new Predicate(
                         "data source",
                         WellKnown.Modules.CSharp,
-                        item.WithFunctor(signature.Tag.Reduce(some => some, () => signature.Functor)),
+                        item.WithFunctor(signature.Tag.GetOr(signature.Functor)),
                         NTuple.Empty,
                         dynamic: true,
                         exported: false

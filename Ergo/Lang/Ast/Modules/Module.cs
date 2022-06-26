@@ -65,12 +65,12 @@ public readonly struct Module
         return new(Name, Imports, Exports, Operators, newLiterals, DynamicPredicates, Program, IsRuntime);
     }
     public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Expansions, predicates, Program, IsRuntime);
-    public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates.Add(predicate.WithModule(Maybe.Some(Name))), Program, IsRuntime);
+    public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates.Add(predicate.WithModule(Name)), Program, IsRuntime);
     public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, p, IsRuntime);
 
     public bool ContainsExport(Signature sign)
     {
-        var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow()))
+        var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOr(default)))
             .AsOperator(OperatorAffix.Infix);
         return Exports.Contents.Any(t => t.Equals(form));
     }

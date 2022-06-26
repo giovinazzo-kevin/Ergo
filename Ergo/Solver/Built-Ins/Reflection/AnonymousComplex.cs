@@ -14,7 +14,7 @@ public sealed class AnonymousComplex : SolverBuiltIn
     {
         if (!args[1].Matches<int>(out var arity))
         {
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1].Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1].Explain());
             yield break;
         }
 
@@ -30,7 +30,7 @@ public sealed class AnonymousComplex : SolverBuiltIn
                 }
             }
 
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());
             yield break;
         }
 

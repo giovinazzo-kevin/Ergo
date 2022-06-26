@@ -3,7 +3,7 @@
 public sealed class AssertA : DynamicPredicateBuiltIn
 {
     public AssertA()
-        : base("", new("asserta"), Maybe.Some(1))
+        : base("", new("asserta"), 1)
     {
     }
 

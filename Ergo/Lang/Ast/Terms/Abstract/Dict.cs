@@ -27,7 +27,7 @@ public sealed class Dict : IAbstractTerm
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
-            Signature = Signature.WithTag(functor.Reduce(a => Maybe.Some(a), v => throw new InvalidOperationException()));
+            Signature = Signature.WithTag(functor.Reduce(a => a, v => throw new InvalidOperationException()));
     }
 
     public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder());

@@ -1,6 +1,4 @@
 ﻿using Ergo.Interpreter;
-
-using Ergo.Solver.BuiltIns;
 using System.Diagnostics;
 
 namespace Ergo.Solver;
@@ -38,11 +36,6 @@ public readonly struct SolverScope
     public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: null);
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
-    public Evaluation ThrowFalse(SolverError error, params object[] args)
-    {
-        InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
-        return new Evaluation(WellKnown.Literals.False);
-    }
 
     public bool IsCutRequested => _cut.IsCancellationRequested;
     public bool Cut()

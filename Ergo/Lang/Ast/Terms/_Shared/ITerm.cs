@@ -12,8 +12,8 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 
     Maybe<Atom> GetFunctor() => this switch
     {
-        Atom a => Maybe.Some(a),
-        Complex c => Maybe.Some(c.Functor),
+        Atom a => a,
+        Complex c => c.Functor,
         _ => Maybe<Atom>.None
     };
 

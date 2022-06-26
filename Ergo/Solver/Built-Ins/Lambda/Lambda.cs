@@ -1,5 +1,4 @@
 ﻿
-
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class Lambda : SolverBuiltIn
@@ -13,21 +12,21 @@ public sealed class Lambda : SolverBuiltIn
     {
         if (args.Length < 2)
         {
-            yield return scope.ThrowFalse(SolverError.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(args.Length)).Explain());
+            yield return ThrowFalse(scope, SolverError.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(args.Length)).Explain());
             yield break;
         }
 
         var (parameters, lambda, rest) = (args[0], args[1], args[2..]);
         if (parameters is Variable)
         {
-            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, parameters.Explain());
+            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, parameters.Explain());
             yield break;
         }
 
         // parameters is a plain list of variables; We don't need to capture free variables, unlike SWIPL which is compiled.
         if (!parameters.IsAbstract<List>(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
         {
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.LambdaParameters, parameters.Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.LambdaParameters, parameters.Explain());
             yield break;
         }
 
@@ -38,11 +37,11 @@ public sealed class Lambda : SolverBuiltIn
         {
             if (list.Contents[i].IsGround)
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.FreeVariable, list.Contents[i].Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.FreeVariable, list.Contents[i].Explain());
                 yield break;
             }
 
-            var newSubs = rest[i].Unify(list.Contents[i]).GetOrThrow();
+            var newSubs = rest[i].Unify(list.Contents[i]).GetOr(Enumerable.Empty<Substitution>());
             lambda = lambda.Substitute(newSubs);
         }
 

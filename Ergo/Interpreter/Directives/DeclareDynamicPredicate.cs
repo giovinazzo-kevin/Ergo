@@ -3,7 +3,7 @@
 public class DeclareDynamicPredicate : InterpreterDirective
 {
     public DeclareDynamicPredicate()
-        : base("", new("dynamic"), Maybe.Some(1), 30)
+        : base("", new("dynamic"), 1, 30)
     {
     }
 

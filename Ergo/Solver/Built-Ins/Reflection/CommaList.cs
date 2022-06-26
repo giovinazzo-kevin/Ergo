@@ -16,7 +16,7 @@ public sealed class CommaToList : SolverBuiltIn
         {
             if (!listArg.IsAbstract<List>(out var list))
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
                 yield break;
             }
 
@@ -35,7 +35,7 @@ public sealed class CommaToList : SolverBuiltIn
         {
             if (!commaArg.IsAbstract<NTuple>(out var comma))
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
                 yield break;
             }
 
@@ -50,6 +50,6 @@ public sealed class CommaToList : SolverBuiltIn
             yield break;
         }
 
-        yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, commaArg.Explain());
+        yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, commaArg.Explain());
     }
 }

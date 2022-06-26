@@ -3,7 +3,7 @@
 public class UseModule : InterpreterDirective
 {
     public UseModule()
-        : base("", new("use_module"), Maybe.Some(1), 1)
+        : base("", new("use_module"), 1, 1)
     {
     }
 

@@ -204,7 +204,7 @@ public partial class ErgoShell
             while (true)
             {
                 yield return cur;
-                cur = cur.Parent.GetOrDefault();
+                cur = cur.Parent.GetOr(default);
                 if (cur is null) yield break;
             }
         }
@@ -240,7 +240,7 @@ public partial class ErgoShell
                 .ToArray();
             foreach (var c in children)
             {
-                c.Parent = Maybe.Some(ret);
+                c.Parent = ret;
             }
 
             ret.Children = children;

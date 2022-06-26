@@ -52,12 +52,10 @@ public readonly struct Substitution
         {
             if (!x.Equals(y))
             {
-                if (x.AbstractForm.HasValue && y.AbstractForm.HasValue)
+                var absUnif = x.AbstractForm.Map(X => y.AbstractForm.Map(Y => X.Unify(Y)));
+                if (absUnif.TryGetValue(out var subs))
                 {
-                    var u = x.AbstractForm.GetOrThrow().Unify(y.AbstractForm.GetOrThrow());
-                    if (!u.HasValue)
-                        return false;
-                    E.AddRange(u.GetOrThrow());
+                    E.AddRange(subs);
                     return true;
                 }
 

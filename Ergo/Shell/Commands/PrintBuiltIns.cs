@@ -18,14 +18,13 @@ public sealed class PrintBuiltIns : ShellCommand
         if (match?.Success ?? false)
         {
             var parsed = shell.Parse<ITerm>(scope, match.Value).Value;
-            if (!parsed.HasValue)
+            if (!parsed.TryGetValue(out var term))
             {
                 shell.No();
                 yield return scope;
                 yield break;
             }
 
-            var term = parsed.GetOrDefault();
             if (solver.BuiltIns.TryGetValue(term.GetSignature(), out var builtin))
             {
                 builtins.Add(builtin);

@@ -82,7 +82,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         {
             // Collections are handled recursively
             args = o == null ? Array.Empty<ITerm>() : ((IEnumerable)o).Cast<object>()
-                .Select(x => TermMarshall.ToTerm(x, Type.GetElementType(), overrideFunctor, Maybe.Some(marshalling)))
+                .Select(x => TermMarshall.ToTerm(x, Type.GetElementType(), overrideFunctor, marshalling))
                 .ToArray();
         }
         else
@@ -91,8 +91,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 m =>
                 {
                     var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
-                    var overrideMemberFunctor = attr is null ? Maybe<Atom>.None : Maybe.Some(new Atom(attr.Functor));
-                    var overrideMemberMarshalling = attr is null ? Maybe.Some(marshalling) : Maybe.Some(attr.Marshalling);
+                    var overrideMemberFunctor = attr is null ? Maybe<Atom>.None : new Atom(attr.Functor);
+                    var overrideMemberMarshalling = attr is null ? marshalling : attr.Marshalling;
                     var memberValue = o == null ? null : GetMemberValue(m, o);
                     var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling);
                     var member = TransformMember(m, term);
@@ -153,7 +153,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 var type = GetMemberType(name);
                 var paramType = GetParameterType(name, constructor);
                 var arg = GetArgument(name, t);
-                var value = TermMarshall.FromTerm(arg, type, Maybe.Some(Marshalling));
+                var value = TermMarshall.FromTerm(arg, type, Marshalling);
                 value = Convert.ChangeType(value, paramType);
                 return value;
             }).ToArray());
@@ -166,7 +166,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                 for (var i = 0; i < list.Contents.Length; i++)
                 {
-                    var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Maybe.Some(Marshalling));
+                    var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Marshalling);
                     instance.SetValue(obj, i);
                 }
 
@@ -180,7 +180,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 {
                     var type = GetMemberType(name);
                     var arg = GetArgument(name, (Complex)t);
-                    var value = TermMarshall.FromTerm(arg, type, Maybe.Some(Marshalling));
+                    var value = TermMarshall.FromTerm(arg, type, Marshalling);
                     value = Convert.ChangeType(value, type);
                     SetMemberValue(name, instance, value);
                 }

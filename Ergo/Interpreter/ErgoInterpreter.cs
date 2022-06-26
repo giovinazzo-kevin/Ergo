@@ -108,7 +108,7 @@ public partial class ErgoInterpreter
         }
 
         stream.Seek(0, SeekOrigin.Begin);
-        return Maybe.Some(module);
+        return module;
     }
 
     public Maybe<Module> Load(ref InterpreterScope scope, Atom module)
@@ -139,7 +139,7 @@ public partial class ErgoInterpreter
 
         stream.Dispose();
         scope = scope.WithModule(module = module.WithProgram(program));
-        return Maybe.Some(module);
+        return module;
     }
 
     public InterpreterScope CreateScope()

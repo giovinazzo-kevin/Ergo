@@ -38,7 +38,7 @@ public readonly partial struct Complex : ITerm
         AbstractForm = isAbstract;
     }
     public Complex AsOperator(Maybe<OperatorAffix> affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
-    public Complex AsOperator(OperatorAffix affix) => new(Maybe.Some(affix), IsParenthesized, Functor, AbstractForm, Arguments);
+    public Complex AsOperator(OperatorAffix affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
     public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, AbstractForm, Arguments);
     public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Affix, IsParenthesized, Functor, abs, Arguments);
     public Complex WithFunctor(Atom functor) => new(Affix, IsParenthesized, functor, AbstractForm, Arguments);
@@ -52,15 +52,15 @@ public readonly partial struct Complex : ITerm
 
         string Inner(Complex c, Maybe<IAbstractTerm> absForm)
         {
-            if (!canonical && absForm.HasValue)
-                return absForm.GetOrThrow().Explain();
+            if (!canonical && absForm.TryGetValue(out var abs))
+                return abs.Explain();
             if (c.IsAbstract<List>(out var list))
                 return list.Explain();
             return c.Affix.Reduce(some => canonical ? OperatorAffix.Prefix : some, () => OperatorAffix.Prefix) switch
             {
                 OperatorAffix.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",
                 OperatorAffix.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.Explain(canonical)}",
-                _ when !c.Functor.IsQuoted && !canonical && c.Affix.HasValue => $"{c.Functor.Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
+                _ when !c.Functor.IsQuoted && !canonical && c.Affix.TryGetValue(out _) => $"{c.Functor.Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
                 _ => $"{c.Functor.Explain(canonical)}({c.Arguments.Join(arg => arg.Explain(canonical))})",
             };
         }
@@ -68,8 +68,8 @@ public readonly partial struct Complex : ITerm
 
     public ITerm Substitute(Substitution s)
     {
-        if (AbstractForm.HasValue)
-            return AbstractForm.GetOrThrow().Substitute(s).CanonicalForm;
+        if (AbstractForm.TryGetValue(out var abs))
+            return abs.Substitute(s).CanonicalForm;
 
         if (Equals(s.Lhs))
         {
@@ -120,8 +120,8 @@ public readonly partial struct Complex : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        if (AbstractForm.HasValue)
-            return AbstractForm.GetOrThrow().Instantiate(ctx, vars).CanonicalForm;
+        if (AbstractForm.TryGetValue(out var abs))
+            return abs.Instantiate(ctx, vars).CanonicalForm;
         return new Complex(Affix, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
     }
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);

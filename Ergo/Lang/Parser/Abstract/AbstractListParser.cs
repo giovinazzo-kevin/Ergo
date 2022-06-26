@@ -22,16 +22,16 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
             {
                 if (cplx.IsAbstract<NTuple>(out var tuple))
                 {
-                    return Maybe.Some(Construct(tuple.Contents));
+                    return Construct(tuple.Contents);
                 }
             }
 
-            return Maybe.Some(Construct(seq.Contents));
+            return Construct(seq.Contents);
         }
 
         if (parser.TryParseAtom(out var a) && a.Equals(empty.EmptyElement))
         {
-            return Maybe.Some(empty);
+            return empty;
         }
 
         return default;

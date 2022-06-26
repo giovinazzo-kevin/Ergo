@@ -14,7 +14,7 @@ public sealed class SequenceType : SolverBuiltIn
         var (type, seq) = (arguments[1], arguments[0]);
         if (seq is Variable)
         {
-            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, seq.Explain());
+            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, seq.Explain());
             yield break;
         }
 

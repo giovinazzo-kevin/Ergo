@@ -113,7 +113,7 @@ public readonly struct InterpreterScope
             var depth_ = depth;
             foreach (Atom import in module.Imports.Contents)
             {
-                foreach (var importedOp in GetOperatorsInner(defaultModule, modules, Maybe.Some(import), added, ++depth_ * 1000))
+                foreach (var importedOp in GetOperatorsInner(defaultModule, modules, import, added, ++depth_ * 1000))
                 {
                     yield return importedOp;
                 }
@@ -164,7 +164,7 @@ public readonly struct InterpreterScope
     /// <param name="added"></param>
     public bool IsModuleVisible(Atom name, Maybe<Atom> entry = default)
     {
-        return Inner(name, entry.Or(Entry), Modules);
+        return Inner(name, entry.GetOr(Entry), Modules);
 
         static bool Inner(Atom name, Atom entry, IDictionary<Atom, Module> modules, HashSet<Atom> added = null)
         {

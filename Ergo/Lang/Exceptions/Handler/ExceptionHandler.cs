@@ -82,7 +82,7 @@ public struct ExceptionHandler
         Contract.Requires(func is { });
         try
         {
-            return Maybe.Some(func());
+            return func();
         }
         catch (ErgoException e)
         {
@@ -108,7 +108,7 @@ public struct ExceptionHandler
         Contract.Requires(func is { });
         try
         {
-            return Maybe.Some(await func());
+            return await func();
         }
         catch (ErgoException e)
         {

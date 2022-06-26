@@ -5,7 +5,7 @@ namespace Ergo.Lang.Parser;
 public interface IAbstractTermParser<A> : IAbstractTermParser
     where A : IAbstractTerm
 {
-    new Maybe<A> TryParse(ErgoParser parser);
-    Maybe<IAbstractTerm> IAbstractTermParser.TryParse(ErgoParser parser) => TryParse(parser)
-        .Map<IAbstractTerm>(some => some);
+    Maybe<A> TryParse(ErgoParser parser);
+    Maybe<IAbstractTerm> IAbstractTermParser.Parse(ErgoParser parser) => TryParse(parser)
+        .Map(some => Maybe.Some<IAbstractTerm>(some));
 }

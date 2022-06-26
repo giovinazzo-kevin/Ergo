@@ -14,15 +14,14 @@ public sealed class ExecuteDirective : ShellCommand
         var dir = m.Groups["dir"].Value;
         var interpreterScope = scope.InterpreterScope;
         var currentModule = interpreterScope.EntryModule;
-        var parsed = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value;
-        var directive = parsed.GetOrDefault();
+        var directive = shell.Parse<Directive>(scope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}").Value.GetOr(default);
         var ret = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Interpreter.RunDirective(ref interpreterScope, directive));
-        if (ret.GetOrDefault())
+        if (ret.GetOr(false))
         {
             yield return scope.WithInterpreterScope(interpreterScope);
             yield break;
         }
-        else if (!ret.HasValue)
+        else if (!ret.TryGetValue(out _))
         {
             yield break;
         }

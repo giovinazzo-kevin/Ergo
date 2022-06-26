@@ -61,9 +61,9 @@ public sealed class SolverContext
         subs ??= new List<Substitution>();
 
         // Treat comma-expression complex ITerms as proper expressions
-        if (NTuple.FromPseudoCanonical(goal, default, default) is { HasValue: true } expr)
+        if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {
-            await foreach (var s in Solve(expr.GetOrThrow(), subs, ct: ct))
+            await foreach (var s in Solve(expr, subs, ct: ct))
                 yield return s;
 
             Scope = Scope.WithChoicePoint();

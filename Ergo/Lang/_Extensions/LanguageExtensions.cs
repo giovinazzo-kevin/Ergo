@@ -51,10 +51,8 @@ public static class LanguageExtensions
 
     public static bool IsAbstract(this ITerm t, Type type, out IAbstractTerm match)
     {
-        match = default;
-        if (t.AbstractForm.HasValue)
+        if (t.AbstractForm.TryGetValue(out match))
         {
-            match = t.AbstractForm.GetOrThrow();
             return match.GetType().Equals(type);
         }
 
@@ -106,7 +104,7 @@ public static class LanguageExtensions
         match = default;
         try
         {
-            match = TermMarshall.FromTerm(t, shape, Maybe.Some(mode));
+            match = TermMarshall.FromTerm(t, shape, mode);
             if (matchFunctor)
             {
                 if (t is Complex cplx && !cplx.Functor.Equals(new Atom(typeof(T).Name.ToLower())))
@@ -136,14 +134,14 @@ public static class LanguageExtensions
             if (qv is Complex cplx && WellKnown.Functors.SignatureTag.Contains(cplx.Functor))
             {
                 qv = cplx.Arguments[0];
-                tag = Maybe.Some((Atom)cplx.Arguments[1]);
+                tag = (Atom)cplx.Arguments[1];
             }
 
-            if (qv is { AbstractForm: { HasValue: true } abs })
+            if (qv.AbstractForm.TryGetValue(out var abs))
             {
-                var sig = abs.GetOrThrow().Signature
-                    .WithModule(Maybe.Some(qm));
-                if (tag.HasValue)
+                var sig = abs.Signature
+                    .WithModule(qm);
+                if (tag.TryGetValue(out _))
                     return sig.WithTag(tag);
                 return sig;
             }
@@ -151,14 +149,14 @@ public static class LanguageExtensions
             return new Signature(
                 qs.Functor,
                 qs.Arity,
-                Maybe.Some(qm),
+                qm,
                 tag
             );
         }
 
         return new Signature(
             term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
-            term.Map(a => Maybe.Some(0), v => Maybe.Some(0), c => Maybe.Some(c.Arity)),
+            term.Map(a => 0, v => 0, c => c.Arity),
             Maybe<Atom>.None,
             term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)
         );

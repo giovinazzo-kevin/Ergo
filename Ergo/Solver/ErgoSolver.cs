@@ -25,8 +25,8 @@ public partial class ErgoSolver : IDisposable
     {
         var term = TermMarshall.ToTerm(new T());
         var signature = term.GetSignature();
-        signature = signature.Tag.HasValue && WellKnown.Functors.Dict.Contains(signature.Functor)
-            ? functor.Reduce(some => signature.WithTag(Maybe.Some(some)), () => signature)
+        signature = signature.Tag.TryGetValue(out _) && WellKnown.Functors.Dict.Contains(signature.Functor)
+            ? functor.Reduce(some => signature.WithTag(some), () => signature)
             : functor.Reduce(some => signature.WithFunctor(some), () => signature);
         return signature;
     }
@@ -50,7 +50,7 @@ public partial class ErgoSolver : IDisposable
     public void BindDataSource<T>(DataSource<T> data)
         where T : new()
     {
-        var signature = GetDataSignature<T>(Maybe.Some(data.Functor)).WithModule(Maybe.None<Atom>());
+        var signature = GetDataSignature<T>(data.Functor).WithModule(Maybe.None<Atom>());
         if (!DataSources.TryGetValue(signature, out var hashSet))
         {
             DataSources[signature] = hashSet = new();
@@ -74,7 +74,7 @@ public partial class ErgoSolver : IDisposable
     public bool RemoveDataSources<T>(Atom functor)
         where T : new()
     {
-        var signature = GetDataSignature<T>(Maybe.Some(functor));
+        var signature = GetDataSignature<T>(functor);
         if (DataSources.TryGetValue(signature, out var hashSet))
         {
             hashSet.Clear();
@@ -92,7 +92,7 @@ public partial class ErgoSolver : IDisposable
         {
             foreach (var sig in DataSources.Keys)
             {
-                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOrThrow()).CanonicalForm);
+                var anon = sig.Arity.Reduce(some => sig.Functor.BuildAnonymousTerm(some), () => new Dict(sig.Tag.GetOr(WellKnown.Literals.Discard)).CanonicalForm);
                 if (!head.Unify(anon).TryGetValue(out var subs))
                 {
                     continue;
@@ -145,17 +145,17 @@ public partial class ErgoSolver : IDisposable
     {
         var any = false;
         var sig = goal.GetSignature();
-        if (!goal.TryGetQualification(out var qm, out var term))
+        if (!goal.TryGetQualification(out _, out _))
         {
             // Try resolving the built-in's module automatically
             foreach (var key in BuiltIns.Keys)
             {
-                if (!scope.InterpreterScope.IsModuleVisible(key.Module.GetOrDefault()))
+                if (!key.Module.TryGetValue(out var module) || !scope.InterpreterScope.IsModuleVisible(module))
                     continue;
                 var withoutModule = key.WithModule(default);
                 if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
                 {
-                    term.TryQualify(key.Module.GetOrDefault(), out goal);
+                    goal.TryQualify(module, out goal);
                     sig = key;
                     break;
                 }
@@ -172,7 +172,7 @@ public partial class ErgoSolver : IDisposable
             LogTrace(SolverTraceType.BuiltInResolution, $"{goal.Explain()}", scope.Depth);
             if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
             {
-                scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(Maybe.Some(args.Length)).Explain());
+                scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(args.Length).Explain());
                 yield break;
             }
 

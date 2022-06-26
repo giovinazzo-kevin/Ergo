@@ -55,5 +55,5 @@ public sealed class List : AbstractList
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
     public static Maybe<List> FromCanonical(ITerm term) => Unfold(term, last => true, WellKnown.Functors.List)
-        .Map(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
+        .Select(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
 }

@@ -6,13 +6,13 @@ using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();
 var personGenSource = new DataSource<Person>(
     source: () => new PersonGenerator().Generate(),
-    functor: Maybe.Some(new Atom("person_generator")),
+    functor: new Atom("person_generator"),
     dataSemantics: RejectionData.Discard,
     ctrlSemantics: RejectionControl.Break
 );
 var feedbackSource = new DataSource<Person>(
     source: () => feedbackSink.Pull(),
-    functor: Maybe.Some(new Atom("person")),
+    functor: new Atom("person"),
     dataSemantics: RejectionData.Recycle,
     ctrlSemantics: RejectionControl.Continue
 );

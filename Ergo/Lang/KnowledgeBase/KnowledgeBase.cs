@@ -44,12 +44,12 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             return true;
         }
 
-        var looseKey = key.WithModule(Maybe<Atom>.None);
-        if (key.Module.HasValue && Predicates.Contains(looseKey))
-        {
-            predicates = (List<Predicate>)Predicates[looseKey];
-            return predicates.All(p => p.DeclaringModule.Equals(key.Module.GetOrThrow()));
-        }
+        //var looseKey = key.WithModule(Maybe<Atom>.None);
+        //if (key.Module.TryGetValue(out var module) && Predicates.Contains(looseKey))
+        //{
+        //    predicates = (List<Predicate>)Predicates[looseKey];
+        //    return predicates.All(p => p.DeclaringModule.Equals(module));
+        //}
 
         return false;
     }
@@ -106,7 +106,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (predicate.Unify(head).HasValue)
+                if (predicate.Unify(head).TryGetValue(out _))
                 {
                     matches.RemoveAt(i);
                     return true;
@@ -125,7 +125,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (predicate.Unify(head).HasValue)
+                if (predicate.Unify(head).TryGetValue(out _))
                 {
                     retracted++;
                     matches.RemoveAt(i);

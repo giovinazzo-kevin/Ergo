@@ -3,7 +3,7 @@
 public class SetModule : InterpreterDirective
 {
     public SetModule()
-        : base("", new("module"), Maybe.Some(1), 0)
+        : base("", new("module"), 1, 0)
     {
     }
 

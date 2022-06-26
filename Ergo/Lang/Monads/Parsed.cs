@@ -3,12 +3,22 @@ using Ergo.Lang.Utils;
 
 namespace Ergo.Lang;
 
+/// <summary>
+/// Typed wrapper for common parser operations.
+/// </summary>
 public readonly struct Parsed<T>
 {
-    private static Maybe<T> Box(object value) => Maybe.Some((T)value);
+    private static Maybe<T> Box(object value) => (T)value;
     private readonly Lazy<Maybe<T>> _value;
     private readonly Lazy<Maybe<T>> _valueUnsafe;
+
+    /// <summary>
+    /// The parsed value, or None if the string could not be parsed or if a parser exception was thrown during parsing.
+    /// </summary>
     public readonly Maybe<T> Value => _value.Value;
+    /// <summary>
+    /// The parsed value, or None if the string could not be parsed. Parser exceptions are not caught and will bubble up the stack.
+    /// </summary>
     public readonly Maybe<T> ValueUnsafe => _valueUnsafe.Value;
 
     public Parsed(ErgoFacade facade, string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
@@ -28,6 +38,7 @@ public readonly struct Parsed<T>
             _ when typeof(T) == typeof(ITerm) =>
                 (ErgoParser p) => p.TryParseTerm(out var x, out _) ? Box(x) : onParseFail(data)
             ,
+            // TODO: Generalize abstract terms
             _ when typeof(T) == typeof(List) =>
                 (ErgoParser p) => p.TryParseTerm(out var x, out _) && x.IsAbstract<List>(out var expr) ? Box(expr) : onParseFail(data)
             ,

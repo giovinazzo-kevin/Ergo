@@ -3,7 +3,7 @@
 public class DeclareModule : InterpreterDirective
 {
     public DeclareModule()
-        : base("", new("module"), Maybe.Some(2), 0)
+        : base("", new("module"), 2, 0)
     {
     }
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)

@@ -49,9 +49,8 @@ public partial class ErgoParser : IDisposable
         abs = default;
         if (!AbstractTermParsers.TryGetValue(typeof(T), out var parser))
             return false;
-        var res = parser.TryParse(this);
-        abs = res.Reduce(some => (T)some, () => default);
-        return res.HasValue;
+        var res = parser.Parse(this).Select(some => (T)some);
+        return res.TryGetValue(out abs);
     }
 
     public bool TryParseAtom(out Atom atom)
@@ -133,10 +132,10 @@ public partial class ErgoParser : IDisposable
 
         var argParse = new TupleParser()
             .TryParse(this);
-        if (!argParse.HasValue)
+        if (!argParse.TryGetValue(out var parsed))
             return Fail(pos);
 
-        cplx = new Complex(new Atom(functor), argParse.GetOrThrow().Contents.ToArray());
+        cplx = new Complex(new Atom(functor), parsed.Contents.ToArray());
         return true;
     }
     public bool TryParseTermOrExpression(out ITerm term, out bool parenthesized)
@@ -146,8 +145,8 @@ public partial class ErgoParser : IDisposable
         {
             term = expr.Complex;
             parenthesized = expr.Complex.IsParenthesized;
-            if (NTuple.FromPseudoCanonical(term, Maybe.Some(parenthesized), hasEmptyElement: Maybe.Some(false)) is { HasValue: true } tuple)
-                term = tuple.GetOrThrow().CanonicalForm;
+            if (!NTuple.FromPseudoCanonical(term, parenthesized, hasEmptyElement: false).TryGetValue(out var tuple))
+                term = tuple.CanonicalForm;
             return true;
         }
 
@@ -190,13 +189,13 @@ public partial class ErgoParser : IDisposable
             var pos = Lexer.State;
             foreach (var abstractParser in AbstractTermParsers.Values)
             {
-                if (abstractParser.TryParse(this) is not { HasValue: true } parsed)
+                if (!abstractParser.Parse(this).TryGetValue(out var parsed))
                 {
                     Fail(pos);
                     continue;
                 }
 
-                ITerm = parsed.GetOrThrow().CanonicalForm;
+                ITerm = parsed.CanonicalForm;
                 return true;
             }
 
@@ -514,12 +513,12 @@ public partial class ErgoParser : IDisposable
 
         var rhs = op.Right.Reduce(s => s, () => throw new NotImplementedException());
 
-        if (NTuple.FromPseudoCanonical(rhs, default, hasEmptyElement: Maybe.Some(false)) is not { HasValue: true } contents)
+        if (!NTuple.FromPseudoCanonical(rhs, default, hasEmptyElement: false).TryGetValue(out var contents))
         {
-            contents = Maybe.Some(new NTuple(new[] { rhs }));
+            contents = new NTuple(new[] { rhs });
         }
 
-        return MakePredicate(pos, desc, op.Left, contents.GetOrThrow(), out predicate);
+        return MakePredicate(pos, desc, op.Left, contents, out predicate);
 
         bool MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, Ast.NTuple body, out Predicate c)
         {
@@ -560,7 +559,7 @@ public partial class ErgoParser : IDisposable
             predicates.Add(predicate);
         }
 
-        var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOrDefault().Equals(new Atom("module")))
+        var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals(new Atom("module")))
             .Body.GetArguments();
 
         if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>(out var exported))
@@ -571,7 +570,7 @@ public partial class ErgoParser : IDisposable
         var exportedPredicates = predicates.Select(p =>
         {
             var sign = p.Head.GetSignature();
-            var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow()))
+            var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOr(default)))
                 .AsOperator(OperatorAffix.Infix);
             if (exported.Contents.Any(x => x.Equals(form)))
                 return p.Exported();

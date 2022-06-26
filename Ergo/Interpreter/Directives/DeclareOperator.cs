@@ -4,7 +4,7 @@ public class DeclareOperator : InterpreterDirective
 {
 
     public DeclareOperator()
-        : base("", new("op"), Maybe.Some(3), 10)
+        : base("", new("op"), 3, 10)
     {
     }
 

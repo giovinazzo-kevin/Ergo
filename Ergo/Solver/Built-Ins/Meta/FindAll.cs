@@ -4,7 +4,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class FindAll : SolverBuiltIn
 {
     public FindAll()
-        : base("", new("findall"), Maybe.Some(3), WellKnown.Modules.Meta)
+        : base("", new("findall"), 3, WellKnown.Modules.Meta)
     {
     }
 
@@ -12,7 +12,7 @@ public sealed class FindAll : SolverBuiltIn
     {
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
-            .WithCallee(Maybe.Some(GetStub(args)));
+            .WithCallee(GetStub(args));
         if (!args[1].IsAbstract<NTuple>(out var comma))
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
@@ -29,11 +29,11 @@ public sealed class FindAll : SolverBuiltIn
             }
             else if (!args[2].IsGround)
             {
-                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], WellKnown.Literals.EmptyList));
+                yield return True(new Substitution(args[2], WellKnown.Literals.EmptyList));
             }
             else
             {
-                yield return new Evaluation(WellKnown.Literals.False);
+                yield return False();
             }
         }
         else
@@ -45,11 +45,11 @@ public sealed class FindAll : SolverBuiltIn
             }
             else if (!args[2].IsGround)
             {
-                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[2], list.CanonicalForm));
+                yield return True(new Substitution(args[2], list.CanonicalForm));
             }
             else
             {
-                yield return new Evaluation(WellKnown.Literals.False);
+                yield return False();
             }
         }
     }

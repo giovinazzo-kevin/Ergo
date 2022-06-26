@@ -16,10 +16,9 @@ public sealed class DictParser : IAbstractTermParser<Dict>
 
         var argParse = new SetParser()
             .TryParse(parser);
-        if (!argParse.HasValue)
+        if (!argParse.TryGetValue(out var args))
             return default;
-        var args = argParse.GetOrThrow();
-        if (!args.Contents.All(a => WellKnown.Functors.NamedArgument.Contains(a.GetFunctor().GetOrDefault())))
+        if (!args.Contents.All(a => WellKnown.Functors.NamedArgument.Contains(a.GetFunctor().GetOr(default))))
             return default;
 
         foreach (var item in args.Contents)

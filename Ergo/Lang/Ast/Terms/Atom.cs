@@ -36,8 +36,8 @@ public readonly struct Atom : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (!canonical && AbstractForm.HasValue)
-            return AbstractForm.GetOrThrow().Explain();
+        if (!canonical && AbstractForm.TryGetValue(out var abs))
+            return abs.Explain();
         if (Value is bool b)
         {
             return b ? "⊤" : "⊥";
@@ -71,8 +71,8 @@ public readonly struct Atom : ITerm
     }
 
     public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
-    public Atom AsQuoted(bool quoted) => new(Value, Maybe.Some(quoted));
-    public Atom WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Value, Maybe.Some(IsQuoted), abs);
+    public Atom AsQuoted(bool quoted) => new(Value, quoted);
+    public Atom WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Value, IsQuoted, abs);
 
     public override bool Equals(object obj)
     {

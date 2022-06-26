@@ -37,7 +37,7 @@ public readonly struct Signature
         }
 
         return Functor.Equals(other.Functor)
-            && (!Arity.HasValue || !other.Arity.HasValue || Arity.Equals(other.Arity))
+            && (!Arity.TryGetValue(out _) || !other.Arity.TryGetValue(out _) || Arity.Equals(other.Arity))
             && Module.Equals(other.Module);
     }
 
@@ -55,11 +55,11 @@ public readonly struct Signature
             c.Arguments[0].TryGetQualification(out var qm, out var qs);
             if (qs is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
             {
-                sig = new((Atom)d.Arguments[0], Maybe.Some(match.Arity), Maybe.Some(qm), Maybe.Some((Atom)d.Arguments[1]));
+                sig = new((Atom)d.Arguments[0], match.Arity, qm, (Atom)d.Arguments[1]);
                 return true;
             }
 
-            sig = new((Atom)qs, Maybe.Some(match.Arity), Maybe.Some(qm), Maybe<Atom>.None);
+            sig = new((Atom)qs, match.Arity, qm, Maybe<Atom>.None);
             return true;
         }
 

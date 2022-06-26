@@ -123,7 +123,6 @@ public readonly struct ErgoFacade
         var newFacade = this;
         foreach (var type in lookInAssembly.GetTypes())
         {
-            if (!type.IsAssignableTo(typeof(IAbstractTermParser))) continue;
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
             if (type.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == typeof(IAbstractTermParser<>)) is not { } inter) continue;
             var inst = Activator.CreateInstance(type);

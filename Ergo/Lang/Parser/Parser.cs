@@ -22,7 +22,7 @@ public partial class ErgoParser : IDisposable
 
     public bool TryRemoveAbstractParser<T>()
         where T : IAbstractTerm => AbstractTermParsers.Remove(typeof(T));
-    public bool TryAddAbstractParser<T>(AbstractTermParser<T> parser)
+    public bool TryAddAbstractParser<T>(IAbstractTermParser<T> parser)
         where T : IAbstractTerm
     {
         AbstractTermParsers.Add(typeof(T), parser);
@@ -131,7 +131,7 @@ public partial class ErgoParser : IDisposable
             return Fail(pos);
         }
 
-        var argParse = new ListParser<NTuple>((h, t) => (new(h)))
+        var argParse = new TupleParser()
             .TryParse(this);
         if (!argParse.HasValue)
             return Fail(pos);

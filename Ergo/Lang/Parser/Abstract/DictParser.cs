@@ -2,9 +2,9 @@
 
 namespace Ergo.Lang.Parser;
 
-public sealed class DictParser : AbstractTermParser<Dict>
+public sealed class DictParser : IAbstractTermParser<Dict>
 {
-    public override Maybe<Dict> TryParse(ErgoParser parser)
+    public Maybe<Dict> TryParse(ErgoParser parser)
     {
         var functor = (Either<Atom, Variable>)default;
         if (parser.TryParseAtom(out var atom))
@@ -14,7 +14,7 @@ public sealed class DictParser : AbstractTermParser<Dict>
         else
             return default;
 
-        var argParse = new ListParser<Set>((h, t) => new(h))
+        var argParse = new SetParser()
             .TryParse(parser);
         if (!argParse.HasValue)
             return default;

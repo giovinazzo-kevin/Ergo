@@ -56,6 +56,12 @@ public abstract class PredicatesShellCommand : ShellCommand
         }
 
         var explanations = predicates
+            .OrderBy(x => x switch
+            {
+                { IsDynamic: true } => 1,
+                { IsExported: true } => 10,
+                _ => 100
+            })
             .Select(p => Explain
                 ? new[] { p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Explain(canonical: !Explain) }
                 : new[] { p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Documentation })

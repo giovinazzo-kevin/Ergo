@@ -120,9 +120,9 @@ public static class LanguageExtensions
 
     public static Maybe<IEnumerable<Substitution>> Unify(this Predicate predicate, ITerm head)
     {
-        return predicate.Head.GetQualification(out var qv)
-            .Map(_ => head.GetQualification(out var hv)
-                .Map(_ => qv.Unify(hv)));
+        predicate.Head.GetQualification(out var qv);
+        head.GetQualification(out var hv);
+        return qv.Unify(hv);
     }
 
     public static Signature GetSignature(this ITerm term)

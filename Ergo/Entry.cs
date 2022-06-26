@@ -27,7 +27,7 @@ var facade = ErgoFacade.Standard
     ;
 
 var shell = facade.BuildShell();
-await foreach (var _ in shell.Repl(shell.CreateScope()))
+await foreach (var _ in shell.Repl())
 {
     await foreach (var person in consoleSink.Pull())
     {

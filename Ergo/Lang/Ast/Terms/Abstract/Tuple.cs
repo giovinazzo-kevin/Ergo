@@ -9,7 +9,7 @@ public sealed class NTuple : AbstractList
     public NTuple(ImmutableArray<ITerm> head)
         : base(head)
     {
-        CanonicalForm = FoldNoEmptyTail(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
+        CanonicalForm = FoldNoEmptyTailParensSingle(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }

@@ -2,7 +2,7 @@
 
 public partial class ErgoLexer
 {
-    public readonly ref struct StreamState
+    public readonly struct StreamState
     {
         public readonly string Filename;
         public readonly long Position;

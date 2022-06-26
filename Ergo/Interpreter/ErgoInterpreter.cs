@@ -1,5 +1,6 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter.Directives;
+using Ergo.Lang.Exceptions.Handler;
 using Ergo.Lang.Utils;
 using System.IO;
 
@@ -68,11 +69,11 @@ public partial class ErgoInterpreter
         var parser = Facade.BuildParser(stream, operators);
         var pos = parser.Lexer.State;
         // Bootstrap a new parser by first loading the operator symbols defined in this module
-        var newOperators = parser.ParseOperatorDeclarations();
+        var newOperators = parser.OperatorDeclarations();
         parser.Lexer.Seek(pos);
         parser = Facade.BuildParser(stream, operators.Concat(newOperators).Distinct());
 
-        if (!parser.TryParseProgramDirectives(out var program))
+        if (!scope.ExceptionHandler.TryGet(() => parser.ProgramDirectives()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
             scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
@@ -131,7 +132,7 @@ public partial class ErgoInterpreter
         }
 
         var parser = Facade.BuildParser(stream, scope.GetOperators());
-        if (!parser.TryParseProgram(out var program))
+        if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
             scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
@@ -143,9 +144,10 @@ public partial class ErgoInterpreter
         return module;
     }
 
-    public InterpreterScope CreateScope()
+    public InterpreterScope CreateScope(ExceptionHandler handler = default)
     {
-        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
+        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true))
+            .WithExceptionHandler(handler);
         Load(ref stdlibScope, WellKnown.Modules.Stdlib);
         var scope = stdlibScope
             .WithRuntime(false)

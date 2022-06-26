@@ -18,7 +18,7 @@ namespace Ergo.Facade;
 /// </summary>
 public readonly struct ErgoFacade
 {
-    private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(ErgoParser).GetMethod(nameof(ErgoParser.TryAddAbstractParser));
+    private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(ErgoParser).GetMethod(nameof(ErgoParser.AddAbstractParser));
     private static readonly MethodInfo Solver_BindDataSource = typeof(ErgoSolver).GetMethod(nameof(ErgoSolver.BindDataSource));
     private static readonly MethodInfo Solver_BindDataSink = typeof(ErgoSolver).GetMethod(nameof(ErgoSolver.BindDataSink));
     private static readonly MethodInfo This_AddParser = typeof(ErgoFacade).GetMethod(nameof(ErgoFacade.AddParser));

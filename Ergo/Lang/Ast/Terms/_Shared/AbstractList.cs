@@ -78,7 +78,7 @@ public abstract class AbstractList : IAbstractTerm
     }
 
     /// <summary>
-    /// Folds a list in a non-canonical way that omits the trailing empty element. 
+    /// Folds a list in a non-canonical way that omits the trailing empty element.
     /// Note that the empty element is still returned for 0-length lists.
     /// </summary>
     protected static ITerm FoldNoEmptyTail(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
@@ -88,6 +88,24 @@ public abstract class AbstractList : IAbstractTerm
             return emptyElement;
         if (args.Length == 1)
             return new Complex(functor, args[0]);
+        return args
+            .Reverse()
+            .Aggregate((a, b) => new Complex(functor, b, a)
+                .AsOperator(OperatorAffix.Infix));
+    }
+
+    /// <summary>
+    /// Folds a list in a non-canonical way that omits the trailing empty element and parenthesizes the single element instead of returning a malformed complex.
+    /// Note that the empty element is still returned for 0-length lists.
+    /// </summary>
+    protected static ITerm FoldNoEmptyTailParensSingle(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    {
+        // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
+        if (args.Length == 0)
+            return emptyElement;
+        args = args.SetItem(0, args[0].AsParenthesized(true));
+        if (args.Length == 1)
+            return args[0];
         return args
             .Reverse()
             .Aggregate((a, b) => new Complex(functor, b, a)

@@ -41,6 +41,13 @@ public readonly struct Maybe<T>
         return Maybe<U>.None;
     }
 
+    public Maybe<T> Where(Func<T, bool> cond)
+    {
+        if (HasValue && cond(Value))
+            return this;
+        return default;
+    }
+
     public IEnumerable<T> AsEnumerable()
     {
         if (HasValue)
@@ -60,20 +67,27 @@ public readonly struct Maybe<T>
             return Value;
         return other;
     }
+    public Maybe<T> Or(Func<Maybe<T>> other)
+    {
+        if (HasValue)
+            return this;
+        return other();
+    }
+
     public T GetOrThrow(Exception ex)
     {
         if (HasValue)
             return Value;
         throw ex;
     }
-    public Either<T, U> GetOr<U>(U other)
+    public Either<T, U> GetEither<U>(U other)
     {
         if (HasValue)
             return Value;
         return other;
     }
 
-    public void Do(Action<T> some, Action none = null) => _ = Map<T>(v => { some(v); return default; }, () => { none?.Invoke(); return default; });
+    public Maybe<T> Do(Action<T> some = null, Action none = null) => Map<T>(v => { some?.Invoke(v); return v; }, () => { none?.Invoke(); return default; });
 
     private Maybe(T value)
     {

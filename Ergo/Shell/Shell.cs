@@ -27,7 +27,7 @@ public partial class ErgoShell
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
 
-    public ShellScope CreateScope() => new(Interpreter.CreateScope().WithRuntime(true).WithExceptionHandler(LoggingExceptionHandler), false);
+    public ShellScope CreateScope() => new(Interpreter.CreateScope(LoggingExceptionHandler).WithRuntime(true), false);
 
     public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
     {
@@ -106,7 +106,7 @@ public partial class ErgoShell
         scope = copy;
     }
 
-    public virtual async IAsyncEnumerable<ShellScope> Repl(ShellScope scope, Func<string, bool> exit = null)
+    public virtual async IAsyncEnumerable<ShellScope> Repl(Func<ShellScope> createScope = null, Func<string, bool> exit = null)
     {
         var encoding = new UnicodeEncoding(false, false);
         Out = new StreamWriter(Console.OpenStandardOutput(), encoding);
@@ -115,6 +115,7 @@ public partial class ErgoShell
         Console.SetOut(Out);
         Console.SetIn(In);
 
+        var scope = createScope?.Invoke() ?? CreateScope();
         while (true)
         {
             Write($"{scope.InterpreterScope.Entry.Explain()}> ");

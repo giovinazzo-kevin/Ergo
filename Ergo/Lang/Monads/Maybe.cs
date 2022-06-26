@@ -8,32 +8,50 @@ public static class Maybe
 
 public readonly struct Maybe<T>
 {
-    public readonly bool HasValue;
+    private readonly bool HasValue;
     private readonly T Value { get; }
 
-    public Maybe<U> Map<U>(Func<T, U> some, Func<U> none = null)
-    {
-        if (HasValue)
-        {
-            return Maybe<U>.Some(some(Value));
-        }
-
-        if (none != null)
-        {
-            return Maybe<U>.Some(none());
-        }
-
-        return Maybe<U>.None;
-    }
-
-    public U Reduce<U>(Func<T, U> some, Func<U> none)
+    public Maybe<U> Map<U>(Func<T, Maybe<U>> some, Func<Maybe<U>> none = null)
     {
         if (HasValue)
         {
             return some(Value);
         }
 
-        return none();
+        if (none != null)
+        {
+            return none();
+        }
+
+        return Maybe<U>.None;
+    }
+
+    public Maybe<U> Select<U>(Func<T, U> some, Func<U> none = null)
+    {
+        if (HasValue)
+        {
+            return some(Value);
+        }
+
+        if (none != null)
+        {
+            return none();
+        }
+
+        return Maybe<U>.None;
+    }
+
+    public Maybe<T> Where(Func<T, bool> cond)
+    {
+        if (HasValue && cond(Value))
+            return this;
+        return default;
+    }
+
+    public IEnumerable<T> AsEnumerable()
+    {
+        if (HasValue)
+            yield return Value;
     }
 
     public bool TryGetValue(out T value)
@@ -43,10 +61,33 @@ public readonly struct Maybe<T>
         value = default;
         return false;
     }
-    public T GetOrDefault() => HasValue ? Value : default;
-    public T GetOrThrow(string msg = null) => HasValue ? Value : throw new ArgumentException(msg ?? "Value was None");
+    public T GetOr(T other)
+    {
+        if (HasValue)
+            return Value;
+        return other;
+    }
+    public Maybe<T> Or(Func<Maybe<T>> other)
+    {
+        if (HasValue)
+            return this;
+        return other();
+    }
 
-    public void Do(Action<T> some, Action none = null) => _ = Map<T>(v => { some(v); return default; }, () => { none?.Invoke(); return default; });
+    public T GetOrThrow(Exception ex)
+    {
+        if (HasValue)
+            return Value;
+        throw ex;
+    }
+    public Either<T, U> GetEither<U>(U other)
+    {
+        if (HasValue)
+            return Value;
+        return other;
+    }
+
+    public Maybe<T> Do(Action<T> some = null, Action none = null) => Map<T>(v => { some?.Invoke(v); return v; }, () => { none?.Invoke(); return default; });
 
     private Maybe(T value)
     {
@@ -56,5 +97,6 @@ public readonly struct Maybe<T>
 
     public static readonly Maybe<T> None = default;
     public static Maybe<T> Some(T value) => new(value);
-    internal object SkipLast(int v) => throw new NotImplementedException();
+
+    public static implicit operator Maybe<T>(T a) => Maybe.Some(a);
 }

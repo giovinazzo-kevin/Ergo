@@ -1,29 +1,22 @@
-﻿using Ergo.Interpreter;
+﻿namespace Ergo.Solver.BuiltIns;
 
-namespace Ergo.Solver.BuiltIns;
-
-public abstract class SolutionAggregationBuiltIn : BuiltIn
+public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 {
     protected SolutionAggregationBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
         : base(documentation, functor, arity, module)
     {
     }
 
-    protected async IAsyncEnumerable<(ITerm ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    protected async IAsyncEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         var (template, goal, instances) = (args[0], args[1], args[2]);
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
-            .WithCallee(Maybe.Some(GetStub(args)));
+            .WithCallee(GetStub(args));
 
         if (goal is Variable)
         {
             throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
-        }
-
-        if (instances is not Variable && !instances.IsAbstract<List>(out _))
-        {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, solver.InterpreterScope, WellKnown.Types.List, instances.Explain());
         }
 
         var templateVars = Enumerable.Empty<Variable>();
@@ -48,7 +41,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
                 new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
             .AsOperator(OperatorAffix.Infix)
         });
-        var solutions = (await solver.Solve(new(goalClauses), Maybe.Some(scope)).CollectAsync())
+        var solutions = (await solver.Solve(new(goalClauses), scope).CollectAsync())
             .Select(s => s.Simplify());
         foreach (var sol in solutions
             .Select(sol =>
@@ -68,9 +61,10 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
 
                 argVars = argVars.Substitute(subTmpl);
                 argTmpl = argTmpl.Substitute(subTmpl);
-                return (argVars, argTmpl);
+                argVars.IsAbstract<List>(out var argList);
+                return (argList, argTmpl);
             })
-            .ToLookup(sol => sol.argVars, sol => sol.argTmpl)
+            .ToLookup(sol => sol.argList, sol => sol.argTmpl)
             .Select(kv => (kv.Key, new List(kv), listVars)))
         {
             yield return sol;

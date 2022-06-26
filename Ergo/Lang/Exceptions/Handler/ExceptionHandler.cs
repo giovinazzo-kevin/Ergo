@@ -2,7 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.Runtime.ExceptionServices;
 
-namespace Ergo.Lang.Exceptions;
+namespace Ergo.Lang.Exceptions.Handler;
 public struct ExceptionHandler
 {
     public readonly Action<ErgoException> Catch;
@@ -82,7 +82,7 @@ public struct ExceptionHandler
         Contract.Requires(func is { });
         try
         {
-            return Maybe.Some(func());
+            return func();
         }
         catch (ErgoException e)
         {
@@ -108,7 +108,7 @@ public struct ExceptionHandler
         Contract.Requires(func is { });
         try
         {
-            return Maybe.Some(await func());
+            return await func();
         }
         catch (ErgoException e)
         {

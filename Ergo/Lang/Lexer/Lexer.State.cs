@@ -1,8 +1,8 @@
 ﻿namespace Ergo.Lang;
 
-public partial class Lexer
+public partial class ErgoLexer
 {
-    public readonly ref struct StreamState
+    public readonly struct StreamState
     {
         public readonly string Filename;
         public readonly long Position;

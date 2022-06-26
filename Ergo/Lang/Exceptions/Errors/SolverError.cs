@@ -1,4 +1,4 @@
-﻿namespace Ergo.Solver;
+﻿namespace Ergo.Lang.Exceptions;
 
 public enum SolverError
 {
@@ -7,5 +7,6 @@ public enum SolverError
     , KeyNotFound
     , ExpectedTermOfTypeAt
     , CannotRetractImportedPredicate
+    , CannotRetractStaticPredicate
     , UndefinedPredicate
 }

@@ -1,11 +1,9 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class SetOf : SolutionAggregationBuiltIn
 {
     public SetOf()
-           : base("", new("setof"), Maybe.Some(3), WellKnown.Modules.Meta)
+           : base("", new("setof"), 3, WellKnown.Modules.Meta)
     {
     }
 
@@ -14,11 +12,11 @@ public sealed class SetOf : SolutionAggregationBuiltIn
         var any = false;
         await foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(solver, scope, args))
         {
-            var setTemplate = new List(ListTemplate.Contents
-                .Distinct()
-                .OrderBy(x => x));
+            var argSet = new Set(ArgVars.Contents);
+            var setVars = new Set(ListVars.Contents);
+            var setTemplate = new Set(ListTemplate.Contents);
 
-            if (!ListVars.CanonicalForm.Unify(ArgVars).TryGetValue(out var listSubs)
+            if (!setVars.Unify(argSet).TryGetValue(out var listSubs)
             || !args[2].Unify(setTemplate.CanonicalForm).TryGetValue(out var instSubs))
             {
                 yield return new(WellKnown.Literals.False);

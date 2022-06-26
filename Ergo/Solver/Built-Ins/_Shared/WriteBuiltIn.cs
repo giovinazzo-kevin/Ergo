@@ -1,8 +1,6 @@
-﻿using Ergo.Interpreter;
+﻿namespace Ergo.Solver.BuiltIns;
 
-namespace Ergo.Solver.BuiltIns;
-
-public abstract class WriteBuiltIn : BuiltIn
+public abstract class WriteBuiltIn : SolverBuiltIn
 {
     public readonly bool Canonical;
     public readonly bool Quoted;
@@ -31,8 +29,8 @@ public abstract class WriteBuiltIn : BuiltIn
     {
         if (args[0].IsAbstract<NTuple>(out var comma))
         {
-            Console.Write(string.Join(string.Empty, comma.Contents.Select(x =>
-                AsQuoted(x, Quoted).Explain(canonical: Canonical))));
+            Console.Write(comma.Contents.Join(x =>
+                AsQuoted(x, Quoted).Explain(canonical: Canonical), ""));
         }
         else
         {

@@ -1,6 +1,8 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿
 
-public sealed class Term : BuiltIn
+namespace Ergo.Solver.BuiltIns;
+
+public sealed class Term : SolverBuiltIn
 {
     public Term()
         : base("", new("term"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
@@ -55,13 +57,13 @@ public sealed class Term : BuiltIn
 
         if (functorArg is Variable)
         {
-            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, functorArg.Explain());
+            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, functorArg.Explain());
             yield break;
         }
 
         if (functorArg is not Atom functor)
         {
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Atom, functorArg.Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Atom, functorArg.Explain());
             yield break;
         }
 
@@ -69,7 +71,7 @@ public sealed class Term : BuiltIn
         {
             if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, args.Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, args.Explain());
                 yield break;
             }
 

@@ -4,9 +4,11 @@ namespace Ergo.Shell;
 
 public readonly struct ShellScope
 {
-    public readonly InterpreterScope InterpreterScope;
-
+    /// <summary>
+    /// If true, the tracing debugger will engage on the next solution.
+    /// </summary>
     public readonly bool TraceEnabled;
+    public readonly InterpreterScope InterpreterScope;
 
     public ShellScope(InterpreterScope i, bool trace)
     {

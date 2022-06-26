@@ -18,15 +18,24 @@ public readonly struct Signature
 
     public string Explain()
     {
-        var module = Module.Reduce(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}", () => "");
-        var tag = Tag.Reduce(some => some.Explain(), () => null);
-        var arity = Arity.Reduce(some => some.ToString(), () => "*");
-        if (WellKnown.Functors.Dict.Contains(Functor) && tag != null)
+        var module = Module
+            .Select(some => $"{some.Explain()}{WellKnown.Functors.Module.First().Explain()}")
+            .GetOr("");
+        var tag = Tag
+            .Select(some => some.Explain())
+            .GetOr("");
+        var arity = Arity
+            .Select(some => some.ToString())
+            .GetOr("*");
+        if (WellKnown.Functors.Dict.Contains(Functor))
         {
-            return $"{module}{tag}{{}}/{arity}";
+            return $"{module}{tag}{{}}{WellKnown.Functors.Arity.First().Explain()}{arity}";
         }
 
-        return $"{module}{Functor.Explain()}{(tag != null ? WellKnown.Functors.SignatureTag.First().Explain() : null)}{tag}/{arity}";
+        var tagSign = Tag
+            .Select(_ => WellKnown.Functors.SignatureTag.First().Explain())
+            .GetOr("");
+        return $"{module}{Functor.Explain()}{tagSign}{tag}{WellKnown.Functors.Arity.First().Explain()}{arity}";
     }
 
     public override bool Equals(object obj)
@@ -37,7 +46,7 @@ public readonly struct Signature
         }
 
         return Functor.Equals(other.Functor)
-            && (!Arity.HasValue || !other.Arity.HasValue || Arity.Equals(other.Arity))
+            && (!Arity.TryGetValue(out _) || !other.Arity.TryGetValue(out _) || Arity.Equals(other.Arity))
             && Module.Equals(other.Module);
     }
 
@@ -52,14 +61,14 @@ public readonly struct Signature
         if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
             && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
         {
-            c.Arguments[0].TryGetQualification(out var qm, out var qs);
-            if (qs is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
+            var module = c.Arguments[0].GetQualification(out var arg);
+            if (arg is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
             {
-                sig = new((Atom)d.Arguments[0], Maybe.Some(match.Arity), Maybe.Some(qm), Maybe.Some((Atom)d.Arguments[1]));
+                sig = new((Atom)arg, match.Arity, module, (Atom)d.Arguments[1]);
                 return true;
             }
 
-            sig = new((Atom)qs, Maybe.Some(match.Arity), Maybe.Some(qm), Maybe<Atom>.None);
+            sig = new((Atom)arg, match.Arity, module, Maybe<Atom>.None);
             return true;
         }
 

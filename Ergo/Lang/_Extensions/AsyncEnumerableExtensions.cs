@@ -1,13 +1,11 @@
-﻿namespace Ergo.Solver;
+﻿namespace Ergo.Lang.Extensions;
 
 public static class EnumerableExtensions
 {
     public static IEnumerable<IEnumerable<T>> CartesianProduct<T>(this IEnumerable<IEnumerable<T>> sequences)
     {
         if (sequences == null)
-        {
             return null;
-        }
 
         IEnumerable<IEnumerable<T>> emptyProduct = new[] { Enumerable.Empty<T>() };
 

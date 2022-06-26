@@ -1,5 +1,4 @@
-﻿using Ergo.Solver;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -13,7 +12,7 @@ public abstract class SolveShellCommand : ShellCommand
         var colorMap = Enum.GetNames(typeof(ConsoleColor))
             .Select(v => v.ToString())
             .ToList();
-        return string.Join('|', colorMap);
+        return colorMap.Join("|");
     }
 
     protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor)
@@ -38,15 +37,14 @@ public abstract class SolveShellCommand : ShellCommand
             userQuery += '.';
         }
 
-        using var solver = shell.CreateSolver(ref scope); ;
-        var parsed = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Parse<Query>(scope, userQuery).ValueUnsafe);
-        if (!parsed.HasValue)
+        using var solver = shell.Facade.BuildSolver(scope.InterpreterScope.KnowledgeBase);
+        var parsed = shell.Parse<Query>(scope, userQuery).Value;
+        if (!parsed.TryGetValue(out var query))
         {
             yield return scope;
             yield break;
         }
 
-        var query = parsed.GetOrDefault().GetOrDefault();
         shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
         var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
         if (scope.TraceEnabled)
@@ -75,7 +73,7 @@ public abstract class SolveShellCommand : ShellCommand
             };
         }
 
-        var solutions = solver.Solve(query, ct: requestCancel.Token); // Solution graph is walked lazily
+        var solutions = solver.Solve(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
@@ -107,7 +105,7 @@ public abstract class SolveShellCommand : ShellCommand
                 yield return scope;
                 if (s.Substitutions.Any())
                 {
-                    var join = string.Join(", ", s.Simplify().Substitutions.Select(s => s.Explain()));
+                    var join = s.Simplify().Substitutions.Join(s => s.Explain());
                     shell.Write($"{join}", LogLevel.Ans);
                     if (scope_.TraceEnabled)
                     {

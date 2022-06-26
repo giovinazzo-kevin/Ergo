@@ -14,25 +14,24 @@ public abstract class PredicatesShellCommand : ShellCommand
         var term = m.Groups["term"];
         var shellScope = scope;
         var interpreterScope = scope.InterpreterScope;
-        var predicates = shell.GetInterpreterPredicates(scope)
-            .Where(p => !p.Head.IsQualified);
+        var predicates = interpreterScope.KnowledgeBase.AsEnumerable();
         if (term?.Success ?? false)
         {
             var parsed = shell.Parse<NTuple>(scope, $"{term.Value}, true").Value;
-            if (!parsed.HasValue)
+            if (!parsed.TryGetValue(out var tuple))
             {
                 shell.No();
                 yield return scope;
                 yield break;
             }
 
-            var yes = scope.InterpreterScope.ExceptionHandler.TryGet(() =>
+            var yes = interpreterScope.ExceptionHandler.TryGet(() =>
             {
-                var matches = shell.Interpreter.GetMatches(ref interpreterScope, parsed.GetOrDefault().Contents.First());
+                var matches = interpreterScope.KnowledgeBase.GetMatches(tuple.Contents.First(), desugar: true);
                 if (matches.Any())
                 {
                     predicates = predicates.Where(p =>
-                        matches.Select(m => m.Rhs).Any(m => new Substitution(m.Head, p.Head).Unify().HasValue));
+                        matches.Select(m => m.Rhs).Any(m => new Substitution(m.Head, p.Head).Unify().TryGetValue(out _)));
                     shellScope = shellScope.WithInterpreterScope(interpreterScope);
                     return true;
                 }
@@ -40,7 +39,7 @@ public abstract class PredicatesShellCommand : ShellCommand
                 return false;
             });
 
-            if (!yes.GetOrDefault())
+            if (!yes.GetOr(false))
             {
                 shell.No();
                 scope = shellScope;

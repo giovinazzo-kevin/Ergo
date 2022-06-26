@@ -3,7 +3,7 @@
 public sealed class RetractAll : DynamicPredicateBuiltIn
 {
     public RetractAll()
-        : base("", new("retractall"), Maybe.Some(1))
+        : base("", new("retractall"), 1)
     {
     }
 

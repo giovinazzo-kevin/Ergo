@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class Unifiable : BuiltIn
+public sealed class Unifiable : SolverBuiltIn
 {
     public Unifiable()
         : base("", new("unifiable"), Maybe<int>.Some(3), WellKnown.Modules.Prologue)

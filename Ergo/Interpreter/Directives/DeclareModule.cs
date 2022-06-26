@@ -3,7 +3,7 @@
 public class DeclareModule : InterpreterDirective
 {
     public DeclareModule()
-        : base("", new("module"), Maybe.Some(2), 0)
+        : base("", new("module"), 2, 0)
     {
     }
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
@@ -13,9 +13,9 @@ public class DeclareModule : InterpreterDirective
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
-        if (!scope.Runtime && scope.Module != WellKnown.Modules.User)
+        if (!scope.IsRuntime && scope.Entry != WellKnown.Modules.User)
         {
-            throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Module.Explain(), moduleName.Explain());
+            throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Entry.Explain(), moduleName.Explain());
         }
 
         if (!args[1].IsAbstract<List>(out var exports))
@@ -25,7 +25,7 @@ public class DeclareModule : InterpreterDirective
 
         if (scope.Modules.TryGetValue(moduleName, out var module))
         {
-            if (!module.Runtime)
+            if (!module.IsRuntime)
             {
                 throw new InterpreterException(InterpreterError.ModuleNameClash, scope, moduleName.Explain());
             }
@@ -34,7 +34,7 @@ public class DeclareModule : InterpreterDirective
         }
         else
         {
-            module = new Module(moduleName, runtime: scope.Runtime)
+            module = new Module(moduleName, runtime: scope.IsRuntime)
                 .WithExports(exports.Contents)
                 .WithImport(WellKnown.Modules.Stdlib);
         }

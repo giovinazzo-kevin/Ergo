@@ -38,7 +38,7 @@ public static class ExceptionUtils
         return msg;
     }
 
-    public static string GetLexerError(Lexer.ErrorType error, params object[] args)
+    public static string GetLexerError(ErgoLexer.ErrorType error, params object[] args)
     {
         var msg = error switch
         {
@@ -121,7 +121,7 @@ public static class ExceptionUtils
         return msg;
     }
 
-    public static string GetMessage(Lexer.StreamState state, string error)
+    public static string GetMessage(ErgoLexer.StreamState state, string error)
     {
         var ctx = state.Context.Replace("\t", "    ");
         var ctxIndicator = new string('~', ctx.Length) + "^";

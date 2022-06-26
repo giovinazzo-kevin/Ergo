@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Ergo.Solver;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -61,7 +62,7 @@ public partial class ErgoShell
 
     public virtual string Prompt(string until = "\r\n") => ReadLine(until);
 
-    protected virtual (ConsoleColor Foreground, ConsoleColor Background) GetColors(LogLevel lvl, Solver.SolverTraceType trc = default)
+    protected virtual (ConsoleColor Foreground, ConsoleColor Background) GetColors(LogLevel lvl, SolverTraceType trc = default)
     {
         return lvl switch
         {
@@ -73,10 +74,10 @@ public partial class ErgoShell
             LogLevel.Err => (ConsoleColor.Red, ConsoleColor.White),
             LogLevel.Trc => trc switch
             {
-                Solver.SolverTraceType.Call => (ConsoleColor.Black, ConsoleColor.White),
-                Solver.SolverTraceType.Exit => (ConsoleColor.DarkGray, ConsoleColor.White),
-                Solver.SolverTraceType.Expansion => (ConsoleColor.DarkGreen, ConsoleColor.White),
-                Solver.SolverTraceType.BuiltInResolution => (ConsoleColor.DarkYellow, ConsoleColor.White),
+                SolverTraceType.Call => (ConsoleColor.Black, ConsoleColor.White),
+                SolverTraceType.Exit => (ConsoleColor.DarkGray, ConsoleColor.White),
+                SolverTraceType.Expansion => (ConsoleColor.DarkGreen, ConsoleColor.White),
+                SolverTraceType.BuiltInResolution => (ConsoleColor.DarkYellow, ConsoleColor.White),
                 _ => (ConsoleColor.Black, ConsoleColor.White),
             },
             _ => (Console.ForegroundColor, Console.BackgroundColor),
@@ -93,7 +94,7 @@ public partial class ErgoShell
         Console.BackgroundColor = oldBg;
     }
 
-    public virtual void Write(string str, LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
+    public virtual void Write(string str, LogLevel lvl = LogLevel.Rpl, SolverTraceType trc = SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
     {
         var now = DateTime.Now;
         var lines = str.Replace("\r", "").Split('\n').Select(l => new LogLine(l, lvl, now)).ToArray();
@@ -113,7 +114,7 @@ public partial class ErgoShell
         }, colors);
     }
 
-    public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, Solver.SolverTraceType trc = Solver.SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
+    public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, SolverTraceType trc = SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
     {
         Write(str, lvl, trc, overrideFg, overrideBg);
         Out.WriteLine();
@@ -154,7 +155,7 @@ public partial class ErgoShell
             var cycle = seen.Contains(key);
             if (cycle && !shouldPrintCyclicTerm(node.Value))
                 return;
-            var spaces = string.Join("", Enumerable.Range(0, indent).Select(_ => "   "));
+            var spaces = Enumerable.Range(0, indent).Join(_ => "   ", "");
             //if (indent > 0) spaces = $"{spaces}│    ";
             var connector = new string('─', 2);
             Write(spaces);
@@ -203,7 +204,7 @@ public partial class ErgoShell
             while (true)
             {
                 yield return cur;
-                cur = cur.Parent.GetOrDefault();
+                cur = cur.Parent.GetOr(default);
                 if (cur is null) yield break;
             }
         }
@@ -239,7 +240,7 @@ public partial class ErgoShell
                 .ToArray();
             foreach (var c in children)
             {
-                c.Parent = Maybe.Some(ret);
+                c.Parent = ret;
             }
 
             ret.Children = children;

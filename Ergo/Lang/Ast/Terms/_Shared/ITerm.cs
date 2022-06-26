@@ -12,9 +12,15 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 
     Maybe<Atom> GetFunctor() => this switch
     {
-        Atom a => Maybe.Some(a),
-        Complex c => Maybe.Some(c.Functor),
+        Atom a => a,
+        Complex c => c.Functor,
         _ => Maybe<Atom>.None
+    };
+
+    ITerm[] GetArguments() => this switch
+    {
+        Complex c => c.Arguments,
+        _ => Array.Empty<ITerm>()
     };
 
     ITerm WithFunctor(Atom newFunctor) => this switch
@@ -32,31 +38,32 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Complex c => c.WithAbstractForm(abs),
         var x => x
     };
-
-    bool TryQualify(Atom m, out ITerm qualified)
+    ITerm AsParenthesized(bool parens) => this switch
     {
-        if (IsQualified)
-        {
-            qualified = this;
-            return false;
-        }
+        Atom a => a,
+        Variable v => v,
+        Complex c => c.AsParenthesized(parens),
+        var x => x
+    };
 
-        qualified = new Complex(WellKnown.Functors.Module.First(), m, this)
-            .AsOperator(OperatorAffix.Infix);
-        return true;
+    ITerm Qualified(Atom m)
+    {
+        return GetQualification(out var head)
+            .Select(some => Inner(head))
+            .GetOr(Inner(this));
+        ITerm Inner(ITerm t)
+        {
+            return new Complex(WellKnown.Functors.Module.First(), m, t)
+                .AsOperator(OperatorAffix.Infix);
+        }
     }
-    bool TryGetQualification(out Atom module, out ITerm value)
+    Maybe<Atom> GetQualification(out ITerm head)
     {
-        if (!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module_)
-        {
-            module = default;
-            value = this;
-            return false;
-        }
-
-        module = module_;
-        value = cplx.Arguments[1];
-        return true;
+        head = this;
+        if (!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module)
+            return default;
+        head = cplx.Arguments[1];
+        return Maybe.Some(module);
     }
 
     ITerm Substitute(Substitution s);

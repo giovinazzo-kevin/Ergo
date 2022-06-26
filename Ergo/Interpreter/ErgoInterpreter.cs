@@ -1,145 +1,33 @@
-﻿using Ergo.Interpreter.Directives;
-using Ergo.Lang.Parser;
-using Ergo.Solver;
+﻿using Ergo.Facade;
+using Ergo.Interpreter.Directives;
+using Ergo.Lang.Exceptions.Handler;
+using Ergo.Lang.Utils;
 using System.IO;
 
 namespace Ergo.Interpreter;
 
 public partial class ErgoInterpreter
 {
+    public readonly ErgoFacade Facade;
     public readonly InterpreterFlags Flags;
-    public readonly Dictionary<Signature, InterpreterDirective> Directives = new();
-    public readonly Dictionary<Signature, HashSet<DynamicPredicate>> DynamicPredicates = new();
 
-    public readonly InterpreterScope StdlibScope;
-
-    public readonly Action<ErgoParser> ConfigureParser;
-
-    public Parsed<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
-    {
-        var userDefinedOps = scope.Operators.Value;
-        return new Parsed<T>(data, ConfigureParser, onParseFail, userDefinedOps);
-    }
-
-    public ErgoInterpreter(InterpreterFlags flags = InterpreterFlags.Default, Action<ErgoParser> configureParser = null)
+    private readonly Dictionary<Signature, InterpreterDirective> _directives = new();
+    internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
         Flags = flags;
-        ConfigureParser = parser =>
-        {
-            // NOTE: Should always add parsers in order of descending complexity
-            parser.TryAddAbstractParser(new DictParser());
-            parser.TryAddAbstractParser(new ListParser<Set>((h, t) => new(h)));
-            parser.TryAddAbstractParser(new ListParser<List>((h, t) => new(h, t)));
-            parser.TryAddAbstractParser(new ListParser<NTuple>((h, t) => new(h)));
-            configureParser?.Invoke(parser);
-        };
-        AddDirectivesByReflection();
-
-        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
-        TryLoad(ref stdlibScope, WellKnown.Modules.Stdlib.Explain());
-        StdlibScope = stdlibScope
-            .WithCurrentModule(WellKnown.Modules.Stdlib)
-            .WithRuntime(false);
+        Facade = facade;
     }
 
-    public InterpreterScope CreateScope()
+    public void AddDirective(InterpreterDirective d)
     {
-        var scope = StdlibScope
-            .WithModule(new Module(WellKnown.Modules.User, runtime: true)
-                .WithImport(WellKnown.Modules.Stdlib))
-            .WithCurrentModule(WellKnown.Modules.User);
-        return scope;
-    }
-
-    public bool TryAddDirective(InterpreterDirective d) => Directives.TryAdd(d.Signature, d);
-
-    protected void AddDirectivesByReflection()
-    {
-        var assembly = typeof(UseModule).Assembly;
-        foreach (var type in assembly.GetTypes())
-        {
-            if (!type.IsAssignableTo(typeof(InterpreterDirective))) continue;
-            if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            var inst = (InterpreterDirective)Activator.CreateInstance(type);
-            Directives[inst.Signature] = inst;
-        }
-    }
-
-    public bool TryAddDynamicPredicate(DynamicPredicate d)
-    {
-        if (!DynamicPredicates.TryGetValue(d.Signature, out var hashSet))
-        {
-            hashSet = DynamicPredicates[d.Signature] = new() { };
-        }
-
-        hashSet.Add(d);
-        return true;
-    }
-
-    public bool TryRemoveDynamicPredicate(DynamicPredicate d)
-    {
-        if (!DynamicPredicates.TryGetValue(d.Signature, out var hashSet))
-        {
-            return false;
-        }
-
-        hashSet.Remove(d);
-        return true;
-    }
-
-    public Maybe<Module> TryLoad(ref InterpreterScope scope, string name)
-    {
-        var copy = scope;
-        var ret = copy.ExceptionHandler.TryGet(() => ModuleLoader.Load(this, ref copy, name));
-        scope = copy;
-        return ret;
-    }
-    public Maybe<Module> TryLoad(ref InterpreterScope scope, Stream stream, string fn = "")
-    {
-        var copy = scope;
-        var ret = copy.ExceptionHandler.TryGet(() => ModuleLoader.Load(this, ref copy, fn, stream));
-        scope = copy;
-        return ret;
-    }
-
-    public Module EnsureModule(ref InterpreterScope scope, Atom name)
-    {
-        var copy = scope;
-        if (!scope.Modules.TryGetValue(name, out var module))
-        {
-            try
-            {
-                scope = TryLoad(ref copy, name.Explain())
-                    .Reduce(some => copy.WithModule(module = some), () => copy);
-            }
-            catch (FileNotFoundException)
-            {
-                scope = copy
-                    .WithModule(module = new Module(name, runtime: true));
-            }
-        }
-
-        return module;
-    }
-
-    public IEnumerable<KnowledgeBase.Match> GetMatches(ref InterpreterScope scope, ITerm head)
-    {
-        // if head is in the form predicate/arity (or its built-in equivalent),
-        // do some syntactic de-sugaring and convert it into an actual anonymous complex
-        if (head is Complex c
-            && WellKnown.Functors.Division.Contains(c.Functor)
-            && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
-        {
-            head = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
-        }
-        // if head matches the signature of any data source, 
-        return SolverBuilder.Build(this, ref scope).KnowledgeBase
-            .GetMatches(head);
+        if (_directives.ContainsKey(d.Signature))
+            throw new NotSupportedException($"Another directive with the same signature was already added");
+        _directives[d.Signature] = d;
     }
 
     public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
     {
-        if (Directives.TryGetValue(d.Body.GetSignature(), out var directive))
+        if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
         {
             return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
         }
@@ -152,66 +40,121 @@ public partial class ErgoInterpreter
         return false;
     }
 
-    public void LoadScope(ref InterpreterScope scope, KnowledgeBase kb)
+    public Module EnsureModule(ref InterpreterScope scope, Atom name)
     {
-        kb.Clear();
-        var added = new HashSet<Atom>();
-        LoadModule(ref scope, scope.Modules[scope.Module], added);
-        foreach (var module in scope.Modules.Values)
+        if (!scope.Modules.TryGetValue(name, out var module))
         {
-            LoadModule(ref scope, module, added);
+            try
+            {
+                if (Load(ref scope, name).TryGetValue(out module))
+                {
+                    scope = scope.WithModule(module);
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                scope = scope
+                    .WithModule(module = new Module(name, runtime: true));
+            }
         }
 
-        void LoadModule(ref InterpreterScope scope, Module module, HashSet<Atom> added)
+        return module;
+    }
+
+    public Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom module)
+        => LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
+    {
+        var operators = scope.GetOperators();
+        var parser = Facade.BuildParser(stream, operators);
+        var pos = parser.Lexer.State;
+        // Bootstrap a new parser by first loading the operator symbols defined in this module
+        var newOperators = parser.OperatorDeclarations();
+        parser.Lexer.Seek(pos);
+        parser = Facade.BuildParser(stream, operators.Concat(newOperators).Distinct());
+
+        if (!scope.ExceptionHandler.TryGet(() => parser.ProgramDirectives()).Map(x => x).TryGetValue(out var program))
         {
-            var copy = scope;
-            if (added.Contains(module.Name))
-                return;
-            added.Add(module.Name);
-            foreach (var subModule in module.Imports.Contents.Select(c => (Atom)c))
-            {
-                if (added.Contains(subModule))
-                    continue;
-                if (!copy.Modules.TryGetValue(subModule, out var import))
-                {
-                    var importScope = copy;
-                    scope = TryLoad(ref importScope, subModule.Explain())
-                        .Reduce(some => copy.WithModule(import = some), () => copy);
-                }
-
-                LoadModule(ref copy, import, added);
-            }
-
-            foreach (var pred in module.Program.KnowledgeBase)
-            {
-                var sig = pred.Head.GetSignature();
-                if (module.Name == copy.Module || module.ContainsExport(sig))
-                {
-                    kb.AssertZ(pred.WithModuleName(module.Name));
-                }
-                else
-                {
-                    kb.AssertZ(pred.WithModuleName(module.Name).Qualified());
-                }
-            }
-
-            foreach (var key in DynamicPredicates.Keys.Where(k => k.Module.Reduce(some => some, () => WellKnown.Modules.User) == module.Name))
-            {
-                foreach (var dyn in DynamicPredicates[key])
-                {
-                    if (!dyn.AssertZ)
-                    {
-                        kb.AssertA(dyn.Predicate);
-                    }
-                    else
-                    {
-                        kb.AssertZ(dyn.Predicate);
-                    }
-                }
-            }
-
-            scope = copy;
+            stream.Dispose();
+            scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            return default;
         }
+
+        var directives = program.Directives.Select(d =>
+        {
+            if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
+                return (Ast: d, Builtin: directive, Defined: true);
+            return (Ast: d, Builtin: default, Defined: false);
+        });
+        foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
+        {
+            scope.Throw(InterpreterError.UndefinedDirective, Ast.Explain(false));
+            return default;
+        }
+
+        foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.Priority))
+        {
+            Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments);
+        }
+
+        var module = scope.EntryModule
+            .WithProgram(program);
+        foreach (Atom import in module.Imports.Contents)
+        {
+            if (scope.Modules.TryGetValue(import, out var importedModule))
+                continue;
+            var importScope = scope;
+            if (!LoadDirectives(ref importScope, import).TryGetValue(out importedModule))
+                continue;
+            scope = scope.WithModule(importedModule);
+        }
+
+        stream.Seek(0, SeekOrigin.Begin);
+        return module;
+    }
+
+    public Maybe<Module> Load(ref InterpreterScope scope, Atom module)
+        => Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream)
+    {
+        if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
+            return default;
+        // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
+        foreach (Atom import in module.Imports.Contents)
+        {
+            if (scope.Modules[import].Program.IsPartial)
+            {
+                var importScope = scope.WithoutModule(import);
+                if (!Load(ref importScope, import).TryGetValue(out var importModule))
+                    return default;
+                scope = scope.WithModule(importModule);
+            }
+        }
+
+        var parser = Facade.BuildParser(stream, scope.GetOperators());
+        if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
+        {
+            stream.Dispose();
+            scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            return default;
+        }
+
+        stream.Dispose();
+        scope = scope.WithModule(module = module.WithProgram(program));
+        return module;
+    }
+
+    public InterpreterScope CreateScope(ExceptionHandler handler = default)
+    {
+        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true))
+            .WithExceptionHandler(handler);
+        Load(ref stdlibScope, WellKnown.Modules.Stdlib);
+        var scope = stdlibScope
+            .WithRuntime(false)
+            .WithCurrentModule(WellKnown.Modules.User)
+            .WithModule(new Module(WellKnown.Modules.User, runtime: true)
+                .WithImport(WellKnown.Modules.Stdlib));
+        return scope;
     }
 
 }

@@ -9,7 +9,7 @@ public sealed class Set : AbstractList
     public Set(ImmutableArray<ITerm> head)
         : base(head.OrderBy(x => x).Distinct())
     {
-        CanonicalForm = Fold(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), ImmutableArray.CreateRange(Contents))
+        CanonicalForm = FoldNoEmptyTail(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), ImmutableArray.CreateRange(Contents))
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
@@ -22,5 +22,5 @@ public sealed class Set : AbstractList
 
     protected override AbstractList Create(ImmutableArray<ITerm> head) => new Set(head);
     public static Maybe<Set> FromCanonical(ITerm term)
-        => Unfold(term, tail => tail.Equals(Empty.CanonicalForm), WellKnown.Functors.Set).Map(some => new Set(some.SkipLast(1)));
+        => Unfold(term, tail => tail.Equals(Empty.CanonicalForm), WellKnown.Functors.Set).Select(some => new Set(some.SkipLast(1)));
 }

@@ -9,7 +9,7 @@ public sealed class NTuple : AbstractList
     public NTuple(ImmutableArray<ITerm> head)
         : base(head)
     {
-        CanonicalForm = Fold(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
+        CanonicalForm = FoldNoEmptyTailParensSingle(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
@@ -20,17 +20,17 @@ public sealed class NTuple : AbstractList
     public override (string Open, string Close) Braces => ("(", ")");
     public override ITerm CanonicalForm { get; }
     protected override AbstractList Create(ImmutableArray<ITerm> head) => new NTuple(head);
-    public static Maybe<NTuple> FromCanonical(ITerm term) => FromQuasiCanonical(term, Maybe.Some(true), Maybe.Some(true));
-    public static Maybe<NTuple> FromQuasiCanonical(ITerm term, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
+    public static Maybe<NTuple> FromCanonical(ITerm term) => FromPseudoCanonical(term, true, true);
+    public static Maybe<NTuple> FromPseudoCanonical(ITerm term, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
     {
-        if (parenthesized.HasValue && term is Complex { IsParenthesized: var p } && p != parenthesized.GetOrThrow())
+        if (parenthesized.TryGetValue(out var parens) && term is Complex { IsParenthesized: var p } && p != parens)
             return default;
 
         return Unfold(term, tail => true, WellKnown.Functors.Conjunction)
-            .Reduce(some =>
+            .Map(some =>
             {
                 var last = some.Last();
-                if (hasEmptyElement.HasValue && last.Equals(Empty.CanonicalForm) != hasEmptyElement.GetOrThrow())
+                if (hasEmptyElement.TryGetValue(out var empty) && last.Equals(Empty.CanonicalForm) != empty)
                     return default;
                 return Maybe.Some(new NTuple(some));
             }, () => default);

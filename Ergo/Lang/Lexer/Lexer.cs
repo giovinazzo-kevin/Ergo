@@ -1,21 +1,23 @@
-﻿using System.IO;
+﻿using Ergo.Facade;
+using Ergo.Lang.Utils;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Lang;
 
-public partial class Lexer : IDisposable
+public partial class ErgoLexer : IDisposable
 {
-    private readonly Stream _reader;
+    private readonly ErgoStream _reader;
     protected int Line { get; private set; }
     protected int Column { get; private set; }
     protected long Position => _reader.Position;
     protected string Context { get; private set; }
-    protected string Filename { get; private set; }
 
     public readonly Operator[] AvailableOperators;
+    public readonly ErgoFacade Facade;
 
-    public StreamState State => new(Filename, Position, Line, Column, Context);
+    public StreamState State => new(_reader.FileName, Position, Line, Column, Context);
 
     public void Seek(StreamState state, SeekOrigin origin = SeekOrigin.Begin)
     {
@@ -23,14 +25,13 @@ public partial class Lexer : IDisposable
         Line = state.Line;
         Column = state.Column;
         Context = state.Context;
-        Filename = state.Filename;
     }
 
     public bool Eof => _reader.Position >= _reader.Length;
 
-    public Lexer(Stream s, string fn, IEnumerable<Operator> userOperators)
+    internal ErgoLexer(ErgoFacade facade, ErgoStream s, IEnumerable<Operator> userOperators)
     {
-        Filename = fn;
+        Facade = facade;
         _reader = s;
         AvailableOperators = userOperators.ToArray();
         OperatorSymbols = AvailableOperators
@@ -39,17 +40,11 @@ public partial class Lexer : IDisposable
             .ToArray();
     }
 
-    public bool TryPeekNextToken(out Token next)
+    public Maybe<Token> PeekNext()
     {
         var s = State;
-        if (TryReadNextToken(out next))
-        {
-            Seek(s);
-            return true;
-        }
-
-        Seek(s);
-        return false;
+        return ReadNext()
+            .Do(_ => Seek(s));
     }
 
     public static string Unescape(string s)
@@ -117,51 +112,44 @@ public partial class Lexer : IDisposable
         return sb.ToString();
     }
 
-    public bool TryReadNextToken(out Token next)
+    public Maybe<Token> ReadNext()
     {
-        next = default;
         SkipWhitespace();
         SkipComments();
-        if (Eof) return false;
+        if (Eof) return default;
 
         var ch = Peek();
         if (IsStringDelimiter(ch))
         {
-            next = ReadString(ch);
-            return true;
+            return ReadString(ch);
         }
 
         if (IsNumberStart(ch))
         {
-            next = ReadNumber();
-            return true;
+            return ReadNumber();
         }
 
         if (IsIdentifierStart(ch))
         {
-            next = ReadIdentifier();
-            return true;
+            return ReadIdentifier();
         }
 
         if (IsOperatorPiece(ch, 0))
         {
-            next = ReadOperator();
-            return true;
+            return ReadOperator();
         }
 
         if (IsPunctuationPiece(ch))
         {
-            next = ReadPunctuation();
-            return true;
+            return ReadPunctuation();
         }
 
         if (IsSingleLineCommentStart(ch))
         {
-            next = ReadSingleLineComment();
-            return true;
+            return ReadSingleLineComment();
         }
 
-        return false;
+        return default;
 
         // ------------------- Helpers -------------------
         static char ReadUTF8Char(Stream s)

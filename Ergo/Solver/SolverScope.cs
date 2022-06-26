@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Solver.BuiltIns;
 using System.Diagnostics;
 
 namespace Ergo.Solver;
@@ -27,21 +26,12 @@ public readonly struct SolverScope
 
     public SolverScope WithModule(Atom module) => new(InterpreterScope, Depth, module, Callee, Callers);
     public SolverScope WithDepth(int depth) => new(InterpreterScope, depth, Module, Callee, Callers);
-    public SolverScope WithCaller(Maybe<Predicate> caller)
-    {
-        var _callers = Callers;
-        return new(InterpreterScope, Depth, Module, Callee, caller.Reduce(some => _callers.Add(some), () => _callers));
-    }
+    public SolverScope WithCaller(Maybe<Predicate> caller) => new(InterpreterScope, Depth, Module, Callee, Callers.AddRange(caller.AsEnumerable()));
     public SolverScope WithCaller(Predicate caller) => new(InterpreterScope, Depth, Module, Callee, Callers.Add(caller));
     public SolverScope WithCallee(Maybe<Predicate> callee) => new(InterpreterScope, Depth, Module, callee, Callers);
     public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: null);
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
-    public Evaluation ThrowFalse(SolverError error, params object[] args)
-    {
-        InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
-        return new Evaluation(WellKnown.Literals.False);
-    }
 
     public bool IsCutRequested => _cut.IsCancellationRequested;
     public bool Cut()
@@ -58,8 +48,10 @@ public readonly struct SolverScope
         var numCallers = Callers.Length;
         var stackTrace = Callers
             .Select((c, i) => $"[{depth - i}] {c.Head.Explain(canonical: true)}");
-        stackTrace = Callee.Reduce(some => stackTrace.Append($"[{depth - numCallers}] {some.Head.Explain(canonical: true)}"), () => stackTrace);
-        return "\t" + string.Join("\r\n\t", stackTrace);
+        stackTrace = Callee
+            .Select(some => stackTrace.Append($"[{depth - numCallers}] {some.Head.Explain(canonical: true)}"))
+            .GetOr(stackTrace);
+        return "\t" + stackTrace.Join("\r\n\t");
 
     }
 }

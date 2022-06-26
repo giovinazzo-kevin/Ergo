@@ -19,7 +19,7 @@ public abstract class ShellCommand
         Priority = priority;
         if (names.Length > 0)
         {
-            Expression = new Regex(@$"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n)))}){(optionalRegex ? "\\s*" : "\\s+")}{regex}\s*$",
+            Expression = new Regex(@$"^\s*(?:{names.Join(n => Regex.Escape(n), "|")}){(optionalRegex ? "\\s*" : "\\s+")}{regex}\s*$",
                 (caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.Compiled) | RegexOptions.Compiled);
 
             if (optionalRegex)
@@ -27,7 +27,7 @@ public abstract class ShellCommand
             }
             else
             {
-                Expression = new Regex(@$"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n)))})\s*$");
+                Expression = new Regex(@$"^\s*(?:{names.Join(n => Regex.Escape(n), "|")})\s*$");
             }
         }
         else

@@ -31,7 +31,7 @@ public sealed class TermMarshall
     }
 
     private static TermMarshalling GetMode(Type type, Maybe<TermMarshalling> mode = default) => mode
-        .Reduce(some => some, () => type.GetCustomAttribute<TermAttribute>()?.Marshalling ?? TermMarshalling.Positional);
+        .GetOr(type.GetCustomAttribute<TermAttribute>()?.Marshalling ?? TermMarshalling.Positional);
 
     public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default) =>
         GetMode(typeof(T), mode) switch

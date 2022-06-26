@@ -1,6 +1,7 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿
+namespace Ergo.Solver.BuiltIns;
 
-public sealed class AnonymousComplex : BuiltIn
+public sealed class AnonymousComplex : SolverBuiltIn
 {
     // TODO: Remove once Reflection module is up and running
     public AnonymousComplex()
@@ -12,23 +13,20 @@ public sealed class AnonymousComplex : BuiltIn
     {
         if (!args[1].Matches<int>(out var arity))
         {
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1].Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1].Explain());
             yield break;
         }
 
         if (args[0] is not Atom functor)
         {
-            if (args[0].TryGetQualification(out var qm, out var qs) && qs is Atom functor_)
+            if (args[0].GetQualification(out var qs).TryGetValue(out var qm) && qs is Atom functor_)
             {
                 var cplx = functor_.BuildAnonymousTerm(arity);
-                if (cplx.TryQualify(qm, out var qualified))
-                {
-                    yield return new(qualified);
-                    yield break;
-                }
+                yield return new(cplx.Qualified(qm));
+                yield break;
             }
 
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());
             yield break;
         }
 

@@ -1,8 +1,9 @@
-﻿using System.Text.RegularExpressions;
+﻿
+using System.Text.RegularExpressions;
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class FormatString : BuiltIn
+public sealed class FormatString : SolverBuiltIn
 {
     private readonly Regex PositionalParamRegex = new(@"(?<!{){(\d+)}(?!})");
 
@@ -16,7 +17,7 @@ public sealed class FormatString : BuiltIn
         var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
         if (!format.Matches<string>(out var formatStr))
         {
-            yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
+            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
             yield break;
         }
 
@@ -29,7 +30,7 @@ public sealed class FormatString : BuiltIn
         {
             if (result.IsGround)
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
                 yield break;
             }
             else

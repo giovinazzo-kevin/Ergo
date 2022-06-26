@@ -4,5 +4,5 @@ namespace Ergo.Lang.Parser;
 
 public interface IAbstractTermParser
 {
-    Maybe<IAbstractTerm> TryParse(ErgoParser parser);
+    Maybe<IAbstractTerm> Parse(ErgoParser parser);
 }

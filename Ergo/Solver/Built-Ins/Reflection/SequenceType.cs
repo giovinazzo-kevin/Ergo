@@ -1,6 +1,8 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿
 
-public sealed class SequenceType : BuiltIn
+namespace Ergo.Solver.BuiltIns;
+
+public sealed class SequenceType : SolverBuiltIn
 {
     public SequenceType()
         : base("", new("seq_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
@@ -12,7 +14,7 @@ public sealed class SequenceType : BuiltIn
         var (type, seq) = (arguments[1], arguments[0]);
         if (seq is Variable)
         {
-            yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, seq.Explain());
+            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, seq.Explain());
             yield break;
         }
 

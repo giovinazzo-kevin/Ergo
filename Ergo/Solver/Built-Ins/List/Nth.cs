@@ -1,8 +1,6 @@
-﻿using Ergo.Interpreter;
+﻿namespace Ergo.Solver.BuiltIns;
 
-namespace Ergo.Solver.BuiltIns;
-
-public abstract class Nth : BuiltIn
+public abstract class Nth : SolverBuiltIn
 {
     public readonly int Offset;
 
@@ -19,7 +17,7 @@ public abstract class Nth : BuiltIn
                 var elem = list.Contents[index];
                 if (args[2].Unify(elem).TryGetValue(out var subs))
                 {
-                    yield return new Evaluation(WellKnown.Literals.True, subs.ToArray());
+                    yield return True(subs);
                     yield break;
                 }
             }
@@ -28,7 +26,7 @@ public abstract class Nth : BuiltIn
                 var contents = Enumerable.Range(0, index)
                     .Select(x => (ITerm)new Variable("_"))
                     .Append(args[2]);
-                yield return new Evaluation(WellKnown.Literals.True, new Substitution(args[1], new List(contents.ToArray()).CanonicalForm));
+                yield return True(new Substitution(args[1], new List(contents).CanonicalForm));
                 yield break;
             }
         }
@@ -43,7 +41,7 @@ public abstract class Nth : BuiltIn
                     if (args[2].Unify(elem).TryGetValue(out var subs))
                     {
                         any = true;
-                        yield return new Evaluation(WellKnown.Literals.True, subs.Prepend(new(args[0], new Atom(i + Offset))).ToArray());
+                        yield return True(subs.Prepend(new(args[0], new Atom(i + Offset))).ToArray());
                     }
                 }
 
@@ -59,7 +57,7 @@ public abstract class Nth : BuiltIn
             }
         }
 
-        yield return new Evaluation(WellKnown.Literals.False);
+        yield return False();
     }
 }
 public sealed class Nth0 : Nth { public Nth0() : base(0) { } }

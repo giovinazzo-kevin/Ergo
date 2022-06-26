@@ -35,15 +35,14 @@ public partial class CommandDispatcher
         DefaultDispatcher(input);
     }
 
-    public bool TryAdd(ShellCommand cmd)
+    public void Add(ShellCommand cmd)
     {
         if (Commands.Any(d => d.Names.Intersect(cmd.Names).Any()))
         {
-            return false;
+            throw new NotSupportedException($"A shell command with one of these names is already defined: {cmd.Names.Join()}");
         }
 
         CommandList.Add(cmd);
-        return true;
     }
 
     public bool Remove(string name) => CommandList.RemoveAll(d => d.Names.Contains(name)) > 0;

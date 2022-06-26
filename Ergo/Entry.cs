@@ -1,44 +1,33 @@
-﻿using Ergo.Shell;
+﻿using Ergo.Facade;
 using Ergo.Solver;
+using Ergo.Solver.DataBindings;
 
 using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();
 var personGenSource = new DataSource<Person>(
     source: () => new PersonGenerator().Generate(),
-    functor: Maybe.Some(new Atom("person_generator")),
+    functor: new Atom("person_generator"),
     dataSemantics: RejectionData.Discard,
     ctrlSemantics: RejectionControl.Break
 );
 var feedbackSource = new DataSource<Person>(
     source: () => feedbackSink.Pull(),
-    functor: Maybe.Some(new Atom("person")),
+    functor: new Atom("person"),
     dataSemantics: RejectionData.Recycle,
     ctrlSemantics: RejectionControl.Continue
 );
-var shell = new ErgoShell(interpreter =>
-{
-    // interpreter.TryAddDirective lets you extend the interpreter
-    // interpreter.TryAddDynamicPredicate lets you add native Ergo predicates to the interpreter programmatically
 
-}, solver =>
-{
-    // solver.TryAddBuiltIn lets you extend the solver
-    // solver.BindDataSink lets you "push" terms from Ergo to a C# IAsyncEnumerable/Event
-    solver.BindDataSink(consoleSink);
-    solver.BindDataSink(feedbackSink);
-    // solver.BindDataSource lets you "pull" objects from a C# IEnumerable/IAsyncEnumerable to Ergo
-    solver.BindDataSource(personGenSource);
-    // You can also use a sink as a data source in order to share messages between language domains
-    solver.BindDataSource(feedbackSource);
-},
-parser =>
-{
-    // parser.TryAddAbstractParser lets you extend the language with custom abstract terms (such as the built-in Dict)
-});
-// shell.TryAddCommand lets you extend the shell
+// The "Standard" Ergo Facade is the recommended pre-configured default environment.
+// You can extend it, modify it, or start from an empty facade. Note that 
+var facade = ErgoFacade.Standard
+    .AddDataSink(consoleSink)
+    .AddDataSink(feedbackSink)
+    .AddDataSource(personGenSource)
+    .AddDataSource(feedbackSource)
+    ;
 
-var scope = shell.CreateScope();
-await foreach (var _ in shell.Repl(scope))
+var shell = facade.BuildShell();
+await foreach (var _ in shell.Repl())
 {
     await foreach (var person in consoleSink.Pull())
     {
@@ -58,7 +47,7 @@ public sealed class PersonGenerator
     private static readonly string[] LastNames = new[] { "Ross", "Smith", "Giovinazzo", "Messina", "Veneruso" };
 
     private T Choose<T>(T[] arr) => arr[Rng.Next(arr.Length)];
-    private string RandomDigits(int len) => string.Join("", Enumerable.Range(0, len).Select(i => Rng.Next(10)));
+    private string RandomDigits(int len) => Enumerable.Range(0, len).Select(i => Rng.Next(10)).Join("");
 
     public async IAsyncEnumerable<Person> Generate()
     {

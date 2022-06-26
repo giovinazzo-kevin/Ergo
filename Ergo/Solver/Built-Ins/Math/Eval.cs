@@ -9,13 +9,7 @@ public sealed class Eval : MathBuiltIn
 
     public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
     {
-        var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Evaluation(new Atom(Evaluate(solver, arguments[0], solver.InterpreterScope))));
-        if (eval.HasValue)
-        {
-            yield return eval.GetOrThrow();
-            yield break;
-        }
-
-        yield return new Evaluation(WellKnown.Literals.False);
+        var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Evaluation(new Atom(Evaluate(solver, scope, arguments[0]))));
+        yield return eval.GetOr(False());
     }
 }

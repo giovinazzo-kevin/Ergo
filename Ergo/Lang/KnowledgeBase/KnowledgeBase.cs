@@ -35,38 +35,44 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return (List<Predicate>)Predicates[key];
     }
 
-    public bool TryGet(Signature key, out List<Predicate> predicates)
+    public Maybe<List<Predicate>> Get(Signature key)
     {
-        predicates = default;
         if (Predicates.Contains(key))
         {
-            predicates = (List<Predicate>)Predicates[key];
-            return true;
+            return Maybe.Some((List<Predicate>)Predicates[key]);
         }
 
-        var looseKey = key.WithModule(Maybe<Atom>.None);
-        if (key.Module.HasValue && Predicates.Contains(looseKey))
-        {
-            predicates = (List<Predicate>)Predicates[looseKey];
-            return predicates.All(p => p.DeclaringModule.Equals(key.Module.GetOrThrow()));
-        }
-
-        return false;
+        return default;
     }
 
-    public IEnumerable<Match> GetMatches(ITerm goal)
+    public IEnumerable<KBMatch> GetMatches(ITerm goal, bool desugar)
     {
+        if (desugar)
+        {
+            // if head is in the form predicate/arity (or its built-in equivalent),
+            // do some syntactic de-sugaring and convert it into an actual anonymous complex
+            if (goal is Complex c
+                && WellKnown.Functors.Division.Contains(c.Functor)
+                && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            {
+                goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
+            }
+        }
         // Instantiate goal
         var inst = goal.Instantiate(Context);
         if (!inst.Unify(goal).TryGetValue(out var subs))
-        {
-            yield break;
-        }
+            return Enumerable.Empty<KBMatch>();
 
         var head = goal.Substitute(subs);
-        var signature = head.GetSignature();
         // Return predicate matches
-        if (TryGet(signature, out var list))
+        if (Get(head.GetSignature()).TryGetValue(out var list))
+            return Inner(list);
+
+        if (head.IsQualified && head.GetQualification(out head).TryGetValue(out var module) && Get(head.GetSignature()).TryGetValue(out list))
+            return Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module));
+
+        return Enumerable.Empty<KBMatch>();
+        IEnumerable<KBMatch> Inner(List<Predicate> list)
         {
             foreach (var k in list)
             {
@@ -74,7 +80,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 if (predicate.Unify(head).TryGetValue(out var matchSubs))
                 {
                     predicate = Predicate.Substitute(predicate, matchSubs);
-                    yield return new Match(goal, predicate, matchSubs.Concat(subs));
+                    yield return new KBMatch(head, predicate, matchSubs.Concat(subs));
                 }
             }
         }
@@ -86,12 +92,12 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
     public bool Retract(ITerm head)
     {
-        if (TryGet(head.GetSignature(), out var matches))
+        if (Get(head.GetSignature()).TryGetValue(out var matches))
         {
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (predicate.Unify(head).HasValue)
+                if (predicate.Unify(head).TryGetValue(out _))
                 {
                     matches.RemoveAt(i);
                     return true;
@@ -105,12 +111,12 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     public int RetractAll(ITerm head)
     {
         var retracted = 0;
-        if (TryGet(head.GetSignature(), out var matches))
+        if (Get(head.GetSignature()).TryGetValue(out var matches))
         {
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (predicate.Unify(head).HasValue)
+                if (predicate.Unify(head).TryGetValue(out _))
                 {
                     retracted++;
                     matches.RemoveAt(i);

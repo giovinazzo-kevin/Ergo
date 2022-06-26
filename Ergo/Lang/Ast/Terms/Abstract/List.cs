@@ -9,9 +9,7 @@ public sealed class List : AbstractList
     public List(ImmutableArray<ITerm> contents, Maybe<ITerm> tail = default)
         : base(contents)
     {
-        Tail = tail.Reduce(
-            some => some,
-            () => EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty ?? this)));
+        Tail = tail.GetOr((ITerm)EmptyElement.WithAbstractForm(Empty ?? this));
         CanonicalForm = Fold(Functor, Tail, contents)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
@@ -40,12 +38,12 @@ public sealed class List : AbstractList
             return Tail.WithAbstractForm(default).Explain();
         }
 
-        var joined = string.Join(',', Contents.Select(t => t.Explain()));
+        var joined = Contents.Join(t => t.Explain());
         if (!Tail.Equals(EmptyElement))
         {
             if (Tail.IsAbstract<List>(out var rest))
             {
-                joined = string.Join(',', Contents.Select(t => t.Explain()).Append(rest.Explain()[1..^1]));
+                joined = Contents.Select(t => t.Explain()).Append(rest.Explain()[1..^1]).Join();
                 return $"{Braces.Open}{joined}{Braces.Close}";
             }
 
@@ -55,5 +53,5 @@ public sealed class List : AbstractList
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
     public static Maybe<List> FromCanonical(ITerm term) => Unfold(term, last => true, WellKnown.Functors.List)
-        .Map(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
+        .Select(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
 }

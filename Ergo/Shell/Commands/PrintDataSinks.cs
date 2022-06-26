@@ -1,5 +1,4 @@
-﻿using Ergo.Solver;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -15,21 +14,19 @@ public sealed class PrintDataSinks : ShellCommand
     {
         var match = m.Groups["term"];
         var sinks = new List<Signature>();
-        var solver = new ErgoSolver(default, default, default);
-        shell.ConfigureSolver(solver);
+        using var solver = shell.Facade.BuildSolver();
         var parsed = shell.Parse<ITerm>(scope, match.Success ? match.Value : "_").Value;
-        if (!parsed.HasValue)
+        if (!parsed.TryGetValue(out var term))
         {
             shell.No();
             yield return scope;
             yield break;
         }
 
-        var term = parsed.GetOrDefault();
         var signature = term.GetSignature().WithModule(Maybe.None<Atom>());
         foreach (var functor in solver.DataSinks)
         {
-            if (!term.IsGround || new Substitution(signature.Functor, functor).Unify().HasValue)
+            if (!term.IsGround || new Substitution(signature.Functor, functor).Unify().TryGetValue(out _))
             {
                 sinks.Add(new(functor, Maybe<int>.None, Maybe<Atom>.None, Maybe<Atom>.None));
             }

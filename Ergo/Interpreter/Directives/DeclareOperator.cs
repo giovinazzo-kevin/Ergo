@@ -1,12 +1,10 @@
-﻿using Ergo.Lang.Exceptions;
-
-namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Interpreter.Directives;
 
 public class DeclareOperator : InterpreterDirective
 {
 
     public DeclareOperator()
-        : base("", new("op"), Maybe.Some(3), 10)
+        : base("", new("op"), 3, 10)
     {
     }
 
@@ -28,7 +26,7 @@ public class DeclareOperator : InterpreterDirective
         }
 
         var (affix, assoc) = Operator.GetAffixAndAssociativity(type);
-        var existingOperators = scope.Operators.Value;
+        var existingOperators = scope.GetOperators();
         foreach (var op in existingOperators.Where(x => x.Affix == affix))
         {
             var intersectingSynonyms = op.Synonyms.Select(x => x.Explain()).Intersect(synonyms);
@@ -43,8 +41,8 @@ public class DeclareOperator : InterpreterDirective
         }
 
         var synonymAtoms = synonyms.Select(x => new Atom(x)).ToArray();
-        scope = scope.WithModule(scope.Modules[scope.Module]
-            .WithOperator(new(scope.Module, affix, assoc, precedence, synonymAtoms)));
+        scope = scope.WithModule(scope.EntryModule
+            .WithOperator(new(scope.Entry, affix, assoc, precedence, synonymAtoms)));
         return true;
     }
 }

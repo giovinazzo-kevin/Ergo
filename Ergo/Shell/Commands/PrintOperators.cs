@@ -13,7 +13,7 @@ public sealed class PrintOperators : ShellCommand
     {
         var operators = new List<Operator>();
         var startsWith = match.Groups["op"].Success ? match.Groups["op"].Value : "";
-        foreach (var op in scope.InterpreterScope.Operators.Value)
+        foreach (var op in scope.InterpreterScope.GetOperators())
         {
             if (op.Synonyms.Any(s => s.Value.ToString().StartsWith(startsWith)))
             {
@@ -25,7 +25,7 @@ public sealed class PrintOperators : ShellCommand
             .Select(r => new[] {
                 r.Precedence.ToString(),
                 Operator.GetOperatorType(r.Affix, r.Associativity).ToString(),
-                $"[{string.Join(",",r.Synonyms.Select(x => x.AsQuoted(true).Explain(true)))}]",
+                $"[{r.Synonyms.Join(x => x.AsQuoted(true).Explain(true))}]",
                 r.DeclaringModule.Explain() })
             .ToArray();
 

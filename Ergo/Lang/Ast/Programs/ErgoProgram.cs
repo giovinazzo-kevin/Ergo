@@ -12,10 +12,8 @@ public readonly struct ErgoProgram : IExplainable
 
     public string Explain(bool canonical)
     {
-        return string.Join("\r\n\r\n",
-            Directives.Select(d => d.Explain(canonical)).Concat(
-            KnowledgeBase.Select(r => r.Explain(canonical)))
-        );
+        return Directives.Select(d => d.Explain(canonical)).Concat(KnowledgeBase.Select(r => r.Explain(canonical)))
+            .Join("\r\n\r\n");
     }
 
     public ErgoProgram(Directive[] directives, Predicate[] kb)

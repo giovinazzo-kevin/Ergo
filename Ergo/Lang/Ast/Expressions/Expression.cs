@@ -12,7 +12,7 @@ public readonly partial struct Expression
         Operator = op;
         Left = left;
         Right = right;
-        Complex = new Complex(op.CanonicalFunctor, right.Reduce(some => new[] { left, some }, () => new[] { left }))
+        Complex = new Complex(op.CanonicalFunctor, right.Select(some => new[] { left, some }).GetOr(new[] { left }))
             .AsOperator(op.Affix)
             .AsParenthesized(parenthesized);
     }

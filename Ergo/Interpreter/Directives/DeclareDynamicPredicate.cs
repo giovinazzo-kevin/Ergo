@@ -3,7 +3,7 @@
 public class DeclareDynamicPredicate : InterpreterDirective
 {
     public DeclareDynamicPredicate()
-        : base("", new("dynamic"), Maybe.Some(1), 30)
+        : base("", new("dynamic"), 1, 30)
     {
     }
 
@@ -14,7 +14,7 @@ public class DeclareDynamicPredicate : InterpreterDirective
             sig = args[0].GetSignature();
         }
 
-        scope = scope.WithModule(scope.Modules[scope.Module]
+        scope = scope.WithModule(scope.EntryModule
             .WithDynamicPredicate(sig));
         return true;
     }

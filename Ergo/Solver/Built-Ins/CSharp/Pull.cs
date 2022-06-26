@@ -2,7 +2,7 @@
 
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class Pull : BuiltIn
+public sealed class Pull : SolverBuiltIn
 {
     public Pull()
         : base("", new("pull_data"), Maybe<int>.Some(1), WellKnown.Modules.CSharp)

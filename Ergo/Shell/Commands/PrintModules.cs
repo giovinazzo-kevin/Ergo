@@ -12,7 +12,7 @@ public sealed class PrintModules : ShellCommand
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match)
     {
         var modules = scope.InterpreterScope.Modules;
-        var currentModule = scope.InterpreterScope.Modules[scope.InterpreterScope.Module];
+        var currentModule = scope.InterpreterScope.EntryModule;
         shell.WriteTree(currentModule,
             x => x.Name,
             x => x.Imports.Contents.Select(i => modules[(Atom)i]),

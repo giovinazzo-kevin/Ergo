@@ -1,6 +1,8 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿
 
-public sealed class CommaToList : BuiltIn
+namespace Ergo.Solver.BuiltIns;
+
+public sealed class CommaToList : SolverBuiltIn
 {
     public CommaToList()
         : base("", new("comma_list"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
@@ -14,7 +16,7 @@ public sealed class CommaToList : BuiltIn
         {
             if (!listArg.IsAbstract<List>(out var list))
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
                 yield break;
             }
 
@@ -33,7 +35,7 @@ public sealed class CommaToList : BuiltIn
         {
             if (!commaArg.IsAbstract<NTuple>(out var comma))
             {
-                yield return scope.ThrowFalse(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
+                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
                 yield break;
             }
 
@@ -48,6 +50,6 @@ public sealed class CommaToList : BuiltIn
             yield break;
         }
 
-        yield return scope.ThrowFalse(SolverError.TermNotSufficientlyInstantiated, commaArg.Explain());
+        yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, commaArg.Explain());
     }
 }

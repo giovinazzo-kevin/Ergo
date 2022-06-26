@@ -18,8 +18,10 @@ public readonly struct Atom : ITerm
     public Atom(object value, Maybe<bool> quoted = default, Maybe<IAbstractTerm> abs = default)
     {
         Value = value;
+        if (Value?.IsNumericType() ?? false)
+            Value = Convert.ToDecimal(value);
         HashCode = value?.GetHashCode() ?? 0;
-        IsQuoted = quoted.Reduce(some => some, () => value is string s
+        IsQuoted = quoted.GetOr(value is string s
             && s != (string)WellKnown.Literals.EmptyList.Value
             && s != (string)WellKnown.Literals.EmptyCommaList.Value
             && (
@@ -34,8 +36,8 @@ public readonly struct Atom : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (!canonical && AbstractForm.HasValue)
-            return AbstractForm.GetOrThrow().Explain();
+        if (!canonical && AbstractForm.TryGetValue(out var abs))
+            return abs.Explain();
         if (Value is bool b)
         {
             return b ? "⊤" : "⊥";
@@ -69,8 +71,8 @@ public readonly struct Atom : ITerm
     }
 
     public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
-    public Atom AsQuoted(bool quoted) => new(Value, Maybe.Some(quoted));
-    public Atom WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Value, Maybe.Some(IsQuoted), abs);
+    public Atom AsQuoted(bool quoted) => new(Value, quoted);
+    public Atom WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Value, IsQuoted, abs);
 
     public override bool Equals(object obj)
     {

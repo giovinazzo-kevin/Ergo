@@ -49,7 +49,6 @@ public abstract class SolveShellCommand : ShellCommand
         var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
         if (scope.TraceEnabled)
         {
-            shell.WriteLine("Press: spacebar to creep through; 'c' to continue until the next solution; any other key to abort.", LogLevel.Inf, overrideFg: ConsoleColor.DarkMagenta);
             solver.Trace += (type, trace) =>
             {
                 shell.Write(trace, LogLevel.Trc, type);
@@ -86,7 +85,6 @@ public abstract class SolveShellCommand : ShellCommand
 
         if (Interactive)
         {
-            shell.WriteLine("Press: spacebar to yield the next solution; 'c' to enumerate solutions automatically; any other key to abort.", LogLevel.Inf);
             var any = false;
             await foreach (var s in solutions)
             {

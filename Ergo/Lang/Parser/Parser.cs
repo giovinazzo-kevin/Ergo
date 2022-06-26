@@ -115,12 +115,22 @@ public partial class ErgoParser : IDisposable
         Maybe<ITerm> Inner()
         {
             var pos = Lexer.State;
-            var primary = Variable().Select(x => (ITerm)x)
+            var primary = () => Variable().Select(x => (ITerm)x)
                 .Or(() => Complex().Select(x => (ITerm)x))
-                .Or(() => Atom().Select(x => (ITerm)x));
-            var abstractFold = AbstractTermParsers.Values
-                .Aggregate(primary, (a, b) => a.Or(() => b.Parse(this).Or(() => Fail<IAbstractTerm>(pos)).Select(x => x.CanonicalForm)));
-            return abstractFold;
+                .Or(() => Atom().Select(x => (ITerm)x))
+                .Or(() => Fail<ITerm>(pos));
+            if (AbstractTermParsers.Values.Any())
+            {
+                var parsers = AbstractTermParsers.Values;
+                var abstractFold = parsers.Skip(1)
+                    .Aggregate(parsers.First().Parse(this),
+                        (a, b) => a.Or(() => a.Or(() => b.Parse(this).Or(() => Fail<IAbstractTerm>(pos)))))
+                    .Select(x => x.CanonicalForm);
+                return abstractFold
+                    .Or(primary);
+            }
+
+            return primary();
         }
     }
 

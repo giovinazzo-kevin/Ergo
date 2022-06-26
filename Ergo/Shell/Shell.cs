@@ -116,6 +116,13 @@ public partial class ErgoShell
         Console.SetIn(In);
 
         var scope = createScope?.Invoke() ?? CreateScope();
+
+        WriteLine("Welcome to the Ergo shell. To list the available commands, enter '?' (without quotes)." +
+            "\r\nWhile evaluating solutions, press:" +
+            "\r\n\t- spacebar to yield the next solution;" +
+            "\r\n\t- 'c' to enumerate solutions automatically;" +
+            "\r\n\t- any other key to abort.", LogLevel.Cmt);
+
         while (true)
         {
             Write($"{scope.InterpreterScope.Entry.Explain()}> ");

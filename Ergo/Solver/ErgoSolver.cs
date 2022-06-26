@@ -251,7 +251,7 @@ public partial class ErgoSolver : IDisposable
                 {
                     // Expansions are defined as a 1ary lambda over a predicate definition.
                     // The head or body of the predicate MUST reference the lambda variable. (this is already checked by the directive)
-                    // The head of the predicate is unified with the current term, then the body is solved.
+                    // The head of the predicate is unified with the current term, then the body is substituted and solved.
                     // The lambda argument is unified with the outcome of the expansion and yielded.
 
                     // [Output] >> (head :- body(Output)).

@@ -124,7 +124,7 @@ public partial class ErgoParser : IDisposable
                 var parsers = AbstractTermParsers.Values;
                 var abstractFold = parsers.Skip(1)
                     .Aggregate(parsers.First().Parse(this),
-                        (a, b) => a.Or(() => a.Or(() => b.Parse(this).Or(() => Fail<IAbstractTerm>(pos)))))
+                        (a, b) => a.Or(() => b.Parse(this).Or(() => Fail<IAbstractTerm>(pos))))
                     .Select(x => x.CanonicalForm);
                 return abstractFold
                     .Or(primary);

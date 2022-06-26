@@ -103,28 +103,51 @@ public sealed class SolverContext
                     yield break;
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-                var (qualifiedGoal, matches) = Solver.QualifyGoal(Scope, resolvedGoal.Result);
-                Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
-                if (ct.IsCancellationRequested)
-                    yield break;
-                foreach (var m in matches)
+                var anyQualified = false;
+                foreach (var qualifiedGoal in Solver.GetImplicitGoalQualifications(Scope, resolvedGoal.Result))
                 {
-                    var innerScope = Scope.WithDepth(Scope.Depth + 1)
-                        .WithModule(m.Rhs.DeclaringModule)
-                        .WithCallee(Scope.Callee)
-                        .WithCaller(m.Rhs);
-                    var innerContext = new SolverContext(Solver, innerScope);
-                    var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                    await foreach (var s in solve)
+                    var matches = Solver.KnowledgeBase.GetMatches(qualifiedGoal, desugar: false);
+                    Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
+                    if (ct.IsCancellationRequested)
+                        yield break;
+                    foreach (var m in matches)
                     {
-                        Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
-                        yield return s;
+                        anyQualified = true;
+                        var innerScope = Scope.WithDepth(Scope.Depth + 1)
+                            .WithModule(m.Rhs.DeclaringModule)
+                            .WithCallee(Scope.Callee)
+                            .WithCaller(m.Rhs);
+                        var innerContext = new SolverContext(Solver, innerScope);
+                        var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
+                        await foreach (var s in solve)
+                        {
+                            Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
+                            yield return s;
+                        }
+
+                        if (innerScope.IsCutRequested)
+                        {
+                            Scope = Scope.WithChoicePoint();
+                            yield break;
+                        }
                     }
 
-                    if (innerScope.IsCutRequested)
+                    if (anyQualified)
+                        break;
+                }
+
+                if (!anyQualified)
+                {
+                    var signature = resolvedGoal.Result.GetSignature();
+                    var dynModule = signature.Module.Reduce(some => some, () => Scope.Module);
+                    if (!Solver.KnowledgeBase.TryGet(signature, out var predicates)
+                        && !(Scope.InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
                     {
-                        Scope = Scope.WithChoicePoint();
-                        yield break;
+                        if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                        {
+                            Scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
+                            yield break;
+                        }
                     }
                 }
             }

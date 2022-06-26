@@ -278,25 +278,19 @@ public partial class ErgoSolver : IDisposable
 
     }
 
-    public (ITerm Qualified, IEnumerable<KBMatch> Matches) QualifyGoal(SolverScope scope, ITerm goal)
+    /// <summary>
+    /// Enumerates all implicit qualifications of 'goal' that are worth trying in the current scope.
+    /// </summary>
+    public IEnumerable<ITerm> GetImplicitGoalQualifications(SolverScope scope, ITerm goal)
     {
-        var matches = KnowledgeBase.GetMatches(goal, desugar: false);
-        if (matches.Any())
-        {
-            return (goal, matches);
-        }
-
+        yield return goal;
         var isDynamic = false;
         if (!goal.IsQualified)
         {
             if (goal.TryQualify(scope.Module, out var qualified)
                 && ((isDynamic |= scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true))
             {
-                matches = KnowledgeBase.GetMatches(qualified, desugar: false);
-                if (matches.Any())
-                {
-                    return (qualified, matches);
-                }
+                yield return qualified;
             }
 
             if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
@@ -304,29 +298,11 @@ public partial class ErgoSolver : IDisposable
                 if (goal.TryQualify(clause.DeclaringModule, out qualified)
                     && ((isDynamic |= scope.InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
                 {
-                    matches = KnowledgeBase.GetMatches(qualified, desugar: false);
-                    if (matches.Any())
-                    {
-                        return (qualified, matches);
-                    }
+                    yield return qualified;
                 }
             }
         }
-
-        var signature = goal.GetSignature();
-        var dynModule = signature.Module.Reduce(some => some, () => scope.Module);
-        if (!KnowledgeBase.TryGet(signature, out var predicates) && !(isDynamic |= scope.InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
-        {
-            if (Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
-            {
-                scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                return (goal, Enumerable.Empty<KBMatch>());
-            }
-        }
-
-        return (goal, Enumerable.Empty<KBMatch>());
     }
-
     public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
         => new SolverContext(this, scope).Solve(goal, ct: ct);
 

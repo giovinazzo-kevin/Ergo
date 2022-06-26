@@ -14,7 +14,7 @@ public sealed class PrintDataSources : ShellCommand
     {
         var match = m.Groups["term"];
         var sources = new List<Signature>();
-        var solver = shell.Facade.BuildSolver();
+        using var solver = shell.Facade.BuildSolver();
         var parsed = shell.Parse<ITerm>(scope, match.Success ? match.Value : "_").Value;
         if (!parsed.HasValue)
         {

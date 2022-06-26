@@ -76,6 +76,9 @@ public readonly struct ErgoFacade
     public ErgoFacade RemoveDataSource<A>(DataSource<A> source) where A : new()
         => new(_directives, _builtIns, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Remove(source)));
 
+    /// <summary>
+    /// Adds all directives with a public parameterless constructor in the target assembly.
+    /// </summary>
     public ErgoFacade AddDirectivesByReflection(Assembly lookInAssembly)
     {
         var newFacade = this;
@@ -90,6 +93,9 @@ public readonly struct ErgoFacade
         return newFacade;
     }
 
+    /// <summary>
+    /// Adds all built-ins with a public parameterless constructor in the target assembly.
+    /// </summary>
     public ErgoFacade AddBuiltInsByReflection(Assembly lookInAssembly)
     {
         var newFacade = this;
@@ -104,6 +110,9 @@ public readonly struct ErgoFacade
         return newFacade;
     }
 
+    /// <summary>
+    /// Adds all commands with a public parameterless constructor in the target assembly.
+    /// </summary>
     public ErgoFacade AddCommandsByReflection(Assembly lookInAssembly)
     {
         var newFacade = this;
@@ -118,6 +127,9 @@ public readonly struct ErgoFacade
         return newFacade;
     }
 
+    /// <summary>
+    /// Adds all abstract term parsers with a public parameterless constructor in the target assembly.
+    /// </summary>
     public ErgoFacade AddParsersByReflection(Assembly lookInAssembly)
     {
         var newFacade = this;

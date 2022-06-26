@@ -46,30 +46,24 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         var x => x
     };
 
-    bool TryQualify(Atom m, out ITerm qualified)
+    ITerm Qualified(Atom m)
     {
-        if (IsQualified)
+        return GetQualification(out var head)
+            .Select(some => Inner(head))
+            .GetOr(Inner(this));
+        ITerm Inner(ITerm t)
         {
-            qualified = this;
-            return false;
+            return new Complex(WellKnown.Functors.Module.First(), m, t)
+                .AsOperator(OperatorAffix.Infix);
         }
-
-        qualified = new Complex(WellKnown.Functors.Module.First(), m, this)
-            .AsOperator(OperatorAffix.Infix);
-        return true;
     }
-    bool TryGetQualification(out Atom module, out ITerm value)
+    Maybe<Atom> GetQualification(out ITerm head)
     {
-        if (!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module_)
-        {
-            module = default;
-            value = this;
-            return false;
-        }
-
-        module = module_;
-        value = cplx.Arguments[1];
-        return true;
+        head = this;
+        if (!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module)
+            return default;
+        head = cplx.Arguments[1];
+        return Maybe.Some(module);
     }
 
     ITerm Substitute(Substitution s);

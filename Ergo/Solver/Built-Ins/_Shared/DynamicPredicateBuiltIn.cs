@@ -37,10 +37,9 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
 
     protected static bool Retract(ErgoSolver solver, SolverScope scope, ITerm term, bool all)
     {
-        var removed = 0;
         var sig = term.GetSignature();
         if (!term.IsQualified)
-            term.TryQualify(scope.Module, out term);
+            term = term.Qualified(scope.Module);
         var toRemove = new List<ITerm>();
         foreach (var match in solver.KnowledgeBase.GetMatches(term, desugar: true))
         {

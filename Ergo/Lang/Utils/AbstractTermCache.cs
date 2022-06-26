@@ -24,28 +24,13 @@ internal static class AbstractTermCache
         set.Add(t.GetHashCode());
     }
     public static bool IsNot(ITerm t, Type type) => Misses.TryGetValue(type, out var set) && set.Contains(t.GetHashCode());
-
-    public static bool TryGet(ITerm t, out IAbstractTerm a) => Cache.TryGetValue(t.GetHashCode(), out a);
-    public static bool TryGet<T>(ITerm t, out T a) where T : IAbstractTerm
+    public static Maybe<IAbstractTerm> Get(ITerm t, Type checkType)
     {
-        a = default;
-        if (Cache.TryGetValue(t.GetHashCode(), out var x) && x is T)
-        {
-            a = (T)x;
-            return true;
-        }
-
-        return false;
-    }
-    public static bool TryGet(ITerm t, Type checkType, out IAbstractTerm a)
-    {
-        a = default;
         if (Cache.TryGetValue(t.GetHashCode(), out var x) && x.GetType().Equals(checkType))
         {
-            a = x;
-            return true;
+            return Maybe.Some(x);
         }
 
-        return false;
+        return default;
     }
 }

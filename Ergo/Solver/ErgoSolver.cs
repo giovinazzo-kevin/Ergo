@@ -147,7 +147,7 @@ public partial class ErgoSolver : IDisposable
     {
         var any = false;
         var sig = goal.GetSignature();
-        if (!goal.TryGetQualification(out _, out _))
+        if (!goal.IsQualified)
         {
             // Try resolving the built-in's module automatically
             foreach (var key in BuiltIns.Keys)
@@ -157,7 +157,7 @@ public partial class ErgoSolver : IDisposable
                 var withoutModule = key.WithModule(default);
                 if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
                 {
-                    goal.TryQualify(module, out goal);
+                    goal = goal.Qualified(module);
                     sig = key;
                     break;
                 }
@@ -168,9 +168,8 @@ public partial class ErgoSolver : IDisposable
         {
             if (ct.IsCancellationRequested)
                 yield break;
-            if (!goal.TryGetQualification(out _, out var qv))
-                qv = goal;
-            var args = qv.GetArguments();
+            goal.GetQualification(out goal);
+            var args = goal.GetArguments();
             LogTrace(SolverTraceType.BuiltInResolution, $"{goal.Explain()}", scope.Depth);
             if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
             {
@@ -287,16 +286,16 @@ public partial class ErgoSolver : IDisposable
         var isDynamic = false;
         if (!goal.IsQualified)
         {
-            if (goal.TryQualify(scope.Module, out var qualified)
-                && ((isDynamic |= scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true))
+            var qualified = goal.Qualified(scope.Module);
+            if ((isDynamic |= scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true)
             {
                 yield return qualified;
             }
 
             if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
             {
-                if (goal.TryQualify(clause.DeclaringModule, out qualified)
-                    && ((isDynamic |= scope.InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true))
+                qualified = goal.Qualified(clause.DeclaringModule);
+                if ((isDynamic |= scope.InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true)
                 {
                     yield return qualified;
                 }

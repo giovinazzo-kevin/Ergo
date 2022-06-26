@@ -61,14 +61,14 @@ public readonly struct Signature
         if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
             && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
         {
-            c.Arguments[0].TryGetQualification(out var qm, out var qs);
-            if (qs is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
+            var module = c.Arguments[0].GetQualification(out var arg);
+            if (arg is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
             {
-                sig = new((Atom)d.Arguments[0], match.Arity, qm, (Atom)d.Arguments[1]);
+                sig = new((Atom)arg, match.Arity, module, (Atom)d.Arguments[1]);
                 return true;
             }
 
-            sig = new((Atom)qs, match.Arity, qm, Maybe<Atom>.None);
+            sig = new((Atom)arg, match.Arity, module, Maybe<Atom>.None);
             return true;
         }
 

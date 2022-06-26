@@ -63,7 +63,7 @@ public static class LanguageExtensions
 
         if (AbstractTermCache.IsNot(t, type))
             return false;
-        if (AbstractTermCache.TryGet(t, type, out match))
+        if (AbstractTermCache.Get(t, type).TryGetValue(out match))
             return true;
 
         // If the abstract type implements a static Maybe<T> FromCanonical(ITerm t) method, try calling it and caching the result.
@@ -120,24 +120,24 @@ public static class LanguageExtensions
 
     public static Maybe<IEnumerable<Substitution>> Unify(this Predicate predicate, ITerm head)
     {
-        predicate.Head.TryGetQualification(out _, out var qv);
-        head.TryGetQualification(out _, out var hv);
-        return hv.Unify(qv);
+        return predicate.Head.GetQualification(out var qv)
+            .Map(_ => head.GetQualification(out var hv)
+                .Map(_ => qv.Unify(hv)));
     }
 
     public static Signature GetSignature(this ITerm term)
     {
-        if (term.TryGetQualification(out var qm, out var qv))
+        if (term.GetQualification(out term).TryGetValue(out var qm))
         {
-            var qs = qv.GetSignature();
+            var qs = term.GetSignature();
             var tag = Maybe<Atom>.None;
-            if (qv is Complex cplx && WellKnown.Functors.SignatureTag.Contains(cplx.Functor))
+            if (term is Complex cplx && WellKnown.Functors.SignatureTag.Contains(cplx.Functor))
             {
-                qv = cplx.Arguments[0];
+                term = cplx.Arguments[0];
                 tag = (Atom)cplx.Arguments[1];
             }
 
-            if (qv.AbstractForm.TryGetValue(out var abs))
+            if (term.AbstractForm.TryGetValue(out var abs))
             {
                 var sig = abs.Signature
                     .WithModule(qm);
@@ -146,12 +146,7 @@ public static class LanguageExtensions
                 return sig;
             }
 
-            return new Signature(
-                qs.Functor,
-                qs.Arity,
-                qm,
-                tag
-            );
+            return new Signature(qs.Functor, qs.Arity, qm, tag);
         }
 
         return new Signature(

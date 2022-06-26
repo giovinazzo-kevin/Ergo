@@ -1,5 +1,4 @@
 ﻿
-
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class AnonymousComplex : SolverBuiltIn
@@ -20,14 +19,11 @@ public sealed class AnonymousComplex : SolverBuiltIn
 
         if (args[0] is not Atom functor)
         {
-            if (args[0].TryGetQualification(out var qm, out var qs) && qs is Atom functor_)
+            if (args[0].GetQualification(out var qs).TryGetValue(out var qm) && qs is Atom functor_)
             {
                 var cplx = functor_.BuildAnonymousTerm(arity);
-                if (cplx.TryQualify(qm, out var qualified))
-                {
-                    yield return new(qualified);
-                    yield break;
-                }
+                yield return new(cplx.Qualified(qm));
+                yield break;
             }
 
             yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());

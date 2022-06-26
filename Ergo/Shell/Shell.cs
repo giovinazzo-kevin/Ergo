@@ -61,11 +61,7 @@ public partial class ErgoShell
         Clear();
     }
 
-    public void AddCommand(ShellCommand s)
-    {
-        if (!Dispatcher.TryAdd(s))
-            throw new NotSupportedException($"A command with one of these aliases already exists: [{s.Names.Join()}]");
-    }
+    public void AddCommand(ShellCommand s) => Dispatcher.Add(s);
 
     public virtual void Clear()
     {

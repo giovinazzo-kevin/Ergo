@@ -35,23 +35,14 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return (List<Predicate>)Predicates[key];
     }
 
-    public bool TryGet(Signature key, out List<Predicate> predicates)
+    public Maybe<List<Predicate>> Get(Signature key)
     {
-        predicates = default;
         if (Predicates.Contains(key))
         {
-            predicates = (List<Predicate>)Predicates[key];
-            return true;
+            return Maybe.Some((List<Predicate>)Predicates[key]);
         }
 
-        //var looseKey = key.WithModule(Maybe<Atom>.None);
-        //if (key.Module.TryGetValue(out var module) && Predicates.Contains(looseKey))
-        //{
-        //    predicates = (List<Predicate>)Predicates[looseKey];
-        //    return predicates.All(p => p.DeclaringModule.Equals(module));
-        //}
-
-        return false;
+        return default;
     }
 
     public IEnumerable<KBMatch> GetMatches(ITerm goal, bool desugar)
@@ -74,10 +65,10 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
         var head = goal.Substitute(subs);
         // Return predicate matches
-        if (TryGet(head.GetSignature(), out var list))
+        if (Get(head.GetSignature()).TryGetValue(out var list))
             return Inner(list);
 
-        if (head.IsQualified && head.TryGetQualification(out var module, out head) && TryGet(head.GetSignature(), out list))
+        if (head.IsQualified && head.GetQualification(out head).TryGetValue(out var module) && Get(head.GetSignature()).TryGetValue(out list))
             return Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module));
 
         return Enumerable.Empty<KBMatch>();
@@ -101,7 +92,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
     public bool Retract(ITerm head)
     {
-        if (TryGet(head.GetSignature(), out var matches))
+        if (Get(head.GetSignature()).TryGetValue(out var matches))
         {
             for (var i = matches.Count - 1; i >= 0; i--)
             {
@@ -120,7 +111,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     public int RetractAll(ITerm head)
     {
         var retracted = 0;
-        if (TryGet(head.GetSignature(), out var matches))
+        if (Get(head.GetSignature()).TryGetValue(out var matches))
         {
             for (var i = matches.Count - 1; i >= 0; i--)
             {

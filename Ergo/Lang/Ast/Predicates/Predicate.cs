@@ -44,9 +44,9 @@ public readonly struct Predicate : IExplainable
     public Predicate Exported() => new(Documentation, DeclaringModule, Head, Body, IsDynamic, true);
     public Predicate Qualified()
     {
-        if (Head.IsQualified || !Head.TryQualify(DeclaringModule, out var head))
+        if (Head.IsQualified)
             return this;
-        return new(Documentation, DeclaringModule, head, Body, IsDynamic, IsExported);
+        return new(Documentation, DeclaringModule, Head.Qualified(DeclaringModule), Body, IsDynamic, IsExported);
     }
 
     // TODO: Conform to abstract term method FromCanonical
@@ -54,25 +54,17 @@ public readonly struct Predicate : IExplainable
     {
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
         {
-            var head_ = c.Arguments[0];
+            var head = c.Arguments[0];
             var body = c.Arguments[1].IsAbstract<NTuple>(out var tuple)
                 ? tuple : new NTuple(new[] { c.Arguments[1] });
 
-            if (!head_.TryGetQualification(out var module_, out head_))
-            {
-                module_ = defaultModule;
-            }
-
-            pred = new("(dynamic)", module_, head_, body, true, false);
+            var mod = head.GetQualification(out head).GetOr(defaultModule);
+            pred = new("(dynamic)", mod, head, body, true, false);
             return true;
         }
 
-        if (!term.TryGetQualification(out var module, out var head))
-        {
-            module = defaultModule;
-        }
-
-        pred = new("(dynamic)", module, head, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)), true, false);
+        var module = term.GetQualification(out term).GetOr(defaultModule);
+        pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)), true, false);
         return true;
     }
 

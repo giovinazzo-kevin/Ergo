@@ -53,7 +53,7 @@ public readonly struct Parsed<T>
             {
                 return GetParser(data, onParseFail)(parser);
             }
-            catch (ParserException)
+            catch (Exception e) when (e is ParserException or LexerException)
             {
                 return Maybe<T>.None;
             }

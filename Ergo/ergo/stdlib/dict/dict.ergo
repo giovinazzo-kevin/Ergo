@@ -4,7 +4,6 @@
 
 :- use_module(list).
 
-:- op(1000, xfy, [':']).
  %: TODO: Fix parsing and replace this operator with '.'/2
 :- op(900, xfy, ['$']).
 

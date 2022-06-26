@@ -12,6 +12,7 @@
 :- op(30, fx, ['¬', '\\+']).
 :- op(50, xfx, ['=']).
 :- op(50, xfx, ['≠', '\\=']).
+:- op(1000, xfy, [':']).
 
 % OPERATOR IMPLEMENTATIONS
 

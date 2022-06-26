@@ -17,11 +17,10 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         _ => Maybe<Atom>.None
     };
 
-    Maybe<ITerm[]> GetArguments() => this switch
+    ITerm[] GetArguments() => this switch
     {
-        Atom a => default,
-        Complex c => Maybe.Some(c.Arguments),
-        _ => default
+        Complex c => c.Arguments,
+        _ => Array.Empty<ITerm>()
     };
 
     ITerm WithFunctor(Atom newFunctor) => this switch

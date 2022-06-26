@@ -561,7 +561,7 @@ public partial class ErgoParser : IDisposable
         }
 
         var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOrDefault().Equals(new Atom("module")))
-            .Body.GetArguments().GetOrThrow();
+            .Body.GetArguments();
 
         if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>(out var exported))
         {

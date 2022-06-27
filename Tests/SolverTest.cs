@@ -5,7 +5,6 @@ using Ergo.Lang.Extensions;
 using Ergo.Solver;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,18 +24,39 @@ public class SolverTest : ErgoTest
         var facade = ErgoFacade.Standard;
         Interpreter = facade.BuildInterpreter(InterpreterFlags.Default);
         InterpreterScope = Interpreter.CreateScope(x => x
-            .WithExceptionHandler(Debugger.IsAttached ? ThrowingExceptionHandler : NullExceptionHandler)
+            .WithExceptionHandler(NullExceptionHandler)
             .WithoutSearchDirectories()
             .WithSearchDirectory(basePath)
             .WithSearchDirectory($@"{basePath}\stdlib\")
             .WithSearchDirectory($@"{basePath}\user\"));
     }
-
+    // "⊤" : "⊥"
     [DataTestMethod]
-    [DataRow("false", 0)]
-    [DataRow("true", 1, "")]
-    [DataRow("true, true", 1, "")]
-    [DataRow("true; true", 2, "", "")]
+    [DataRow("⊥", 0)]
+    [DataRow("⊤", 1, "")]
+    [DataRow("⊤, ⊤", 1, "")]
+    [DataRow("⊤; ⊤", 2, "", "")]
+    [DataRow("⊤, ⊥", 0)]
+    [DataRow("⊤; ⊥", 1, "")]
+    [DataRow("⊥, ⊤", 0)]
+    [DataRow("⊥; ⊤", 1, "")]
+    [DataRow("(⊥; ⊤), ⊥", 0)]
+    [DataRow("(⊥; ⊤); ⊥", 1, "")]
+    [DataRow("(⊤; ⊤), ⊤", 2, "", "")]
+    [DataRow("(⊤, ⊤); ⊤", 2, "", "")]
+    [DataRow("(⊤, ⊤); (⊤, ⊤)", 2, "", "")]
+    [DataRow("(⊤, ⊥); (⊥; ⊤)", 1, "")]
+    [DataRow("!, ⊤", 1, "")]
+    [DataRow("⊤, !", 1, "")]
+    [DataRow("!, ⊤ ; ⊤", 1, "")]
+    [DataRow("⊤ ; !, ⊤", 2, "", "")]
+    [DataRow("(⊤, !; ⊤); ⊤", 1, "")]
+    [DataRow("(⊤; ⊤, !); ⊤", 2, "", "")]
+    [DataRow("⊤; (⊤, !; ⊤)", 2, "", "")]
+    [DataRow("⊤; (⊤; ⊤, !)", 3, "", "", "")]
+    [DataRow("(⊤, !; ⊤), !; (!, ⊤; ⊤)", 1, "")]
+    [DataRow("setup_call_cleanup(assertz(t:-(⊤)), (t), retractall(t))", 1, "")]
+    [DataRow("setup_call_cleanup(assertz(t:-(⊤; ⊤)), (t), retractall(t))", 2, "", "")]
     public async Task ShouldSolve(string query, int numSolutions, params string[] expected)
     {
         using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);

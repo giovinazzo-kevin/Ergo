@@ -41,11 +41,6 @@ public sealed class SolverContext
                 if (s.Scope.IsCutRequested)
                     yield break;
             }
-
-            if (Scope.IsCutRequested)
-            {
-                yield break;
-            }
         }
     }
 
@@ -93,10 +88,7 @@ public sealed class SolverContext
                         Scope.Cut();
 
                     yield return new Solution(Scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
-
-                    if (Scope.IsCutRequested)
-                        yield break;
-                    else continue;
+                    continue;
                 }
 
                 if (ct.IsCancellationRequested)

@@ -34,8 +34,8 @@ public readonly struct Variable : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (!canonical && AbstractForm.TryGetValue(out var abs))
-            return abs.Explain();
+        if (AbstractForm.TryGetValue(out var abs))
+            return abs.Explain(canonical);
         return Name;
     }
 

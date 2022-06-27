@@ -13,7 +13,7 @@ public interface IAbstractTerm : IExplainable
     string IExplainable.Explain(bool canonical)
     {
         if (canonical)
-            return CanonicalForm.Explain();
+            return CanonicalForm.WithAbstractForm(default).Explain(true);
         return Explain();
     }
     IAbstractTerm Substitute(IEnumerable<Substitution> subs)

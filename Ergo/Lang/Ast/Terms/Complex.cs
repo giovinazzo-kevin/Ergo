@@ -52,10 +52,8 @@ public readonly partial struct Complex : ITerm
 
         string Inner(Complex c, Maybe<IAbstractTerm> absForm)
         {
-            if (!canonical && absForm.TryGetValue(out var abs))
-                return abs.Explain();
-            if (c.IsAbstract<List>().TryGetValue(out var list))
-                return list.Explain();
+            if (absForm.TryGetValue(out var abs))
+                return abs.Explain(canonical);
             return c.Affix.Select(some => canonical ? OperatorAffix.Prefix : some).GetOr(OperatorAffix.Prefix) switch
             {
                 OperatorAffix.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",

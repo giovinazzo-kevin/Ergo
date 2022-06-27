@@ -12,17 +12,17 @@ using System.Threading.Tasks;
 namespace Tests;
 
 [TestClass]
-public class SolverTest : ErgoTest
+public sealed class SolverTests : ErgoTest
 {
     public static ErgoInterpreter Interpreter { get; private set; }
     public static InterpreterScope InterpreterScope { get; private set; }
 
     [ClassInitialize]
-    public static void Initialize(TestContext ctx)
+    public static void Initialize(TestContext _)
     {
         var basePath = Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\Ergo\ergo");
-        var facade = ErgoFacade.Standard;
-        Interpreter = facade.BuildInterpreter(InterpreterFlags.Default);
+        Interpreter = ErgoFacade.Standard
+            .BuildInterpreter(InterpreterFlags.Default);
         InterpreterScope = Interpreter.CreateScope(x => x
             .WithoutSearchDirectories()
             .WithSearchDirectory(basePath)
@@ -37,15 +37,16 @@ public class SolverTest : ErgoTest
         using var solver = Interpreter.Facade.BuildSolver(testScope.KnowledgeBase, SolverFlags.Default);
         var parsed = Interpreter.Parse<Query>(testScope, query)
             .GetOrThrow(new InvalidOperationException());
+        var expectedSolutions = numSolutions;
         await foreach (var (sol, i) in solver.Solve(parsed, solver.CreateScope(testScope))
             .Select((x, i) => (x, i)))
         {
             Assert.IsTrue(i < expected.Length);
-            Assert.AreEqual(expected[i], sol.Simplify().Substitutions.Join(";"));
+            Assert.AreEqual(expected[i], sol.Simplify().Substitutions.Join(s => s.Explain(), ";"));
             Assert.IsTrue(--numSolutions >= 0);
         }
 
-        Assert.AreEqual(0, numSolutions);
+        Assert.AreEqual(expectedSolutions, expectedSolutions - numSolutions);
     }
     #region Rows
     [DataRow("⊥", 0)]
@@ -81,13 +82,22 @@ public class SolverTest : ErgoTest
     public Task ShouldSolveCuts(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, expected);
     #region Rows
-    [DataRow("setup_call_cleanup(assertz(t:-(⊥)), (t), retractall(t))", 0)]
-    [DataRow("setup_call_cleanup(assertz(t:-(⊤)), (t), retractall(t))", 1, "")]
-    [DataRow("setup_call_cleanup(assertz(t:-(⊤; ⊤)), (t), retractall(t))", 2, "", "")]
-    [DataRow("setup_call_cleanup((assertz(t), assertz(t)), (t), retractall(t))", 2, "", "")]
+    [DataRow("assertz(t:-⊥)", "t", "retractall(t)", 0)]
+    [DataRow("assertz(t:-⊤)", "t", "retractall(t)", 1, "")]
+    [DataRow("assertz(t:-(⊤; ⊤))", "t", "retractall(t)", 2, "", "")]
+    [DataRow("assertz(t), assertz(t)", "t", "retractall(t)", 2, "", "")]
+    [DataRow("assertz(t(_))", "t(_X)", "retractall(t)", 1, "")]
+    [DataRow("assertz(t(X):-(X=⊤))", "t(X), X", "retractall(t)", 1, "")]
     #endregion
     [DataTestMethod]
-    public Task ShouldSolveSetups(string query, int numSolutions, params string[] expected)
-        => ShouldSolve(query, numSolutions, expected);
+    public Task ShouldSolveSetups(string setup, string goal, string cleanup, int numSolutions, params string[] expected)
+        => ShouldSolve($"setup_call_cleanup(({setup}), ({goal}), ({cleanup}))", numSolutions, expected);
+    [DataTestMethod]
+    [DataRow("[a,2,C]", "'[|]'(a,'[|]'(2,'[|]'(C,[])))")]
+    [DataRow("[1,2,3|Rest]", "'[|]'(1,'[|]'(2,'[|]'(3,Rest)))")]
+    [DataRow("[1,2,3|[a,2,_C]]", "'[|]'(1,'[|]'(2,'[|]'(3,'[|]'(a,'[|]'(2,'[|]'(_C,[]))))))")]
+    [DataRow("{1,1,2,2,3,4}", "'{|}'(1,'{|}'(2,'{|}'(3,4)))")]
+    public Task ShouldUnifyCanonicals(string term, string canonical)
+        => ShouldSolve($"{term}={canonical}", 1, "");
 
 }

@@ -36,8 +36,8 @@ public readonly struct Atom : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (!canonical && AbstractForm.TryGetValue(out var abs))
-            return abs.Explain();
+        if (AbstractForm.TryGetValue(out var abs))
+            return abs.Explain(canonical);
         if (Value is bool b)
         {
             return b ? "⊤" : "⊥";

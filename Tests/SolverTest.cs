@@ -24,6 +24,7 @@ public sealed class SolverTests : ErgoTest
         Interpreter = ErgoFacade.Standard
             .BuildInterpreter(InterpreterFlags.Default);
         InterpreterScope = Interpreter.CreateScope(x => x
+            .WithExceptionHandler(ThrowingExceptionHandler)
             .WithoutSearchDirectories()
             .WithSearchDirectory(basePath)
             .WithSearchDirectory($@"{basePath}\stdlib\")
@@ -32,13 +33,11 @@ public sealed class SolverTests : ErgoTest
     // "⊤" : "⊥"
     public async Task ShouldSolve(string query, int numSolutions, params string[] expected)
     {
-        var testScope = InterpreterScope
-            .WithExceptionHandler(ThrowingExceptionHandler);
-        using var solver = Interpreter.Facade.BuildSolver(testScope.KnowledgeBase, SolverFlags.Default);
-        var parsed = Interpreter.Parse<Query>(testScope, query)
+        using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);
+        var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         var expectedSolutions = numSolutions;
-        await foreach (var (sol, i) in solver.Solve(parsed, solver.CreateScope(testScope))
+        await foreach (var (sol, i) in solver.Solve(parsed, solver.CreateScope(InterpreterScope))
             .Select((x, i) => (x, i)))
         {
             Assert.IsTrue(i < expected.Length);

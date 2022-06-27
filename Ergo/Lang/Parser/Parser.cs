@@ -1,7 +1,6 @@
 ﻿using Ergo.Facade;
 using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
-using System.Diagnostics;
 
 namespace Ergo.Lang;
 
@@ -205,24 +204,21 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<Expression> Prefix()
     {
-        Debug.WriteLine($"Parser.Prefix");
         var pos = Lexer.State;
         return ExpectOperator(op => op.Affix == OperatorAffix.Prefix)
             .Map(op => Term()
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => Fail<Expression>(pos))
-            .Do(t => Debug.WriteLine($"Parser.Prefix: {t.Complex.Explain(false)}"));
+            .Or(() => Fail<Expression>(pos));
     }
 
     public Maybe<Expression> Postfix()
     {
-        Debug.WriteLine($"Parser.Postfix");
         var pos = Lexer.State;
         return Term()
             .Map(arg => ExpectOperator(op => op.Affix == OperatorAffix.Postfix)
                 .Select(op => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
             .Or(() => Fail<Expression>(pos))
-            .Do(t => Debug.WriteLine($"Parser.Postfix: {t.Complex.Explain(false)}"));
+            ;
     }
 
     public Maybe<Expression> Expression()
@@ -232,8 +228,7 @@ public partial class ErgoParser : IDisposable
         {
             if (WithMinPrecedence(lhs, 0).TryGetValue(out var expr))
             {
-                return Maybe.Some(expr)
-                    .Do(t => Debug.WriteLine($"Parser.Expression: {t.Complex.Explain(false)}"));
+                return Maybe.Some(expr);
             }
             // Special case for unary expressions
             if (lhs is not Complex cplx
@@ -245,8 +240,7 @@ public partial class ErgoParser : IDisposable
 
             var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
             expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
-            return Maybe.Some(expr)
-                .Do(t => Debug.WriteLine($"Parser.Expression: {t.Complex.Explain(false)}"));
+            return Maybe.Some(expr);
         }
 
         return Fail<Expression>(pos);
@@ -321,7 +315,6 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<Directive> Directive()
     {
-        Debug.WriteLine($"Parser.Directive");
         var pos = Lexer.State;
         if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var desc))
         {
@@ -346,7 +339,7 @@ public partial class ErgoParser : IDisposable
                 .Select(_ => op))
             .Select(op => new Directive(op.Left, desc))
             .Or(() => Fail<Directive>(pos))
-            .Do(t => Debug.WriteLine($"Parser.Directive: {t.Explain(false)}"));
+            ;
     }
 
     public Maybe<Predicate> Predicate()
@@ -383,7 +376,7 @@ public partial class ErgoParser : IDisposable
             .Map(p => ExpectDelimiter(p => p.Equals("."))
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
                 .Select(_ => p))
-            .Do(t => Debug.WriteLine($"Parser.Predicate: {t.Explain(false)}"));
+            ;
 
         Maybe<Predicate> MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, NTuple body)
         {

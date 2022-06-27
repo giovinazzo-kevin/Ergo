@@ -55,8 +55,8 @@ public readonly struct Predicate : IExplainable
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
         {
             var head = c.Arguments[0];
-            var body = c.Arguments[1].IsAbstract<NTuple>(out var tuple)
-                ? tuple : new NTuple(new[] { c.Arguments[1] });
+            var body = c.Arguments[1].IsAbstract<NTuple>()
+                .GetOr(new NTuple(new[] { c.Arguments[1] }));
 
             var mod = head.GetQualification(out head).GetOr(defaultModule);
             pred = new("(dynamic)", mod, head, body, true, false);

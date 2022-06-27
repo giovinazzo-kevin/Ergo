@@ -54,7 +54,7 @@ public readonly partial struct Complex : ITerm
         {
             if (!canonical && absForm.TryGetValue(out var abs))
                 return abs.Explain();
-            if (c.IsAbstract<List>(out var list))
+            if (c.IsAbstract<List>().TryGetValue(out var list))
                 return list.Explain();
             return c.Affix.Select(some => canonical ? OperatorAffix.Prefix : some).GetOr(OperatorAffix.Prefix) switch
             {

@@ -49,54 +49,47 @@ public static class LanguageExtensions
         return false;
     }
 
-    public static bool IsAbstract(this ITerm t, Type type, out IAbstractTerm match)
+    public static Maybe<IAbstractTerm> IsAbstract(this ITerm t, Type type)
     {
-        if (t.AbstractForm.TryGetValue(out match))
-        {
-            return match.GetType().Equals(type);
-        }
-
         // It could be that 't' is the canonical form of an abstract term but that it wasn't recognized as abstract on creation.
         // It's a bit unclear when exactly this happens, but two reasons are:
         // - When parsing the canonical form of an abstract type;
         // - When unifying an abstract term with a matching non-abstract canonical form.
+        return t.AbstractForm
+            .Where(a => a.GetType().Equals(type))
+            .Or(() => Maybe.Some(t)
+                .Where(t => !AbstractTermCache.IsNot(t, type))
+                .Map(t => AbstractTermCache.Get(t, type)))
+            .Or(() => Inner());
 
-        if (AbstractTermCache.IsNot(t, type))
-            return false;
-        if (AbstractTermCache.Get(t, type).TryGetValue(out match))
-            return true;
-
-        // If the abstract type implements a static Maybe<T> FromCanonical(ITerm t) method, try calling it and caching the result.
-        var resultType = typeof(Maybe<>).MakeGenericType(type);
-        if (type.GetMethods(BindingFlags.Public | BindingFlags.Static).SingleOrDefault(m =>
-            m.Name.Equals("FromCanonical") && m.GetParameters().Length == 1 && m.ReturnType.Equals(resultType)) is { } unfold)
+        Maybe<IAbstractTerm> Inner()
         {
-            var result = unfold.Invoke(null, new[] { t });
-            if (resultType.GetField("HasValue")?.GetValue(result) is not true)
+            // If the abstract type implements a static Maybe<T> FromCanonical(ITerm t) method, try calling it and caching the result.
+            var resultType = typeof(Maybe<>).MakeGenericType(type);
+            if (type.GetMethods(BindingFlags.Public | BindingFlags.Static).SingleOrDefault(m =>
+                m.Name.Equals("FromCanonical") && m.GetParameters().Length == 1 && m.ReturnType.Equals(resultType)) is { } unfold)
             {
-                AbstractTermCache.Miss(t, type);
-                return false;
+                var result = unfold.Invoke(null, new[] { t });
+                if (resultType.GetField("HasValue")?.GetValue(result) is not true)
+                {
+                    AbstractTermCache.Miss(t, type);
+                    return default;
+                }
+
+                var match = (IAbstractTerm)resultType.GetMethod("GetOrThrow").Invoke(result, new object[] { null });
+                AbstractTermCache.Set(t, match);
+                return Maybe.Some(match);
             }
 
-            match = (IAbstractTerm)resultType.GetMethod("GetOrThrow").Invoke(result, new object[] { null });
-            AbstractTermCache.Set(t, match);
-            return true;
+            return default;
         }
-
-        return false;
     }
 
-    public static bool IsAbstract<T>(this ITerm t, out T match)
+    public static Maybe<T> IsAbstract<T>(this ITerm t)
         where T : IAbstractTerm
     {
-        match = default;
-        if (IsAbstract(t, typeof(T), out var untyped))
-        {
-            match = (T)untyped;
-            return true;
-        }
-
-        return false;
+        return IsAbstract(t, typeof(T))
+            .Select(a => (T)a);
     }
 
     public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, TermMarshalling mode = TermMarshalling.Positional, bool matchFunctor = false)

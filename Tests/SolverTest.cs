@@ -56,7 +56,7 @@ public class SolverTest : ErgoTest
     [DataRow("⊤; (⊤; ⊤, !)", 3, "", "", "")]
     [DataRow("(⊤, !; ⊤), !; (!, ⊤; ⊤)", 1, "")]
     [DataRow("setup_call_cleanup(assertz(t:-(⊤)), (t), retractall(t))", 1, "")]
-    [DataRow("setup_call_cleanup(assertz(t:-(⊤; ⊤)), (t), retractall(t))", 2, "", "")]
+    [DataRow("setup_call_cleanup((assertz(t), assertz(t)), (t), retractall(t))", 2, "", "")]
     public async Task ShouldSolve(string query, int numSolutions, params string[] expected)
     {
         using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);

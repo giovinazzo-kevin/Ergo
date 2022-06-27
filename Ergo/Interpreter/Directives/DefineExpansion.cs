@@ -16,7 +16,7 @@ public class DefineExpansion : InterpreterDirective
         if (WellKnown.Functors.Lambda.Contains(signature.Functor) && signature.Arity.GetOr(default) == 2 && args[0] is Complex cplx)
         {
             // The lambda must have one variable and its body must be a predicate definition that uses that variable.
-            if (!cplx.Arguments[0].IsAbstract<List>(out var lambdaArgs))
+            if (!cplx.Arguments[0].IsAbstract<List>().TryGetValue(out var lambdaArgs))
                 scope.Throw(InterpreterError.ExpectedTermOfTypeAt, WellKnown.Types.List, cplx.Arguments[0].Explain());
 
             if (lambdaArgs.Contents.Length != 1 || lambdaArgs.Contents[0] is not Variable lambdaVariable)

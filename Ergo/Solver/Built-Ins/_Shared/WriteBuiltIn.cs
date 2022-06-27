@@ -27,15 +27,9 @@ public abstract class WriteBuiltIn : SolverBuiltIn
 
     public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
-        if (args[0].IsAbstract<NTuple>(out var comma))
-        {
-            Console.Write(comma.Contents.Join(x =>
-                AsQuoted(x, Quoted).Explain(canonical: Canonical), ""));
-        }
-        else
-        {
-            Console.Write(AsQuoted(args[0], Quoted).Explain(Canonical));
-        }
+        // TODO: Move In/Out streams to the interpreter!!
+        foreach (var arg in args)
+            Console.Write(AsQuoted(arg, Quoted).Explain(Canonical));
 
         yield return new(WellKnown.Literals.True);
     }

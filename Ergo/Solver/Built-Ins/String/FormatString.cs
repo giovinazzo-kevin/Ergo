@@ -21,10 +21,8 @@ public sealed class FormatString : SolverBuiltIn
             yield break;
         }
 
-        if (!args.IsAbstract<List>(out var items))
-        {
-            items = new List(new[] { args });
-        }
+        var items = args.IsAbstract<List>()
+            .GetOr(new List(new[] { args }));
 
         if (result is not Atom resultStr)
         {

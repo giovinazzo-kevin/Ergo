@@ -82,7 +82,7 @@ public sealed class Dict : IAbstractTerm
         if (canonical is not Complex c || !WellKnown.Functors.Dict.Contains(c.Functor) || c.Arguments.Length != 2)
             return default;
         var functor = c.Arguments[0].Reduce<Either<Atom, Variable>>(a => a, v => v, c => throw new NotSupportedException());
-        if (!c.Arguments[1].IsAbstract<List>(out var list))
+        if (!c.Arguments[1].IsAbstract<List>().TryGetValue(out var list))
             return default;
         if (!list.Contents.All(x => x is Complex d && WellKnown.Functors.NamedArgument.Contains(d.Functor) && d.Arguments.Length == 2 && d.Arguments[0] is Atom))
             return default;

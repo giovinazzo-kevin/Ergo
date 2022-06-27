@@ -14,7 +14,7 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
             .AsOperator(OperatorAffix.Infix);
     public override ITerm GetArgument(string name, ITerm value)
     {
-        if (!value.IsAbstract<Dict>(out var dict))
+        if (!value.IsAbstract<Dict>().TryGetValue(out var dict))
             throw new NotSupportedException();
         if (!dict.Dictionary.TryGetValue(new Atom(ToErgoCase(name)), out var arg))
             return WellKnown.Literals.Discard;

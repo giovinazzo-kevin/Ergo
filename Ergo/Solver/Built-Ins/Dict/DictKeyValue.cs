@@ -16,7 +16,7 @@ public sealed class DictKeyValue : SolverBuiltIn
             yield break;
         }
 
-        if (args[0].IsAbstract<Dict>(out var dict))
+        if (args[0].IsAbstract<Dict>().TryGetValue(out var dict))
         {
             if (!dict.Dictionary.Keys.Any())
             {

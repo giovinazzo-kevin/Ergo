@@ -23,9 +23,10 @@ public readonly struct Parsed<T>
         _ when typeof(T).IsAssignableTo(typeof(IAbstractTerm)) => p => Cast<IAbstractTerm, T>(p.Abstract(typeof(T))).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Query) =>
             (ErgoParser p) => p.Expression()
-                .Map(x => x.Complex.IsAbstract<NTuple>(out var expr)
-                    ? Cast<Query, T>(new Query(expr))
-                    : Cast<Query, T>(new Query(x.Complex)))
+                .Map(x => x.Complex.IsAbstract<NTuple>()
+                    .Select(expr => new Query(expr))
+                    .Or(() => new Query(x.Complex))
+                    .Map(q => Cast<Query, T>(q)))
                 .Or(() => p.Term()
                     .Map(t => Cast<Query, T>(new Query(t)))
                 .Or(() => onParseFail(data))),

@@ -1,5 +1,4 @@
 ﻿
-
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class SequenceType : SolverBuiltIn
@@ -18,7 +17,7 @@ public sealed class SequenceType : SolverBuiltIn
             yield break;
         }
 
-        if (seq.IsAbstract<List>(out _))
+        if (seq.IsAbstract<List>().TryGetValue(out _))
         {
             if (type.Unify(new Atom("list")).TryGetValue(out var subs))
             {
@@ -27,7 +26,7 @@ public sealed class SequenceType : SolverBuiltIn
             }
         }
 
-        if (seq.IsAbstract<NTuple>(out _))
+        if (seq.IsAbstract<NTuple>().TryGetValue(out _))
         {
             if (type.Unify(new Atom("comma_list")).TryGetValue(out var subs))
             {
@@ -36,7 +35,7 @@ public sealed class SequenceType : SolverBuiltIn
             }
         }
 
-        if (seq.IsAbstract<Set>(out _))
+        if (seq.IsAbstract<Set>().TryGetValue(out _))
         {
             if (type.Unify(new Atom("bracy_list")).TryGetValue(out var subs))
             {

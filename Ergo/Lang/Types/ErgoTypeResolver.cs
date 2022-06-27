@@ -99,7 +99,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                     var memberValue = o == null ? null : GetMemberValue(m, o);
                     var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling);
                     var member = TransformMember(m, term);
-                    if (member.IsAbstract<List>(out var list))
+                    if (member.IsAbstract<List>().TryGetValue(out var list))
                     {
                         member = new List(list.Contents.Select(x =>
                         {
@@ -164,7 +164,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            if (Type.IsArray && t.IsAbstract<List>(out var list))
+            if (Type.IsArray && t.IsAbstract<List>().TryGetValue(out var list))
             {
                 var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                 for (var i = 0; i < list.Contents.Length; i++)

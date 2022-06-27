@@ -9,7 +9,7 @@ public sealed class List : AbstractList
     public List(ImmutableArray<ITerm> contents, Maybe<ITerm> tail = default)
         : base(contents)
     {
-        Tail = tail.GetOr((ITerm)EmptyElement.WithAbstractForm(Empty ?? this));
+        Tail = tail.GetOr(EmptyElement.WithAbstractForm(Empty ?? this));
         CanonicalForm = Fold(Functor, Tail, contents)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
@@ -41,7 +41,7 @@ public sealed class List : AbstractList
         var joined = Contents.Join(t => t.Explain());
         if (!Tail.Equals(EmptyElement))
         {
-            if (Tail.IsAbstract<List>(out var rest))
+            if (Tail.IsAbstract<List>().TryGetValue(out var rest))
             {
                 joined = Contents.Select(t => t.Explain()).Append(rest.Explain()[1..^1]).Join();
                 return $"{Braces.Open}{joined}{Braces.Close}";

@@ -1,5 +1,4 @@
 ﻿
-
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class CommaToList : SolverBuiltIn
@@ -14,7 +13,7 @@ public sealed class CommaToList : SolverBuiltIn
         var (commaArg, listArg) = (arguments[0], arguments[1]);
         if (listArg is not Variable)
         {
-            if (!listArg.IsAbstract<List>(out var list))
+            if (!listArg.IsAbstract<List>().TryGetValue(out var list))
             {
                 yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
                 yield break;
@@ -33,7 +32,7 @@ public sealed class CommaToList : SolverBuiltIn
 
         if (commaArg is not Variable)
         {
-            if (!commaArg.IsAbstract<NTuple>(out var comma))
+            if (!commaArg.IsAbstract<NTuple>().TryGetValue(out var comma))
             {
                 yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
                 yield break;

@@ -85,7 +85,9 @@ public partial class ErgoParser : IDisposable
         return Expect<string>(ErgoLexer.TokenType.Term)
             .Or(() => Expect<string>(ErgoLexer.TokenType.Operator))
             .Or(() => Expect<string>(ErgoLexer.TokenType.String))
-            .Map(functor => new TupleParser().Parse(this)
+            .Map(functor => Term()
+                //.Where(t => t.IsParenthesized)
+                .Map(t => t.IsAbstract<NTuple>())
                 .Select(args => new Complex(new(functor), args.Contents.ToArray())))
             .Or(() => Fail<Complex>(pos));
     }
@@ -200,7 +202,7 @@ public partial class ErgoParser : IDisposable
         var pos = Lexer.State;
         return ExpectOperator(op => op.Affix == OperatorAffix.Prefix)
             .Map(op => Term()
-                .Where(arg => arg.IsParenthesized || !arg.IsAbstract<NTuple>(out _))
+                .Where(arg => arg.IsParenthesized || !arg.IsAbstract<NTuple>().TryGetValue(out _))
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
             .Or(() => Fail<Expression>(pos));
     }
@@ -209,7 +211,7 @@ public partial class ErgoParser : IDisposable
     {
         var pos = Lexer.State;
         return Term()
-            .Where(arg => arg.IsParenthesized || !arg.IsAbstract<NTuple>(out _))
+            .Where(arg => arg.IsParenthesized || !arg.IsAbstract<NTuple>().TryGetValue(out _))
             .Map(arg => ExpectOperator(op => op.Affix == OperatorAffix.Postfix)
                 .Select(op => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
             .Or(() => Fail<Expression>(pos));
@@ -404,7 +406,7 @@ public partial class ErgoParser : IDisposable
         var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals(new Atom("module")))
             .Body.GetArguments();
 
-        if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>(out var exported))
+        if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>().TryGetValue(out var exported))
         {
             exported = List.Empty;
         }
@@ -442,7 +444,7 @@ public partial class ErgoParser : IDisposable
                         continue;
                     if (!cplx.Arguments[1].Matches<OperatorType>(out var type))
                         continue;
-                    if (!cplx.Arguments[2].IsAbstract<List>(out var syns))
+                    if (!cplx.Arguments[2].IsAbstract<List>().TryGetValue(out var syns))
                         continue;
                     ret.Add(new(moduleName, type, precedence, syns.Contents.Cast<Atom>().ToArray()));
                 }

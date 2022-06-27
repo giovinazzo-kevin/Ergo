@@ -29,7 +29,6 @@ public sealed class SolverContext
         var goals = query.Contents;
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
-        Scope = Scope.WithChoicePoint();
 
         // Get first solution for the current subgoal
         await foreach (var s in Solve(subGoal, subs, ct: ct))
@@ -37,19 +36,18 @@ public sealed class SolverContext
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, subs, ct: ct))
             {
-                yield return new Solution(Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                yield return new Solution(ss.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
             }
+
+            if (s.Scope.IsCutRequested)
+                break;
         }
     }
 
     private async IAsyncEnumerable<Solution> Solve(ITerm goal, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ExceptionCts.Token).Token;
-
-        if (ct.IsCancellationRequested)
-        {
-            yield break;
-        }
+        if (ct.IsCancellationRequested) yield break;
 
         subs ??= new List<Substitution>();
 
@@ -57,9 +55,10 @@ public sealed class SolverContext
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {
             await foreach (var s in Solve(expr, subs, ct: ct))
+            {
                 yield return s;
+            }
 
-            Scope = Scope.WithChoicePoint();
             yield break;
         }
 
@@ -67,12 +66,12 @@ public sealed class SolverContext
         // If a goal has no expansions, it is returned as-is.
         await foreach (var exp in Solver.ExpandTerm(goal, Scope, ct: ct))
         {
+            if (ct.IsCancellationRequested) yield break;
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
             await foreach (var resolvedGoal in Solver.ResolveGoal(exp, Scope, ct: ct))
             {
-                if (ct.IsCancellationRequested)
-                    yield break;
+                if (ct.IsCancellationRequested) yield break;
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
                     // Solver.LogTrace(SolverTraceType.Return, "⊥", Scope.Depth);
@@ -86,38 +85,33 @@ public sealed class SolverContext
                         Scope.Cut();
 
                     yield return new Solution(Scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
+
                     continue;
                 }
-
-                if (ct.IsCancellationRequested)
-                    yield break;
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var anyQualified = false;
                 foreach (var qualifiedGoal in ErgoSolver.GetImplicitGoalQualifications(Scope, resolvedGoal.Result))
                 {
-                    var matches = Solver.KnowledgeBase.GetMatches(qualifiedGoal, desugar: false);
+                    if (ct.IsCancellationRequested) yield break;
                     Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, Scope.Depth);
-                    if (ct.IsCancellationRequested)
-                        yield break;
+                    var matches = Solver.KnowledgeBase.GetMatches(qualifiedGoal, desugar: false);
                     foreach (var m in matches)
                     {
                         anyQualified = true;
-                        var innerScope = Scope.WithDepth(Scope.Depth + 1)
+                        var innerScope = Scope
+                            .WithDepth(Scope.Depth + 1)
                             .WithModule(m.Rhs.DeclaringModule)
                             .WithCallee(Scope.Callee)
-                            .WithCaller(m.Rhs);
+                            .WithCaller(m.Rhs)
+                            .WithChoicePoint();
                         var innerContext = new SolverContext(Solver, innerScope);
                         var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         await foreach (var s in solve)
                         {
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                             yield return s;
-                            if (s.Scope.IsCutRequested)
-                                break;
                         }
-
-                        Scope = Scope.WithChoicePoint();
                     }
 
                     if (anyQualified)
@@ -128,7 +122,7 @@ public sealed class SolverContext
                 {
                     var signature = resolvedGoal.Result.GetSignature();
                     var dynModule = signature.Module.GetOr(Scope.Module);
-                    if (!Solver.KnowledgeBase.Get(signature).TryGetValue(out var predicates)
+                    if (!Solver.KnowledgeBase.Get(signature).TryGetValue(out _)
                     && !(Scope.InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
                     {
                         if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))

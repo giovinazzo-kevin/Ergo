@@ -303,7 +303,7 @@ public partial class ErgoSolver : IDisposable
         }
     }
     public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
-        => new SolverContext(this, scope).Solve(goal, ct: ct);
+        => new SolverContext(this, scope.WithChoicePoint()).Solve(goal, ct: ct);
 
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
     public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");

@@ -14,7 +14,7 @@ public readonly struct SolverScope
     public readonly Maybe<Predicate> Callee;
     public readonly InterpreterScope InterpreterScope;
 
-    public SolverScope(InterpreterScope interp, int depth, Atom module, Maybe<Predicate> callee, ImmutableArray<Predicate> callers, CancellationTokenSource cut = null)
+    public SolverScope(InterpreterScope interp, int depth, Atom module, Maybe<Predicate> callee, ImmutableArray<Predicate> callers, CancellationTokenSource cut)
     {
         Depth = depth;
         Module = module;
@@ -24,11 +24,11 @@ public readonly struct SolverScope
         InterpreterScope = interp;
     }
 
-    public SolverScope WithModule(Atom module) => new(InterpreterScope, Depth, module, Callee, Callers);
-    public SolverScope WithDepth(int depth) => new(InterpreterScope, depth, Module, Callee, Callers);
-    public SolverScope WithCaller(Maybe<Predicate> caller) => new(InterpreterScope, Depth, Module, Callee, Callers.AddRange(caller.AsEnumerable()));
-    public SolverScope WithCaller(Predicate caller) => new(InterpreterScope, Depth, Module, Callee, Callers.Add(caller));
-    public SolverScope WithCallee(Maybe<Predicate> callee) => new(InterpreterScope, Depth, Module, callee, Callers);
+    public SolverScope WithModule(Atom module) => new(InterpreterScope, Depth, module, Callee, Callers, _cut);
+    public SolverScope WithDepth(int depth) => new(InterpreterScope, depth, Module, Callee, Callers, _cut);
+    public SolverScope WithCaller(Maybe<Predicate> caller) => new(InterpreterScope, Depth, Module, Callee, Callers.AddRange(caller.AsEnumerable()), _cut);
+    public SolverScope WithCaller(Predicate caller) => new(InterpreterScope, Depth, Module, Callee, Callers.Add(caller), _cut);
+    public SolverScope WithCallee(Maybe<Predicate> callee) => new(InterpreterScope, Depth, Module, callee, Callers, _cut);
     public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: null);
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));

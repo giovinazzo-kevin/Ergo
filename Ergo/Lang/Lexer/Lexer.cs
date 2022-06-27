@@ -8,31 +8,31 @@ namespace Ergo.Lang;
 
 public partial class ErgoLexer : IDisposable
 {
-    private readonly ErgoStream _reader;
+    public readonly ErgoStream Stream;
     protected int Line { get; private set; }
     protected int Column { get; private set; }
-    protected long Position => _reader.Position;
+    protected long Position => Stream.Position;
     protected string Context { get; private set; }
 
     public readonly Operator[] AvailableOperators;
     public readonly ErgoFacade Facade;
 
-    public StreamState State => new(_reader.FileName, Position, Line, Column, Context);
+    public StreamState State => new(Stream.FileName, Position, Line, Column, Context);
 
     public void Seek(StreamState state, SeekOrigin origin = SeekOrigin.Begin)
     {
-        _reader.Seek(state.Position, origin);
+        Stream.Seek(state.Position, origin);
         Line = state.Line;
         Column = state.Column;
         Context = state.Context;
     }
 
-    public bool Eof => _reader.Position >= _reader.Length;
+    public bool Eof => Stream.Position >= Stream.Length;
 
     internal ErgoLexer(ErgoFacade facade, ErgoStream s, IEnumerable<Operator> userOperators)
     {
         Facade = facade;
-        _reader = s;
+        Stream = s;
         AvailableOperators = userOperators.ToArray();
         OperatorSymbols = AvailableOperators
             .SelectMany(op => op.Synonyms
@@ -175,14 +175,14 @@ public partial class ErgoLexer : IDisposable
         char Peek()
         {
             var p = State;
-            var ret = ReadUTF8Char(_reader);
+            var ret = ReadUTF8Char(Stream);
             Seek(p);
             return ret;
         }
 
         char Read()
         {
-            var c = ReadUTF8Char(_reader);
+            var c = ReadUTF8Char(Stream);
             Context += c;
             if (IsCarriageReturn(c))
             {
@@ -424,7 +424,7 @@ public partial class ErgoLexer : IDisposable
 
     public void Dispose()
     {
-        _reader.Dispose();
+        Stream.Dispose();
         GC.SuppressFinalize(this);
     }
 }

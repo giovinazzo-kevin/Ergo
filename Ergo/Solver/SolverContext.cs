@@ -38,8 +38,6 @@ public sealed class SolverContext
             await foreach (var ss in Solve(rest, subs, ct: ct))
             {
                 yield return new Solution(Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                if (s.Scope.IsCutRequested)
-                    yield break;
             }
         }
     }
@@ -113,15 +111,13 @@ public sealed class SolverContext
                         var solve = innerContext.Solve(m.Rhs.Body, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         await foreach (var s in solve)
                         {
-                            Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, innerScope.Depth);
+                            Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                             yield return s;
+                            if (s.Scope.IsCutRequested)
+                                break;
                         }
 
-                        if (innerScope.IsCutRequested)
-                        {
-                            Scope = Scope.WithChoicePoint();
-                            yield break;
-                        }
+                        Scope = Scope.WithChoicePoint();
                     }
 
                     if (anyQualified)

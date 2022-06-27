@@ -1,6 +1,7 @@
 ﻿using Ergo.Facade;
 using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
+using System.Diagnostics;
 
 namespace Ergo.Lang;
 
@@ -20,8 +21,15 @@ public partial class ErgoParser : IDisposable
         _discardContext = new(string.Empty);
     }
 
-    public bool RemoveAbstractParser<T>()
-        where T : IAbstractTerm => AbstractTermParsers.Remove(typeof(T));
+    public bool RemoveAbstractParser<T>(out IAbstractTermParser<T> parser)
+        where T : IAbstractTerm
+    {
+        parser = default;
+        if (!AbstractTermParsers.Remove(typeof(T), out var parser_))
+            return false;
+        parser = (IAbstractTermParser<T>)parser_;
+        return true;
+    }
     public void AddAbstractParser<T>(IAbstractTermParser<T> parser)
         where T : IAbstractTerm => AbstractTermParsers.Add(typeof(T), parser);
 
@@ -50,7 +58,6 @@ public partial class ErgoParser : IDisposable
     public Maybe<Atom> Atom()
     {
         var pos = Lexer.State;
-
         return Expect<string>(ErgoLexer.TokenType.String)
                 .Select(x => new Atom(x))
             .Or(() => Expect<double>(ErgoLexer.TokenType.Number)
@@ -62,7 +69,8 @@ public partial class ErgoParser : IDisposable
             .Or(() => Expect<string>(ErgoLexer.TokenType.Term)
                 .Where(x => IsAtomIdentifier(x))
                 .Select(x => new Atom(x)))
-            .Or(() => Fail<Atom>(pos));
+            .Or(() => Fail<Atom>(pos))
+            ;
 
     }
     public Maybe<Variable> Variable()
@@ -76,43 +84,41 @@ public partial class ErgoParser : IDisposable
                 .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
                 .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
             .Select(t => new Variable(t))
-            .Or(() => Fail<Variable>(pos));
+            .Or(() => Fail<Variable>(pos))
+            ;
     }
 
     public Maybe<Complex> Complex()
     {
         var pos = Lexer.State;
-        return Expect<string>(ErgoLexer.TokenType.Term)
-            .Or(() => Expect<string>(ErgoLexer.TokenType.Operator))
-            .Or(() => Expect<string>(ErgoLexer.TokenType.String))
-            .Map(functor => Term()
-                //.Where(t => t.IsParenthesized)
-                .Map(t => t.IsAbstract<NTuple>())
-                .Select(args => new Complex(new(functor), args.Contents.ToArray())))
-            .Or(() => Fail<Complex>(pos));
+        return Atom()
+            .Map(functor => Abstract<NTuple>()
+                .Select(args => new Complex(functor, args.Contents.ToArray())))
+            .Or(() => Fail<Complex>(pos))
+            ;
     }
 
-    public Maybe<ITerm> TermOrExpression()
+    public Maybe<ITerm> ExpressionOrTerm()
     {
         var pos = Lexer.State;
-
         return Expression()
-            .Map(expr => NTuple.FromPseudoCanonical(expr.Complex, expr.Complex.IsParenthesized, hasEmptyElement: false)
-                .Select(tup => tup.CanonicalForm, () => expr.Complex))
+            .Select<ITerm>(e => e.Complex)
             .Or(() => Term())
-            .Or(() => Fail<ITerm>(pos));
+            .Or(() => Fail<ITerm>(pos))
+            ;
     }
 
     public Maybe<ITerm> Term()
     {
         var pos = Lexer.State;
         return
-            Parenthesized(() => Expression())
+            Parenthesized("(", ")", () => Expression())
                 .Select<ITerm>(x => x.Complex.AsParenthesized(true))
-            .Or(() => Parenthesized(() => Term()
+            .Or(() => Parenthesized("(", ")", () => Term()
                 .Select(x => x.AsParenthesized(true))))
             .Or(() => Inner())
-            .Or(() => Fail<ITerm>(pos));
+            .Or(() => Fail<ITerm>(pos))
+            ;
 
         Maybe<ITerm> Inner()
         {
@@ -123,7 +129,7 @@ public partial class ErgoParser : IDisposable
                 .Or(() => Fail<ITerm>(pos));
             if (AbstractTermParsers.Values.Any())
             {
-                var parsers = AbstractTermParsers.Values;
+                var parsers = AbstractTermParsers.Values.ToArray();
                 var abstractFold = parsers.Skip(1)
                     .Aggregate(parsers.First().Parse(this),
                         (a, b) => a.Or(() => b.Parse(this).Or(() => Fail<IAbstractTerm>(pos))))
@@ -199,22 +205,24 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<Expression> Prefix()
     {
+        Debug.WriteLine($"Parser.Prefix");
         var pos = Lexer.State;
         return ExpectOperator(op => op.Affix == OperatorAffix.Prefix)
             .Map(op => Term()
-                .Where(arg => arg.IsParenthesized || !arg.IsAbstract<NTuple>().TryGetValue(out _))
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => Fail<Expression>(pos));
+            .Or(() => Fail<Expression>(pos))
+            .Do(t => Debug.WriteLine($"Parser.Prefix: {t.Complex.Explain(false)}"));
     }
 
     public Maybe<Expression> Postfix()
     {
+        Debug.WriteLine($"Parser.Postfix");
         var pos = Lexer.State;
         return Term()
-            .Where(arg => arg.IsParenthesized || !arg.IsAbstract<NTuple>().TryGetValue(out _))
             .Map(arg => ExpectOperator(op => op.Affix == OperatorAffix.Postfix)
                 .Select(op => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => Fail<Expression>(pos));
+            .Or(() => Fail<Expression>(pos))
+            .Do(t => Debug.WriteLine($"Parser.Postfix: {t.Complex.Explain(false)}"));
     }
 
     public Maybe<Expression> Expression()
@@ -224,7 +232,8 @@ public partial class ErgoParser : IDisposable
         {
             if (WithMinPrecedence(lhs, 0).TryGetValue(out var expr))
             {
-                return expr;
+                return Maybe.Some(expr)
+                    .Do(t => Debug.WriteLine($"Parser.Expression: {t.Complex.Explain(false)}"));
             }
             // Special case for unary expressions
             if (lhs is not Complex cplx
@@ -236,7 +245,8 @@ public partial class ErgoParser : IDisposable
 
             var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
             expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
-            return expr;
+            return Maybe.Some(expr)
+                .Do(t => Debug.WriteLine($"Parser.Expression: {t.Complex.Explain(false)}"));
         }
 
         return Fail<Expression>(pos);
@@ -311,6 +321,7 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<Directive> Directive()
     {
+        Debug.WriteLine($"Parser.Directive");
         var pos = Lexer.State;
         if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var desc))
         {
@@ -334,7 +345,8 @@ public partial class ErgoParser : IDisposable
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
                 .Select(_ => op))
             .Select(op => new Directive(op.Left, desc))
-            .Or(() => Fail<Directive>(pos));
+            .Or(() => Fail<Directive>(pos))
+            .Do(t => Debug.WriteLine($"Parser.Directive: {t.Explain(false)}"));
     }
 
     public Maybe<Predicate> Predicate()
@@ -370,7 +382,8 @@ public partial class ErgoParser : IDisposable
             .Map(x => MakePredicate(pos, desc, x.head, x.body))
             .Map(p => ExpectDelimiter(p => p.Equals("."))
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
-                .Select(_ => p));
+                .Select(_ => p))
+            .Do(t => Debug.WriteLine($"Parser.Predicate: {t.Explain(false)}"));
 
         Maybe<Predicate> MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, NTuple body)
         {
@@ -427,6 +440,7 @@ public partial class ErgoParser : IDisposable
 
     public IEnumerable<Operator> OperatorDeclarations()
     {
+        var pos = Lexer.State;
         var moduleName = WellKnown.Modules.Stdlib;
         var ret = new List<Operator>();
         try
@@ -455,6 +469,7 @@ public partial class ErgoParser : IDisposable
             // The parser reached a point where a newly-declared operator was used. Probably.
         }
 
+        Lexer.Seek(pos);
         return ret;
     }
 

@@ -64,7 +64,7 @@ public abstract class AbstractList : IAbstractTerm
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
     /// </summary>
-    protected static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
         if (args.Length == 0)
             return emptyElement;
@@ -81,7 +81,7 @@ public abstract class AbstractList : IAbstractTerm
     /// Folds a list in a non-canonical way that omits the trailing empty element.
     /// Note that the empty element is still returned for 0-length lists.
     /// </summary>
-    protected static ITerm FoldNoEmptyTail(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm FoldNoEmptyTail(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
@@ -98,7 +98,7 @@ public abstract class AbstractList : IAbstractTerm
     /// Folds a list in a non-canonical way that omits the trailing empty element and parenthesizes the single element instead of returning a malformed complex.
     /// Note that the empty element is still returned for 0-length lists.
     /// </summary>
-    protected static ITerm FoldNoEmptyTailParensSingle(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm FoldNoEmptyTailParensSingle(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
@@ -112,7 +112,7 @@ public abstract class AbstractList : IAbstractTerm
                 .AsOperator(OperatorAffix.Infix));
     }
 
-    protected static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, params Atom[] functors)
+    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, params Atom[] functors)
     {
         if (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
             return Maybe.Some(Inner());

@@ -79,6 +79,7 @@ public partial class ErgoInterpreter
             return default;
         }
 
+        parser.Lexer.Seek(pos);
         var directives = program.Directives.Select(d =>
         {
             if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
@@ -109,7 +110,6 @@ public partial class ErgoInterpreter
             scope = scope.WithModule(importedModule);
         }
 
-        parser.Lexer.Seek(pos);
         return module;
     }
 

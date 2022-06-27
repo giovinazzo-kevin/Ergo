@@ -74,11 +74,25 @@ public readonly struct Maybe<T>
         return other();
     }
 
+    public Maybe<T> And<U>(Func<Maybe<U>> other)
+    {
+        var this_ = this;
+        return other().Map(_ => this_);
+    }
+
     public T GetOrThrow(Exception ex)
     {
         if (HasValue)
             return Value;
         throw ex;
+    }
+    public Maybe<Either<T, U>> Either<U>(Func<Maybe<U>> other)
+    {
+        if (HasValue)
+            return Maybe.Some<Either<T, U>>(Value);
+        if (other().TryGetValue(out var v))
+            return Maybe.Some<Either<T, U>>(v);
+        return default;
     }
     public Either<T, U> GetEither<U>(U other)
     {

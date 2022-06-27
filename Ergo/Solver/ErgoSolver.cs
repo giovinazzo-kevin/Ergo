@@ -268,8 +268,8 @@ public partial class ErgoSolver : IDisposable
                             yield return WellKnown.Literals.Discard;
                         else yield return expanded;
 
-                        if (sol.Scope.IsCutRequested)
-                            break;
+                        //if (sol.Scope.IsCutRequested)
+                        //    break;
                     }
                 }
             }

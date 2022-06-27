@@ -18,5 +18,7 @@ public partial class ErgoLexer
             Column = col;
             Context = ctx ?? string.Empty;
         }
+
+        public override string ToString() => (Filename, Position, Line, Column, Context).ToString();
     }
 }

@@ -86,7 +86,7 @@ public sealed class SolverTests : ErgoTest
     [DataRow("assertz(t:-(⊤; ⊤))", "t", "retractall(t)", 2, "", "")]
     [DataRow("assertz(t), assertz(t)", "t", "retractall(t)", 2, "", "")]
     [DataRow("assertz(t(_))", "t(_X)", "retractall(t)", 1, "")]
-    [DataRow("assertz(t(X):-(X=⊤))", "t(X), X", "retractall(t)", 1, "")]
+    [DataRow("assertz(t(X):-(X=⊤))", "t(X), X", "retractall(t)", 1, "X/⊤")]
     #endregion
     [DataTestMethod]
     public Task ShouldSolveSetups(string setup, string goal, string cleanup, int numSolutions, params string[] expected)

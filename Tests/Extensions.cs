@@ -1,9 +1,8 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Tests
+namespace Tests;
+
+public static class Extensions
 {
-    public static class Extensions
-    {
-        public static string RemoveExtraWhitespace(this string s) => new Regex("\\s+", RegexOptions.Compiled | RegexOptions.Multiline).Replace(s, " ");
-    }
+    public static string RemoveExtraWhitespace(this string s) => new Regex("\\s+", RegexOptions.Compiled | RegexOptions.Multiline).Replace(s, " ");
 }

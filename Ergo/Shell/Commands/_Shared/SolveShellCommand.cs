@@ -38,7 +38,7 @@ public abstract class SolveShellCommand : ShellCommand
         }
 
         using var solver = shell.Facade.BuildSolver(scope.InterpreterScope.KnowledgeBase);
-        var parsed = shell.Parse<Query>(scope, userQuery).Value;
+        var parsed = shell.Interpreter.Parse<Query>(scope.InterpreterScope, userQuery);
         if (!parsed.TryGetValue(out var query))
         {
             yield return scope;

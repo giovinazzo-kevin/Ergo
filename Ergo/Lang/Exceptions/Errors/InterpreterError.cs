@@ -6,6 +6,7 @@ public enum InterpreterError
     , ExpectedTermOfTypeAt
     , ModuleAlreadyImported
     , ModuleNameClash
+    , CouldNotParseTerm
     , OperatorClash
     , ExpansionClashWithLiteral
     , ExpansionLambdaShouldHaveOneVariable

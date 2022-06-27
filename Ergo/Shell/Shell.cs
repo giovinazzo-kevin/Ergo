@@ -27,18 +27,7 @@ public partial class ErgoShell
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
 
-    public ShellScope CreateScope() => new(Interpreter.CreateScope(LoggingExceptionHandler).WithRuntime(true), false);
-
-    public Parsed<T> Parse<T>(ShellScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
-    {
-        onParseFail ??= (str =>
-        {
-            scope.Throw($"Could not parse '{data}' as {typeof(T).Name}");
-            return default;
-        });
-        var userDefinedOps = scope.InterpreterScope.GetOperators();
-        return new Parsed<T>(Facade, data, onParseFail, userDefinedOps.ToArray());
-    }
+    public ShellScope CreateScope() => new(Interpreter.CreateScope(x => x.WithExceptionHandler(LoggingExceptionHandler)).WithRuntime(true), false);
 
     internal ErgoShell(
         ErgoFacade facade,

@@ -1,6 +1,5 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter.Directives;
-using Ergo.Lang.Exceptions.Handler;
 using Ergo.Lang.Utils;
 using System.IO;
 
@@ -88,6 +87,7 @@ public partial class ErgoInterpreter
         });
         foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
         {
+            stream.Dispose();
             scope.Throw(InterpreterError.UndefinedDirective, Ast.Explain(false));
             return default;
         }
@@ -109,7 +109,7 @@ public partial class ErgoInterpreter
             scope = scope.WithModule(importedModule);
         }
 
-        stream.Seek(0, SeekOrigin.Begin);
+        parser.Lexer.Seek(pos);
         return module;
     }
 
@@ -144,10 +144,11 @@ public partial class ErgoInterpreter
         return module;
     }
 
-    public InterpreterScope CreateScope(ExceptionHandler handler = default)
+    public InterpreterScope CreateScope(Func<InterpreterScope, InterpreterScope> configureStdlibScope = null)
     {
-        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true))
-            .WithExceptionHandler(handler);
+        configureStdlibScope ??= s => s;
+        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
+        stdlibScope = configureStdlibScope(stdlibScope);
         Load(ref stdlibScope, WellKnown.Modules.Stdlib);
         var scope = stdlibScope
             .WithRuntime(false)
@@ -155,6 +156,18 @@ public partial class ErgoInterpreter
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
                 .WithImport(WellKnown.Modules.Stdlib));
         return scope;
+    }
+
+    public Maybe<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
+    {
+        onParseFail ??= (str =>
+        {
+            scope.Throw(InterpreterError.CouldNotParseTerm, typeof(T), data);
+            return Maybe<T>.None;
+        });
+        var userDefinedOps = scope.GetOperators();
+        return new Parsed<T>(Facade, data, onParseFail, userDefinedOps.ToArray())
+            .Value;
     }
 
 }

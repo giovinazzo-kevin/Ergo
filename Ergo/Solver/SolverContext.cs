@@ -38,11 +38,11 @@ public sealed class SolverContext
             await foreach (var ss in Solve(rest, subs, ct: ct))
             {
                 yield return new Solution(Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                if (ss.Scope.IsCutRequested)
-                    break;
+                if (s.Scope.IsCutRequested)
+                    yield break;
             }
 
-            if (Scope.IsCutRequested || s.Scope.IsCutRequested)
+            if (Scope.IsCutRequested)
             {
                 yield break;
             }

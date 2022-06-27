@@ -15,7 +15,7 @@ public sealed class PrintDataSinks : ShellCommand
         var match = m.Groups["term"];
         var sinks = new List<Signature>();
         using var solver = shell.Facade.BuildSolver();
-        var parsed = shell.Parse<ITerm>(scope, match.Success ? match.Value : "_").Value;
+        var parsed = shell.Interpreter.Parse<ITerm>(scope.InterpreterScope, match.Success ? match.Value : "_");
         if (!parsed.TryGetValue(out var term))
         {
             shell.No();

@@ -47,7 +47,7 @@ public class SolverTest : ErgoTest
 
         Assert.AreEqual(0, numSolutions);
     }
-    [DataTestMethod]
+    #region Rows
     [DataRow("⊥", 0)]
     [DataRow("⊤", 1, "")]
     [DataRow("⊤, ⊤", 1, "")]
@@ -62,9 +62,11 @@ public class SolverTest : ErgoTest
     [DataRow("(⊤, ⊤); ⊤", 2, "", "")]
     [DataRow("(⊤, ⊤); (⊤, ⊤)", 2, "", "")]
     [DataRow("(⊤, ⊥); (⊥; ⊤)", 1, "")]
+    #endregion
+    [DataTestMethod]
     public Task ShouldSolveConjunctionsAndDisjunctions(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, expected);
-    [DataTestMethod]
+    #region Rows
     [DataRow("!, ⊤", 1, "")]
     [DataRow("⊤, !", 1, "")]
     [DataRow("!, ⊤ ; ⊤", 1, "")]
@@ -74,11 +76,17 @@ public class SolverTest : ErgoTest
     [DataRow("⊤; (⊤, !; ⊤)", 2, "", "")]
     [DataRow("⊤; (⊤; ⊤, !)", 3, "", "", "")]
     [DataRow("(⊤, !; ⊤), !; (!, ⊤; ⊤)", 1, "")]
+    #endregion
+    [DataTestMethod]
     public Task ShouldSolveCuts(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, expected);
-    [DataTestMethod]
+    #region Rows
+    [DataRow("setup_call_cleanup(assertz(t:-(⊥)), (t), retractall(t))", 0)]
     [DataRow("setup_call_cleanup(assertz(t:-(⊤)), (t), retractall(t))", 1, "")]
+    [DataRow("setup_call_cleanup(assertz(t:-(⊤; ⊤)), (t), retractall(t))", 2, "", "")]
     [DataRow("setup_call_cleanup((assertz(t), assertz(t)), (t), retractall(t))", 2, "", "")]
+    #endregion
+    [DataTestMethod]
     public Task ShouldSolveSetups(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, expected);
 

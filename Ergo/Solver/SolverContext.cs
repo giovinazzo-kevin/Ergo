@@ -40,16 +40,12 @@ public sealed class SolverContext
         await foreach (var s in Solve(subGoal, scope, subs, ct: ct))
         {
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
-            await foreach (var ss in Solve(rest, scope, subs, ct: ct))
+            await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
                 yield return new Solution(s.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-
                 if (ss.Scope.IsCutRequested)
-                    break;
+                    yield break;
             }
-
-            if (s.Scope.IsCutRequested)
-                break;
         }
     }
 
@@ -59,7 +55,6 @@ public sealed class SolverContext
         if (ct.IsCancellationRequested) yield break;
 
         subs ??= new List<Substitution>();
-
         // Treat comma-expression complex ITerms as proper expressions
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {
@@ -112,15 +107,12 @@ public sealed class SolverContext
                             .WithDepth(scope.Depth + 1)
                             .WithModule(m.Rhs.DeclaringModule)
                             .WithCallee(scope.Callee)
-                            .WithCaller(m.Rhs)
-                            .WithChoicePoint();
+                            .WithCaller(m.Rhs);
                         var solve = Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         await foreach (var s in solve)
                         {
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                            yield return new(scope, s.Substitutions);
-                            if (s.Scope.IsCutRequested)
-                                yield break;
+                            yield return s;
                         }
                     }
 

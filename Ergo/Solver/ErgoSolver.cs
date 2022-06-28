@@ -39,7 +39,7 @@ public partial class ErgoSolver : IDisposable
         BuiltIns = new();
     }
     public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: null);
+        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: false);
     public void AddBuiltIn(SolverBuiltIn b)
     {
         if (!BuiltIns.TryAdd(b.Signature, b))
@@ -196,7 +196,7 @@ public partial class ErgoSolver : IDisposable
             yield return new(goal);
     }
 
-    public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var any = false;
         await foreach (var exp in Inner(term, scope, ct))
@@ -234,7 +234,7 @@ public partial class ErgoSolver : IDisposable
 
         yield return term;
 
-        async IAsyncEnumerable<ITerm> Inner(ITerm term, SolverScope scope = default, [EnumeratorCancellation] CancellationToken ct = default)
+        async IAsyncEnumerable<ITerm> Inner(ITerm term, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
         {
             if (ct.IsCancellationRequested || term is Variable)
                 yield break;
@@ -280,7 +280,7 @@ public partial class ErgoSolver : IDisposable
     /// <summary>
     /// Enumerates all implicit qualifications of 'goal' that are worth trying in the current scope.
     /// </summary>
-    public static IEnumerable<ITerm> GetImplicitGoalQualifications(SolverScope scope, ITerm goal)
+    public static IEnumerable<ITerm> GetImplicitGoalQualifications(ITerm goal, SolverScope scope)
     {
         yield return goal;
         var isDynamic = false;
@@ -303,7 +303,7 @@ public partial class ErgoSolver : IDisposable
         }
     }
     public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
-        => new SolverContext(this, scope.WithChoicePoint()).Solve(goal, ct: ct);
+        => new SolverContext(this).Solve(goal, scope.WithChoicePoint(), ct: ct);
 
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
     public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");

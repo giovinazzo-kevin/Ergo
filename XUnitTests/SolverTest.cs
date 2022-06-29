@@ -16,15 +16,20 @@ public sealed class SolverTestFixture : IDisposable
     public SolverTestFixture()
     {
         // Run at start
-        var basePath = Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\Ergo\ergo");
+        var basePath = Directory.GetCurrentDirectory();
+        var stdlibPath = Path.Combine(basePath, @"..\..\..\..\Ergo\ergo");
+        var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
+
         Interpreter = ErgoFacade.Standard
             .BuildInterpreter(InterpreterFlags.Default);
         InterpreterScope = Interpreter.CreateScope(x => x
             .WithExceptionHandler(ThrowingExceptionHandler)
             .WithoutSearchDirectories()
-            .WithSearchDirectory(basePath)
-            .WithSearchDirectory($@"{basePath}\stdlib\")
-            .WithSearchDirectory($@"{basePath}\user\"));
+            .WithSearchDirectory(testsPath)
+            .WithSearchDirectory(stdlibPath)
+            .WithModule(x.EntryModule
+                .WithImport(new("tests")))
+        );
     }
 
     ~SolverTestFixture()
@@ -48,21 +53,20 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     }
 
     // "⊤" : "⊥"
-    public async Task ShouldSolve(string query, int numSolutions, params string[] expected)
+    public async Task ShouldSolve(string query, int expectedSolutions, params string[] expected)
     {
+        Assert.Equal(expectedSolutions, expected.Length);
         using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);
         var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
-        var expectedSolutions = numSolutions;
-        await foreach (var (sol, i) in solver.Solve(parsed, solver.CreateScope(InterpreterScope))
-            .Select((x, i) => (x, i)))
+        var numSolutions = 0;
+        await foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope)))
         {
-            Assert.InRange(i, 0, expected.Length);
-            Assert.Equal(expected[i], sol.Simplify().Substitutions.Join(s => s.Explain(), ";"));
-            Assert.NotEqual(0, numSolutions--);
+            Assert.InRange(++numSolutions, 1, expected.Length);
+            Assert.Equal(expected[numSolutions - 1], sol.Simplify().Substitutions.Join(s => s.Explain(), ";"));
         }
 
-        Assert.Equal(expectedSolutions, expectedSolutions - numSolutions);
+        Assert.Equal(expectedSolutions, numSolutions);
     }
     #region Rows
     [Theory]
@@ -98,6 +102,10 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("(⊤ ; (⊤ ; (!, ⊤ ; (⊤ ; ⊤))))", 3, "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (!, ⊤ ; ⊤))))", 4, "", "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤ ; !, ⊤))))", 5, "", "", "", "", "")]
+
+    [InlineData("(⊤ ; !, ⊥ ; ⊤)", 1, "")]
+    [InlineData("(⊤ ; ⊥, ! ; ⊤)", 2, "", "")]
+
     #endregion
     public Task ShouldSolveCuts(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, expected);
@@ -112,6 +120,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     #endregion
     public Task ShouldSolveSetups(string setup, string goal, string cleanup, int numSolutions, params string[] expected)
         => ShouldSolve($"setup_call_cleanup(({setup}), ({goal}), ({cleanup}))", numSolutions, expected);
+    [Theory]
     [InlineData("[a,2,C]", "'[|]'(a,'[|]'(2,'[|]'(C,[])))")]
     [InlineData("[1,2,3|Rest]", "'[|]'(1,'[|]'(2,'[|]'(3,Rest)))")]
     [InlineData("[1,2,3|[a,2,_C]]", "'[|]'(1,'[|]'(2,'[|]'(3,'[|]'(a,'[|]'(2,'[|]'(_C,[]))))))")]

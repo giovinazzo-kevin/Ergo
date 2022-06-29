@@ -39,9 +39,8 @@ public readonly struct InterpreterScope
         Modules = ImmutableDictionary.Create<Atom, Module>()
             .Add(userModule.Name, userModule);
         SearchDirectories = ImmutableArray<string>.Empty
-            .Add(string.Empty)
-            .Add("./ergo/stdlib/")
-            .Add("./ergo/user/");
+            .Add(@".\ergo\")
+            ;
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;
         KnowledgeBase = null;

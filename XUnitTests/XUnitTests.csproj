@@ -25,4 +25,10 @@
     <ProjectReference Include="..\Ergo\Ergo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="ergo\tests\tests.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -43,7 +43,7 @@ public sealed class SolverContext
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
                 yield return new Solution(s.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                if (ss.Scope.IsCutRequested)
+                if (s.Scope.IsCutRequested)
                     yield break;
             }
         }

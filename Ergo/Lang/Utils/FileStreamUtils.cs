@@ -6,17 +6,16 @@ namespace Ergo.Lang.Utils;
 public static class FileStreamUtils
 {
     public static ErgoStream MemoryStream(string contents, string fileName = "") => new(new MemoryStream(Encoding.UTF8.GetBytes(contents)), fileName);
-    public static ErgoStream FileStream(IEnumerable<string> searchDirectories, string fileName)
+    public static ErgoStream FileStream(IEnumerable<string> searchDirectories, string module)
     {
-        var dir = searchDirectories
-            .Concat(searchDirectories.Select(s => s + fileName + "/")) // Allows structuring modules within folders of the same name; TODO: proper refactor
-            .FirstOrDefault(d => File.Exists(Path.ChangeExtension(Path.Combine(d, fileName), "ergo")));
-        if (dir == null)
+        var fileName = searchDirectories
+            .SelectMany(d => Directory.EnumerateFiles(d, "*.ergo", SearchOption.AllDirectories))
+            .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(module));
+        if (fileName is null)
         {
-            throw new FileNotFoundException(fileName);
+            throw new FileNotFoundException(module);
         }
 
-        fileName = Path.ChangeExtension(Path.Combine(dir, fileName), "ergo");
         var fs = EncodedFileStream(File.OpenRead(fileName), closeStream: true);
 
         fs.Seek(0, SeekOrigin.Begin);

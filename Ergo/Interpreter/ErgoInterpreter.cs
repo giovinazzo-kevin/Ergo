@@ -71,7 +71,6 @@ public partial class ErgoInterpreter
         var newOperators = parser.OperatorDeclarations();
         parser.Lexer.Seek(pos);
         parser = Facade.BuildParser(stream, operators.Concat(newOperators).Distinct());
-
         if (!scope.ExceptionHandler.TryGet(() => parser.ProgramDirectives()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();

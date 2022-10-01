@@ -58,6 +58,9 @@
     <None Update="ergo\stdlib\stdlib.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ergo\user\soc\soc.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\user\tree\tree.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

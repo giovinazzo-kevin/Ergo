@@ -280,24 +280,33 @@ public partial class ErgoSolver : IDisposable
     /// <summary>
     /// Enumerates all implicit qualifications of 'goal' that are worth trying in the current scope.
     /// </summary>
-    public static IEnumerable<ITerm> GetImplicitGoalQualifications(ITerm goal, SolverScope scope)
+    public static IEnumerable<(ITerm Term, bool Dynamic)> GetImplicitGoalQualifications(ITerm goal, SolverScope scope)
     {
-        yield return goal;
+        yield return (goal, false);
         var isDynamic = false;
         if (!goal.IsQualified)
         {
-            var qualified = goal.Qualified(scope.Module);
-            if ((isDynamic |= scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true)
+            //var modules = scope.Callers.Reverse().Select(c => c.DeclaringModule).Distinct();
+            //foreach (var m in modules)
+            //{
+            //    var qualified = goal.Qualified(m);
+            //    if ((isDynamic = scope.InterpreterScope.Modules[m].DynamicPredicates.Contains(qualified.GetSignature())) || true)
+            //    {
+            //        yield return (qualified, isDynamic);
+            //    }
+            //}
             {
-                yield return qualified;
-            }
-
-            if (scope.Callers.Length > 0 && scope.Callers.First() is { } clause)
-            {
-                qualified = goal.Qualified(clause.DeclaringModule);
-                if ((isDynamic |= scope.InterpreterScope.Modules[clause.DeclaringModule].DynamicPredicates.Contains(qualified.GetSignature())) || true)
+                var qualified = goal.Qualified(scope.Module);
+                if ((isDynamic = scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true)
                 {
-                    yield return qualified;
+                    yield return (qualified, isDynamic);
+                }
+            }
+            {
+                var qualified = goal.Qualified(scope.InterpreterScope.EntryModule.Name);
+                if ((isDynamic = scope.InterpreterScope.EntryModule.DynamicPredicates.Contains(qualified.GetSignature())) || true)
+                {
+                    yield return (qualified, isDynamic);
                 }
             }
         }

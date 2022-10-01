@@ -91,7 +91,6 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 
             variables = @base.Variables.Where(var => steps.ContainsKey(var));
         }
-
         return @base;
     }
 }

@@ -42,7 +42,7 @@ public sealed class SolverContext
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
                 yield return new Solution(s.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                if (s.Scope.IsCutRequested)
+                if (ss.Scope.IsCutRequested)
                     yield break;
             }
         }
@@ -94,7 +94,8 @@ public sealed class SolverContext
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var anyQualified = false;
-                foreach (var qualifiedGoal in ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope))
+                var dynamicMatched = false;
+                foreach (var (qualifiedGoal, isDynamic) in ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope))
                 {
                     if (ct.IsCancellationRequested) yield break;
                     Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
@@ -117,20 +118,17 @@ public sealed class SolverContext
 
                     if (anyQualified)
                         break;
+                    if (dynamicMatched |= isDynamic)
+                        break;
                 }
 
-                if (!anyQualified)
+                if (!anyQualified && !dynamicMatched)
                 {
                     var signature = resolvedGoal.Result.GetSignature();
-                    var dynModule = signature.Module.GetOr(scope.Module);
-                    if (!Solver.KnowledgeBase.Get(signature).TryGetValue(out _)
-                    && !(scope.InterpreterScope.Modules.TryGetValue(dynModule, out var m) && m.DynamicPredicates.Contains(signature)))
+                    if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
-                        if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
-                        {
-                            scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                            yield break;
-                        }
+                        scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
+                        yield break;
                     }
                 }
             }

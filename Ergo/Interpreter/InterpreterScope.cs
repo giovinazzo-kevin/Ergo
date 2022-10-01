@@ -69,7 +69,6 @@ public readonly struct InterpreterScope
                     var newPred = pred.WithModuleName(module.Name);
                     if (!pred.IsExported)
                         newPred = newPred.Qualified();
-
                     KnowledgeBase.AssertZ(newPred);
                 }
             }

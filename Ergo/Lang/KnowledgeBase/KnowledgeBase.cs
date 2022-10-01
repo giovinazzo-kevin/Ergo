@@ -68,13 +68,13 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         if (Get(head.GetSignature()).TryGetValue(out var list))
             return Inner(list);
 
-        if (head.IsQualified && head.GetQualification(out head).TryGetValue(out var module) && Get(head.GetSignature()).TryGetValue(out list))
+        if (head.IsQualified && head.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
             return Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module));
 
         return Enumerable.Empty<KBMatch>();
         IEnumerable<KBMatch> Inner(List<Predicate> list)
         {
-            foreach (var k in list)
+            foreach (var k in list.ToArray())
             {
                 var predicate = k.Instantiate(Context);
                 if (predicate.Unify(head).TryGetValue(out var matchSubs))

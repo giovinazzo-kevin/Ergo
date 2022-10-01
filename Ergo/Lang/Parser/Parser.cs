@@ -426,7 +426,6 @@ public partial class ErgoParser : IDisposable
                 return p.Exported();
             return p;
         });
-
         return new ErgoProgram(directives.ToArray(), exportedPredicates.ToArray())
             .AsPartial(false);
     }

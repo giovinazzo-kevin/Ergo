@@ -1,5 +1,4 @@
 ﻿namespace Ergo.Lang;
-
 public static class Maybe
 {
     public static Maybe<T> Some<T>(T some) => Maybe<T>.Some(some);

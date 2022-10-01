@@ -4,5 +4,6 @@ namespace Tests;
 
 public static class Extensions
 {
-    public static string RemoveExtraWhitespace(this string s) => new Regex("\\s+", RegexOptions.Compiled | RegexOptions.Multiline).Replace(s, " ");
+    static readonly Regex RemoveExtraWhitespaceRegex = new("\\s+", RegexOptions.Compiled | RegexOptions.Multiline);
+    public static string RemoveExtraWhitespace(this string s) => RemoveExtraWhitespaceRegex.Replace(s, " ");
 }

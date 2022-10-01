@@ -6,13 +6,13 @@ namespace Ergo.Lang.Ast;
 public readonly partial struct Operator
 {
     public readonly Atom CanonicalFunctor;
-    public readonly Atom[] Synonyms;
+    public readonly HashSet<Atom> Synonyms;
     public readonly Atom DeclaringModule;
     public readonly int Precedence;
     public readonly OperatorAffix Affix;
     public readonly OperatorAssociativity Associativity;
 
-    public Operator(Atom module, OperatorAffix affix, OperatorAssociativity assoc, int precedence, params Atom[] functors)
+    public Operator(Atom module, OperatorAffix affix, OperatorAssociativity assoc, int precedence, HashSet<Atom> functors)
     {
         DeclaringModule = module;
         Affix = affix;
@@ -21,7 +21,7 @@ public readonly partial struct Operator
         CanonicalFunctor = Synonyms.First();
         Precedence = precedence;
     }
-    public Operator(Atom module, OperatorType type, int precedence, params Atom[] functors)
+    public Operator(Atom module, OperatorType type, int precedence, HashSet<Atom> functors)
     {
         DeclaringModule = module;
         (Affix, Associativity) = GetAffixAndAssociativity(type);

@@ -17,6 +17,12 @@ public partial class ErgoLexer : IDisposable
     public readonly Operator[] AvailableOperators;
     public readonly ErgoFacade Facade;
 
+    #region Regular Expressions
+    protected static readonly Regex UnescapeRegex =
+        new("\\\\[abfnrtv?\"'\\\\]|\\\\[0-3]?[0-7]{1,2}|\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}|.", RegexOptions.Compiled);
+    #endregion
+
+
     public StreamState State => new(Stream.FileName, Position, Line, Column, Context);
 
     public void Seek(StreamState state, SeekOrigin origin = SeekOrigin.Begin)
@@ -50,8 +56,7 @@ public partial class ErgoLexer : IDisposable
     public static string Unescape(string s)
     {
         var sb = new StringBuilder();
-        var r = new Regex("\\\\[abfnrtv?\"'\\\\]|\\\\[0-3]?[0-7]{1,2}|\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}|.");
-        var mc = r.Matches(s, 0);
+        var mc = UnescapeRegex.Matches(s, 0);
 
         foreach (Match m in mc)
         {

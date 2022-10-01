@@ -92,10 +92,10 @@ public readonly struct InterpreterScope
     {
         var operators = GetOperatorsInner(Entry, Modules)
             .ToList();
-        foreach (var (op, depth) in operators)
+        foreach (var (op, _) in operators)
         {
-            if (!operators.Any(other => other.Depth < depth && other.Op.Synonyms.SequenceEqual(op.Synonyms)))
-                yield return op;
+            // if (!operators.Any(other => other.Depth < depth && other.Op.Synonyms.SequenceEqual(op.Synonyms)))
+            yield return op;
         }
 
         static IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Atom defaultModule, ImmutableDictionary<Atom, Module> modules, Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)

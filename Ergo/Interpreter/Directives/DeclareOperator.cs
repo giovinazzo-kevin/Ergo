@@ -33,14 +33,14 @@ public class DeclareOperator : InterpreterDirective
             // Operators can be re-defined, but only if the new definition covers all synonyms.
             if (intersectingSynonyms.Any())
             {
-                if (intersectingSynonyms.Count() != op.Synonyms.Length)
+                if (intersectingSynonyms.Count() != op.Synonyms.Count)
                 {
                     throw new InterpreterException(InterpreterError.OperatorClash, scope, args[2].Explain());
                 }
             }
         }
 
-        var synonymAtoms = synonyms.Select(x => new Atom(x)).ToArray();
+        var synonymAtoms = synonyms.Select(x => new Atom(x)).ToHashSet();
         scope = scope.WithModule(scope.EntryModule
             .WithOperator(new(scope.Entry, affix, assoc, precedence, synonymAtoms)));
         return true;

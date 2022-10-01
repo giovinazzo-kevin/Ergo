@@ -17,7 +17,6 @@ public sealed class SolverContext
         {
             yield return s;
         }
-
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught -= Cancel;
         void Cancel(ExceptionDispatchInfo _) => ExceptionCts.Cancel(false);

@@ -112,7 +112,7 @@ public abstract class AbstractList : IAbstractTerm
                 .AsOperator(OperatorAffix.Infix));
     }
 
-    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, params Atom[] functors)
+    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, HashSet<Atom> functors)
     {
         if (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
             return Maybe.Some(Inner());

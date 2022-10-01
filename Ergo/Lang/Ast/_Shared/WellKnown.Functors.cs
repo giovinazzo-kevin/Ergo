@@ -4,34 +4,34 @@ public static partial class WellKnown
 {
     public static class Functors
     {
-        public static readonly Atom[] Conjunction = new Atom[] { new(","), new("∧") };
-        public static readonly Atom[] Lambda = new Atom[] { new(">>") };
-        public static readonly Atom[] HeadTail = new Atom[] { new("|") };
-        public static readonly Atom[] List = new Atom[] { new("[|]") };
-        public static readonly Atom[] Set = new Atom[] { new("{|}") };
-        public static readonly Atom[] Tuple = Conjunction;
-        public static readonly Atom[] Multiplication = new Atom[] { new("*") };
-        public static readonly Atom[] Division = new Atom[] { new("/") };
-        public static readonly Atom[] IntDivision = new Atom[] { new("//") };
-        public static readonly Atom[] Arity = Division;
-        public static readonly Atom[] Module = new Atom[] { new(":") };
-        public static readonly Atom[] Dict = new Atom[] { new("dict") };
-        public static readonly Atom[] NamedArgument = new Atom[] { new(":") };
-        public static readonly Atom[] DictAccess = new Atom[] { new(".") };
-        public static readonly Atom[] Addition = new Atom[] { new("+") };
-        public static readonly Atom[] Plus = Addition;
-        public static readonly Atom[] Subtraction = new Atom[] { new("-") };
-        public static readonly Atom[] SignatureTag = new Atom[] { new("^") };
-        public static readonly Atom[] Minus = Subtraction;
-        public static readonly Atom[] Power = new Atom[] { new("^") };
-        public static readonly Atom[] SquareRoot = new Atom[] { new("√"), new("sqrt") };
-        public static readonly Atom[] Modulo = new Atom[] { new("mod") };
-        public static readonly Atom[] Unification = new Atom[] { new("=") };
-        public static readonly Atom[] Gt = new Atom[] { new(">") };
-        public static readonly Atom[] Gte = new Atom[] { new("≥"), new(">=") };
-        public static readonly Atom[] Lt = new Atom[] { new("<") };
-        public static readonly Atom[] Lte = new Atom[] { new("≤"), new("<=") };
-        public static readonly Atom[] Horn = new Atom[] { new("←"), new(":-") };
-        public static readonly Atom[] ExistentialQualifier = new Atom[] { new("^") };
+        public static readonly HashSet<Atom> Conjunction = new(new Atom[] { new(","), new("∧") });
+        public static readonly HashSet<Atom> Lambda = new(new Atom[] { new(">>") });
+        public static readonly HashSet<Atom> HeadTail = new(new Atom[] { new("|") });
+        public static readonly HashSet<Atom> List = new(new Atom[] { new("[|]") });
+        public static readonly HashSet<Atom> Set = new(new Atom[] { new("{|}") });
+        public static readonly HashSet<Atom> Tuple = Conjunction;
+        public static readonly HashSet<Atom> Multiplication = new(new Atom[] { new("*") });
+        public static readonly HashSet<Atom> Division = new(new Atom[] { new("/") });
+        public static readonly HashSet<Atom> IntDivision = new(new Atom[] { new("//") });
+        public static readonly HashSet<Atom> Arity = Division;
+        public static readonly HashSet<Atom> Module = new(new Atom[] { new(":") });
+        public static readonly HashSet<Atom> Dict = new(new Atom[] { new("dict") });
+        public static readonly HashSet<Atom> NamedArgument = new(new Atom[] { new(":") });
+        public static readonly HashSet<Atom> DictAccess = new(new Atom[] { new(".") });
+        public static readonly HashSet<Atom> Addition = new(new Atom[] { new("+") });
+        public static readonly HashSet<Atom> Plus = Addition;
+        public static readonly HashSet<Atom> Subtraction = new(new Atom[] { new("-") });
+        public static readonly HashSet<Atom> SignatureTag = new(new Atom[] { new("^") });
+        public static readonly HashSet<Atom> Minus = Subtraction;
+        public static readonly HashSet<Atom> Power = new(new Atom[] { new("^") });
+        public static readonly HashSet<Atom> SquareRoot = new(new Atom[] { new("√"), new("sqrt") });
+        public static readonly HashSet<Atom> Modulo = new(new Atom[] { new("mod") });
+        public static readonly HashSet<Atom> Unification = new(new Atom[] { new("=") });
+        public static readonly HashSet<Atom> Gt = new(new Atom[] { new(">") });
+        public static readonly HashSet<Atom> Gte = new(new Atom[] { new("≥"), new(">=") });
+        public static readonly HashSet<Atom> Lt = new(new Atom[] { new("<") });
+        public static readonly HashSet<Atom> Lte = new(new Atom[] { new("≤"), new("<=") });
+        public static readonly HashSet<Atom> Horn = new(new Atom[] { new("←"), new(":-") });
+        public static readonly HashSet<Atom> ExistentialQualifier = new(new Atom[] { new("^") });
     }
 }

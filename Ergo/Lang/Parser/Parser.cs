@@ -453,7 +453,7 @@ public partial class ErgoParser : IDisposable
                         continue;
                     if (!cplx.Arguments[2].IsAbstract<List>().TryGetValue(out var syns))
                         continue;
-                    ret.Add(new(moduleName, type, precedence, syns.Contents.Cast<Atom>().ToArray()));
+                    ret.Add(new(moduleName, type, precedence, syns.Contents.Cast<Atom>().ToHashSet()));
                 }
             }
         }

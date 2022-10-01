@@ -118,6 +118,7 @@ public partial class ErgoInterpreter
     {
         if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
             return default;
+
         // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
         foreach (Atom import in module.Imports.Contents)
         {
@@ -129,7 +130,6 @@ public partial class ErgoInterpreter
                 scope = scope.WithModule(importModule);
             }
         }
-
         var parser = Facade.BuildParser(stream, scope.GetOperators());
         if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {

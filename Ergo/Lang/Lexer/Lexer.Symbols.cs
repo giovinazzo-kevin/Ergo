@@ -2,27 +2,27 @@
 
 public partial class ErgoLexer
 {
-    public static readonly string[] TrueSymbols = new string[] {
+    public static readonly HashSet<string> TrueSymbols = new string[] {
         "true", "⊤"
-    };
-    public static readonly string[] FalseSymbols = new string[] {
+    }.ToHashSet();
+    public static readonly HashSet<string> FalseSymbols = new string[] {
         "false", "⊥"
-    };
-    public static readonly string[] CutSymbols = new string[] {
+    }.ToHashSet();
+    public static readonly HashSet<string> CutSymbols = new string[] {
         "!"
-    };
-    public static readonly string[] BooleanSymbols =
+    }.ToHashSet();
+    public static readonly HashSet<string> BooleanSymbols =
         FalseSymbols
         .Concat(TrueSymbols)
-        .ToArray();
-    public static readonly string[] KeywordSymbols =
+        .ToHashSet();
+    public static readonly HashSet<string> KeywordSymbols =
         CutSymbols
         .Concat(BooleanSymbols)
-        .ToArray();
+        .ToHashSet();
 
-    public static readonly string[] PunctuationSymbols = new string[] {
+    public static readonly HashSet<string> PunctuationSymbols = new string[] {
         "(", ")", "[", "]", "{", "}", ",", "."
-    };
+    }.ToHashSet();
 
     public readonly string[] OperatorSymbols;
 

@@ -21,7 +21,7 @@ public static class FileStreamUtils
         fs.Seek(0, SeekOrigin.Begin);
         return new(fs, fileName);
 
-        static Stream EncodedFileStream(FileStream file, bool closeStream = true)
+        static MemoryStream EncodedFileStream(FileStream file, bool closeStream = true)
         {
             var stream = (Stream)file;
             using (var reader = new StreamReader(file))
@@ -39,7 +39,7 @@ public static class FileStreamUtils
             }
 
             stream.Seek(0, SeekOrigin.Begin);
-            return stream;
+            return (MemoryStream)stream;
         }
     }
 }

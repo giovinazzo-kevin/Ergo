@@ -42,7 +42,7 @@ public sealed class SolverContext
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
                 yield return new Solution(s.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                if (ss.Scope.IsCutRequested)
+                if (ss.Scope.IsCutRequested && rest.Contents.Length > 0)
                     yield break;
             }
         }
@@ -54,6 +54,8 @@ public sealed class SolverContext
         if (ct.IsCancellationRequested) yield break;
 
         subs ??= new List<Substitution>();
+        if (goal.IsParenthesized)
+            scope = scope.WithoutCut();
         // Treat comma-expression complex ITerms as proper expressions
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {

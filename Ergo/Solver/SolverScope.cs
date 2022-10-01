@@ -31,6 +31,7 @@ public readonly struct SolverScope
     public SolverScope WithCallee(Maybe<Predicate> callee) => new(InterpreterScope, Depth, Module, callee, Callers, IsCutRequested);
     public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: false);
     public SolverScope WithCut() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: true);
+    public SolverScope WithoutCut() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: false);
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
 

@@ -5,6 +5,7 @@ public static partial class WellKnown
     public static class Functors
     {
         public static readonly HashSet<Atom> Conjunction = new(new Atom[] { new(","), new("∧") });
+        public static readonly HashSet<Atom> Disjunction = new(new Atom[] { new(";"), new("∨") });
         public static readonly HashSet<Atom> Lambda = new(new Atom[] { new(">>") });
         public static readonly HashSet<Atom> HeadTail = new(new Atom[] { new("|") });
         public static readonly HashSet<Atom> List = new(new Atom[] { new("[|]") });

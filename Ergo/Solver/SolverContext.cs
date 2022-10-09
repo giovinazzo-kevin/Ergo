@@ -31,6 +31,8 @@ public sealed class SolverContext
             yield break;
         }
 
+        // This method takes a list of goals and solves them one at a time.
+        // The tail of the list is fed back into this method recursively.
         var goals = query.Contents;
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
@@ -38,15 +40,18 @@ public sealed class SolverContext
         // Get first solution for the current subgoal
         await foreach (var s in Solve(subGoal, scope, subs, ct: ct))
         {
+            // Solve the rest of the goal 
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
                 yield return new Solution(s.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
-                if (ss.Scope.IsCutRequested && rest.Contents.Length > 0)
-                    yield break;
             }
+            // Handle cuts
+            if (s.Scope.IsCutRequested)
+                yield break;
         }
     }
+
 
     private async IAsyncEnumerable<Solution> Solve(ITerm goal, SolverScope scope, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
@@ -54,8 +59,7 @@ public sealed class SolverContext
         if (ct.IsCancellationRequested) yield break;
 
         subs ??= new List<Substitution>();
-        if (goal.IsParenthesized)
-            scope = scope.WithoutCut();
+        // || WellKnown.Functors.Disjunction.Contains(goal.GetFunctor().GetOr(default))
         // Treat comma-expression complex ITerms as proper expressions
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {
@@ -80,7 +84,7 @@ public sealed class SolverContext
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
                     // Solver.LogTrace(SolverTraceType.Return, "⊥", Scope.Depth);
-                    yield break;
+                    continue;
                 }
 
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
@@ -117,7 +121,6 @@ public sealed class SolverContext
                             yield return s;
                         }
                     }
-
                     if (anyQualified)
                         break;
                     if (dynamicMatched |= isDynamic)

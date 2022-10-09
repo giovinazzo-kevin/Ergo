@@ -1,13 +1,13 @@
 ﻿:- module(prologue, [
 	'¬'/1,
-	'∧'/2, '∨'/2,
+	'∧'/2, '∨'/2, ';'/2,
 	'='/2, '≠'/2,
 	'->'/2
 ]).
 
 % OPERATOR DECLARATIONS
 :- op(5, xfy, ['::']).
-:- op(30, xfy, ['∨', ';']).
+:- op(30, xfy, [';', '∨']).
 :- op(30, xfx, ['->']).
 :- op(30, fx, ['¬', '\\+']).
 :- op(50, xfx, ['=']).
@@ -21,9 +21,13 @@ _If -> _Then; Else :- !, Else.
 If -> Then :- If, !, Then.
 
 %: Logical disjunction of A and B.
-'∨'(A, _B) :- A.
+';'(A, _B) :- A.
 %: Logical disjunction of A and B.
-'∨'(_A, B) :- B.
+';'(_A, B) :- B.
+
+'∨'(A, B) :- A ; B.
+'∧'(A, B) :- A , B.
+
 %: Logical complement of A (negation).
 %: ⊤ iff A cannot be proven.
 '¬'(A) :- not(A), !.

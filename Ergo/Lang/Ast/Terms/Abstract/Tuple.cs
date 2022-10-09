@@ -35,4 +35,19 @@ public sealed class NTuple : AbstractList
                 return Maybe.Some(new NTuple(some));
             }, () => default);
     }
+    public override string Explain()
+    {
+        if (IsEmpty)
+            return EmptyElement.WithAbstractForm(default).Explain();
+        // Special cases for tuples:
+        // 1. 1-item tuples can only be created internally, e.g. when parsing queries.
+        //    They don't need to be parenthesized, ever.
+        if (Contents.Length == 1)
+            return Contents.Single().Explain();
+        // 2. They don't need to be parenthesized implicitly
+        var joined = Contents.Join(t => t.Explain(), ", ");
+        if (!CanonicalForm.IsParenthesized)
+            return joined;
+        return $"{Braces.Open}{joined}{Braces.Close}";
+    }
 }

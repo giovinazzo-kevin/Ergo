@@ -53,12 +53,14 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     }
 
     // "⊤" : "⊥"
-    public async Task ShouldSolve(string query, int expectedSolutions, params string[] expected)
+    public async Task ShouldSolve(string query, int expectedSolutions, bool checkParse, params string[] expected)
     {
         Assert.Equal(expectedSolutions, expected.Length);
         using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);
         var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
+        if (checkParse)
+            Assert.Equal(query, parsed.Goals.CanonicalForm.Explain(false));
         var numSolutions = 0;
         await foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope)))
         {
@@ -87,7 +89,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤ ; ⊤))))", 5, "", "", "", "", "")]
     #endregion
     public Task ShouldSolveConjunctionsAndDisjunctions(string query, int numSolutions, params string[] expected)
-        => ShouldSolve(query, numSolutions, expected);
+        => ShouldSolve(query, numSolutions, false, expected);
     #region Rows
     [Theory]
     [InlineData("!, (⊤ ; (⊤ ; (⊤ ; (⊤ ; ⊤))))", 5, "", "", "", "", "")]
@@ -108,7 +110,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
 
     #endregion
     public Task ShouldSolveCuts(string query, int numSolutions, params string[] expected)
-        => ShouldSolve(query, numSolutions, expected);
+        => ShouldSolve(query, numSolutions, true, expected);
     #region Rows
     [Theory]
     [InlineData("assertz(t:-⊥)", "t", "retractall(t)", 0)]
@@ -119,12 +121,12 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("assertz(t(X):-(X=⊤))", "t(X), X", "retractall(t)", 1, "X/⊤")]
     #endregion
     public Task ShouldSolveSetups(string setup, string goal, string cleanup, int numSolutions, params string[] expected)
-        => ShouldSolve($"setup_call_cleanup(({setup}), ({goal}), ({cleanup}))", numSolutions, expected);
+        => ShouldSolve($"setup_call_cleanup(({setup}), ({goal}), ({cleanup}))", numSolutions, false, expected);
     [Theory]
     [InlineData("[a,2,C]", "'[|]'(a,'[|]'(2,'[|]'(C,[])))")]
     [InlineData("[1,2,3|Rest]", "'[|]'(1,'[|]'(2,'[|]'(3,Rest)))")]
     [InlineData("[1,2,3|[a,2,_C]]", "'[|]'(1,'[|]'(2,'[|]'(3,'[|]'(a,'[|]'(2,'[|]'(_C,[]))))))")]
     [InlineData("{1,1,2,2,3,4}", "'{|}'(1,'{|}'(2,'{|}'(3,4)))")]
     public Task ShouldUnifyCanonicals(string term, string canonical)
-        => ShouldSolve($"{term}={canonical}", 1, "");
+        => ShouldSolve($"{term}={canonical}", 1, false, "");
 }

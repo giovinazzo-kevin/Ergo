@@ -113,8 +113,8 @@ public partial class ErgoParser : IDisposable
         return
             Parenthesized("(", ")", () => Expression())
                 .Select<ITerm>(x => x.Complex.AsParenthesized(true))
-            .Or(() => Parenthesized("(", ")", () => Term()
-                .Select(x => x.AsParenthesized(true))))
+            .Or(() => Parenthesized("(", ")", () => Inner())
+                .Select(x => x.AsParenthesized(true)))
             .Or(() => Inner())
             .Or(() => Fail<ITerm>(pos))
             ;
@@ -170,7 +170,12 @@ public partial class ErgoParser : IDisposable
                 var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
                 return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
             }
-
+            // Special case for comma-lists: always parse them as NTuples
+            if (WellKnown.Operators.Conjunction.Equals(op))
+            {
+                var list = (Complex)new NTuple(new[] { lhs, rhs }).CanonicalForm;
+                return new Expression(list);
+            }
             return new Expression(op, lhs, Maybe.Some(rhs), exprParenthesized);
         }
 

@@ -47,8 +47,10 @@ public readonly partial struct Complex : ITerm
     public string Explain(bool canonical = false)
     {
         if (!canonical && IsParenthesized)
-            return $"({Inner(this, AbstractForm)})";
+            return ParenthesizeUnlessRedundant(Inner(this, AbstractForm));
         return Inner(this, AbstractForm);
+
+        string ParenthesizeUnlessRedundant(string s) => s.StartsWith('(') && s.EndsWith(')') ? s : $"({s})";
 
         string Inner(Complex c, Maybe<IAbstractTerm> absForm)
         {
@@ -56,9 +58,9 @@ public readonly partial struct Complex : ITerm
                 return abs.Explain(canonical);
             return c.Affix.Select(some => canonical ? OperatorAffix.Prefix : some).GetOr(OperatorAffix.Prefix) switch
             {
-                OperatorAffix.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{c.Functor.Explain(canonical)}{c.Arguments[1].Explain(canonical)}",
-                OperatorAffix.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.Explain(canonical)}",
-                _ when !c.Functor.IsQuoted && !canonical && c.Affix.TryGetValue(out _) => $"{c.Functor.Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
+                OperatorAffix.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)} {c.Functor.AsQuoted(false).Explain(canonical)} {c.Arguments[1].Explain(canonical)}",
+                OperatorAffix.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.AsQuoted(false).Explain(canonical)}",
+                _ when !c.Functor.IsQuoted && !canonical && c.Affix.TryGetValue(out _) => $"{c.Functor.AsQuoted(false).Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
                 _ => $"{c.Functor.Explain(canonical)}({c.Arguments.Join(arg => arg.Explain(canonical))})",
             };
         }

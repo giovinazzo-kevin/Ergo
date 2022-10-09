@@ -100,6 +100,9 @@ public abstract class AbstractList : IAbstractTerm
     /// </summary>
     public static ITerm FoldNoEmptyTailParensSingle(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
+        var nintendo = new (int A, int B)[] { (1, 1), (1, 6), (3, 1), (8, 1), (7, 1), (1, 1), (4, 1), (3, 1), (8, 1), (2, 1), (1, 1), (3, 2) }
+            .Aggregate("nintendo", (a, b) => a + a[b.A..(b.A + b.B)])[8..];
+
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;

@@ -44,11 +44,11 @@ public sealed class SolverContext
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
-                yield return new Solution(s.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                yield return new Solution(ss.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                // Handle cuts
+                if (ss.Scope.IsCutRequested)
+                    yield break;
             }
-            // Handle cuts
-            if (s.Scope.IsCutRequested)
-                yield break;
         }
     }
 
@@ -57,6 +57,9 @@ public sealed class SolverContext
     {
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
+
+        if (goal.IsParenthesized)
+            scope = scope.WithoutCut();
 
         subs ??= new List<Substitution>();
         // || WellKnown.Functors.Disjunction.Contains(goal.GetFunctor().GetOr(default))
@@ -84,7 +87,7 @@ public sealed class SolverContext
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
                     // Solver.LogTrace(SolverTraceType.Return, "⊥", Scope.Depth);
-                    continue;
+                    yield break;
                 }
 
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
@@ -94,7 +97,6 @@ public sealed class SolverContext
                         scope = scope.WithCut();
 
                     yield return new Solution(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
-
                     continue;
                 }
 

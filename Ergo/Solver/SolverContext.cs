@@ -87,7 +87,6 @@ public sealed class SolverContext
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
                     Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
-                    // yield return Solution.Failure(scope);
                     if (scope.IsCutRequested)
                         ExceptionCts.Cancel(false);
                     yield break;

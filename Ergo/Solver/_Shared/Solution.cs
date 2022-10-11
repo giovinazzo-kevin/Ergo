@@ -8,7 +8,7 @@ public readonly struct Solution
     public readonly Substitution[] Substitutions;
     public readonly Lazy<ImmutableDictionary<ITerm, ITerm>> Links;
 
-    public static Solution Failure(SolverScope scope) => new(scope);
+    //public static Solution Failure(SolverScope scope) => new(scope);
     public static Solution Success(SolverScope scope, params Substitution[] subs) => new(scope, subs);
 
     /// <summary>

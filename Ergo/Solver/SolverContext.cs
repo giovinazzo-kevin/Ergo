@@ -27,7 +27,7 @@ public sealed class SolverContext
         subs ??= new List<Substitution>();
         if (query.IsEmpty)
         {
-            yield return new Solution(scope, subs.ToArray());
+            yield return Solution.Success(scope, subs.ToArray());
             yield break;
         }
 
@@ -44,7 +44,7 @@ public sealed class SolverContext
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
-                yield return new Solution(ss.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                yield return Solution.Success(ss.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 // Handle cuts
                 if (ss.Scope.IsCutRequested)
                     yield break;
@@ -86,7 +86,10 @@ public sealed class SolverContext
                 if (ct.IsCancellationRequested) yield break;
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
                 {
-                    // Solver.LogTrace(SolverTraceType.Return, "⊥", Scope.Depth);
+                    Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
+                    // yield return Solution.Failure(scope);
+                    if (scope.IsCutRequested)
+                        ExceptionCts.Cancel(false);
                     yield break;
                 }
 
@@ -96,13 +99,12 @@ public sealed class SolverContext
                     if (exp.Equals(WellKnown.Literals.Cut))
                         scope = scope.WithCut();
 
-                    yield return new Solution(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
+                    yield return Solution.Success(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }
 
                 // Attempts qualifying a goal with a module, then finds matches in the knowledge base
                 var anyQualified = false;
-                var dynamicMatched = false;
                 foreach (var (qualifiedGoal, isDynamic) in ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope))
                 {
                     if (ct.IsCancellationRequested) yield break;
@@ -122,16 +124,21 @@ public sealed class SolverContext
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                             yield return s;
                         }
+
                     }
                     if (anyQualified)
                         break;
-                    if (dynamicMatched |= isDynamic)
-                        break;
                 }
 
-                if (!anyQualified && !dynamicMatched)
+                if (!anyQualified)
                 {
                     var signature = resolvedGoal.Result.GetSignature();
+                    var dyn = scope.InterpreterScope.Modules.Values
+                        .SelectMany(m => m.DynamicPredicates)
+                        .SelectMany(p => new[] { p, p.WithModule(default) })
+                        .ToHashSet();
+                    if (dyn.Contains(signature))
+                        continue;
                     if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
                         scope.Throw(SolverError.UndefinedPredicate, signature.Explain());

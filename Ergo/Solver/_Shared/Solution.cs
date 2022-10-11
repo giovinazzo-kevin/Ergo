@@ -2,9 +2,14 @@
 
 public readonly struct Solution
 {
+    public readonly bool IsFailure;
+
     public readonly SolverScope Scope;
     public readonly Substitution[] Substitutions;
     public readonly Lazy<ImmutableDictionary<ITerm, ITerm>> Links;
+
+    public static Solution Failure(SolverScope scope) => new(scope);
+    public static Solution Success(SolverScope scope, params Substitution[] subs) => new(scope, subs);
 
     /// <summary>
     /// Applies all redundant substitutions and removes them from the set of returned substitutions.
@@ -40,8 +45,18 @@ public readonly struct Solution
             }
         }
     }
-    public Solution(SolverScope scope, params Substitution[] subs)
+
+    private Solution(SolverScope scope)
     {
+        IsFailure = true;
+        Scope = scope;
+        Substitutions = Array.Empty<Substitution>();
+        Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty);
+    }
+
+    private Solution(SolverScope scope, params Substitution[] subs)
+    {
+        IsFailure = false;
         Scope = scope;
         Substitutions = subs;
         Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty

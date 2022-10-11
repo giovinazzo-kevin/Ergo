@@ -16,6 +16,8 @@ public sealed class SolverContext
         await foreach (var s in Solve(goal.Goals, scope, ct: ct))
         {
             yield return s;
+            //if (s.Scope.IsCutRequested)
+            //    break;
         }
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught -= Cancel;
@@ -42,13 +44,19 @@ public sealed class SolverContext
         {
             // Solve the rest of the goal 
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
+            var cutDepth = int.MaxValue;
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
                 yield return Solution.Success(ss.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
                 // Handle cuts
                 if (ss.Scope.IsCutRequested)
-                    yield break;
+                {
+                    cutDepth = ss.Scope.Depth;
+                    break;
+                }
             }
+            if (s.Scope.IsCutRequested || cutDepth <= s.Scope.Depth)
+                break;
         }
     }
 

@@ -106,9 +106,8 @@ public abstract class AbstractList : IAbstractTerm
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;
-        args = args.SetItem(0, args[0].AsParenthesized(true));
         if (args.Length == 1)
-            return args[0];
+            return args[0].AsParenthesized(true);
         return args
             .Reverse()
             .Aggregate((a, b) => new Complex(functor, b, a)

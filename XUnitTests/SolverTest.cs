@@ -60,7 +60,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
         var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
-            Assert.Equal(query, parsed.Goals.CanonicalForm.Explain(false));
+            Assert.Equal(query, parsed.Goals.Explain());
         var numSolutions = 0;
         await foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope)))
         {
@@ -104,9 +104,13 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("(⊤ ; (⊤ ; (!, ⊤ ; (⊤ ; ⊤))))", 3, "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (!, ⊤ ; ⊤))))", 4, "", "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤ ; !, ⊤))))", 5, "", "", "", "", "")]
-
     [InlineData("(⊤ ; !, ⊥ ; ⊤)", 1, "")]
     [InlineData("(⊤ ; ⊥, ! ; ⊤)", 2, "", "")]
+    [InlineData("range(0 < X <= 3)", 3, "X/1", "X/2", "X/3")]
+    [InlineData("range(0 < X <= 3), range(0 < Y <= 3)", 9, "X/1;Y/1", "X/1;Y/2", "X/1;Y/3", "X/2;Y/1", "X/2;Y/2", "X/2;Y/3", "X/3;Y/1", "X/3;Y/2", "X/3;Y/3")]
+    [InlineData("range(0 < X <= 3), !", 1, "X/1")]
+    [InlineData("range(0 < X <= 3), !, range(0 < Y <= 3)", 3, "X/1;Y/1", "X/1;Y/2", "X/1;Y/3")]
+    [InlineData("range(0 < X <= 3), !, range(0 < Y <= 3), !", 1, "X/1;Y/1")]
 
     #endregion
     public Task ShouldSolveCuts(string query, int numSolutions, params string[] expected)

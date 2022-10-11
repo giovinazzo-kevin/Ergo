@@ -5,20 +5,21 @@
 	range/2, range/1,
 	between/3, between/6,
 	plus/3,
-	fibonacci/2
+	fibonacci/2,
+	max/3, min/3
 ]).
 :- use_module(meta).
 
 :- op(50, xfx, [':=', is]).
 :- op(50, xfx, ['=:=']).
 :- op(50, xfx, ['=\\=']).
-:- op(50, xfx, ['≡', '==']).
-:- op(50, xfx, ['≢', '\\==']).
+:- op(50, xfx, ['==', '≡']).
+:- op(50, xfx, ['\\==', '≢']).
 
 :- op(60, xfy, ['>']).
-:- op(60, xfy, ['≥', '>=']).
+:- op(60, xfy, ['>=', '≥']).
 :- op(40, xfx, ['<']).
-:- op(40, xfx, ['≤', '<=']).
+:- op(40, xfx, ['<=', '≤']).
 
 :- op(300, xfx, ['mod']).
 :- op(700, xfy, ['^']).
@@ -48,13 +49,13 @@
 %: Arithmetic comparison (lt).
 '<'(A, B)  :- eval(A < B).
 %: Arithmetic comparison (gte).
-'≥'(A, B) :- eval(A >= B).
+'>='(A, B) :- eval(A >= B).
 %: Arithmetic comparison (lte).
-'≤'(A, B) :- eval(A <= B).
+'<='(A, B) :- eval(A <= B).
 %: Arithmetic comparison (eq).
-'≡'(A, B) :- compare(0, A, B).
+'=='(A, B) :- compare(0, A, B).
 %: Arithmetic comparison (neq).
-'≢'(A, B) :- not(compare(0, A, B)).
+'\\=='(A, B) :- not(compare(0, A, B)).
 
 % HELPERS
 
@@ -92,3 +93,9 @@ fibonacci(N, F) :-
         memo(fibonacci(N1, F1)),
         memo(fibonacci(N2, F2)),
         F is F1 + F2.
+
+max(X,Y,X) :- X >= Y,!.
+max(X,Y,Y) :- X < Y.
+
+min(X,Y,X) :- X < Y,!.
+min(X,Y,Y) :- X >= Y.

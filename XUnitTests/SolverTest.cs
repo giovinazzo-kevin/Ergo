@@ -64,8 +64,9 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
         var numSolutions = 0;
         await foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope)))
         {
+            var check = sol.Simplify().Substitutions.Join(s => s.Explain(), ";");
             Assert.InRange(++numSolutions, 1, expected.Length);
-            Assert.Equal(expected[numSolutions - 1], sol.Simplify().Substitutions.Join(s => s.Explain(), ";"));
+            Assert.Equal(expected[numSolutions - 1], check);
         }
 
         Assert.Equal(expectedSolutions, numSolutions);
@@ -92,6 +93,12 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
         => ShouldSolve(query, numSolutions, false, expected);
     #region Rows
     [Theory]
+    [InlineData("min(3,5,3)", 1, "")]
+    [InlineData("max(3,5,5)", 1, "")]
+    [InlineData("min(5,3,3)", 1, "")]
+    [InlineData("max(5,3,5)", 1, "")]
+    [InlineData("X = 1, X == 1 -> Y = a ; Y = b", 1, "X/1;Y/a")]
+    [InlineData("X = 2, X == 1 -> Y = a ; Y = b", 1, "Y/b")]
     [InlineData("!, (⊤ ; (⊤ ; (⊤ ; (⊤ ; ⊤))))", 5, "", "", "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤ ; ⊤, !))))", 5, "", "", "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤, ! ; ⊤))))", 4, "", "", "", "")]

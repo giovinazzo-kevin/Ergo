@@ -1,7 +1,7 @@
 ﻿:- module(math, [
 	':='/2, '=:='/2, '=\\='/2,
-	'>'/2, '<'/2, '≥'/2, '≤'/2,
-	'≡'/2, '≢'/2, 
+	'>'/2, '<'/2, '>='/2, '<='/2,
+	'=='/2, '\\=='/2, 
 	range/2, range/1,
 	between/3, between/6,
 	plus/3,
@@ -94,8 +94,5 @@ fibonacci(N, F) :-
         memo(fibonacci(N2, F2)),
         F is F1 + F2.
 
-max(X,Y,X) :- X >= Y,!.
-max(X,Y,Y) :- X < Y.
-
-min(X,Y,X) :- X < Y,!.
-min(X,Y,Y) :- X >= Y.
+max(A, B, Max) :- A > B -> Max = A ; Max = B.
+min(A, B, Min) :- A < B -> Min = A ; Min = B.

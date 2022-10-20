@@ -1,11 +1,4 @@
-﻿using Ergo.Facade;
-using Ergo.Interpreter;
-using Ergo.Lang.Ast;
-using Ergo.Lang.Exceptions.Handler;
-using Ergo.Lang.Extensions;
-using Ergo.Solver;
-
-namespace Tests;
+﻿namespace Tests;
 public sealed class SolverTestFixture : IDisposable
 {
     public readonly ExceptionHandler NullExceptionHandler = default;

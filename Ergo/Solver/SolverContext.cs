@@ -1,6 +1,4 @@
-﻿using System.Runtime.ExceptionServices;
-
-namespace Ergo.Solver;
+﻿namespace Ergo.Solver;
 
 public sealed class SolverContext
 {

@@ -1,5 +1,5 @@
 ﻿:- module(todo, [
-	tag/2, subtag/2, todo/3, todo_find/2
+	tag/2, subtag/2, todo/2, todo_find/2
 ]).
 
 % ----
@@ -27,19 +27,14 @@ todo('Coroutining/Async', [global]).
 todo('Exception handling', [global]).
 todo('Strings/Regex', [global]).
 todo('Tabling/memoization', [global]).
-todo('Typesystem', [global]).
-todo('Abstract first class citizens (for Dict and others)', [global]).
-todo('Lambdas/Higher order predicates', [global]).
+todo('Trampolining/Last call optimization', [global]).
+todo('Rigid Typesystem', [global]).
 todo('Libraries', [modules]).
-todo('First class dictionary terms for named marshalling', [global]).
 todo('Improved marshalling, debugging for Data Sources/Sinks', [solver]).
-todo('Term/Goal expansions', [interpreter]).
-todo('Stack/Recursion optimizations', [interpreter]).
 todo('IL codegen', [global, ast]).
+todo('Trees as first class abstract terms', [interpreter, ast]).
 todo('Modules', [tests]).
 todo('Sugaring/Desugaring rules', [tests]).
 todo('Operator and literal resolution', [tests]).
 todo('Standardized table commands', [commands]).
 todo('Standardized tree commands', [commands]).
-
-test{x:1, y:2, z:2}.

@@ -40,6 +40,7 @@ public readonly struct InterpreterScope
             .Add(userModule.Name, userModule);
         SearchDirectories = ImmutableArray<string>.Empty
             .Add(@".\ergo\")
+            .Add(@".\user\")
             ;
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;

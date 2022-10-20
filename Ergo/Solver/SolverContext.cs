@@ -2,8 +2,10 @@
 
 namespace Ergo.Solver;
 
+// TODO: Build a stack-based system that supports last call optimization
 public sealed class SolverContext
 {
+    private readonly CancellationTokenSource ChoicePointCts = new();
     private readonly CancellationTokenSource ExceptionCts = new();
     public readonly ErgoSolver Solver;
 
@@ -16,8 +18,6 @@ public sealed class SolverContext
         await foreach (var s in Solve(goal.Goals, scope, ct: ct))
         {
             yield return s;
-            //if (s.Scope.IsCutRequested)
-            //    break;
         }
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught -= Cancel;
@@ -54,7 +54,7 @@ public sealed class SolverContext
 
     private async IAsyncEnumerable<Solution> Solve(ITerm goal, SolverScope scope, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ExceptionCts.Token).Token;
+        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
 
         if (goal.IsParenthesized)
@@ -87,7 +87,7 @@ public sealed class SolverContext
                 {
                     Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
                     if (scope.IsCutRequested)
-                        ExceptionCts.Cancel(false);
+                        ChoicePointCts.Cancel(false);
                     yield break;
                 }
 
@@ -99,7 +99,7 @@ public sealed class SolverContext
 
                     yield return Solution.Success(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
                     if (scope.IsCutRequested)
-                        ExceptionCts.Cancel(false);
+                        ChoicePointCts.Cancel(false);
                     continue;
                 }
 
@@ -113,21 +113,52 @@ public sealed class SolverContext
                     foreach (var m in matches)
                     {
                         anyQualified = true;
+                        // Create a new scope and context for this procedure call, essentially creating a choice point
                         var innerScope = scope
                             .WithDepth(scope.Depth + 1)
                             .WithModule(m.Rhs.DeclaringModule)
                             .WithCallee(scope.Callee)
-                            .WithCaller(m.Rhs)
-                        ;
+                            .WithCaller(m.Rhs);
                         var innerContext = new SolverContext(Solver);
+
+                        // Perform LCO.
+                        /* https://sicstus.sics.se/sicstus/docs/4.0.1/html/sicstus/Last-Call-Optimization.html
+                            Another important efficiency feature of SICStus Prolog is last call optimization. 
+                            This is a space optimization technique, which applies when a predicate is determinate 
+                              at the point where it is about to call the last goal in the body of a clause.
+
+                             % for(Int, Lower, Upper)
+                             % Lower and Upper should be integers such that Lower =< Upper.
+                             % Int should be uninstantiated; it will be bound successively on
+                             % backtracking to Lower, Lower+1, ... Upper.
+     
+                             for(Int, Int, _Upper).
+                             for(Int, Lower, Upper) :-
+                                for(Int, Next, Upper).
+                                Lower < Upper,
+                                Next is Lower + 1,
+                                for(Int, Next, Upper).
+
+                            This predicate is determinate at the point where the recursive call is about to be made, 
+                              since this is the last clause and the preceding goals (<)/2 and is/2) are determinate. 
+                            Thus last call optimization can be applied; effectively, the stack space being used for
+                              the current predicate call is reclaimed before the recursive call is made. 
+
+                            This means that this predicate uses only a constant amount of space, no matter how deep the recursion.
+                         */
+
+
+
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         await foreach (var s in solve)
                         {
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                             yield return s;
                         }
-                        if (innerContext.ExceptionCts.IsCancellationRequested)
+                        if (innerContext.ChoicePointCts.IsCancellationRequested)
                             break;
+                        if (innerContext.ExceptionCts.IsCancellationRequested)
+                            ExceptionCts.Cancel(false);
 
                     }
                     if (anyQualified)

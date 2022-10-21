@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using PeterO.Numbers;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -19,7 +20,7 @@ public readonly struct Atom : ITerm
     {
         Value = value;
         if (Value?.IsNumericType() ?? false)
-            Value = Convert.ToDecimal(value);
+            Value = EDecimal.FromDecimal(Convert.ToDecimal(value));
         HashCode = value?.GetHashCode() ?? 0;
         IsQuoted = quoted.GetOr(value is string s
             && s != (string)WellKnown.Literals.EmptyList.Value

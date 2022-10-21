@@ -5,7 +5,7 @@
 	range/2, range/1,
 	between/3, between/6,
 	plus/3,
-	fibonacci/2,
+	fibonacci/2, factorial/2,
 	max/3, min/3
 ]).
 :- use_module(meta).
@@ -93,6 +93,14 @@ fibonacci(N, F) :-
         memo(fibonacci(N1, F1)),
         memo(fibonacci(N2, F2)),
         F is F1 + F2.
+
+factorial(N, R) :- factorial(N, 1, R).
+factorial(0, R, R) :- !.
+factorial(N, Acc, R) :-
+    NewN is N - 1,
+    NewAcc is Acc * N,
+    factorial(NewN, NewAcc, R).
+
 
 max(A, B, Max) :- A > B -> Max = A ; Max = B.
 min(A, B, Min) :- A < B -> Min = A ; Min = B.

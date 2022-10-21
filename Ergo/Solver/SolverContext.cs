@@ -108,7 +108,6 @@ public sealed class SolverContext
                 foreach (var (qualifiedGoal, isDynamic) in ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope))
                 {
                     if (ct.IsCancellationRequested) yield break;
-                    Solver.LogTrace(SolverTraceType.Call, qualifiedGoal, scope.Depth);
                     var matches = Solver.KnowledgeBase.GetMatches(qualifiedGoal, desugar: false);
                     foreach (var m in matches)
                     {
@@ -120,8 +119,8 @@ public sealed class SolverContext
                             .WithCallee(scope.Callee)
                             .WithCaller(m.Rhs);
                         var innerContext = new SolverContext(Solver);
+                        Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
 
-                        // Perform LCO.
                         /* https://sicstus.sics.se/sicstus/docs/4.0.1/html/sicstus/Last-Call-Optimization.html
                             Another important efficiency feature of SICStus Prolog is last call optimization. 
                             This is a space optimization technique, which applies when a predicate is determinate 
@@ -146,7 +145,6 @@ public sealed class SolverContext
 
                             This means that this predicate uses only a constant amount of space, no matter how deep the recursion.
                          */
-
 
 
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);

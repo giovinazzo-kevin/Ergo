@@ -13,6 +13,7 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsDynamic;
     public readonly bool IsExported;
 
+
     public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
     {
         Documentation = desc;

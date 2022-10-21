@@ -32,6 +32,7 @@ todo('Rigid Typesystem', [global]).
 todo('Libraries', [modules]).
 todo('Improved marshalling, debugging for Data Sources/Sinks', [solver]).
 todo('IL codegen', [global, ast]).
+todo('BigFloat/BigInteger support', [global]).
 todo('Trees as first class abstract terms', [interpreter, ast]).
 todo('Modules', [tests]).
 todo('Sugaring/Desugaring rules', [tests]).

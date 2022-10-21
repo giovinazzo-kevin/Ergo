@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using PeterO.Numbers;
+using System.Collections;
 using System.Reflection;
 
 namespace Ergo.Lang;
@@ -26,11 +27,17 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             GetFunctor = o => new Atom(o ?? false);
             DefaultValue = new(() => ToTerm(false));
         }
-        else if (Type.IsPrimitive)
+        else if (Type.IsNumericType())
         {
             IsAtomic = new(() => true);
-            GetFunctor = o => new Atom(Convert.ChangeType(o ?? 0, typeof(double)));
+            GetFunctor = o => new Atom(Convert.ToDecimal(o ?? 0M));
             DefaultValue = new(() => ToTerm(0d));
+        }
+        else if (Type == typeof(EDecimal))
+        {
+            IsAtomic = new(() => true);
+            GetFunctor = o => new Atom(o);
+            DefaultValue = new(() => ToTerm(EDecimal.Zero));
         }
         else if (Type.IsEnum)
         {
@@ -141,7 +148,11 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             return t switch
             {
                 Complex cplx when cplx.Arguments.Length == 1 => ((Atom)cplx.Arguments[0]).Value,
-                Atom a => a.Value,
+                Atom a => a.Value switch
+                {
+                    EDecimal d when Type.IsNumericType() => Convert.ChangeType(d.ToDecimal(), Type),
+                    var v => v
+                },
                 _ => null
             };
         }

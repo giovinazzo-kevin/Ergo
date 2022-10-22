@@ -42,9 +42,9 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.IntDivision.Contains(f)
                 => (int)(Evaluate(solver, c.Arguments[0]) / Evaluate(solver, c.Arguments[1])),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Power.Contains(f)
-                => Math.Pow(Evaluate(solver, c.Arguments[0]), Evaluate(solver, c.Arguments[1])),
+                => ((EDecimal)Evaluate(solver, c.Arguments[0])).Pow(Evaluate(solver, c.Arguments[1])),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.SquareRoot.Contains(f)
-                => Math.Sqrt(Evaluate(solver, c.Arguments[0])),
+                => ((EDecimal)Evaluate(solver, c.Arguments[0])).Sqrt(null),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Minus.Contains(f)
                 => -Evaluate(solver, c.Arguments[0]),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)

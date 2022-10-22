@@ -40,7 +40,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Division.Contains(f)
                 => Evaluate(solver, c.Arguments[0]) / Evaluate(solver, c.Arguments[1]),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.IntDivision.Contains(f)
-                => (int)(Evaluate(solver, c.Arguments[0]) / Evaluate(solver, c.Arguments[1])),
+                => (((EDecimal)Evaluate(solver, c.Arguments[0])).DivideToIntegerNaturalScale(Evaluate(solver, c.Arguments[1]))),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Power.Contains(f)
                 => ((EDecimal)Evaluate(solver, c.Arguments[0])).Pow(Evaluate(solver, c.Arguments[1])),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.SquareRoot.Contains(f)
@@ -49,18 +49,6 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 => -Evaluate(solver, c.Arguments[0]),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)
                 => +Evaluate(solver, c.Arguments[0]),
-                var f when c.Arguments.Length == 1 && f.Equals(new Atom("sin"))
-                => Math.Sin(Evaluate(solver, c.Arguments[0])),
-                var f when c.Arguments.Length == 1 && f.Equals(new Atom("cos"))
-                => Math.Cos(Evaluate(solver, c.Arguments[0])),
-                var f when c.Arguments.Length == 1 && f.Equals(new Atom("tan"))
-                => Math.Tan(Evaluate(solver, c.Arguments[0])),
-                var f when c.Arguments.Length == 1 && f.Equals(new Atom("sinh"))
-                => Math.Sinh(Evaluate(solver, c.Arguments[0])),
-                var f when c.Arguments.Length == 1 && f.Equals(new Atom("cosh"))
-                => Math.Cosh(Evaluate(solver, c.Arguments[0])),
-                var f when c.Arguments.Length == 1 && f.Equals(new Atom("tanh"))
-                => Math.Tanh(Evaluate(solver, c.Arguments[0])),
                 _ => Throw(c)
             };
         }

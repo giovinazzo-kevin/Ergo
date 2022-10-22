@@ -120,7 +120,6 @@ public sealed class SolverContext
                             .WithCaller(m.Rhs);
                         var innerContext = new SolverContext(Solver);
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-
                         /* https://sicstus.sics.se/sicstus/docs/4.0.1/html/sicstus/Last-Call-Optimization.html
                             Another important efficiency feature of SICStus Prolog is last call optimization. 
                             This is a space optimization technique, which applies when a predicate is determinate 
@@ -133,7 +132,6 @@ public sealed class SolverContext
      
                              for(Int, Int, _Upper).
                              for(Int, Lower, Upper) :-
-                                for(Int, Next, Upper).
                                 Lower < Upper,
                                 Next is Lower + 1,
                                 for(Int, Next, Upper).
@@ -145,8 +143,6 @@ public sealed class SolverContext
 
                             This means that this predicate uses only a constant amount of space, no matter how deep the recursion.
                          */
-
-
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         await foreach (var s in solve)
                         {

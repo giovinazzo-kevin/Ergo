@@ -90,4 +90,4 @@ wielder_lvl_skill_requirement(WielderName, Lvl, Skill, Requirement) :-
 	member(Skill, S),
 	( member(Requirement_, R),
 	  wielder_lvl_skill_requirement_helper_(Skills, Requirement_, Requirement)
-	), ! ; Requirement = none.
+	) -> true ; Requirement = none.

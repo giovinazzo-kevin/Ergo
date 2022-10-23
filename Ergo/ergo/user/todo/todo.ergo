@@ -28,11 +28,12 @@ todo('Exception handling', [global]).
 todo('Strings/Regex', [global]).
 todo('Tabling/memoization', [global]).
 todo('Trampolining/Last call optimization', [global]).
+todo('Delimited continuations with reset/3 and shift/1', [global]).
 todo('Rigid Typesystem', [global]).
 todo('Libraries', [modules]).
 todo('Improved marshalling, debugging for Data Sources/Sinks', [solver]).
 todo('IL codegen', [global, ast]).
-todo('BigFloat/BigInteger support', [global]).
+todo('Granular numeric data types', [global]).
 todo('Trees as first class abstract terms', [interpreter, ast]).
 todo('Modules', [tests]).
 todo('Sugaring/Desugaring rules', [tests]).

@@ -120,29 +120,6 @@ public sealed class SolverContext
                             .WithCaller(scope.Callee);
                         var innerContext = new SolverContext(Solver);
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                        /* https://sicstus.sics.se/sicstus/docs/4.0.1/html/sicstus/Last-Call-Optimization.html
-                            Another important efficiency feature of SICStus Prolog is last call optimization. 
-                            This is a space optimization technique, which applies when a predicate is determinate 
-                              at the point where it is about to call the last goal in the body of a clause.
-
-                             % for(Int, Lower, Upper)
-                             % Lower and Upper should be integers such that Lower =< Upper.
-                             % Int should be uninstantiated; it will be bound successively on
-                             % backtracking to Lower, Lower+1, ... Upper.
-     
-                             for(Int, Int, _Upper).
-                             for(Int, Lower, Upper) :-
-                                Lower < Upper,
-                                Next is Lower + 1,
-                                for(Int, Next, Upper).
-
-                            This predicate is determinate at the point where the recursive call is about to be made, 
-                              since this is the last clause and the preceding goals (<)/2 and is/2) are determinate. 
-                            Thus last call optimization can be applied; effectively, the stack space being used for
-                              the current predicate call is reclaimed before the recursive call is made. 
-
-                            This means that this predicate uses only a constant amount of space, no matter how deep the recursion.
-                         */
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         await foreach (var s in solve)
                         {

@@ -116,8 +116,8 @@ public sealed class SolverContext
                         var innerScope = scope
                             .WithDepth(scope.Depth + 1)
                             .WithModule(m.Rhs.DeclaringModule)
-                            .WithCallee(scope.Callee)
-                            .WithCaller(m.Rhs);
+                            .WithCallee(m.Rhs)
+                            .WithCaller(scope.Callee);
                         var innerContext = new SolverContext(Solver);
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                         /* https://sicstus.sics.se/sicstus/docs/4.0.1/html/sicstus/Last-Call-Optimization.html

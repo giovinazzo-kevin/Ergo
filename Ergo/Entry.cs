@@ -18,7 +18,7 @@ var feedbackSource = new DataSource<Person>(
 );
 
 // The "Standard" Ergo Facade is the recommended pre-configured default environment.
-// You can extend it, modify it, or start from an empty facade. Note that 
+// You can extend it, modify it, or start from an empty facade.
 var facade = ErgoFacade.Standard
     .AddDataSink(consoleSink)
     .AddDataSink(feedbackSink)

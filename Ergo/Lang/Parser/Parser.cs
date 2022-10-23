@@ -312,9 +312,16 @@ public partial class ErgoParser : IDisposable
 
         Maybe<Operator> PeekNextOperator()
         {
-            return Lexer.PeekNext()
-                .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value))
-                    .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence)));
+            try
+            {
+                return Lexer.PeekNext()
+                    .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value))
+                        .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence)));
+            }
+            catch (InvalidOperationException)
+            {
+                return default;
+            }
         }
     }
 

@@ -130,7 +130,7 @@ public partial class ErgoInterpreter
                 scope = scope.WithModule(importModule);
             }
         }
-        var parser = Facade.BuildParser(stream, scope.GetOperators());
+        using var parser = Facade.BuildParser(stream, scope.GetOperators());
         if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();

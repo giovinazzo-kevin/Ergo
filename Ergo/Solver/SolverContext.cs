@@ -1,4 +1,5 @@
-﻿using System.Runtime.ExceptionServices;
+﻿using Ergo.Solver.BuiltIns;
+using System.Runtime.ExceptionServices;
 
 namespace Ergo.Solver;
 
@@ -18,6 +19,62 @@ public sealed class SolverContext
     public readonly ErgoSolver Solver;
 
     internal SolverContext(ErgoSolver solver) => Solver = solver;
+
+    /// <summary>
+    /// Attempts to resolve 'goal' as a built-in call, and evaluates its result. On failure evaluates 'goal' as-is.
+    /// </summary>
+    public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var any = false;
+        var sig = goal.GetSignature();
+        if (!goal.IsQualified)
+        {
+            // Try resolving the built-in's module automatically
+            foreach (var key in Solver.BuiltIns.Keys)
+            {
+                if (!key.Module.TryGetValue(out var module) || !scope.InterpreterScope.IsModuleVisible(module))
+                    continue;
+                var withoutModule = key.WithModule(default);
+                if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
+                {
+                    goal = goal.Qualified(module);
+                    sig = key;
+                    break;
+                }
+            }
+        }
+
+        while (Solver.BuiltIns.TryGetValue(sig, out var builtIn) || Solver.BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
+        {
+            if (ct.IsCancellationRequested)
+                yield break;
+            goal.GetQualification(out goal);
+            var args = goal.GetArguments();
+            Solver.LogTrace(SolverTraceType.BuiltInResolution, $"{goal.Explain()}", scope.Depth);
+            if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
+            {
+                scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(args.Length).Explain());
+                yield break;
+            }
+
+            await foreach (var eval in builtIn.Apply(this, scope, args))
+            {
+                if (ct.IsCancellationRequested)
+                    yield break;
+                goal = eval.Result;
+                sig = goal.GetSignature();
+                await foreach (var inner in ResolveGoal(eval.Result, scope, ct))
+                {
+                    yield return new(inner.Result, inner.Substitutions.Concat(eval.Substitutions).Distinct().ToArray());
+                }
+
+                any = true;
+            }
+        }
+
+        if (!any)
+            yield return new(goal);
+    }
 
     public async IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
@@ -88,7 +145,7 @@ public sealed class SolverContext
             if (ct.IsCancellationRequested) yield break;
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-            await foreach (var resolvedGoal in Solver.ResolveGoal(exp, scope, ct: ct))
+            await foreach (var resolvedGoal in ResolveGoal(exp, scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
                 if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
@@ -129,7 +186,8 @@ public sealed class SolverContext
                         var innerContext = new SolverContext(Solver);
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                        var isMemoized = scope.InterpreterScope.Modules[m.Rhs.DeclaringModule].TabledPredicates.Contains(m.Lhs.GetSignature().WithModule(m.Rhs.DeclaringModule));
+                        var isMemoized = scope.InterpreterScope.Modules[m.Rhs.DeclaringModule].TabledPredicates
+                            .Contains(m.Lhs.GetSignature().WithModule(m.Rhs.DeclaringModule));
                         await foreach (var s in solve)
                         {
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);

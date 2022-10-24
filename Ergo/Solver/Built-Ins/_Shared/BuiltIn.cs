@@ -20,7 +20,7 @@ public abstract class SolverBuiltIn
     protected Evaluation True(IEnumerable<Substitution> subs) => new(WellKnown.Literals.True, subs.ToArray());
     protected Evaluation True(params Substitution[] subs) => new(WellKnown.Literals.True, subs);
 
-    public abstract IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments);
+    public abstract IAsyncEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] arguments);
 
     public SolverBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
     {

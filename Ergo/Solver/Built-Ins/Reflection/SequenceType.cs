@@ -8,7 +8,7 @@ public sealed class SequenceType : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         var (type, seq) = (arguments[1], arguments[0]);
         if (seq is Variable)

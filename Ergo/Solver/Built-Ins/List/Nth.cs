@@ -7,7 +7,7 @@ public abstract class Nth : SolverBuiltIn
     public Nth(int offset)
         : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         if (args[0].Matches<int>(out var index))
         {

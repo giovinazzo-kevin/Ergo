@@ -8,9 +8,9 @@ public sealed class Not : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
-        var solutions = await solver.Solve(new Query(arguments.Single()), scope).CollectAsync();
+        var solutions = await context.Solver.Solve(new Query(arguments.Single()), scope).CollectAsync();
         if (solutions.Any())
         {
             yield return new(WellKnown.Literals.False);

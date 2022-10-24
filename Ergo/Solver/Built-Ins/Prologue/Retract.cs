@@ -7,10 +7,10 @@ public sealed class Retract : DynamicPredicateBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         var any = false;
-        while (Retract(solver, scope, arguments[0], all: false))
+        while (Retract(context.Solver, scope, arguments[0], all: false))
         {
             yield return new(WellKnown.Literals.True);
             any = true;

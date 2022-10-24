@@ -25,7 +25,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
         );
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         // TODO: Move In/Out streams to the interpreter!!
         foreach (var arg in args)

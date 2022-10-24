@@ -8,7 +8,7 @@ public sealed class Lambda : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         if (args.Length < 2)
         {
@@ -47,7 +47,7 @@ public sealed class Lambda : SolverBuiltIn
 
         var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : Array.Empty<ITerm>();
 
-        await foreach (var eval in new Call().Apply(solver, scope, new[] { lambda }.Concat(extraArgs).ToArray()))
+        await foreach (var eval in new Call().Apply(context, scope, new[] { lambda }.Concat(extraArgs).ToArray()))
         {
             yield return eval;
         }

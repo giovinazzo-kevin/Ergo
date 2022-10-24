@@ -39,7 +39,7 @@ public readonly struct Solution
                     var unresolvedVars = newVars.Where(v => vars.Contains(v));
                     if (unresolvedVars.Any())
                     {
-                        retry.Enqueue(ans);
+                        retry.Enqueue(ret);
                         break;
                     }
                     vars = newVars;
@@ -49,9 +49,12 @@ public readonly struct Solution
 
             while (retry.TryDequeue(out var ans))
             {
-                var sub = output.Where(x => x.Lhs.Equals(ans.Lhs))
+                var subs_ = output.Where(x => x.Lhs.Equals(ans.Lhs) && x.Rhs is Variable)
                     .Select(x => output.FirstOrDefault(y => y.Rhs.Equals(x.Rhs) && !y.Lhs.Equals(x.Lhs)))
-                    .FirstOrDefault();
+                    .ToList();
+                if (!subs_.Any())
+                    continue;
+                var sub = subs_.First();
                 output.Remove(output.First(x => x.Lhs.Equals(ans.Lhs)));
                 if (sub.Lhs is null)
                     continue;

@@ -9,7 +9,7 @@ public sealed class NumberVars : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         var allSubs = Enumerable.Empty<Substitution>();
         var (start, end) = (0, 0);

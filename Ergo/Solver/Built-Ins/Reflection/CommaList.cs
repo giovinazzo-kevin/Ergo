@@ -8,7 +8,7 @@ public sealed class CommaToList : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] arguments)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         var (commaArg, listArg) = (arguments[0], arguments[1]);
         if (listArg is not Variable)

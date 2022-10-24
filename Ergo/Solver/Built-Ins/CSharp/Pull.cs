@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Pull : SolverBuiltIn
 {
@@ -9,10 +7,10 @@ public sealed class Pull : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         var any = false;
-        await foreach (var item in solver.GetDataSourceMatches(args[0]))
+        await foreach (var item in context.Solver.GetDataSourceMatches(args[0]))
         {
             if (item.Rhs.Unify(args[0]).TryGetValue(out var subs))
             {

@@ -7,10 +7,10 @@ public sealed class BagOf : SolutionAggregationBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         var any = false;
-        await foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(solver, scope, args))
+        await foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context.Solver, scope, args))
         {
             if (!ListVars.Unify(ArgVars).TryGetValue(out var listSubs)
             || !args[2].Unify(ListTemplate.CanonicalForm).TryGetValue(out var instSubs))

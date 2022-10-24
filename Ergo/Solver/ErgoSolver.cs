@@ -140,61 +140,6 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    /// <summary>
-    /// Attempts to resolve 'goal' as a built-in call, and evaluates its result. On failure evaluates 'goal' as-is.
-    /// </summary>
-    public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
-    {
-        var any = false;
-        var sig = goal.GetSignature();
-        if (!goal.IsQualified)
-        {
-            // Try resolving the built-in's module automatically
-            foreach (var key in BuiltIns.Keys)
-            {
-                if (!key.Module.TryGetValue(out var module) || !scope.InterpreterScope.IsModuleVisible(module))
-                    continue;
-                var withoutModule = key.WithModule(default);
-                if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
-                {
-                    goal = goal.Qualified(module);
-                    sig = key;
-                    break;
-                }
-            }
-        }
-
-        while (BuiltIns.TryGetValue(sig, out var builtIn) || BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
-        {
-            if (ct.IsCancellationRequested)
-                yield break;
-            goal.GetQualification(out goal);
-            var args = goal.GetArguments();
-            LogTrace(SolverTraceType.BuiltInResolution, $"{goal.Explain()}", scope.Depth);
-            if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
-            {
-                scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(args.Length).Explain());
-                yield break;
-            }
-
-            await foreach (var eval in builtIn.Apply(this, scope, args))
-            {
-                if (ct.IsCancellationRequested)
-                    yield break;
-                goal = eval.Result;
-                sig = goal.GetSignature();
-                await foreach (var inner in ResolveGoal(eval.Result, scope, ct))
-                {
-                    yield return new(inner.Result, inner.Substitutions.Concat(eval.Substitutions).Distinct().ToArray());
-                }
-
-                any = true;
-            }
-        }
-
-        if (!any)
-            yield return new(goal);
-    }
 
     public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
@@ -264,7 +209,8 @@ public partial class ErgoSolver : IDisposable
                         if (ct.IsCancellationRequested)
                             yield break;
 
-                        if (!sol.Simplify().Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
+                        var simple = sol.Simplify();
+                        if (!simple.Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
                             yield return WellKnown.Literals.Discard;
                         else yield return expanded;
 

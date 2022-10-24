@@ -163,7 +163,6 @@ public sealed class SolverContext
             yield return Solution.Success(scope, subs.ToArray());
             yield break;
         }
-
         // This method takes a list of goals and solves them one at a time.
         // The tail of the list is fed back into this method recursively.
         var goals = query.Contents;
@@ -173,7 +172,7 @@ public sealed class SolverContext
         // Get first solution for the current subgoal
         await foreach (var s in Solve(subGoal, scope, subs, ct: ct))
         {
-            // Solve the rest of the goal 
+            // Solve the rest of the goal
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
@@ -192,7 +191,6 @@ public sealed class SolverContext
             scope = scope.WithoutCut();
 
         subs ??= new List<Substitution>();
-        // || WellKnown.Functors.Disjunction.Contains(goal.GetFunctor().GetOr(default))
         // Treat comma-expression complex ITerms as proper expressions
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {
@@ -250,17 +248,18 @@ public sealed class SolverContext
                             .WithCallee(m.Rhs)
                             .WithCaller(scope.Callee);
                         var innerContext = ScopedClone();
+                        var tailRecursive = m.Rhs.IsTailRecursive()
+                            && scope.Callee.TryGetValue(out var callee)
+                            && callee.IsSameDefinitionAs(m.Rhs);
+                        if (tailRecursive)
+                        {
+
+                        }
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                        var isMemoized = scope.InterpreterScope.Modules[m.Rhs.DeclaringModule].TabledPredicates
-                            .Contains(m.Lhs.GetSignature().WithModule(m.Rhs.DeclaringModule));
                         await foreach (var s in solve)
                         {
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                            //if (isMemoized)
-                            //{
-                            //    MemoizationTables[m.Lhs]
-                            //}
                             yield return s;
                         }
                         if (innerContext.ChoicePointCts.IsCancellationRequested)

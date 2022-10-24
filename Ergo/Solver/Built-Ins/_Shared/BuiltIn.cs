@@ -7,8 +7,9 @@ public abstract class SolverBuiltIn
 
     public Predicate GetStub(ITerm[] arguments)
     {
-        var head = new Complex(Signature.Functor, arguments);
-        return new Predicate(Documentation, Signature.Module.GetOr(WellKnown.Modules.Stdlib), head, NTuple.Empty, dynamic: false, exported: true);
+        var module = Signature.Module.GetOr(WellKnown.Modules.Stdlib);
+        var head = ((ITerm)new Complex(Signature.Functor, arguments)).Qualified(module);
+        return new Predicate(Documentation, module, head, NTuple.Empty, dynamic: false, exported: true);
     }
 
     protected Evaluation ThrowFalse(SolverScope scope, SolverError error, params object[] args)

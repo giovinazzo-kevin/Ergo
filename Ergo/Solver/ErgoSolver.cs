@@ -41,7 +41,7 @@ public partial class ErgoSolver : IDisposable
         BuiltIns = new();
     }
 
-    internal async Task InitializeAsync(InterpreterScope interpreterScope, CancellationToken ct = default)
+    public async Task InitializeAsync(InterpreterScope interpreterScope, CancellationToken ct = default)
     {
         _initialized = true;
         var expansions = new Queue<Predicate>();

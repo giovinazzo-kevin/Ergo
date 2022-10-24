@@ -13,6 +13,32 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsDynamic;
     public readonly bool IsExported;
 
+    public bool IsTailRecursive()
+    {
+        var calls = 0;
+        var sign = Head.GetSignature();
+        var anon = sign.Functor.BuildAnonymousTerm(sign.Arity.GetOr(0));
+        foreach (var (goal, i) in Body.Contents.Select((g, i) => (g, i)))
+        {
+            if (anon.Unify(goal).TryGetValue(out _))
+            {
+                if (++calls > 1)
+                    return false;
+                if (i == Body.Contents.Length - 1)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public bool IsSameDefinitionAs(Predicate other)
+    {
+        if (other.DeclaringModule != DeclaringModule)
+            return false;
+        if (!other.Head.GetSignature().Equals(Head.GetSignature()))
+            return false;
+        return true;
+    }
 
     public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
     {

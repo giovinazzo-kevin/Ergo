@@ -1,6 +1,7 @@
 ﻿:- module(reflection, [
-	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2,
+	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2,
 	'?='/2, '/'/2, '=..'/2,
+	'=='/2, '\\=='/2, 
 
 	functor/3, arg/3,
 	atom_concat/3
@@ -10,8 +11,11 @@
 :- op(51, xfy, ['@≥', '@>=']).
 :- op(49, yfx, ['@<']).
 :- op(49, yfx, ['@≤', '@<=']).
+:- op(50, yfx, ['=@=']).
 :- op(50, xfx, ['?=']).
 :- op(50, xfx, ['=..']).
+:- op(50, xfx, ['==', '≡']).
+:- op(50, xfx, ['\\==', '≢']).
 
 
 %: Term expansion.
@@ -24,9 +28,20 @@
 '@≥'(A, B) :- compare(X, A, B), X >= 0.
 %: Term comparison (lte).
 '@≤'(A, B) :- compare(X, A, B), X <= 0.
+%: Arithmetic comparison (eq).
+'=='(A, B) :- compare(0, A, B).
+%: Arithmetic comparison (neq).
+'\\=='(A, B) :- not(compare(0, A, B)).
 %: Synctactic equality of A and B.
 %: ⊤ iff the result of A == B will not change due to further instantiation of either term.
 '?='(A,B) :- \+unifiable(A,B,[_H|_T]).
+%: Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
+'=@='(A, B) :-
+	copy_term(A, Ac),
+	copy_term(B, Bc),
+	numbervars(Ac, 0, N),
+	numbervars(Bc, 0, N),
+	Ac == Bc.
 %: Anonymous type declaration. (TODO: remove?)
 '/'(Functor, Arity) :- anon(Functor, Arity).
 %: True when Term is a term with functor Name/Arity.

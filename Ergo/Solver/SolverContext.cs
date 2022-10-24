@@ -2,11 +2,19 @@
 
 namespace Ergo.Solver;
 
+public sealed class MemoizationTable
+{
+
+}
+
 // TODO: Build a stack-based system that supports last call optimization
 public sealed class SolverContext
 {
     private readonly CancellationTokenSource ChoicePointCts = new();
     private readonly CancellationTokenSource ExceptionCts = new();
+
+    private readonly Dictionary<ITerm, MemoizationTable> MemoizationTables = new();
+
     public readonly ErgoSolver Solver;
 
     internal SolverContext(ErgoSolver solver) => Solver = solver;
@@ -121,9 +129,14 @@ public sealed class SolverContext
                         var innerContext = new SolverContext(Solver);
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
+                        var isMemoized = scope.InterpreterScope.Modules[m.Rhs.DeclaringModule].TabledPredicates.Contains(m.Lhs.GetSignature().WithModule(m.Rhs.DeclaringModule));
                         await foreach (var s in solve)
                         {
                             Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
+                            //if (isMemoized)
+                            //{
+                            //    MemoizationTables[m.Lhs]
+                            //}
                             yield return s;
                         }
                         if (innerContext.ChoicePointCts.IsCancellationRequested)

@@ -5,15 +5,15 @@ namespace Ergo.Lang;
 
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
+    public readonly InstantiationContext InstantiationContext;
     protected readonly OrderedDictionary Predicates;
-    protected readonly InstantiationContext Context;
 
     public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 
     public KnowledgeBase()
     {
         Predicates = new OrderedDictionary();
-        Context = new("K");
+        InstantiationContext = new("K");
     }
 
     public void Clear() => Predicates.Clear();
@@ -59,7 +59,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             }
         }
         // Instantiate goal
-        var inst = goal.Instantiate(Context);
+        var inst = goal.Instantiate(InstantiationContext);
         if (!inst.Unify(goal).TryGetValue(out var subs))
             return Enumerable.Empty<KBMatch>();
 
@@ -76,7 +76,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         {
             foreach (var k in list.ToArray())
             {
-                var predicate = k.Instantiate(Context);
+                var predicate = k.Instantiate(InstantiationContext);
                 if (predicate.Unify(head).TryGetValue(out var matchSubs))
                 {
                     predicate = Predicate.Substitute(predicate, matchSubs);

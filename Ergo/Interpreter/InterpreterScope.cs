@@ -32,6 +32,7 @@ public readonly struct InterpreterScope
     /// The entry module.
     /// </summary>
     public Module EntryModule => Modules[Entry];
+    public InstantiationContext InstantaitionContext => KnowledgeBase.InstantiationContext;
 
     public InterpreterScope(Module userModule)
     {

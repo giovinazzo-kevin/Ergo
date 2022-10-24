@@ -1,5 +1,4 @@
-﻿
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class AnonymousComplex : SolverBuiltIn
 {

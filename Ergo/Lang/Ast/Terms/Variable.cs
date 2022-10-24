@@ -53,12 +53,12 @@ public readonly struct Variable : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        if (AbstractForm.TryGetValue(out var abs))
-            return abs.Instantiate(ctx, vars).CanonicalForm;
         if (vars.TryGetValue(Name, out var inst))
         {
             return inst;
         }
+        if (AbstractForm.TryGetValue(out var abs))
+            return abs.Instantiate(ctx, vars).CanonicalForm;
 
         return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
     }

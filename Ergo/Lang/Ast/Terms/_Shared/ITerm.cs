@@ -22,6 +22,13 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Complex c => c.Arguments,
         _ => Array.Empty<ITerm>()
     };
+    public ITerm GetVariant() => this switch
+    {
+        Complex c => c.WithArguments(c.Arguments.Select(x => x.GetVariant()).ToArray()),
+        Variable v => v,
+        Atom a => new Variable(a.Explain().ToUpper()),
+        var x => x
+    };
 
     ITerm WithFunctor(Atom newFunctor) => this switch
     {

@@ -1,5 +1,5 @@
 ﻿:- module(reflection, [
-	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2,
+	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2, '\\=@='/2,
 	'?='/2, '/'/2, '=..'/2,
 	'=='/2, '\\=='/2, 
 
@@ -11,7 +11,8 @@
 :- op(51, xfy, ['@≥', '@>=']).
 :- op(49, yfx, ['@<']).
 :- op(49, yfx, ['@≤', '@<=']).
-:- op(50, yfx, ['=@=']).
+:- op(50, xfx, ['=@=']).
+:- op(50, xfx, ['\\=@=']).
 :- op(50, xfx, ['?=']).
 :- op(50, xfx, ['=..']).
 :- op(50, xfx, ['==', '≡']).
@@ -42,6 +43,7 @@
 	numbervars(Ac, 0, N),
 	numbervars(Bc, 0, N),
 	Ac == Bc.
+'\\=@='(A, B) :- \+(A =@= B).
 %: Anonymous type declaration. (TODO: remove?)
 '/'(Functor, Arity) :- anon(Functor, Arity).
 %: True when Term is a term with functor Name/Arity.

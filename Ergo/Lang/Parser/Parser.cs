@@ -7,7 +7,7 @@ namespace Ergo.Lang;
 
 public sealed class DiagnosticProbe : IDisposable
 {
-    private record struct Datum(int Hits, int Leaves, Stopwatch Timer, TimeSpan TotalTime, TimeSpan AverageTime);
+    private record struct Datum(int Hits, int Leaves, Stopwatch Timer, TimeSpan TotalTime, TimeSpan AverageTime, ImmutableDictionary<string, int> Counters);
     private Dictionary<string, Datum> _data = new();
 
     public string GetCurrentMethodName([CallerMemberName] string callerName = "") => callerName;
@@ -15,7 +15,7 @@ public sealed class DiagnosticProbe : IDisposable
     {
         if (!_data.TryGetValue(callerName, out var datum))
         {
-            _data[callerName] = datum = new(0, 0, new(), default, default);
+            _data[callerName] = datum = new(0, 0, new(), default, default, ImmutableDictionary.Create<string, int>());
             datum.Timer.Start();
         }
         _data[callerName] = datum with { Hits = datum.Hits + 1 };
@@ -26,7 +26,20 @@ public sealed class DiagnosticProbe : IDisposable
         if (_data.TryGetValue(callerName, out var datum))
         {
             datum.Timer.Stop();
-            _data[callerName] = datum with { Leaves = datum.Leaves + 1, TotalTime = datum.Timer.Elapsed, AverageTime = datum.Timer.Elapsed / (float)datum.Hits };
+            _data[callerName] = datum with { Leaves = datum.Leaves + 1, TotalTime = datum.Timer.Elapsed + datum.TotalTime, AverageTime = datum.Timer.Elapsed / (float)datum.Hits };
+        }
+        else throw new InvalidOperationException(callerName);
+    }
+
+    public void Count(string counter, int amount = 1, [CallerMemberName] string callerName = "")
+    {
+        if (_data.TryGetValue(callerName, out var datum))
+        {
+            datum.Timer.Stop();
+
+            if (datum.Counters.TryGetValue(counter, out var oldAmount))
+                amount += oldAmount;
+            _data[callerName] = datum with { Counters = datum.Counters.SetItem(counter, amount) };
         }
         else throw new InvalidOperationException(callerName);
     }
@@ -35,6 +48,16 @@ public sealed class DiagnosticProbe : IDisposable
     {
         if (_data.FirstOrDefault(d => d.Value.Hits != d.Value.Leaves) is { Key: { } } item)
             throw new InvalidOperationException($"{item.Key}: {item.Value}");
+    }
+
+    public string GetDiagnostics()
+    {
+        var totalTime = _data.Values.Sum(x => x.TotalTime.TotalMilliseconds);
+        return _data
+            .Select(kv => (kv.Key, kv.Value, SelfTimePct: (float)(kv.Value.TotalTime.TotalMilliseconds / totalTime) * 100))
+            .OrderBy(kv => kv.SelfTimePct)
+            .Select(x => $"{x.Key,20}: HIT={x.Value.Hits:00000} TOT={x.Value.TotalTime.TotalMilliseconds:00000.000000} AVG={x.Value.AverageTime.TotalMilliseconds:00000.000000} SLF={x.SelfTimePct:000.00}%{(x.Value.Counters.Any() ? $"\r\n\t{{ {x.Value.Counters.Select(kv => $"{kv.Key}={kv.Value:00000}").Join()} }}" : "")}")
+            .Join("\r\n") + "\r\n";
     }
 }
 
@@ -45,12 +68,13 @@ public partial class ErgoParser : IDisposable
 
     private readonly DiagnosticProbe Probe = new();
 
-    private Maybe<T> Memoize<T>(Func<Maybe<T>> parser)
+    private Maybe<T> Memoize<T>(Func<Maybe<T>> parser, [CallerMemberName] string callerName = "")
     {
         var pos = Lexer.State;
-        var key = pos.ToString();
+        var key = callerName + pos.ToString();
         if (_memoizationTable.TryGetValue(key, out var memo))
         {
+            Probe.Count("MemoizationHits", 1, callerName);
             return (T)memo;
         }
         return parser()
@@ -99,9 +123,14 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<IAbstractTerm> Abstract(Type type)
     {
+        Probe.Enter();
         if (!AbstractTermParsers.TryGetValue(type, out var parser))
+        {
+            Probe.Leave();
             return default;
-        return parser.Parse(this);
+        }
+        return parser.Parse(this)
+            .Do(() => Probe.Leave());
     }
 
     public Maybe<Atom> Atom()
@@ -585,6 +614,8 @@ public partial class ErgoParser : IDisposable
 
     public void Dispose()
     {
+        Console.WriteLine(Lexer.Stream.FileName);
+        Console.WriteLine(Probe.GetDiagnostics());
         Probe.Dispose();
         Lexer.Dispose();
         GC.SuppressFinalize(this);

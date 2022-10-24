@@ -8,6 +8,8 @@ namespace Ergo.Solver;
 
 public partial class ErgoSolver : IDisposable
 {
+    private volatile bool _initialized;
+
     public readonly SolverFlags Flags;
     public readonly Dictionary<Signature, SolverBuiltIn> BuiltIns;
 
@@ -38,6 +40,30 @@ public partial class ErgoSolver : IDisposable
         KnowledgeBase = kb;
         BuiltIns = new();
     }
+
+    internal async Task InitializeAsync(InterpreterScope interpreterScope, CancellationToken ct = default)
+    {
+        _initialized = true;
+        var expansions = new Queue<Predicate>();
+        var tmpScope = CreateScope(interpreterScope);
+        foreach (var pred in KnowledgeBase.ToList())
+        {
+            await foreach (var exp in ExpandPredicate(pred, tmpScope, ct))
+            {
+                expansions.Enqueue(exp);
+            }
+            if (expansions.Count > 0)
+            {
+                KnowledgeBase.Retract(pred.Head);
+                while (expansions.TryDequeue(out var exp))
+                {
+                    KnowledgeBase.AssertZ(exp);
+                }
+                expansions.Clear();
+            }
+        }
+    }
+
     public SolverScope CreateScope(InterpreterScope interpreterScope)
         => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: false);
     public void AddBuiltIn(SolverBuiltIn b)
@@ -273,7 +299,12 @@ public partial class ErgoSolver : IDisposable
         }
     }
     public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
-        => new SolverContext(this).Solve(goal, scope, ct: ct);
+    {
+        if (!_initialized)
+            throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
+
+        return new SolverContext(this).Solve(goal, scope, ct: ct);
+    }
 
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
     public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");

@@ -57,6 +57,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     {
         Assert.Equal(expectedSolutions, expected.Length);
         using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);
+        await solver.InitializeAsync(InterpreterScope);
         var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)

@@ -175,7 +175,6 @@ public partial class ErgoInterpreter
             program.KnowledgeBase.AssertZ(tblPred);
             scope = scope.WithModule(module = module.WithProgram(program));
         }
-
         return module;
     }
 

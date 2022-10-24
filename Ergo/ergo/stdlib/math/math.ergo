@@ -5,7 +5,8 @@
 	between/3, between/6,
 	plus/3,
 	fibonacci/2, factorial/2,
-	max/3, min/3
+	max/3, min/3,
+	test/1
 ]).
 :- use_module(meta).
 
@@ -36,6 +37,8 @@
 :- expand([O] >> (':='(A) :- O is A)).
 
 :- table(fibonacci/2).
+
+test('π').
 
 % OPERATORS
 

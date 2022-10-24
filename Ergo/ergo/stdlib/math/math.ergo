@@ -34,6 +34,7 @@
 
 :- expand([O] >> ('π' :- O = 3.14159265359)).
 :- expand([O] >> ('τ' :- O = 6.28318530717)).
+%: Expansion for inline arithmetic evaluation.
 :- expand([O] >> (':='(A) :- O is A)).
 
 :- table(fibonacci/2).
@@ -59,16 +60,15 @@ test('π').
 
 % HELPERS
 
-between_(Min, Max, _, M) :- Min <= Max, M is Min.
+between_(Min, Max, _, Min) :- Min <= Max.
 between_(Min, Max, Step, M) :-
 	Min <= Max,
-	NewMin := Min + Step,
-	between_(NewMin, Max, Step, M).
+	between_(:=(Min + Step), Max, Step, M).
 
 between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
-between('(', Min, Max, ']', Step, M) :- NewMin := Min + Step, between_(NewMin, Max, Step, M).
-between('[', Min, Max, ')', Step, M) :- NewMax := Max - Step, between_(Min, NewMax, Step, M).
-between('(', Min, Max, ')', Step, M) :- NewMin := Min + Step, NewMax := Max - Step, between_(NewMin, NewMax, Step, M).
+between('(', Min, Max, ']', Step, M) :- between_(:=(Min + Step), Max, Step, M).
+between('[', Min, Max, ')', Step, M) :- between_(Min, :=(Max - Step), Step, M).
+between('(', Min, Max, ')', Step, M) :- between_(:=(Min + Step), :=(Max - Step), Step, M).
 
 between(Min, Max, M) :- between('(', Min, Max, ']', 1, M).
 
@@ -95,9 +95,7 @@ fibonacci(N, F) :-
 factorial(N, R) :- factorial(N, 1, R).
 factorial(0, R, R) :- !.
 factorial(N, Acc, R) :-
-    NewN is N - 1,
-    NewAcc is Acc * N,
-    factorial(NewN, NewAcc, R).
+    factorial(:=(N - 1), :=(Acc * N), R).
 
 
 max(A, B, Max) :- A > B -> Max = A ; Max = B.

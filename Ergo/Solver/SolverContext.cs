@@ -282,6 +282,8 @@ public sealed class SolverContext
                         .ToHashSet();
                     if (dyn.Contains(signature))
                         continue;
+                    if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
+                        continue;
                     if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {
                         scope.Throw(SolverError.UndefinedPredicate, signature.Explain());

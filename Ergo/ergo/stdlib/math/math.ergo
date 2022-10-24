@@ -37,7 +37,6 @@
 
 :- table(fibonacci/2).
 
-
 % OPERATORS
 
 %: Assignment of A to the arithmetic evaluation of B.

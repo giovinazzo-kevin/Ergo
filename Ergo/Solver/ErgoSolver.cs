@@ -141,6 +141,21 @@ public partial class ErgoSolver : IDisposable
     }
 
 
+    public async IAsyncEnumerable<Predicate> ExpandPredicate(Predicate p, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        await foreach (var exp in ExpandTerm(p.Head, scope, ct))
+        {
+            yield return new(
+                p.Documentation,
+                p.DeclaringModule,
+                exp,
+                p.Body,
+                p.IsDynamic,
+                p.IsExported
+            );
+        }
+    }
+
     public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var any = false;

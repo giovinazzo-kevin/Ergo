@@ -204,93 +204,82 @@ public sealed class SolverContext
 
         // If a goal is expanded, all of its possible expansions are enumerated.
         // If a goal has no expansions, it is returned as-is.
-        await foreach (var exp in Solver.ExpandTerm(goal, scope, ct: ct))
-        {
-            if (ct.IsCancellationRequested) yield break;
+        var resolveExpansions = Solver.ExpandTerm(goal, scope, ct: ct)
             // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
             // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-            await foreach (var resolvedGoal in ResolveGoal(exp, scope, ct: ct))
+            .SelectMany(exp => ResolveGoal(exp, scope, ct: ct).Select(goal => (exp, goal)));
+        await foreach (var (exp, resolvedGoal) in resolveExpansions)
+        {
+            if (ct.IsCancellationRequested) yield break;
+            if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
-                if (ct.IsCancellationRequested) yield break;
-                if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
-                {
-                    Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
-                    if (scope.IsCutRequested)
-                        ChoicePointCts.Cancel(false);
-                    yield break;
-                }
+                Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
+                if (scope.IsCutRequested)
+                    ChoicePointCts.Cancel(false);
+                yield break;
+            }
 
-                if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
-                {
-                    // Solver.LogTrace(SolverTraceType.Return, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
-                    if (exp.Equals(WellKnown.Literals.Cut))
-                        scope = scope.WithCut();
+            if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
+            {
+                // Solver.LogTrace(SolverTraceType.Return, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
+                if (exp.Equals(WellKnown.Literals.Cut))
+                    scope = scope.WithCut();
 
-                    yield return Solution.Success(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
-                    if (scope.IsCutRequested)
-                        ChoicePointCts.Cancel(false);
+                yield return Solution.Success(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
+                if (scope.IsCutRequested)
+                    ChoicePointCts.Cancel(false);
+                continue;
+            }
+
+            // Attempts qualifying a goal with a module, then finds matches in the knowledge base
+            var matches = ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope)
+                .Select(x => Solver.KnowledgeBase.GetMatches(x.Term, desugar: false))
+                .FirstOrDefault(x => x.Any());
+            if (matches is null)
+            {
+                var signature = resolvedGoal.Result.GetSignature();
+                if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
                     continue;
-                }
-
-                // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-                var anyQualified = false;
-                foreach (var (qualifiedGoal, isDynamic) in ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope))
+                var dyn = scope.InterpreterScope.Modules.Values
+                    .SelectMany(m => m.DynamicPredicates)
+                    .SelectMany(p => new[] { p, p.WithModule(default) })
+                    .ToHashSet();
+                if (dyn.Contains(signature))
+                    continue;
+                if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                    scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
+                ChoicePointCts.Cancel(false);
+                yield break;
+            }
+            foreach (var m in matches)
+            {
+                // Create a new scope and context for this procedure call, essentially creating a choice point
+                var innerScope = scope
+                    .WithDepth(scope.Depth + 1)
+                    .WithModule(m.Rhs.DeclaringModule)
+                    .WithCallee(m.Rhs)
+                    .WithCaller(scope.Callee);
+                var innerContext = ScopedClone();
+                var tailRecursive = m.Rhs.IsTailRecursive()
+                    && scope.Callee.TryGetValue(out var callee)
+                    && callee.IsSameDefinitionAs(m.Rhs);
+                if (tailRecursive)
                 {
-                    if (ct.IsCancellationRequested) yield break;
-                    var matches = Solver.KnowledgeBase.GetMatches(qualifiedGoal, desugar: false);
-                    foreach (var m in matches)
-                    {
-                        anyQualified = true;
-                        // Create a new scope and context for this procedure call, essentially creating a choice point
-                        var innerScope = scope
-                            .WithDepth(scope.Depth + 1)
-                            .WithModule(m.Rhs.DeclaringModule)
-                            .WithCallee(m.Rhs)
-                            .WithCaller(scope.Callee);
-                        var innerContext = ScopedClone();
-                        var tailRecursive = m.Rhs.IsTailRecursive()
-                            && scope.Callee.TryGetValue(out var callee)
-                            && callee.IsSameDefinitionAs(m.Rhs);
-                        if (tailRecursive)
-                        {
 
-                        }
-                        Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                        var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
-                        await foreach (var s in solve)
-                        {
-                            Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                            yield return s;
-                        }
-                        if (innerContext.ChoicePointCts.IsCancellationRequested)
-                            break;
-                        if (innerContext.ExceptionCts.IsCancellationRequested)
-                            ExceptionCts.Cancel(false);
-
-                    }
-                    if (anyQualified)
-                        break;
                 }
-
-                if (!anyQualified)
+                Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
+                var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
+                await foreach (var s in solve)
                 {
-                    var signature = resolvedGoal.Result.GetSignature();
-                    if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
-                        continue;
-                    var dyn = scope.InterpreterScope.Modules.Values
-                        .SelectMany(m => m.DynamicPredicates)
-                        .SelectMany(p => new[] { p, p.WithModule(default) })
-                        .ToHashSet();
-                    if (dyn.Contains(signature))
-                        continue;
-                    if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
-                    {
-                        scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                        yield break;
-                    }
+                    Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
+                    yield return s;
                 }
+                if (innerContext.ChoicePointCts.IsCancellationRequested)
+                    break;
+                if (innerContext.ExceptionCts.IsCancellationRequested)
+                    ExceptionCts.Cancel(false);
+
             }
         }
-
     }
 }

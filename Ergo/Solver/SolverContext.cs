@@ -275,13 +275,13 @@ public sealed class SolverContext
                 if (!anyQualified)
                 {
                     var signature = resolvedGoal.Result.GetSignature();
+                    if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
+                        continue;
                     var dyn = scope.InterpreterScope.Modules.Values
                         .SelectMany(m => m.DynamicPredicates)
                         .SelectMany(p => new[] { p, p.WithModule(default) })
                         .ToHashSet();
                     if (dyn.Contains(signature))
-                        continue;
-                    if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
                         continue;
                     if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     {

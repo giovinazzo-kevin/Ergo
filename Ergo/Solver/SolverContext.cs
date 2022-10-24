@@ -5,7 +5,23 @@ namespace Ergo.Solver;
 
 public sealed class MemoizationTable
 {
+    public readonly HashSet<ITerm> Followers = new();
+    public readonly HashSet<Solution> Solutions = new();
 
+    public void AddFollowers(IEnumerable<ITerm> followers)
+    {
+        foreach (var fol in followers)
+        {
+            Followers.Add(fol);
+        }
+    }
+    public void AddSolutions(IEnumerable<Solution> solutions)
+    {
+        foreach (var sol in solutions)
+        {
+            Solutions.Add(sol);
+        }
+    }
 }
 
 // TODO: Build a stack-based system that supports last call optimization
@@ -14,11 +30,61 @@ public sealed class SolverContext
     private readonly CancellationTokenSource ChoicePointCts = new();
     private readonly CancellationTokenSource ExceptionCts = new();
 
-    private readonly Dictionary<ITerm, MemoizationTable> MemoizationTables = new();
+    private Dictionary<ITerm, MemoizationTable> MemoizationTable = new();
 
     public readonly ErgoSolver Solver;
 
     internal SolverContext(ErgoSolver solver) => Solver = solver;
+
+    public SolverContext ScopedClone()
+    {
+        var ret = new SolverContext(Solver);
+        ret.MemoizationTable = MemoizationTable;
+        return ret;
+    }
+
+    public void MemoizePioneer(ITerm pioneer)
+    {
+        if (!MemoizationTable.TryGetValue(pioneer, out _))
+            MemoizationTable[pioneer] = new();
+        else throw new InvalidOperationException();
+    }
+
+    public void MemoizeFollower(ITerm pioneer, ITerm follower)
+    {
+        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
+            throw new InvalidOperationException();
+        tbl.Followers.Add(follower);
+    }
+
+    public void MemoizeSolution(ITerm pioneer, Solution sol)
+    {
+        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
+            throw new InvalidOperationException();
+        tbl.Solutions.Add(sol);
+    }
+
+    public Maybe<ITerm> GetPioneer(ITerm variant)
+    {
+        var key = MemoizationTable.Keys.FirstOrDefault(k => variant.IsVariantOf(k));
+        if (key != null)
+            return Maybe.Some(key);
+        return default;
+    }
+
+    public IEnumerable<ITerm> GetFollowers(ITerm pioneer)
+    {
+        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
+            throw new InvalidOperationException();
+        return tbl.Followers;
+    }
+
+    public IEnumerable<Solution> GetSolutions(ITerm pioneer)
+    {
+        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
+            throw new InvalidOperationException();
+        return tbl.Solutions;
+    }
 
     /// <summary>
     /// Attempts to resolve 'goal' as a built-in call, and evaluates its result. On failure evaluates 'goal' as-is.
@@ -183,7 +249,7 @@ public sealed class SolverContext
                             .WithModule(m.Rhs.DeclaringModule)
                             .WithCallee(m.Rhs)
                             .WithCaller(scope.Callee);
-                        var innerContext = new SolverContext(Solver);
+                        var innerContext = ScopedClone();
                         Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                         var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                         var isMemoized = scope.InterpreterScope.Modules[m.Rhs.DeclaringModule].TabledPredicates

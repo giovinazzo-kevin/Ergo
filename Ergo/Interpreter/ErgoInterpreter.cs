@@ -140,6 +140,42 @@ public partial class ErgoInterpreter
 
         stream.Dispose();
         scope = scope.WithModule(module = module.WithProgram(program));
+
+        // At this point we can apply local transformations such as those required by tabling
+        foreach (var sig in scope.EntryModule.TabledPredicates)
+        {
+            var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");
+            var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));
+            var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(scope.Entry);
+
+            var tblPred = new Predicate(
+                "(auto-generated auxilliary predicate for tabling)",
+                scope.Entry,
+                anon,
+                new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }),
+                true,
+                true
+            );
+
+            foreach (var match in scope.KnowledgeBase.GetMatches(anon.Qualified(scope.Entry), desugar: false))
+            {
+                match.Rhs.Head.GetQualification(out var head);
+                var auxPred = new Predicate(
+                    match.Rhs.Documentation,
+                    match.Rhs.DeclaringModule,
+                    head.WithFunctor(auxFunctor),
+                    match.Rhs.Body,
+                    match.Rhs.IsDynamic,
+                    false
+                );
+
+                program.KnowledgeBase.Retract(match.Rhs.Head);
+                program.KnowledgeBase.AssertZ(auxPred);
+            }
+            program.KnowledgeBase.AssertZ(tblPred);
+            scope = scope.WithModule(module = module.WithProgram(program));
+        }
+
         return module;
     }
 

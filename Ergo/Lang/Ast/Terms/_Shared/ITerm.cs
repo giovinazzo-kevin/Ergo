@@ -100,5 +100,23 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         }
         return @base;
     }
+
+    ITerm ToNumberVars()
+    {
+        return Substitute(Variables.Select((v, i) => new Substitution(v, new Variable($"$VAR({i})"))));
+    }
+
+    /// <summary>
+    /// Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
+    /// </summary>
+    bool IsVariantOf(ITerm other)
+    {
+        var ctx = new InstantiationContext("__IsVariantOf");
+        var Ac = Instantiate(ctx);
+        var Bc = other.Instantiate(ctx);
+        var An = Ac.ToNumberVars();
+        var Bn = Bc.ToNumberVars();
+        return An.Equals(Bn);
+    }
 }
 

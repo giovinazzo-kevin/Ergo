@@ -79,7 +79,7 @@ plus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A + B.
 plus(A, B, C) :- ground(A), \+ground(B), ground(C), B := C - A.
 plus(A, B, C) :- \+ground(A), ground(B), ground(C), A := C - B. 
 
-fibonacci(0, 1).
+fibonacci(0, 0).
 fibonacci(1, 1).
 fibonacci(N, F) :-
         N > 1,

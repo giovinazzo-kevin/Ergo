@@ -17,13 +17,32 @@ public partial class ErgoLexer : IDisposable
     public readonly Operator[] AvailableOperators;
     public readonly ErgoFacade Facade;
 
+    protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = new();
+
     #region Regular Expressions
     protected static readonly Regex UnescapeRegex =
         new("\\\\[abfnrtv?\"'\\\\]|\\\\[0-3]?[0-7]{1,2}|\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}|.", RegexOptions.Compiled);
     #endregion
 
-
+    private readonly DiagnosticProbe Probe = new();
     public StreamState State => new(Stream.FileName, Position, Line, Column, Context);
+
+    private void Memoize(StreamState state, Token tok, [CallerMemberName] string caller = null)
+    {
+        if (_memoizationTable.ContainsKey(state.Position))
+            throw new InvalidOperationException();
+        _memoizationTable[state.Position] = (State, tok);
+    }
+
+    public Maybe<Token> Memoized(StreamState state, [CallerMemberName] string caller = null)
+    {
+        if (_memoizationTable.TryGetValue(state.Position, out var memo))
+        {
+            Seek(memo.State, SeekOrigin.Begin);
+            return Maybe.Some(memo.Token);
+        }
+        return default;
+    }
 
     public void Seek(StreamState state, SeekOrigin origin = SeekOrigin.Begin)
     {
@@ -31,6 +50,11 @@ public partial class ErgoLexer : IDisposable
         Line = state.Line;
         Column = state.Column;
         Context = state.Context;
+    }
+
+    public void Reset()
+    {
+        Seek(State with { Position = 0, Line = 0, Column = 0, Context = string.Empty }, SeekOrigin.Begin);
     }
 
     public bool Eof => Stream.Position >= Stream.Length;
@@ -119,42 +143,48 @@ public partial class ErgoLexer : IDisposable
 
     public Maybe<Token> ReadNext()
     {
-        SkipWhitespace();
-        SkipComments();
-        if (Eof) return default;
-
-        var ch = Peek();
-        if (IsStringDelimiter(ch))
+        var pos = State;
+        return Memoized(pos).Or(() => Maybe.None<Token>().Or(() =>
         {
-            return ReadString(ch);
-        }
+            SkipWhitespace();
+            SkipComments();
+            if (Eof) return default;
 
-        if (IsNumberStart(ch))
-        {
-            return ReadNumber();
-        }
+            var ch = Peek();
+            if (IsStringDelimiter(ch))
+            {
+                return ReadString(ch);
+            }
 
-        if (IsIdentifierStart(ch))
-        {
-            return ReadIdentifier();
-        }
+            if (IsNumberStart(ch))
+            {
+                return ReadNumber();
+            }
 
-        if (IsOperatorPiece(ch, 0))
-        {
-            return ReadOperator();
-        }
+            if (IsIdentifierStart(ch))
+            {
+                return ReadIdentifier();
+            }
 
-        if (IsPunctuationPiece(ch))
-        {
-            return ReadPunctuation();
-        }
+            if (IsOperatorPiece(ch, 0))
+            {
+                return ReadOperator();
+            }
 
-        if (IsSingleLineCommentStart(ch))
-        {
-            return ReadSingleLineComment();
-        }
+            if (IsPunctuationPiece(ch))
+            {
+                return ReadPunctuation();
+            }
 
-        return default;
+            if (IsSingleLineCommentStart(ch))
+            {
+                return ReadSingleLineComment();
+            }
+
+            return default;
+        })
+        .Do(some => Memoize(pos, some)));
+
 
         // ------------------- Helpers -------------------
         static char ReadUTF8Char(Stream s)

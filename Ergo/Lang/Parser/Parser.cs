@@ -67,6 +67,10 @@ public partial class ErgoParser : IDisposable
     private HashSet<string> _memoizationTable = new();
 
     private readonly DiagnosticProbe Probe = new();
+    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
+
+    public readonly ErgoLexer Lexer;
+    public readonly ErgoFacade Facade;
 
     private string GetMemoKey(ErgoLexer.StreamState state, string callerName) => $"{state}@{callerName}";
 
@@ -103,11 +107,6 @@ public partial class ErgoParser : IDisposable
         MemoizeFailure(state, callerName);
         return Fail<T>(state);
     }
-
-    public readonly ErgoLexer Lexer;
-    public readonly ErgoFacade Facade;
-
-    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
 
     internal ErgoParser(ErgoFacade facade, ErgoLexer lexer)
     {
@@ -260,13 +259,14 @@ public partial class ErgoParser : IDisposable
             var primary = () => Variable().Select(x => (ITerm)x)
                 .Or(() => Complex().Select(x => (ITerm)x))
                 .Or(() => Atom().Select(x => (ITerm)x))
-                .Or(() => Fail<ITerm>(pos));
+                .Or(() => Fail<ITerm>(pos))
+                ;
             if (AbstractTermParsers.Values.Any())
             {
                 var parsers = AbstractTermParsers.Values.ToArray();
                 var abstractFold = parsers.Skip(1)
                     .Aggregate(parsers.First().Parse(this).Or(() => Fail<IAbstractTerm>(pos)),
-                        (a, b) => a.Or(() => b.Parse(this).Or(() => Fail<IAbstractTerm>(pos))))
+                        (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<IAbstractTerm>(pos)))
                     .Select(x => x.CanonicalForm);
                 return abstractFold
                     .Or(primary);

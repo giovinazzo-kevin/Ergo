@@ -10,6 +10,8 @@ public partial class ErgoInterpreter
     public readonly ErgoFacade Facade;
     public readonly InterpreterFlags Flags;
 
+    protected readonly DiagnosticProbe Probe = new();
+
     private readonly Dictionary<Signature, InterpreterDirective> _directives = new();
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
@@ -26,16 +28,21 @@ public partial class ErgoInterpreter
 
     public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
     {
+        var watch = Probe.Enter();
         if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
         {
-            return directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
+            var sig = directive.Signature.Explain();
+            var directiveWatch = Probe.Enter(sig);
+            var ret = directive.Execute(this, ref scope, ((Complex)d.Body).Arguments);
+            Probe.Leave(directiveWatch, sig);
+            return ret;
         }
 
         if (Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
         {
             throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain(canonical: false));
         }
-
+        Probe.Leave(watch);
         return false;
     }
 
@@ -64,6 +71,7 @@ public partial class ErgoInterpreter
         => LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
     public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
     {
+        var watch = Probe.Enter();
         var operators = scope.GetOperators();
         var parser = Facade.BuildParser(stream, operators);
         var pos = parser.Lexer.State;
@@ -75,6 +83,7 @@ public partial class ErgoInterpreter
         {
             stream.Dispose();
             scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            Probe.Leave(watch);
             return default;
         }
 
@@ -89,12 +98,16 @@ public partial class ErgoInterpreter
         {
             stream.Dispose();
             scope.Throw(InterpreterError.UndefinedDirective, Ast.Explain(false));
+            Probe.Leave(watch);
             return default;
         }
 
         foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.Priority))
         {
+            var sig = Builtin.Signature.Explain();
+            var builtinWatch = Probe.Enter(sig);
             Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments);
+            Probe.Leave(builtinWatch, sig);
         }
 
         var module = scope.EntryModule
@@ -109,6 +122,7 @@ public partial class ErgoInterpreter
             scope = scope.WithModule(importedModule);
         }
 
+        Probe.Leave(watch);
         return module;
     }
 
@@ -130,6 +144,7 @@ public partial class ErgoInterpreter
                 scope = scope.WithModule(importModule);
             }
         }
+
         using var parser = Facade.BuildParser(stream, scope.GetOperators());
         if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {
@@ -175,6 +190,7 @@ public partial class ErgoInterpreter
             program.KnowledgeBase.AssertZ(tblPred);
             scope = scope.WithModule(module = module.WithProgram(program));
         }
+
         return module;
     }
 
@@ -204,4 +220,8 @@ public partial class ErgoInterpreter
             .Value;
     }
 
+    public void PrintDiagnostics()
+    {
+        Console.WriteLine(Probe.GetDiagnostics());
+    }
 }

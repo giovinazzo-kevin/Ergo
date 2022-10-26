@@ -29,18 +29,22 @@ public partial class ErgoLexer : IDisposable
 
     private void Memoize(StreamState state, Token tok, [CallerMemberName] string caller = null)
     {
+#if !ERGO_LEXER_DISABLE_MEMOIZATION
         if (_memoizationTable.ContainsKey(state.Position))
             throw new InvalidOperationException();
         _memoizationTable[state.Position] = (State, tok);
+#endif
     }
 
     public Maybe<Token> Memoized(StreamState state, [CallerMemberName] string caller = null)
     {
+#if !ERGO_LEXER_DISABLE_MEMOIZATION
         if (_memoizationTable.TryGetValue(state.Position, out var memo))
         {
             Seek(memo.State, SeekOrigin.Begin);
             return Maybe.Some(memo.Token);
         }
+#endif
         return default;
     }
 
@@ -187,7 +191,7 @@ public partial class ErgoLexer : IDisposable
 
 
         // ------------------- Helpers -------------------
-        static char ReadUTF8Char(Stream s)
+        static char ReadUTF8Char(ErgoStream s)
         {
             if (s.Position >= s.Length)
                 throw new Exception("Error: Read beyond EOF");

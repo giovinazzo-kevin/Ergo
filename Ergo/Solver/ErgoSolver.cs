@@ -50,7 +50,8 @@ public partial class ErgoSolver : IDisposable
         {
             await foreach (var exp in ExpandPredicate(pred, tmpScope, ct))
             {
-                expansions.Enqueue(exp);
+                if (!exp.Equals(pred))
+                    expansions.Enqueue(exp);
             }
             if (expansions.Count > 0)
             {

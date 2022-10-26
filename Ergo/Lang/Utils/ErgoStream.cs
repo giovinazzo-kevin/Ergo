@@ -37,4 +37,10 @@ public sealed class ErgoStream : Stream
         ret.Seek(0, SeekOrigin.Begin);
         return ret;
     }
+
+    protected override void Dispose(bool disposing)
+    {
+        Disposing?.Invoke();
+        base.Dispose(disposing);
+    }
 }

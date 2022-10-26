@@ -33,18 +33,25 @@ public partial class ErgoParser
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type) => Expect<T>(type, _ => true);
     protected Maybe<T> Parenthesized<T>(string opening, string closing, Func<Maybe<T>> tryParse)
     {
-        return Inner();
+        var key = $"Parenthesized{opening}{typeof(T).Name}{closing}";
+        var watch = Probe.Enter(key);
+        var pos = Lexer.State;
+        if (IsFailureMemoized(pos, key))
+        {
+            Probe.Leave(watch, key);
+            return default;
+        }
+        return Inner()
+            .Do(() => Probe.Leave(watch, key));
         Maybe<T> Inner()
         {
             var pos = Lexer.State;
-            var watch = Probe.Enter();
             if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(opening)).TryGetValue(out _))
-                return Fail<T>(pos).Do(() => Probe.Leave(watch));
+                return MemoizeAndFail<T>(pos, key);
             if (!tryParse().TryGetValue(out var ret))
-                return Fail<T>(pos).Do(() => Probe.Leave(watch));
+                return MemoizeAndFail<T>(pos, key);
             if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(closing)).TryGetValue(out _))
-                return Fail<T>(pos).Do(() => Probe.Leave(watch));
-            Probe.Leave(watch);
+                return MemoizeAndFail<T>(pos, key);
             return ret;
         }
     }

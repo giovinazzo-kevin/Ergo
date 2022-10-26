@@ -5,6 +5,14 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants)TRACE;ERGO_PARSER_DIAGNOSTICS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>$(DefineConstants)TRACE;ERGO_PARSER_DIAGNOSTICS</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="Lang\Ast\Maps\**" />
     <EmbeddedResource Remove="Lang\Ast\Maps\**" />

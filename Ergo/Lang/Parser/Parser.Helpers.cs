@@ -15,10 +15,12 @@ public partial class ErgoParser
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type, Func<T, bool> pred)
     {
         var pos = Lexer.State;
+        var watch = Probe.Enter();
         return Lexer.ReadNext()
             .Where(token => token.Type == type && token.Value is T t && pred(t))
             .Select(token => (T)token.Value)
             .Or(() => Fail<T>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
     }
     public Maybe<string> ExpectDelimiter(Func<string, bool> condition)
@@ -31,14 +33,20 @@ public partial class ErgoParser
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type) => Expect<T>(type, _ => true);
     protected Maybe<T> Parenthesized<T>(string opening, string closing, Func<Maybe<T>> tryParse)
     {
-        var pos = Lexer.State;
-        if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(opening)).TryGetValue(out _))
-            return Fail<T>(pos);
-        if (!tryParse().TryGetValue(out var ret))
-            return Fail<T>(pos);
-        if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(closing)).TryGetValue(out _))
-            return Fail<T>(pos);
-        return ret;
+        return Inner();
+        Maybe<T> Inner()
+        {
+            var pos = Lexer.State;
+            var watch = Probe.Enter();
+            if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(opening)).TryGetValue(out _))
+                return Fail<T>(pos).Do(() => Probe.Leave(watch));
+            if (!tryParse().TryGetValue(out var ret))
+                return Fail<T>(pos).Do(() => Probe.Leave(watch));
+            if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(closing)).TryGetValue(out _))
+                return Fail<T>(pos).Do(() => Probe.Leave(watch));
+            Probe.Leave(watch);
+            return ret;
+        }
     }
     protected void Throw(ErgoLexer.StreamState s, ErrorType error, params object[] args)
     {

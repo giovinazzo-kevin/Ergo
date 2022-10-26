@@ -7,26 +7,28 @@ namespace Ergo.Lang;
 
 public sealed class DiagnosticProbe : IDisposable
 {
-    private record struct Datum(int Hits, int Leaves, Stopwatch Timer, TimeSpan TotalTime, TimeSpan AverageTime, ImmutableDictionary<string, int> Counters);
+    private record struct Datum(int Hits, int Leaves, int Recursion, TimeSpan TotalTime, TimeSpan AverageTime, ImmutableDictionary<string, int> Counters);
     private Dictionary<string, Datum> _data = new();
 
     public string GetCurrentMethodName([CallerMemberName] string callerName = "") => callerName;
-    public void Enter([CallerMemberName] string callerName = "")
+    public Stopwatch Enter([CallerMemberName] string callerName = "")
     {
+        var sw = new Stopwatch();
+        sw.Start();
         if (!_data.TryGetValue(callerName, out var datum))
         {
-            _data[callerName] = datum = new(0, 0, new(), default, default, ImmutableDictionary.Create<string, int>());
-            datum.Timer.Start();
+            _data[callerName] = datum = new(0, 0, 0, default, default, ImmutableDictionary.Create<string, int>());
         }
         _data[callerName] = datum with { Hits = datum.Hits + 1 };
+        return sw;
     }
 
-    public void Leave([CallerMemberName] string callerName = "")
+    public void Leave(Stopwatch sw, [CallerMemberName] string callerName = "")
     {
         if (_data.TryGetValue(callerName, out var datum))
         {
-            datum.Timer.Stop();
-            _data[callerName] = datum with { Leaves = datum.Leaves + 1, TotalTime = datum.Timer.Elapsed + datum.TotalTime, AverageTime = datum.Timer.Elapsed / (float)datum.Hits };
+            _data[callerName] = datum with { Leaves = datum.Leaves + 1, TotalTime = sw.Elapsed + datum.TotalTime, AverageTime = datum.TotalTime / (float)datum.Hits };
+            sw.Stop();
         }
         else throw new InvalidOperationException(callerName);
     }
@@ -35,8 +37,6 @@ public sealed class DiagnosticProbe : IDisposable
     {
         if (_data.TryGetValue(callerName, out var datum))
         {
-            datum.Timer.Stop();
-
             if (datum.Counters.TryGetValue(counter, out var oldAmount))
                 amount += oldAmount;
             _data[callerName] = datum with { Counters = datum.Counters.SetItem(counter, amount) };
@@ -46,7 +46,7 @@ public sealed class DiagnosticProbe : IDisposable
 
     public void Dispose()
     {
-        if (_data.FirstOrDefault(d => d.Value.Hits != d.Value.Leaves) is { Key: { } } item)
+        if (_data.FirstOrDefault(d => d.Value.Hits != d.Value.Leaves || d.Value.Recursion != 0) is { Key: { } } item)
             throw new InvalidOperationException($"{item.Key}: {item.Value}");
     }
 
@@ -64,22 +64,44 @@ public sealed class DiagnosticProbe : IDisposable
 public partial class ErgoParser : IDisposable
 {
     private InstantiationContext _discardContext;
-    private Dictionary<string, object> _memoizationTable = new();
+    private HashSet<string> _memoizationTable = new();
 
     private readonly DiagnosticProbe Probe = new();
 
-    private Maybe<T> Memoize<T>(Func<Maybe<T>> parser, [CallerMemberName] string callerName = "")
+    private string GetMemoKey(ErgoLexer.StreamState state, string callerName) => $"{state}@{callerName}";
+
+    private bool IsFailureMemoized(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
-        var pos = Lexer.State;
-        var key = callerName + pos.ToString();
-        if (_memoizationTable.TryGetValue(key, out var memo))
+#if ERGO_PARSER_DISABLE_MEMOIZATION
+        return default;
+#endif
+        if (_memoizationTable.Contains(GetMemoKey(state, callerName)))
         {
-            Probe.Count("MemoizationHits", 1, callerName);
-            return (T)memo;
+            if (callerName != "Atom")
+                ;
+            Probe.Count("MEMO_HIT", 1, callerName);
+            return true;
         }
-        return parser()
-            .Do(some => _memoizationTable[key] = some)
-            .Or(() => Fail<T>(pos));
+        return false;
+    }
+
+    private void MemoizeFailure(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
+    {
+#if ERGO_PARSER_DISABLE_MEMOIZATION
+        return parsed;
+#endif
+        var key = GetMemoKey(state, callerName);
+        if (!_memoizationTable.Contains(key))
+        {
+            _memoizationTable.Add(key);
+            Probe.Count("MEMO_NEW", 1, callerName);
+        }
+    }
+
+    private Maybe<T> MemoizeAndFail<T>(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
+    {
+        MemoizeFailure(state, callerName);
+        return Fail<T>(state);
     }
 
     public readonly ErgoLexer Lexer;
@@ -123,20 +145,25 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<IAbstractTerm> Abstract(Type type)
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         if (!AbstractTermParsers.TryGetValue(type, out var parser))
         {
-            Probe.Leave();
+            Probe.Leave(watch);
             return default;
         }
         return parser.Parse(this)
-            .Do(() => Probe.Leave());
+            .Do(() => Probe.Leave(watch));
     }
 
     public Maybe<Atom> Atom()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         return Expect<string>(ErgoLexer.TokenType.String)
                 .Select(x => new Atom(x))
             .Or(() => Expect<double>(ErgoLexer.TokenType.Number)
@@ -148,64 +175,83 @@ public partial class ErgoParser : IDisposable
             .Or(() => Expect<string>(ErgoLexer.TokenType.Term)
                 .Where(x => IsAtomIdentifier(x))
                 .Select(x => new Atom(x)))
-            .Or(() => Fail<Atom>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<Atom>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
 
     }
     public Maybe<Variable> Variable()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         return Expect<string>(ErgoLexer.TokenType.Term)
-            .Where(term => IsVariableIdentifier(term))
-            .Map(term => Maybe.Some(term)
-                .Where(term => !term.StartsWith("__K"))
-                .Do(none: () => Throw(pos, ErrorType.TermHasIllegalName, term))
-                .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
-                .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
-            .Select(t => new Variable(t))
-            .Or(() => Fail<Variable>(pos))
-            .Do(() => Probe.Leave())
-            ;
+        .Where(term => IsVariableIdentifier(term))
+        .Map(term => Maybe.Some(term)
+            .Where(term => !term.StartsWith("__K"))
+            .Do(none: () => Throw(pos, ErrorType.TermHasIllegalName, term))
+            .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
+            .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
+        .Select(t => new Variable(t))
+        .Or(() => MemoizeAndFail<Variable>(pos))
+        .Do(() => Probe.Leave(watch))
+        ;
     }
 
     public Maybe<Complex> Complex()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         return Atom()
             .Map(functor => Abstract<NTuple>()
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
-            .Or(() => Fail<Complex>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<Complex>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public Maybe<ITerm> ExpressionOrTerm()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         return Expression()
-            .Select<ITerm>(e => e.Complex)
+                .Select<ITerm>(e => e.Complex)
             .Or(() => Term())
-            .Or(() => Fail<ITerm>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<ITerm>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public Maybe<ITerm> Term()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
-        return
-            Parenthesized("(", ")", () => Expression())
-                .Select<ITerm>(x => x.Complex.AsParenthesized(true))
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
+        return Parenthesized("(", ")", () => Expression())
+                    .Select<ITerm>(x => x.Complex.AsParenthesized(true))
             .Or(() => Parenthesized("(", ")", () => Inner())
                 .Select(x => x.AsParenthesized(true)))
             .Or(() => Inner())
-            .Or(() => Fail<ITerm>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<ITerm>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
 
         Maybe<ITerm> Inner()
@@ -232,21 +278,21 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<Operator> ExpectOperator(Func<Operator, bool> match)
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         return Expect<string>(ErgoLexer.TokenType.Operator)
             .Map(str => GetOperatorsFromFunctor(new Atom(str)))
             .Where(ops => ops.Any(match))
             .Select(ops => ops.Single(match))
-            .Do(() => Probe.Leave())
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool exprParenthesized = false)
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         return maybeRhs
             .Select(rhs => Associate(lhs, rhs))
-            .Do(() => Probe.Leave())
+            .Do(() => Probe.Leave(watch))
             .GetOr(new Expression(op, lhs, Maybe<ITerm>.None, lhs.IsParenthesized || exprParenthesized))
             ;
 
@@ -304,132 +350,174 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<Expression> Prefix()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         return ExpectOperator(op => op.Affix == OperatorAffix.Prefix)
             .Map(op => Term()
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => Fail<Expression>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<Expression>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public Maybe<Expression> Postfix()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         return Term()
             .Map(arg => ExpectOperator(op => op.Affix == OperatorAffix.Postfix)
                 .Select(op => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => Fail<Expression>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<Expression>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public Maybe<Expression> Expression()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         if (Primary().TryGetValue(out var lhs))
         {
             if (WithMinPrecedence(lhs, 0).TryGetValue(out var expr))
             {
-                return Maybe.Some(expr).Do(() => Probe.Leave());
+                return Maybe.Some(expr).Do(() => Probe.Leave(watch));
             }
             // Special case for unary expressions
             if (lhs is not Complex cplx
                 || cplx.Arguments.Length > 1
                 || !GetOperatorsFromFunctor(cplx.Functor).TryGetValue(out var ops))
             {
-                return Fail<Expression>(pos).Do(() => Probe.Leave());
+                return MemoizeAndFail<Expression>(pos).Do(() => Probe.Leave(watch));
             }
 
             var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
             expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
-            return Maybe.Some(expr).Do(() => Probe.Leave());
+            return Maybe.Some(expr)
+                .Do(() => Probe.Leave(watch));
         }
 
-        return Fail<Expression>(pos).Do(() => Probe.Leave());
+        return MemoizeAndFail<Expression>(pos).Do(() => Probe.Leave(watch));
 
-        Maybe<Expression> WithMinPrecedence(ITerm lhs, int minPrecedence)
+    }
+    Maybe<Expression> WithMinPrecedence(ITerm lhs, int minPrecedence)
+    {
+        var watch = Probe.Enter();
+        var pos = Lexer.State;
+        if (!PeekNextOperator().TryGetValue(out var lookahead))
         {
-            var pos = Lexer.State;
-            if (!PeekNextOperator().TryGetValue(out var lookahead))
+            return Fail<Expression>(pos)
+                .Do(() => Probe.Leave(watch))
+                ;
+        }
+
+        if (lookahead.Affix != OperatorAffix.Infix || lookahead.Precedence < minPrecedence)
+        {
+            return Fail<Expression>(pos)
+                .Do(() => Probe.Leave(watch))
+                ;
+        }
+
+        var expr = default(Expression);
+        while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence)
+        {
+            Lexer.ReadNext();
+            var op = lookahead;
+
+            if (!Primary().TryGetValue(out var rhs))
             {
-                return Fail<Expression>(pos);
+                return Fail<Expression>(pos)
+                .Do(() => Probe.Leave(watch))
+                ;
             }
 
-            if (lookahead.Affix != OperatorAffix.Infix || lookahead.Precedence < minPrecedence)
+            if (!PeekNextOperator().TryGetValue(out lookahead))
             {
-                return Fail<Expression>(pos);
+                expr = BuildExpression(op, lhs, Maybe.Some(rhs));
+                break;
             }
 
-            var expr = default(Expression);
-            while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence)
+            while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
+                || lookahead.Associativity == OperatorAssociativity.Right && lookahead.Precedence == op.Precedence)
             {
-                Lexer.ReadNext();
-                var op = lookahead;
-
-                if (!Primary().TryGetValue(out var rhs))
+                if (!WithMinPrecedence(rhs, op.Precedence + 1).TryGetValue(out var newRhs))
                 {
-                    return Fail<Expression>(pos);
-                }
-
-                if (!PeekNextOperator().TryGetValue(out lookahead))
-                {
-                    expr = BuildExpression(op, lhs, Maybe.Some(rhs));
                     break;
                 }
 
-                while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
-                    || lookahead.Associativity == OperatorAssociativity.Right && lookahead.Precedence == op.Precedence)
+                rhs = newRhs.Complex;
+                if (!PeekNextOperator().TryGetValue(out lookahead))
                 {
-                    if (!WithMinPrecedence(rhs, op.Precedence + 1).TryGetValue(out var newRhs))
-                    {
-                        break;
-                    }
-
-                    rhs = newRhs.Complex;
-                    if (!PeekNextOperator().TryGetValue(out lookahead))
-                    {
-                        break;
-                    }
+                    break;
                 }
-
-                lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
             }
 
-            return Maybe.Some(expr);
+            lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
         }
 
-        Maybe<ITerm> Primary()
-        {
-            var pos = Lexer.State;
-            return Prefix().Select<ITerm>(p => p.Complex)
-                .Or(() => Postfix().Select<ITerm>(p => p.Complex))
-                .Or(() => Term())
-                .Or(() => Fail<ITerm>(pos));
-        }
+        return Maybe.Some(expr)
+                .Do(() => Probe.Leave(watch))
+                ;
+    }
 
-        Maybe<Operator> PeekNextOperator()
+    Maybe<ITerm> Primary()
+    {
+        var watch = Probe.Enter();
+        var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
         {
-            try
-            {
-                return Lexer.PeekNext()
-                    .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value))
-                        .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence)));
-            }
-            catch (InvalidOperationException)
-            {
-                return default;
-            }
+            Probe.Leave(watch);
+            return default;
+        }
+        return Prefix().Select<ITerm>(p => p.Complex)
+            .Or(() => Postfix().Select<ITerm>(p => p.Complex))
+            .Or(() => Term())
+            .Or(() => MemoizeAndFail<ITerm>(pos))
+            .Do(() => Probe.Leave(watch))
+            ;
+    }
+
+    Maybe<Operator> PeekNextOperator()
+    {
+        var watch = Probe.Enter();
+        try
+        {
+            return Lexer.PeekNext()
+                .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value))
+                    .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence)))
+                .Do(() => Probe.Leave(watch))
+                ;
+        }
+        catch (InvalidOperationException)
+        {
+            Probe.Leave(watch);
+            return default;
         }
     }
 
     public Maybe<Directive> Directive()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var desc))
         {
             desc = desc[1..].TrimStart();
@@ -443,7 +531,7 @@ public partial class ErgoParser : IDisposable
         }
 
         if (Lexer.Eof)
-            return Fail<Directive>(pos).Do(() => Probe.Leave());
+            return MemoizeAndFail<Directive>(pos).Do(() => Probe.Leave(watch));
 
         desc ??= " ";
         return Expression()
@@ -452,15 +540,20 @@ public partial class ErgoParser : IDisposable
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
                 .Select(_ => op))
             .Select(op => new Directive(op.Left, desc))
-            .Or(() => Fail<Directive>(pos))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<Directive>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public Maybe<Predicate> Predicate()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
+        if (IsFailureMemoized(pos))
+        {
+            Probe.Leave(watch);
+            return default;
+        }
         if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var desc))
         {
             desc = desc[1..].TrimStart();
@@ -474,7 +567,7 @@ public partial class ErgoParser : IDisposable
         }
 
         if (Lexer.Eof)
-            return Fail<Predicate>(pos).Do(() => Probe.Leave());
+            return MemoizeAndFail<Predicate>(pos).Do(() => Probe.Leave(watch));
 
         desc ??= " ";
         return Expression()
@@ -492,7 +585,8 @@ public partial class ErgoParser : IDisposable
             .Map(p => ExpectDelimiter(p => p.Equals("."))
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
                 .Select(_ => p))
-            .Do(() => Probe.Leave())
+            .Or(() => MemoizeAndFail<Predicate>(pos))
+            .Do(() => Probe.Leave(watch))
             ;
 
         Maybe<Predicate> MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, NTuple body)
@@ -514,7 +608,7 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<ErgoProgram> Program()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var directives = new List<Directive>();
         var predicates = new List<Predicate>();
         while (Directive().TryGetValue(out var directive))
@@ -546,13 +640,13 @@ public partial class ErgoParser : IDisposable
         });
         return Maybe.Some(new ErgoProgram(directives.ToArray(), exportedPredicates.ToArray())
             .AsPartial(false))
-            .Do(() => Probe.Leave())
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public IEnumerable<Operator> OperatorDeclarations()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var pos = Lexer.State;
         var moduleName = WellKnown.Modules.Stdlib;
         var ret = new List<Operator>();
@@ -583,13 +677,13 @@ public partial class ErgoParser : IDisposable
         }
 
         Lexer.Seek(pos);
-        Probe.Leave();
+        Probe.Leave(watch);
         return ret;
     }
 
     public Maybe<ErgoProgram> ProgramDirectives()
     {
-        Probe.Enter();
+        var watch = Probe.Enter();
         var ret = true;
         var directives = new List<Directive>();
         try
@@ -608,14 +702,16 @@ public partial class ErgoParser : IDisposable
             return default;
         return Maybe.Some(new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>())
             .AsPartial(true))
-            .Do(() => Probe.Leave())
+            .Do(() => Probe.Leave(watch))
             ;
     }
 
     public void Dispose()
     {
+#if ERGO_PARSER_DIAGNOSTICS
         Console.WriteLine(Lexer.Stream.FileName);
         Console.WriteLine(Probe.GetDiagnostics());
+#endif
         Probe.Dispose();
         Lexer.Dispose();
         GC.SuppressFinalize(this);

@@ -205,6 +205,9 @@ public partial class ErgoInterpreter
             .WithCurrentModule(WellKnown.Modules.User)
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
                 .WithImport(WellKnown.Modules.Stdlib));
+#if ERGO_INTERPRETER_DIAGNOSTICS
+        Console.WriteLine(Probe.GetDiagnostics());
+#endif
         return scope;
     }
 
@@ -218,10 +221,5 @@ public partial class ErgoInterpreter
         var userDefinedOps = scope.GetOperators();
         return new Parsed<T>(Facade, data, onParseFail, userDefinedOps.ToArray())
             .Value;
-    }
-
-    public void PrintDiagnostics()
-    {
-        Console.WriteLine(Probe.GetDiagnostics());
     }
 }

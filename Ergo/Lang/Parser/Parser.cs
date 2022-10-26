@@ -64,7 +64,8 @@ public sealed class DiagnosticProbe : IDisposable
 public partial class ErgoParser : IDisposable
 {
     private InstantiationContext _discardContext;
-    private HashSet<string> _memoizationTable = new();
+    private HashSet<string> _memoizationFailures = new();
+    private Dictionary<string, object> _memoizationTable = new();
 
     private readonly DiagnosticProbe Probe = new();
     protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
@@ -76,33 +77,54 @@ public partial class ErgoParser : IDisposable
 
     private bool IsFailureMemoized(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
-#if ERGO_PARSER_DISABLE_MEMOIZATION
-        return default;
-#endif
-        if (_memoizationTable.Contains(GetMemoKey(state, callerName)))
+#if !ERGO_PARSER_DISABLE_MEMOIZATION
+        if (_memoizationFailures.Contains(GetMemoKey(state, callerName)))
         {
-            if (callerName != "Atom")
-                ;
-            Probe.Count("MEMO_HIT", 1, callerName);
+            Probe.Count("MEMO_FAIL_HIT", 1, callerName);
             return true;
         }
+#endif
         return false;
     }
 
     private void MemoizeFailure(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
-#if ERGO_PARSER_DISABLE_MEMOIZATION
-        return parsed;
-#endif
+#if !ERGO_PARSER_DISABLE_MEMOIZATION
         var key = GetMemoKey(state, callerName);
-        if (!_memoizationTable.Contains(key))
+        if (!_memoizationFailures.Contains(key))
         {
-            _memoizationTable.Add(key);
-            Probe.Count("MEMO_NEW", 1, callerName);
+            _memoizationFailures.Add(key);
+            Probe.Count("MEMO_FAIL_NEW", 1, callerName);
         }
+#endif
     }
 
-    private Maybe<T> MemoizeAndFail<T>(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
+    private void Memoize<T>(T data, ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
+    {
+#if !ERGO_PARSER_DISABLE_MEMOIZATION
+        var key = GetMemoKey(state, callerName);
+        if (!_memoizationTable.ContainsKey(key))
+        {
+            _memoizationTable[key] = data;
+            Probe.Count("MEMO_SUCC_NEW", 1, callerName);
+        }
+#endif
+    }
+
+    private Maybe<T> Memoized<T>(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
+    {
+#if !ERGO_PARSER_DISABLE_MEMOIZATION
+        var key = GetMemoKey(state, callerName);
+        if (_memoizationTable.TryGetValue(key, out var memo))
+        {
+            Probe.Count("MEMO_SUCC_HIT", 1, callerName);
+            return (T)memo;
+        }
+#endif
+        return default;
+    }
+
+    private Maybe<T> MemoizeFailureAndFail<T>(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
         MemoizeFailure(state, callerName);
         return Fail<T>(state);
@@ -174,7 +196,7 @@ public partial class ErgoParser : IDisposable
             .Or(() => Expect<string>(ErgoLexer.TokenType.Term)
                 .Where(x => IsAtomIdentifier(x))
                 .Select(x => new Atom(x)))
-            .Or(() => MemoizeAndFail<Atom>(pos))
+            .Or(() => MemoizeFailureAndFail<Atom>(pos))
             .Do(() => Probe.Leave(watch))
             ;
 
@@ -196,7 +218,7 @@ public partial class ErgoParser : IDisposable
             .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
             .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
         .Select(t => new Variable(t))
-        .Or(() => MemoizeAndFail<Variable>(pos))
+        .Or(() => MemoizeFailureAndFail<Variable>(pos))
         .Do(() => Probe.Leave(watch))
         ;
     }
@@ -213,7 +235,7 @@ public partial class ErgoParser : IDisposable
         return Atom()
             .Map(functor => Abstract<NTuple>()
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
-            .Or(() => MemoizeAndFail<Complex>(pos))
+            .Or(() => MemoizeFailureAndFail<Complex>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
@@ -230,7 +252,7 @@ public partial class ErgoParser : IDisposable
         return Expression()
                 .Select<ITerm>(e => e.Complex)
             .Or(() => Term())
-            .Or(() => MemoizeAndFail<ITerm>(pos))
+            .Or(() => MemoizeFailureAndFail<ITerm>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
@@ -249,7 +271,7 @@ public partial class ErgoParser : IDisposable
             .Or(() => Parenthesized("(", ")", () => Inner())
                 .Select(x => x.AsParenthesized(true)))
             .Or(() => Inner())
-            .Or(() => MemoizeAndFail<ITerm>(pos))
+            .Or(() => MemoizeFailureAndFail<ITerm>(pos))
             .Do(() => Probe.Leave(watch))
             ;
 
@@ -360,7 +382,7 @@ public partial class ErgoParser : IDisposable
         return ExpectOperator(op => op.Affix == OperatorAffix.Prefix)
             .Map(op => Term()
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => MemoizeAndFail<Expression>(pos))
+            .Or(() => MemoizeFailureAndFail<Expression>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
@@ -377,7 +399,7 @@ public partial class ErgoParser : IDisposable
         return Term()
             .Map(arg => ExpectOperator(op => op.Affix == OperatorAffix.Postfix)
                 .Select(op => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
-            .Or(() => MemoizeAndFail<Expression>(pos))
+            .Or(() => MemoizeFailureAndFail<Expression>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
@@ -402,7 +424,7 @@ public partial class ErgoParser : IDisposable
                 || cplx.Arguments.Length > 1
                 || !GetOperatorsFromFunctor(cplx.Functor).TryGetValue(out var ops))
             {
-                return MemoizeAndFail<Expression>(pos).Do(() => Probe.Leave(watch));
+                return MemoizeFailureAndFail<Expression>(pos).Do(() => Probe.Leave(watch));
             }
 
             var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
@@ -411,7 +433,7 @@ public partial class ErgoParser : IDisposable
                 .Do(() => Probe.Leave(watch));
         }
 
-        return MemoizeAndFail<Expression>(pos).Do(() => Probe.Leave(watch));
+        return MemoizeFailureAndFail<Expression>(pos).Do(() => Probe.Leave(watch));
 
     }
     Maybe<Expression> WithMinPrecedence(ITerm lhs, int minPrecedence)
@@ -486,7 +508,7 @@ public partial class ErgoParser : IDisposable
         return Prefix().Select<ITerm>(p => p.Complex)
             .Or(() => Postfix().Select<ITerm>(p => p.Complex))
             .Or(() => Term())
-            .Or(() => MemoizeAndFail<ITerm>(pos))
+            .Or(() => MemoizeFailureAndFail<ITerm>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
@@ -531,7 +553,7 @@ public partial class ErgoParser : IDisposable
         }
 
         if (Lexer.Eof)
-            return MemoizeAndFail<Directive>(pos).Do(() => Probe.Leave(watch));
+            return MemoizeFailureAndFail<Directive>(pos).Do(() => Probe.Leave(watch));
 
         desc ??= " ";
         return Expression()
@@ -540,7 +562,7 @@ public partial class ErgoParser : IDisposable
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
                 .Select(_ => op))
             .Select(op => new Directive(op.Left, desc))
-            .Or(() => MemoizeAndFail<Directive>(pos))
+            .Or(() => MemoizeFailureAndFail<Directive>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
@@ -567,7 +589,7 @@ public partial class ErgoParser : IDisposable
         }
 
         if (Lexer.Eof)
-            return MemoizeAndFail<Predicate>(pos).Do(() => Probe.Leave(watch));
+            return MemoizeFailureAndFail<Predicate>(pos).Do(() => Probe.Leave(watch));
 
         desc ??= " ";
         return Expression()
@@ -585,7 +607,7 @@ public partial class ErgoParser : IDisposable
             .Map(p => ExpectDelimiter(p => p.Equals("."))
                 .Do(none: () => Throw(pos, ErrorType.UnterminatedClauseList))
                 .Select(_ => p))
-            .Or(() => MemoizeAndFail<Predicate>(pos))
+            .Or(() => MemoizeFailureAndFail<Predicate>(pos))
             .Do(() => Probe.Leave(watch))
             ;
 

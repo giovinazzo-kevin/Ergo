@@ -105,7 +105,6 @@ public partial class ErgoShell
         Console.SetIn(In);
 
         var scope = createScope?.Invoke() ?? CreateScope();
-        Interpreter.PrintDiagnostics();
 
         WriteLine("Welcome to the Ergo shell. To list the available commands, enter '?' (without quotes)." +
             "\r\nWhile evaluating solutions, press:" +

@@ -47,11 +47,11 @@ public partial class ErgoParser
         {
             var pos = Lexer.State;
             if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(opening)).TryGetValue(out _))
-                return MemoizeAndFail<T>(pos, key);
+                return MemoizeFailureAndFail<T>(pos, key);
             if (!tryParse().TryGetValue(out var ret))
-                return MemoizeAndFail<T>(pos, key);
+                return MemoizeFailureAndFail<T>(pos, key);
             if (!Expect<string>(ErgoLexer.TokenType.Punctuation, str => str.Equals(closing)).TryGetValue(out _))
-                return MemoizeAndFail<T>(pos, key);
+                return MemoizeFailureAndFail<T>(pos, key);
             return ret;
         }
     }

@@ -3,27 +3,6 @@ using System.Runtime.ExceptionServices;
 
 namespace Ergo.Solver;
 
-public sealed class MemoizationTable
-{
-    public readonly HashSet<ITerm> Followers = new();
-    public readonly HashSet<Solution> Solutions = new();
-
-    public void AddFollowers(IEnumerable<ITerm> followers)
-    {
-        foreach (var fol in followers)
-        {
-            Followers.Add(fol);
-        }
-    }
-    public void AddSolutions(IEnumerable<Solution> solutions)
-    {
-        foreach (var sol in solutions)
-        {
-            Solutions.Add(sol);
-        }
-    }
-}
-
 // TODO: Build a stack-based system that supports last call optimization
 public sealed class SolverContext
 {
@@ -186,14 +165,19 @@ public sealed class SolverContext
     {
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
-
+        subs ??= new List<Substitution>();
+    begin:
         if (goal.IsParenthesized)
             scope = scope.WithoutCut();
 
-        subs ??= new List<Substitution>();
         // Treat comma-expression complex ITerms as proper expressions
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
         {
+            if (expr.Contents.Length == 1)
+            {
+                goal = expr.Contents.Single();
+                goto begin; // gotos are used to prevent allocating unnecessary stack frames whenever possible
+            }
             await foreach (var s in Solve(expr, scope, subs, ct: ct))
             {
                 yield return s;
@@ -260,12 +244,9 @@ public sealed class SolverContext
                     .WithCallee(m.Rhs)
                     .WithCaller(scope.Callee);
                 var innerContext = ScopedClone();
-                var tailRecursive = m.Rhs.IsTailRecursive()
-                    && scope.Callee.TryGetValue(out var callee)
-                    && callee.IsSameDefinitionAs(m.Rhs);
+                var tailRecursive = m.Rhs.IsTailRecursive();
                 if (tailRecursive)
                 {
-
                 }
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                 var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);

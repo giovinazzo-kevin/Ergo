@@ -1,45 +1,9 @@
-﻿using Ergo.Facade;
-using Ergo.Interpreter;
+﻿using Ergo.Interpreter;
 using Ergo.Lang.Ast;
-using Ergo.Lang.Exceptions.Handler;
 using Ergo.Lang.Extensions;
 using Ergo.Solver;
 
 namespace Tests;
-public sealed class SolverTestFixture : IDisposable
-{
-    public readonly ExceptionHandler NullExceptionHandler = default;
-    public readonly ExceptionHandler ThrowingExceptionHandler = new(ex => throw ex);
-    public readonly ErgoInterpreter Interpreter;
-    public readonly InterpreterScope InterpreterScope;
-
-    public SolverTestFixture()
-    {
-        // Run at start
-        var basePath = Directory.GetCurrentDirectory();
-        var stdlibPath = Path.Combine(basePath, @"..\..\..\..\Ergo\ergo");
-        var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
-
-        Interpreter = ErgoFacade.Standard
-            .BuildInterpreter(InterpreterFlags.Default);
-        InterpreterScope = Interpreter.CreateScope(x => x
-            .WithExceptionHandler(ThrowingExceptionHandler)
-            .WithoutSearchDirectories()
-            .WithSearchDirectory(testsPath)
-            .WithSearchDirectory(stdlibPath)
-            .WithModule(x.EntryModule
-                .WithImport(new("tests")))
-        );
-    }
-
-    ~SolverTestFixture()
-    {
-        Dispose();
-    }
-
-    public void Dispose() => GC.SuppressFinalize(this);// Run at end
-
-}
 
 public sealed class SolverTests : IClassFixture<SolverTestFixture>
 {
@@ -50,6 +14,13 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     {
         Interpreter = fixture.Interpreter;
         InterpreterScope = fixture.InterpreterScope;
+    }
+    // "⊤" : "⊥"
+    public async Task ShouldParse<T>(string query, T expected)
+    {
+        var parsed = Interpreter.Parse<T>(InterpreterScope, query)
+            .GetOrThrow(new InvalidOperationException());
+        Assert.Equal(parsed, expected);
     }
 
     // "⊤" : "⊥"
@@ -142,4 +113,22 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("{1,1,2,2,3,4}", "'{|}'(1,'{|}'(2,'{|}'(3,4)))")]
     public Task ShouldUnifyCanonicals(string term, string canonical)
         => ShouldSolve($"{term}={canonical}", 1, false, "");
+
+    [Theory]
+    [InlineData("0", 0)]
+    [InlineData("0.5", 0.5)]
+    [InlineData("0  .5", 0.5)]
+    [InlineData("0. 5", 0.5)]
+    [InlineData("0 .  5", 0.5)]
+    [InlineData(".5", .5)]
+    [InlineData(".   5", .5)]
+    [InlineData("-2", -2)]
+    [InlineData("- 3", -3)]
+    [InlineData("+26", +26)]
+    [InlineData("+ 63", +63)]
+    [InlineData("+ .  0", +.0)]
+    [InlineData("+06.4592", +06.4592)]
+    [InlineData("-.194381", -.194381)]
+    public Task ShouldParseAtoms(string query, object constructor)
+        => ShouldParse(query, new Atom(constructor));
 }

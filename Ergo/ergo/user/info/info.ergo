@@ -1,4 +1,6 @@
 ﻿:- module(info, [
 ]).
 
-fact('It is sunny outside').
+wins(paper, rock).
+wins(rock, scissors).
+wins(scissors, paper).

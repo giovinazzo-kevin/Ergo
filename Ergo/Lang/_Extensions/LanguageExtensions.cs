@@ -71,7 +71,7 @@ public static class LanguageExtensions
                 m.Name.Equals("FromCanonical") && m.GetParameters().Length == 1 && m.ReturnType.Equals(resultType)) is { } unfold)
             {
                 var result = unfold.Invoke(null, new[] { t });
-                if (resultType.GetField("HasValue")?.GetValue(result) is not true)
+                if (resultType.GetField("HasValue", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(result) is not true)
                 {
                     AbstractTermCache.Miss(t, type);
                     return default;

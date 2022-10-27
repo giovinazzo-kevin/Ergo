@@ -219,6 +219,21 @@ public partial class ErgoLexer : IDisposable
             return ret;
         }
 
+        char PeekAhead(int n, bool skipWhitespace = true)
+        {
+            var p = State;
+            char c = (char)0;
+            if (!Eof)
+                c = Read();
+            for (int i = 0; i < n; i++)
+            {
+                while (!Eof && char.IsWhiteSpace(c = Read()))
+                    ;
+            }
+            Seek(p);
+            return c;
+        }
+
         char Read()
         {
             var c = ReadUTF8Char(Stream);
@@ -247,10 +262,10 @@ public partial class ErgoLexer : IDisposable
         bool IsCarriageReturn(char c) => c == '\r';
         bool IsNewline(char c) => c == '\n';
         bool IsDigit(char c) => char.IsDigit(c);
-        bool IsDecimalDelimiter(char c) => c == '.';
+        bool IsDecimalDelimiter(char c) => c == '.' && IsDigit(PeekAhead(1));
         bool IsDocumentationCommentStart(char c) => c == ':';
-        bool IsNumberStart(char c) => IsDigit(c);
-        bool IsNumberPiece(char c) => IsNumberStart(c) || IsDecimalDelimiter(c) || c == '-' || c == '+';
+        bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c);
+        bool IsNumberPiece(char c) => IsDecimalDelimiter(c) || IsDigit(c);
         bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_' || c == '!' || c == '⊤' || c == '⊥';
         bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
         bool IsKeyword(string s) => KeywordSymbols.Contains(s);
@@ -325,6 +340,7 @@ public partial class ErgoLexer : IDisposable
                 if (IsDigit(Peek()))
                 {
                     var digit = int.Parse(Read().ToString());
+                    SkipWhitespace();
                     if (integralPlaces == -1)
                     {
                         number = number * 10 + digit;
@@ -339,6 +355,7 @@ public partial class ErgoLexer : IDisposable
                     if (integralPlaces != -1) break;
                     var s = State;
                     Read();
+                    SkipWhitespace();
                     if (!Eof && !IsNumberPiece(Peek()))
                     {
                         Seek(s);

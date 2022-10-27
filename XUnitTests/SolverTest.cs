@@ -122,13 +122,15 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("0 .  5", 0.5)]
     [InlineData(".5", .5)]
     [InlineData(".   5", .5)]
-    [InlineData("-2", -2)]
-    [InlineData("- 3", -3)]
+    public Task ShouldParseDecimals(string query, object constructor)
+        => ShouldParse(query, new Atom(constructor));
     [InlineData("+26", +26)]
     [InlineData("+ 63", +63)]
-    [InlineData("+ .  0", +.0)]
     [InlineData("+06.4592", +06.4592)]
     [InlineData("-.194381", -.194381)]
-    public Task ShouldParseAtoms(string query, object constructor)
-        => ShouldParse(query, new Atom(constructor));
+    [InlineData("-2", -2)]
+    [InlineData("- 3", -3)]
+    [InlineData("+ .  0", +.0)]
+    public Task ShouldParseSignedNumbers(string query, object functor, params object[] args)
+        => ShouldParse(query, new Complex(new Atom(functor), args.Select(a => (ITerm)new Atom(a)).ToArray()).AsOperator(OperatorAffix.Prefix));
 }

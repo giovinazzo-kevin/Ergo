@@ -48,7 +48,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Minus.Contains(f)
                 => -Evaluate(solver, c.Arguments[0]),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)
-                => +Evaluate(solver, c.Arguments[0]),
+                => Evaluate(solver, c.Arguments[0]),
                 _ => Throw(c)
             };
         }

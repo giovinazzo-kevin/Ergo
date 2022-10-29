@@ -439,13 +439,16 @@ public partial class ErgoLexer : IDisposable
             var set = OperatorSymbols.Distinct().ToList();
             var i = 0;
             var p = State;
-            while (!Eof && IsOperatorPiece(Peek(), i))
+            var peek = Peek();
+            while (!Eof && IsOperatorPiece(peek, i) && set.SelectMany(x => x).Contains(peek))
             {
                 var ch = Read();
                 for (var o = set.Count - 1; o >= 0; o--)
                 {
                     if (set[o].Length <= i || set[o][i] != ch)
+                    {
                         set.RemoveAt(o);
+                    }
                 }
 
                 if (set.Count >= 1)
@@ -471,9 +474,10 @@ public partial class ErgoLexer : IDisposable
                     Seek(p);
                     throw new LexerException(ErrorType.UnrecognizedOperator, State);
                 }
+
+                peek = Peek();
             }
 
-            SkipWhitespace();
             return Token.FromOperator(set.OrderBy(s => s.Length).First());
         }
     }

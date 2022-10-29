@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Interpreter;
+
+namespace Ergo.Lang.Ast;
 
 public readonly partial struct Expression
 {
@@ -7,9 +9,17 @@ public readonly partial struct Expression
     public readonly Operator Operator;
     public readonly Complex Complex;
 
-    public Expression(Complex fromComplex)
+    public Expression(Complex fromComplex, Maybe<InterpreterScope> maybeScope = default)
     {
-        Operator = WellKnown.Operators.DefinedOperators.Single(op => op.Synonyms.Contains(fromComplex.Functor));
+        var ops = WellKnown.Operators.DefinedOperators.AsEnumerable();
+        if (maybeScope.TryGetValue(out var scope))
+        {
+            ops = ops.Concat(scope.GetOperators())
+                .Distinct();
+        }
+        Operator = ops.Single(op => op.Synonyms.Contains(fromComplex.Functor) &&
+            (op.Affix == OperatorAffix.Infix && fromComplex.Arguments.Length == 2
+            || op.Affix != OperatorAffix.Infix && fromComplex.Arguments.Length == 1));
         Left = fromComplex.Arguments[0];
         Right = fromComplex.Arguments.Length > 1 ? Maybe.Some(fromComplex.Arguments[1]) : default;
         Complex = fromComplex;

@@ -123,7 +123,7 @@ public static class ExceptionUtils
 
     public static string GetMessage(ErgoLexer.StreamState state, string error)
     {
-        var ctx = state.Context.Replace("\t", "    ");
+        var ctx = state.Context?.Replace("\t", "    ") ?? String.Empty;
         var ctxIndicator = new string('~', ctx.Length) + "^";
         var ret = $"at line {state.Line}, col {state.Column}:\r\n\t{error}\r\n\r\n\t{ctx}\r\n\t{ctxIndicator} (here)\r\n";
         if (!string.IsNullOrEmpty(state.Filename))

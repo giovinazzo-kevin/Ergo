@@ -198,8 +198,6 @@ public sealed class SolverContext
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
                 Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
-                if (scope.IsCutRequested)
-                    ChoicePointCts.Cancel(false);
                 yield break;
             }
 

@@ -168,7 +168,7 @@ public sealed class SolverContext
         subs ??= new List<Substitution>();
     begin:
         if (goal.IsParenthesized)
-            scope = scope.WithoutCut();
+            scope = scope.WithChoicePoint();
 
         // Treat comma-expression complex ITerms as proper expressions
         if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
@@ -240,7 +240,8 @@ public sealed class SolverContext
                     .WithDepth(scope.Depth + 1)
                     .WithModule(m.Rhs.DeclaringModule)
                     .WithCallee(m.Rhs)
-                    .WithCaller(scope.Callee);
+                    .WithCaller(scope.Callee)
+                    .WithChoicePoint();
                 var innerContext = ScopedClone();
                 var tailRecursive = m.Rhs.IsTailRecursive();
                 if (tailRecursive)

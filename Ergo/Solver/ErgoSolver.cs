@@ -151,7 +151,8 @@ public partial class ErgoSolver : IDisposable
                         item.WithFunctor(signature.Tag.GetOr(signature.Functor)),
                         NTuple.Empty,
                         dynamic: true,
-                        exported: false
+                        exported: false,
+                        tailRecursive: false
                     );
                     if (predicate.Unify(head).TryGetValue(out var matchSubs))
                     {
@@ -178,7 +179,8 @@ public partial class ErgoSolver : IDisposable
                 exp,
                 p.Body,
                 p.IsDynamic,
-                p.IsExported
+                p.IsExported,
+                p.IsTailRecursive
             );
         }
     }
@@ -299,12 +301,12 @@ public partial class ErgoSolver : IDisposable
             }
         }
     }
-    public IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
+    public IAsyncEnumerable<Solution> Solve(Query query, SolverScope scope, CancellationToken ct = default)
     {
         if (!_initialized)
             throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
-
-        return new SolverContext(this).Solve(goal, scope, ct: ct);
+        var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, WellKnown.Literals.TopLevel, query.Goals, dynamic: true, exported: false, tailRecursive: false);
+        return new SolverContext(this).Solve(query, scope.WithCallee(topLevel), ct: ct);
     }
 
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);

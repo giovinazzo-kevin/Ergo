@@ -134,16 +134,19 @@ public sealed class SolverContext
         void Cancel(ExceptionDispatchInfo _) => ExceptionCts.Cancel(false);
     }
 
+
+    // This method takes a list of goals and solves them one at a time.
+    // The tail of the list is fed back into this method recursively.
     private async IAsyncEnumerable<Solution> Solve(NTuple query, SolverScope scope, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
         subs ??= new List<Substitution>();
+
         if (query.IsEmpty)
         {
             yield return Solution.Success(scope, subs.ToArray());
             yield break;
         }
-        // This method takes a list of goals and solves them one at a time.
-        // The tail of the list is fed back into this method recursively.
+
         var goals = query.Contents;
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
@@ -155,7 +158,8 @@ public sealed class SolverContext
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
             {
-                yield return Solution.Success(ss.Scope, s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray());
+                var newSubs = s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray();
+                yield return Solution.Success(ss.Scope, newSubs);
             }
         }
     }
@@ -243,10 +247,6 @@ public sealed class SolverContext
                     .WithCaller(scope.Callee)
                     .WithChoicePoint();
                 var innerContext = ScopedClone();
-                var tailRecursive = m.Rhs.IsTailRecursive();
-                if (tailRecursive)
-                {
-                }
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                 var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
                 await foreach (var s in solve)

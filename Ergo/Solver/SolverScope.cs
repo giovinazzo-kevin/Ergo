@@ -10,11 +10,11 @@ public readonly struct SolverScope
     public readonly int Depth;
     public readonly Atom Module;
     public readonly ImmutableArray<Predicate> Callers;
-    public readonly Maybe<Predicate> Callee;
+    public readonly Predicate Callee;
     public readonly InterpreterScope InterpreterScope;
     public readonly bool IsCutRequested;
 
-    public SolverScope(InterpreterScope interp, int depth, Atom module, Maybe<Predicate> callee, ImmutableArray<Predicate> callers, bool cut)
+    public SolverScope(InterpreterScope interp, int depth, Atom module, Predicate callee, ImmutableArray<Predicate> callers, bool cut)
     {
         Depth = depth;
         Module = module;
@@ -28,7 +28,7 @@ public readonly struct SolverScope
     public SolverScope WithDepth(int depth) => new(InterpreterScope, depth, Module, Callee, Callers, IsCutRequested);
     public SolverScope WithCaller(Maybe<Predicate> caller) => new(InterpreterScope, Depth, Module, Callee, Callers.AddRange(caller.AsEnumerable()), IsCutRequested);
     public SolverScope WithCaller(Predicate caller) => new(InterpreterScope, Depth, Module, Callee, Callers.Add(caller), IsCutRequested);
-    public SolverScope WithCallee(Maybe<Predicate> callee) => new(InterpreterScope, Depth, Module, callee, Callers, IsCutRequested);
+    public SolverScope WithCallee(Predicate callee) => new(InterpreterScope, Depth, Module, callee, Callers, IsCutRequested);
     public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: false);
     public SolverScope WithCut() => new(InterpreterScope, Depth, Module, Callee, Callers, cut: true);
 
@@ -40,9 +40,7 @@ public readonly struct SolverScope
         var numCallers = Callers.Length;
         var stackTrace = Callers
             .Select((c, i) => $"[{depth - i}] {c.Head.Explain(canonical: true)}");
-        stackTrace = Callee
-            .Select(some => stackTrace.Append($"[{depth - numCallers}] {some.Head.Explain(canonical: true)}"))
-            .GetOr(stackTrace);
+        stackTrace = stackTrace.Append($"[{depth - numCallers}] {Callee.Head.Explain(canonical: true)}");
         return "\t" + stackTrace.Join("\r\n\t");
 
     }

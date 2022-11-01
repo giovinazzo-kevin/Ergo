@@ -12,19 +12,22 @@ public readonly struct Predicate : IExplainable
     public readonly string Documentation;
     public readonly bool IsDynamic;
     public readonly bool IsExported;
+    public readonly bool IsTailRecursive;
 
-    public bool IsTailRecursive()
+    private static bool GetIsTailRecursive(ITerm head, NTuple body)
     {
+        if (head.Equals(WellKnown.Literals.TopLevel))
+            return false;
         var calls = 0;
-        var sign = Head.GetSignature();
+        var sign = head.GetSignature();
         var anon = sign.Functor.BuildAnonymousTerm(sign.Arity.GetOr(0));
-        foreach (var (goal, i) in Body.Contents.Select((g, i) => (g, i)))
+        foreach (var (goal, i) in body.Contents.Select((g, i) => (g, i)))
         {
-            if (anon.Unify(goal).TryGetValue(out _))
+            if (goal is not Variable && anon.Unify(goal).TryGetValue(out _))
             {
                 if (++calls > 1)
                     return false;
-                if (i == Body.Contents.Length - 1)
+                if (i == body.Contents.Length - 1)
                     return true;
             }
         }
@@ -40,7 +43,7 @@ public readonly struct Predicate : IExplainable
         return true;
     }
 
-    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
+    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive)
     {
         Documentation = desc;
         DeclaringModule = module;
@@ -48,6 +51,12 @@ public readonly struct Predicate : IExplainable
         Body = body;
         IsDynamic = dynamic;
         IsExported = exported;
+        IsTailRecursive = tailRecursive;
+    }
+
+    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
+        : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body))
+    {
     }
 
     public Predicate Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
@@ -60,20 +69,21 @@ public readonly struct Predicate : IExplainable
             , new NTuple(Body.Contents.Select(x => x.Instantiate(ctx, vars)))
             , IsDynamic
             , IsExported
+            , IsTailRecursive
         );
     }
 
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
-        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)((IAbstractTerm)k.Body).Substitute(s), k.IsDynamic, k.IsExported);
+        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)((IAbstractTerm)k.Body).Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive);
 
-    public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body, IsDynamic, IsExported);
-    public Predicate Dynamic() => new(Documentation, DeclaringModule, Head, Body, true, IsExported);
-    public Predicate Exported() => new(Documentation, DeclaringModule, Head, Body, IsDynamic, true);
+    public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive);
+    public Predicate Dynamic() => new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive);
+    public Predicate Exported() => new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive);
     public Predicate Qualified()
     {
         if (Head.IsQualified)
             return this;
-        return new(Documentation, DeclaringModule, Head.Qualified(DeclaringModule), Body, IsDynamic, IsExported);
+        return new(Documentation, DeclaringModule, Head.Qualified(DeclaringModule), Body, IsDynamic, IsExported, IsTailRecursive);
     }
 
     // TODO: Conform to abstract term method FromCanonical

@@ -95,7 +95,9 @@ fibonacci(N, F) :-
 factorial(N, R) :- factorial(N, 1, R).
 factorial(0, R, R) :- !.
 factorial(N, Acc, R) :-
-    factorial(:=(N - 1), :=(Acc * N), R).
+	A :=(N - 1), 
+	B :=(Acc * N),
+    factorial(A, B, R).
 
 
 max(A, B, Max) :- A > B -> Max = A ; Max = B.

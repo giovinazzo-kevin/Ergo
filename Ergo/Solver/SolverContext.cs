@@ -137,13 +137,11 @@ public sealed class SolverContext
 
     // This method takes a list of goals and solves them one at a time.
     // The tail of the list is fed back into this method recursively.
-    private async IAsyncEnumerable<Solution> Solve(NTuple query, SolverScope scope, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<Solution> Solve(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        subs ??= new List<Substitution>();
-
         if (query.IsEmpty)
         {
-            yield return Solution.Success(scope, subs.ToArray());
+            yield return Solution.Success(scope);
             yield break;
         }
 
@@ -152,25 +150,25 @@ public sealed class SolverContext
         goals = goals.RemoveAt(0);
 
         // Get first solution for the current subgoal
-        await foreach (var s in Solve(subGoal, scope, subs, ct: ct))
+        await foreach (var s in Solve(subGoal, scope, ct: ct))
         {
             // Solve the rest of the goal
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
-            await foreach (var ss in Solve(rest, s.Scope, subs, ct: ct))
+            await foreach (var ss in Solve(rest, scope, ct: ct))
             {
                 var newSubs = s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray();
-                yield return Solution.Success(ss.Scope, newSubs);
+                var sol = Solution.Success(ss.Scope, newSubs);
+                yield return sol;
             }
         }
     }
 
 
-    private async IAsyncEnumerable<Solution> Solve(ITerm goal, SolverScope scope, List<Substitution> subs = null, [EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<Solution> Solve(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
-        subs ??= new List<Substitution>();
-    begin:
+        begin:
         if (goal.IsParenthesized)
             scope = scope.WithChoicePoint();
 
@@ -182,7 +180,7 @@ public sealed class SolverContext
                 goal = expr.Contents.Single();
                 goto begin; // gotos are used to prevent allocating unnecessary stack frames whenever possible
             }
-            await foreach (var s in Solve(expr, scope, subs, ct: ct))
+            await foreach (var s in Solve(expr, scope, ct: ct))
             {
                 yield return s;
             }
@@ -211,7 +209,7 @@ public sealed class SolverContext
                 if (exp.Equals(WellKnown.Literals.Cut))
                     scope = scope.WithCut();
 
-                yield return Solution.Success(scope, subs.Concat(resolvedGoal.Substitutions).ToArray());
+                yield return Solution.Success(scope, resolvedGoal.Substitutions);
                 if (scope.IsCutRequested)
                     ChoicePointCts.Cancel(false);
                 continue;
@@ -248,11 +246,11 @@ public sealed class SolverContext
                     .WithChoicePoint();
                 var innerContext = ScopedClone();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                var solve = innerContext.Solve(m.Rhs.Body, innerScope, new List<Substitution>(m.Substitutions.Concat(resolvedGoal.Substitutions)), ct: ct);
+                var solve = innerContext.Solve(m.Rhs.Body, innerScope, ct: ct);
                 await foreach (var s in solve)
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return s;
+                    yield return Solution.Success(s.Scope, s.Substitutions.Concat(m.Substitutions.Concat(resolvedGoal.Substitutions)).ToArray());
                 }
                 if (innerContext.ChoicePointCts.IsCancellationRequested)
                     break;

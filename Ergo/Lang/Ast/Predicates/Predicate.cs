@@ -18,6 +18,11 @@ public readonly struct Predicate : IExplainable
     {
         if (head.Equals(WellKnown.Literals.TopLevel))
             return false;
+        return IsLastCall(head, body);
+    }
+
+    public static bool IsLastCall(ITerm head, NTuple body)
+    {
         var calls = 0;
         var sign = head.GetSignature();
         var anon = sign.Functor.BuildAnonymousTerm(sign.Arity.GetOr(0));

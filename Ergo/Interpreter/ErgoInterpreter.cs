@@ -183,8 +183,7 @@ public partial class ErgoInterpreter
                     match.Rhs.IsDynamic,
                     false
                 );
-
-                program.KnowledgeBase.Retract(match.Rhs.Head);
+                var check = program.KnowledgeBase.Retract(head);
                 program.KnowledgeBase.AssertZ(auxPred);
             }
             program.KnowledgeBase.AssertZ(tblPred);

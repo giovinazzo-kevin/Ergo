@@ -23,6 +23,8 @@ public readonly struct Predicate : IExplainable
 
     public static bool IsLastCall(ITerm head, NTuple body)
     {
+        if (head is Variable)
+            return false;
         var calls = 0;
         var sign = head.GetSignature();
         var anon = sign.Functor.BuildAnonymousTerm(sign.Arity.GetOr(0));

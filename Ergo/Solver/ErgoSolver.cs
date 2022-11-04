@@ -2,7 +2,6 @@
 using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
 using Ergo.Solver.DataBindings;
-using System.Collections.Concurrent;
 using System.ComponentModel;
 
 namespace Ergo.Solver;
@@ -10,8 +9,6 @@ namespace Ergo.Solver;
 public partial class ErgoSolver : IDisposable
 {
     private volatile bool _initialized;
-
-    public readonly int MaxStackSize;
 
     public readonly SolverFlags Flags;
     public readonly Dictionary<Signature, SolverBuiltIn> BuiltIns;
@@ -36,12 +33,11 @@ public partial class ErgoSolver : IDisposable
         return signature;
     }
 
-    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, int stackSizeInBytes = 0)
+    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
     {
         Facade = facade;
         Flags = flags;
         KnowledgeBase = kb;
-        MaxStackSize = stackSizeInBytes;
         BuiltIns = new();
     }
 
@@ -306,28 +302,10 @@ public partial class ErgoSolver : IDisposable
             await InitializeAsync(scope.InterpreterScope, ct);
         }
 
-        var ansQueue = new ConcurrentQueue<Solution>();
-        var (mutexIn, mutexOut) = (new AutoResetEvent(false), new AutoResetEvent(true));
-
-        var solveThread = new Thread(async () =>
+        var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, WellKnown.Literals.TopLevel, query.Goals, dynamic: true, exported: false, tailRecursive: false);
+        await foreach (var s in new SolverContext(this).SolveAsync(query, scope.WithCallee(topLevel), ct: ct))
         {
-            var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, WellKnown.Literals.TopLevel, query.Goals, dynamic: true, exported: false, tailRecursive: false);
-            await foreach (var s in new SolverContext(this).SolveAsync(query, scope.WithCallee(topLevel), ct: ct))
-            {
-                mutexOut.WaitOne();
-                ansQueue.Enqueue(s);
-                mutexIn.Set();
-            }
-            mutexIn.Set();
-        }, maxStackSize: MaxStackSize);
-        solveThread.Start();
-        while (solveThread.IsAlive)
-        {
-            mutexIn.WaitOne();
-            if (!ansQueue.TryDequeue(out var s))
-                break;
             yield return s;
-            mutexOut.Set();
         }
     }
 

@@ -1,19 +1,10 @@
 ﻿:- module(meta, [
-    memo/1,
 	ignore/1,
 	once/1, repeat/2, forever/1,
 	forall/2,
 	maplist/2, maplist/3, maplist/4, maplist/5,
     for/3
 ]).
-:- dynamic(memo_/1).
-
-memo(Goal) :-
-    (   memo_(Goal)
-    ->  true
-    ;   once(Goal),
-        assertz(memo_(Goal))
-    ).
     
 
 ignore(Goal) :- Goal, !.

@@ -2,6 +2,7 @@
 using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
 using Ergo.Solver.DataBindings;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 
 namespace Ergo.Solver;
@@ -9,6 +10,9 @@ namespace Ergo.Solver;
 public partial class ErgoSolver : IDisposable
 {
     private volatile bool _initialized;
+
+    public readonly int MaximumStackDepth;
+    private const int EstimatedStackFrameSizeInBytes = 1024 * 16;
 
     public readonly SolverFlags Flags;
     public readonly Dictionary<Signature, SolverBuiltIn> BuiltIns;
@@ -33,11 +37,12 @@ public partial class ErgoSolver : IDisposable
         return signature;
     }
 
-    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
+    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, int maximumStackDepth = 10)
     {
         Facade = facade;
         Flags = flags;
         KnowledgeBase = kb;
+        MaximumStackDepth = maximumStackDepth;
         BuiltIns = new();
     }
 
@@ -248,7 +253,7 @@ public partial class ErgoSolver : IDisposable
 
                     var pred = Predicate.Substitute(exp.Predicate, subs).Qualified();
                     LogTrace(SolverTraceType.Expansion, $"{pred.Head.Explain()}", scope.Depth);
-                    await foreach (var sol in Solve(new Query(pred.Body), scope, ct))
+                    await foreach (var sol in SolveAsync(new Query(pred.Body), scope, ct))
                     {
                         if (ct.IsCancellationRequested)
                             yield break;
@@ -272,19 +277,10 @@ public partial class ErgoSolver : IDisposable
     /// </summary>
     public static IEnumerable<(ITerm Term, bool Dynamic)> GetImplicitGoalQualifications(ITerm goal, SolverScope scope)
     {
-        yield return (goal, false);
         var isDynamic = false;
+        yield return (goal, isDynamic);
         if (!goal.IsQualified)
         {
-            //var modules = scope.Callers.Reverse().Select(c => c.DeclaringModule).Distinct();
-            //foreach (var m in modules)
-            //{
-            //    var qualified = goal.Qualified(m);
-            //    if ((isDynamic = scope.InterpreterScope.Modules[m].DynamicPredicates.Contains(qualified.GetSignature())) || true)
-            //    {
-            //        yield return (qualified, isDynamic);
-            //    }
-            //}
             {
                 var qualified = goal.Qualified(scope.Module);
                 if ((isDynamic = scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true)
@@ -301,12 +297,39 @@ public partial class ErgoSolver : IDisposable
             }
         }
     }
-    public IAsyncEnumerable<Solution> Solve(Query query, SolverScope scope, CancellationToken ct = default)
+
+    public async IAsyncEnumerable<Solution> SolveAsync(Query query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         if (!_initialized)
-            throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
-        var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, WellKnown.Literals.TopLevel, query.Goals, dynamic: true, exported: false, tailRecursive: false);
-        return new SolverContext(this).Solve(query, scope.WithCallee(topLevel), ct: ct);
+        {
+            if (!Flags.HasFlag(SolverFlags.InitializeAutomatically))
+                throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
+            await InitializeAsync(scope.InterpreterScope, ct);
+        }
+
+        var ansQueue = new ConcurrentQueue<Solution>();
+        var (mutexIn, mutexOut) = (new AutoResetEvent(false), new AutoResetEvent(true));
+
+        var solveThread = new Thread(async () =>
+        {
+            var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, WellKnown.Literals.TopLevel, query.Goals, dynamic: true, exported: false, tailRecursive: false);
+            await foreach (var s in new SolverContext(this).SolveAsync(query, scope.WithCallee(topLevel), ct: ct))
+            {
+                mutexOut.WaitOne();
+                ansQueue.Enqueue(s);
+                mutexIn.Set();
+            }
+            mutexIn.Set();
+        }, maxStackSize: MaximumStackDepth * EstimatedStackFrameSizeInBytes);
+        solveThread.Start();
+        while (solveThread.IsAlive)
+        {
+            mutexIn.WaitOne();
+            if (!ansQueue.TryDequeue(out var s))
+                break;
+            yield return s;
+            mutexOut.Set();
+        }
     }
 
     public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);

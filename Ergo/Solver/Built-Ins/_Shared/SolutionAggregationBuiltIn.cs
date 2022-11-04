@@ -41,7 +41,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
                 new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
             .AsOperator(OperatorAffix.Infix)
         });
-        var solutions = (await solver.Solve(new(goalClauses), scope).CollectAsync())
+        var solutions = (await solver.SolveAsync(new(goalClauses), scope).CollectAsync())
             .Select(s => s.Simplify());
         foreach (var sol in solutions
             .Select(sol =>

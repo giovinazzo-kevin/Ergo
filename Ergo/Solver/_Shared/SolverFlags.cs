@@ -3,7 +3,8 @@
 [Flags]
 public enum SolverFlags
 {
-    Default = ThrowOnPredicateNotFound
+    Default = ThrowOnPredicateNotFound | InitializeAutomatically
     , None = 0
     , ThrowOnPredicateNotFound = 1
+    , InitializeAutomatically
 }

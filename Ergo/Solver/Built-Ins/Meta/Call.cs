@@ -32,7 +32,7 @@ public sealed class Call : SolverBuiltIn
         }
 
         var any = false;
-        await foreach (var solution in context.Solver.Solve(new(comma), scope))
+        await foreach (var solution in context.Solver.SolveAsync(new(comma), scope))
         {
             yield return True(solution.Substitutions);
             any = true;

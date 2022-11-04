@@ -121,7 +121,7 @@ public sealed class SolverContext
             yield return new(goal);
     }
 
-    public async IAsyncEnumerable<Solution> Solve(Query goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<Solution> SolveAsync(Query goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
@@ -176,6 +176,9 @@ public sealed class SolverContext
     {
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
+
+        if (scope.Depth > Solver.MaximumStackDepth)
+            throw new SolverException(SolverError.StackOverflow, scope, scope.Explain());
 
         begin:
         if (goal.IsParenthesized)

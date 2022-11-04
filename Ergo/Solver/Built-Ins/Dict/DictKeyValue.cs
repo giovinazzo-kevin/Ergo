@@ -48,7 +48,7 @@ public sealed class DictKeyValue : SolverBuiltIn
 
             if (!anyKey)
             {
-                yield return ThrowFalse(scope, SolverError.KeyNotFound, args[1].Explain());
+                yield return ThrowFalse(scope, SolverError.KeyNotFound, args[0].Explain(), args[1].Explain());
                 yield break;
             }
 

@@ -9,24 +9,15 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
-            ErgoParser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.')."
-            ,
-            ErgoParser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_')."
-            ,
-            ErgoParser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments."
-            ,
-            ErgoParser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}')."
-            ,
-            ErgoParser.ErrorType.ExpectedClauseList => "Expected clause list."
-            ,
-            ErgoParser.ErrorType.UnterminatedClauseList => "Unterminated clause list."
-            ,
-            ErgoParser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file."
-            ,
-            ErgoParser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}"
-            ,
-            ErgoParser.ErrorType.KeyExpected => "Key expected; found: {0}"
-            ,
+            ErgoParser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.').",
+            ErgoParser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_').",
+            ErgoParser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments.",
+            ErgoParser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}').",
+            ErgoParser.ErrorType.ExpectedClauseList => "Expected clause list.",
+            ErgoParser.ErrorType.UnterminatedClauseList => "Unterminated clause list.",
+            ErgoParser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file.",
+            ErgoParser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}",
+            ErgoParser.ErrorType.KeyExpected => "Key expected; found: {0}",
             _ => error.ToString()
         };
 
@@ -57,24 +48,15 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
-            InterpreterError.UndefinedDirective => string.Format("Undefined directive: {0}", args)
-            ,
-            InterpreterError.ModuleRedefinition => string.Format("Declaration of module {1} would shadow existing declaration: {0}", args)
-            ,
-            InterpreterError.ModuleNameClash => string.Format("Module {0} can't be declared because it would shadow a static module", args)
-            ,
-            InterpreterError.ExpansionClashWithLiteral => string.Format("Literal {0} can't be declared because it would shadow a built-in literal", args)
-            ,
-            InterpreterError.ExpansionClash => string.Format("Literal {0} was already declared in this module", args)
-            ,
-            InterpreterError.LiteralCyclicDefinition => string.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args)
-            ,
-            InterpreterError.OperatorClash => string.Format("Operator {0} can't be declared because it would shadow a built-in operator", args)
-            ,
-            InterpreterError.ExpectedTermOfTypeAt => string.Format("Expected term of type {0}, found: {1}", args)
-            ,
-            InterpreterError.ModuleAlreadyImported => string.Format("Module already imported: {0}", args)
-            ,
+            InterpreterError.UndefinedDirective => string.Format("Undefined directive: {0}", args),
+            InterpreterError.ModuleRedefinition => string.Format("Declaration of module {1} would shadow existing declaration: {0}", args),
+            InterpreterError.ModuleNameClash => string.Format("Module {0} can't be declared because it would shadow a static module", args),
+            InterpreterError.ExpansionClashWithLiteral => string.Format("Literal {0} can't be declared because it would shadow a built-in literal", args),
+            InterpreterError.ExpansionClash => string.Format("Literal {0} was already declared in this module", args),
+            InterpreterError.LiteralCyclicDefinition => string.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args),
+            InterpreterError.OperatorClash => string.Format("Operator {0} can't be declared because it would shadow a built-in operator", args),
+            InterpreterError.ExpectedTermOfTypeAt => string.Format("Expected term of type {0}, found: {1}", args),
+            InterpreterError.ModuleAlreadyImported => string.Format("Module already imported: {0}", args),
             _ => error.ToString()
         };
 
@@ -94,12 +76,13 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
-            SolverError.CannotRetractImportedPredicate => string.Format("Can't retract {0} from module {1} because it was declared in module {2}", args)
-            ,
-            SolverError.UndefinedPredicate => string.Format("Undefined predicate: {0}", args)
-            ,
-            SolverError.TermNotSufficientlyInstantiated => string.Format("Term not sufficiently instantiated: {0}", args)
-            ,
+            SolverError.CannotRetractImportedPredicate => string.Format("Can't retract {0} from module {1} because it was declared in module {2}", args),
+            SolverError.CannotRetractStaticPredicate => string.Format("Can't retract {0} because it is not a dynamic predicate", args),
+            SolverError.UndefinedPredicate => string.Format("Undefined predicate: {0}", args),
+            SolverError.TermNotSufficientlyInstantiated => string.Format("Term not sufficiently instantiated: {0}", args),
+            SolverError.KeyNotFound => string.Format("Key {1} not found in: {0}", args),
+            SolverError.ExpectedTermOfTypeAt => string.Format("Expected term of type {0}, found: {1}", args),
+            SolverError.StackOverflow => string.Format("Stack overflow in scope: {0}", args),
             _ => error.ToString()
         };
 

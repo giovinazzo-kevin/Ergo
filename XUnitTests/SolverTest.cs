@@ -34,7 +34,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
         if (checkParse)
             Assert.Equal(query, parsed.Goals.Explain());
         var numSolutions = 0;
-        await foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope)))
+        await foreach (var sol in solver.SolveAsync(parsed, solver.CreateScope(InterpreterScope)))
         {
             var check = sol.Simplify().Substitutions.Join(s => s.Explain(), ";");
             Assert.InRange(++numSolutions, 1, expected.Length);

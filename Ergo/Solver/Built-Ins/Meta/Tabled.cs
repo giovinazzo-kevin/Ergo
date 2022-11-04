@@ -32,7 +32,7 @@ public sealed class Tabled : SolverBuiltIn
         if (!context.GetPioneer(variant).TryGetValue(out var pioneer))
         {
             context.MemoizePioneer(pioneer = variant);
-            await foreach (var sol in context.Solve(new(args), scope))
+            await foreach (var sol in context.SolveAsync(new(args), scope))
             {
                 context.MemoizeSolution(pioneer, sol);
                 yield return True(sol.Substitutions);

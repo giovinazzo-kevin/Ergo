@@ -74,7 +74,7 @@ public abstract class SolveShellCommand : ShellCommand
             };
         }
 
-        var solutions = solver.Solve(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
+        var solutions = solver.SolveAsync(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);

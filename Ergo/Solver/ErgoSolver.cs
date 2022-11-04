@@ -66,7 +66,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: false);
+        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: false, new("K"));
     public void AddBuiltIn(SolverBuiltIn b)
     {
         if (!BuiltIns.TryAdd(b.Signature, b))

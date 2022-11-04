@@ -38,7 +38,7 @@ public sealed class NumberVars : SolverBuiltIn
             ++end;
         }
 
-        if (!args[0].Instantiate(scope.InterpreterScope.InstantaitionContext, newVars).Unify(args[0]).TryGetValue(out var subs0))
+        if (!args[0].Instantiate(scope.InstantiationContext, newVars).Unify(args[0]).TryGetValue(out var subs0))
         {
             yield return False();
             yield break;

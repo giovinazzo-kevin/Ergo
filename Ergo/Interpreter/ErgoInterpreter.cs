@@ -156,6 +156,7 @@ public partial class ErgoInterpreter
         stream.Dispose();
         scope = scope.WithModule(module = module.WithProgram(program));
 
+        var ctx = new InstantiationContext("L");
         // At this point we can apply local transformations such as those required by tabling
         foreach (var sig in scope.EntryModule.TabledPredicates)
         {
@@ -172,7 +173,7 @@ public partial class ErgoInterpreter
                 true
             );
 
-            foreach (var match in scope.KnowledgeBase.GetMatches(anon.Qualified(scope.Entry), desugar: false))
+            foreach (var match in scope.KnowledgeBase.GetMatches(ctx, anon.Qualified(scope.Entry), desugar: false))
             {
                 match.Rhs.Head.GetQualification(out var head);
                 var auxPred = new Predicate(

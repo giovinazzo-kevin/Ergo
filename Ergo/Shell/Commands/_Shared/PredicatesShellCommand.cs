@@ -27,7 +27,7 @@ public abstract class PredicatesShellCommand : ShellCommand
 
             var yes = interpreterScope.ExceptionHandler.TryGet(() =>
             {
-                var matches = interpreterScope.KnowledgeBase.GetMatches(tuple.Contents.First(), desugar: true);
+                var matches = interpreterScope.KnowledgeBase.GetMatches(new("S"), tuple.Contents.First(), desugar: true);
                 if (matches.Any())
                 {
                     predicates = predicates.Where(p =>

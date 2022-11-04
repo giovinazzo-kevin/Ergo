@@ -30,9 +30,9 @@ public sealed class Lambda : SolverBuiltIn
             yield break;
         }
 
-        var (ctx, vars) = (new InstantiationContext("L"), new Dictionary<string, Variable>());
-        list = (List)list.Instantiate(ctx, vars);
-        lambda = lambda.Instantiate(ctx, vars);
+        var vars = new Dictionary<string, Variable>();
+        list = (List)list.Instantiate(scope.InstantiationContext, vars);
+        lambda = lambda.Instantiate(scope.InstantiationContext, vars);
         for (var i = 0; i < Math.Min(rest.Length, list.Contents.Length); i++)
         {
             if (list.Contents[i].IsGround)

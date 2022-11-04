@@ -242,7 +242,7 @@ public sealed class SolverContext
 
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
             var matches = ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope)
-                .Select(x => Solver.KnowledgeBase.GetMatches(x.Term, desugar: false))
+                .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x.Term, desugar: false))
                 .FirstOrDefault(x => x.Any());
             if (matches is null)
             {

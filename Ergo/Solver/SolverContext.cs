@@ -166,8 +166,7 @@ public sealed class SolverContext
             await foreach (var ss in SolveQuery(rest, scope, ct: ct))
             {
                 var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct().ToArray();
-                var sol = Solution.Success(ss.Scope, newSubs);
-                yield return sol;
+                yield return Solution.Success(ss.Scope, newSubs);
             }
         }
     }

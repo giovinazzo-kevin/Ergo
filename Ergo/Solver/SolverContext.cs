@@ -144,7 +144,7 @@ public sealed class SolverContext
     TCO:
         if (query.IsEmpty)
         {
-            yield return Solution.Success(scope, tcoSubs.ToArray());
+            yield return Solution.Success(scope, tcoSubs);
             yield break;
         }
         var goals = query.Contents;
@@ -176,7 +176,7 @@ public sealed class SolverContext
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
-                var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct().ToArray();
+                var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct();
                 yield return Solution.Success(ss.Scope, newSubs);
             }
         }
@@ -272,7 +272,7 @@ public sealed class SolverContext
                 if (m.Rhs.IsTailRecursive)
                 {
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions).ToArray());
+                    yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
                     continue;
                 }
                 var innerContext = ScopedClone();
@@ -281,7 +281,7 @@ public sealed class SolverContext
                 await foreach (var s in solve)
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return Solution.Success(s.Scope, s.Substitutions.Concat(m.Substitutions.Concat(resolvedGoal.Substitutions)).ToArray());
+                    yield return Solution.Success(s.Scope, s.Substitutions.Concat(m.Substitutions.Concat(resolvedGoal.Substitutions)));
                 }
                 if (innerContext.ChoicePointCts.IsCancellationRequested)
                     break;

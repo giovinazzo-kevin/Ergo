@@ -177,10 +177,17 @@ public sealed class SolverContext
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
 
-        if (scope.Depth > Solver.MaximumStackDepth)
-            throw new SolverException(SolverError.StackOverflow, scope, scope.Explain());
+        try
+        {
+            RuntimeHelpers.EnsureSufficientExecutionStack();
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            scope.Throw(SolverError.StackOverflow);
+            yield break;
+        }
 
-        begin:
+    begin:
         if (goal.IsParenthesized)
             scope = scope.WithChoicePoint();
 

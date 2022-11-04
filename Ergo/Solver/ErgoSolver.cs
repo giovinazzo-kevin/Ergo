@@ -11,8 +11,7 @@ public partial class ErgoSolver : IDisposable
 {
     private volatile bool _initialized;
 
-    public readonly int MaximumStackDepth;
-    private const int EstimatedStackFrameSizeInBytes = 1024 * 16;
+    public readonly int MaxStackSize;
 
     public readonly SolverFlags Flags;
     public readonly Dictionary<Signature, SolverBuiltIn> BuiltIns;
@@ -37,12 +36,12 @@ public partial class ErgoSolver : IDisposable
         return signature;
     }
 
-    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, int maximumStackDepth = 10)
+    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, int stackSizeInBytes = 0)
     {
         Facade = facade;
         Flags = flags;
         KnowledgeBase = kb;
-        MaximumStackDepth = maximumStackDepth;
+        MaxStackSize = stackSizeInBytes;
         BuiltIns = new();
     }
 
@@ -320,7 +319,7 @@ public partial class ErgoSolver : IDisposable
                 mutexIn.Set();
             }
             mutexIn.Set();
-        }, maxStackSize: MaximumStackDepth * EstimatedStackFrameSizeInBytes);
+        }, maxStackSize: MaxStackSize);
         solveThread.Start();
         while (solveThread.IsAlive)
         {

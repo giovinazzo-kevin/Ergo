@@ -82,7 +82,7 @@ public static class ExceptionUtils
             SolverError.TermNotSufficientlyInstantiated => string.Format("Term not sufficiently instantiated: {0}", args),
             SolverError.KeyNotFound => string.Format("Key {1} not found in: {0}", args),
             SolverError.ExpectedTermOfTypeAt => string.Format("Expected term of type {0}, found: {1}", args),
-            SolverError.StackOverflow => string.Format("Stack overflow in scope: {0}", args),
+            SolverError.StackOverflow => string.Format("Stack overflow", args),
             _ => error.ToString()
         };
 

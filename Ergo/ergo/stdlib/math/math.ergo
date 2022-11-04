@@ -82,12 +82,10 @@ plus(A, B, C) :- \+ground(A), ground(B), ground(C), A := C - B.
 		
 fibonacci(0, 0).
 fibonacci(1, 1).
-fibonacci(N,Result):-fibonacci(N,0,1,Result).
+fibonacci(N,Result) :- fibonacci(N, 0, 1, Result).
 
-fibonacci(0,N,_,N).
-fibonacci(N, Prev1,Prev2,Result):-
-   N>0,
-   fibonacci(:=(N-1),Prev2,:=(Prev1+Prev2),Result).
+fibonacci(0, N, _, N).
+fibonacci(N, Prev1, Prev2, Result):- N > 0, fibonacci(:=(N - 1), Prev2, :=(Prev1 + Prev2), Result).
 
 factorial(N, R) :- factorial(N, 1, R).
 factorial(0, R, R) :- !.

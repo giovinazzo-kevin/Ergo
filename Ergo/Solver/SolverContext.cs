@@ -125,7 +125,7 @@ public sealed class SolverContext
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
-        await foreach (var s in Solve(goal.Goals, scope, ct: ct))
+        await foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
         {
             yield return s;
         }
@@ -137,7 +137,7 @@ public sealed class SolverContext
 
     // This method takes a list of goals and solves them one at a time.
     // The tail of the list is fed back into this method recursively.
-    private async IAsyncEnumerable<Solution> Solve(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         if (query.IsEmpty)
         {
@@ -145,18 +145,27 @@ public sealed class SolverContext
             yield break;
         }
 
+        var tcoSubs = new List<Substitution>();
         var goals = query.Contents;
+    TCO:
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
 
         // Get first solution for the current subgoal
-        await foreach (var s in Solve(subGoal, scope, ct: ct))
+        await foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
-            // Solve the rest of the goal
-            var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
-            await foreach (var ss in Solve(rest, scope, ct: ct))
+            if (s.Scope.Callee.IsTailRecursive)
             {
-                var newSubs = s.Substitutions.Concat(ss.Substitutions).Distinct().ToArray();
+                // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
+                goals = s.Scope.Callee.Body.Contents;
+                tcoSubs.AddRange(s.Substitutions);
+                goto TCO;
+            }
+            // Solve the rest of the goal
+            var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
+            await foreach (var ss in SolveQuery(rest, scope, ct: ct))
+            {
+                var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct().ToArray();
                 var sol = Solution.Success(ss.Scope, newSubs);
                 yield return sol;
             }
@@ -164,10 +173,11 @@ public sealed class SolverContext
     }
 
 
-    private async IAsyncEnumerable<Solution> Solve(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
+
         begin:
         if (goal.IsParenthesized)
             scope = scope.WithChoicePoint();
@@ -180,11 +190,8 @@ public sealed class SolverContext
                 goal = expr.Contents.Single();
                 goto begin; // gotos are used to prevent allocating unnecessary stack frames whenever possible
             }
-            await foreach (var s in Solve(expr, scope, ct: ct))
-            {
+            await foreach (var s in SolveQuery(expr, scope, ct: ct))
                 yield return s;
-            }
-
             yield break;
         }
 
@@ -244,9 +251,14 @@ public sealed class SolverContext
                     .WithCallee(m.Rhs)
                     .WithCaller(scope.Callee)
                     .WithChoicePoint();
+                if (m.Rhs.IsTailRecursive)
+                {
+                    yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions).ToArray());
+                    continue;
+                }
                 var innerContext = ScopedClone();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                var solve = innerContext.Solve(m.Rhs.Body, innerScope, ct: ct);
+                var solve = innerContext.SolveQuery(m.Rhs.Body, innerScope, ct: ct);
                 await foreach (var s in solve)
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);

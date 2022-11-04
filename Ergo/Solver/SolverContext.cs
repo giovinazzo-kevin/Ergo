@@ -125,6 +125,7 @@ public sealed class SolverContext
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
+        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         await foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
         {
             yield return s;
@@ -154,6 +155,7 @@ public sealed class SolverContext
         // Get first solution for the current subgoal
         await foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
+            if (ct.IsCancellationRequested) yield break;
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
@@ -165,6 +167,7 @@ public sealed class SolverContext
             var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
             await foreach (var ss in SolveQuery(rest, scope, ct: ct))
             {
+                if (ct.IsCancellationRequested) yield break;
                 var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct().ToArray();
                 yield return Solution.Success(ss.Scope, newSubs);
             }
@@ -174,7 +177,6 @@ public sealed class SolverContext
 
     private async IAsyncEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
         if (ct.IsCancellationRequested) yield break;
 
         try
@@ -267,7 +269,7 @@ public sealed class SolverContext
                 }
                 var innerContext = ScopedClone();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                var solve = innerContext.SolveQuery(m.Rhs.Body, innerScope, ct: ct);
+                var solve = innerContext.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct);
                 await foreach (var s in solve)
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);

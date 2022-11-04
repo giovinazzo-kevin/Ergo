@@ -16,6 +16,6 @@ It can be used in many different scenarios, and it is very easy to customize and
 It supports automatic marshalling of terms to and from C# types, but it can also work with unmarshalled CLR `objects`.
 
 ## Roadmap
-At the time of writing, Ergo is fully interpreted language with much room for optimization. 
+At the time of writing, Ergo is fully interpreted toy language with much room for optimization. 
 
 For a rough roadmap, please refer to: https://github.com/users/G3Kappa/projects/1/views/1

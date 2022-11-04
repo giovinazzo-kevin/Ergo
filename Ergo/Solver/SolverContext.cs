@@ -95,7 +95,7 @@ public sealed class SolverContext
                 yield break;
             goal.GetQualification(out goal);
             var args = goal.GetArguments();
-            Solver.LogTrace(SolverTraceType.BuiltInResolution, $"{goal.Explain()}", scope.Depth);
+            Solver.LogTrace(SolverTraceType.BuiltInResolution, goal, scope.Depth);
             if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
             {
                 scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(args.Length).Explain());
@@ -161,11 +161,12 @@ public sealed class SolverContext
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
                 goals = s.Scope.Callee.Body.Contents;
                 tcoSubs.AddRange(s.Substitutions);
+                scope = s.Scope;
                 goto TCO;
             }
             // Solve the rest of the goal
             var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
-            await foreach (var ss in SolveQuery(rest, scope, ct: ct))
+            await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
                 var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct().ToArray();
@@ -217,13 +218,12 @@ public sealed class SolverContext
             if (ct.IsCancellationRequested) yield break;
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
-                Solver.LogTrace(SolverTraceType.BuiltInResolution, "⊥", scope.Depth);
+                Solver.LogTrace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False, scope.Depth);
                 yield break;
             }
 
             if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
             {
-                // Solver.LogTrace(SolverTraceType.Return, $"⊤ {{{string.Join("; ", subs.Select(s => s.Explain()))}}}", Scope.Depth);
                 if (exp.Equals(WellKnown.Literals.Cut))
                     scope = scope.WithCut();
 
@@ -264,6 +264,7 @@ public sealed class SolverContext
                     .WithChoicePoint();
                 if (m.Rhs.IsTailRecursive)
                 {
+                    // Yield a "fake" solution to the caller, which will then use it to perform TCO
                     yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions).ToArray());
                     continue;
                 }

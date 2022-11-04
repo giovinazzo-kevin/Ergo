@@ -171,12 +171,12 @@ public partial class ErgoSolver : IDisposable
 
     public async IAsyncEnumerable<Predicate> ExpandPredicate(Predicate p, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        await foreach (var exp in ExpandTerm(p.Head, scope, ct))
+        await foreach (var headExp in ExpandTerm(p.Head, scope, ct))
         {
             yield return new(
                 p.Documentation,
                 p.DeclaringModule,
-                exp,
+                headExp,
                 p.Body,
                 p.IsDynamic,
                 p.IsExported,
@@ -247,7 +247,7 @@ public partial class ErgoSolver : IDisposable
                         continue;
 
                     var pred = Predicate.Substitute(exp.Predicate, subs).Qualified();
-                    LogTrace(SolverTraceType.Expansion, $"{pred.Head.Explain()}", scope.Depth);
+                    LogTrace(SolverTraceType.Expansion, pred.Head, scope.Depth);
                     await foreach (var sol in SolveAsync(new Query(pred.Body), scope, ct))
                     {
                         if (ct.IsCancellationRequested)
@@ -309,8 +309,13 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, term.Explain(), depth);
-    public void LogTrace(SolverTraceType type, string s, int depth = 0) => Trace?.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s}");
+    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, () => term.Explain(), depth);
+    private void LogTrace(SolverTraceType type, Func<string> s, int depth = 0)
+    {
+        if (Trace is null || Trace.GetInvocationList().Length == 0)
+            return;
+        Trace.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s()}");
+    }
 
     public void Dispose()
     {

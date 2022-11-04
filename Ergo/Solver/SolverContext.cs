@@ -140,15 +140,14 @@ public sealed class SolverContext
     // The tail of the list is fed back into this method recursively.
     private async IAsyncEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
+        var tcoSubs = new List<Substitution>();
+    TCO:
         if (query.IsEmpty)
         {
-            yield return Solution.Success(scope);
+            yield return Solution.Success(scope, tcoSubs.ToArray());
             yield break;
         }
-
-        var tcoSubs = new List<Substitution>();
         var goals = query.Contents;
-    TCO:
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
 
@@ -159,13 +158,20 @@ public sealed class SolverContext
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
-                goals = s.Scope.Callee.Body.Contents;
+                query = new(s.Scope.Callee.Body.Contents);
                 tcoSubs.AddRange(s.Substitutions);
                 scope = s.Scope;
                 goto TCO;
             }
             // Solve the rest of the goal
             var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
+            if (scope.Callee.IsTailRecursive)
+            {
+                query = new(rest.Contents);
+                tcoSubs.AddRange(s.Substitutions);
+                scope = s.Scope;
+                goto TCO;
+            }
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;

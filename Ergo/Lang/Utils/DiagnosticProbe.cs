@@ -42,7 +42,7 @@ public sealed class DiagnosticProbe : IDisposable
     public void Dispose()
     {
         if (_data.FirstOrDefault(d => d.Value.Hits != d.Value.Leaves || d.Value.Recursion != 0) is { Key: { } } item)
-            throw new InvalidOperationException($"{item.Key}: {item.Value}");
+            throw new InternalErgoException($"{item.Key}: {item.Value}");
     }
 
     public string GetDiagnostics()

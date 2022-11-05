@@ -219,7 +219,7 @@ public partial class ErgoInterpreter
             return Maybe<T>.None;
         });
         var userDefinedOps = scope.GetOperators();
-        return new Parsed<T>(Facade, data, onParseFail, userDefinedOps.ToArray())
-            .Value;
+        return scope.ExceptionHandler.TryGet(() => new Parsed<T>(Facade, data, onParseFail, userDefinedOps.ToArray())
+            .Value).Map(x => x);
     }
 }

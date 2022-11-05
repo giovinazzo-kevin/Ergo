@@ -155,16 +155,15 @@ public sealed class SolverContext
         await foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
             if (ct.IsCancellationRequested) yield break;
+            var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
                 scope = s.Scope;
                 tcoSubs.AddRange(s.Substitutions);
-                query = new(s.Scope.Callee.Body.Contents);
+                query = new(s.Scope.Callee.Body.Contents.AddRange(rest.Contents));
                 goto TCO;
             }
-            // Solve the rest of the goal
-            var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
             if (scope.Callee.IsTailRecursive
              || rest.Contents.Length > 0 && scope.Callers.Reverse().Skip(rest.Contents.Length - 1).Take(1).Any(c => Predicate.IsLastCall(rest.Contents.Last(), c.Body)))
             {
@@ -173,6 +172,7 @@ public sealed class SolverContext
                 query = new(rest.Contents);
                 goto TCO;
             }
+            // Solve the rest of the goal
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;

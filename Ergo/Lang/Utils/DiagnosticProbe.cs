@@ -39,10 +39,12 @@ public sealed class DiagnosticProbe : IDisposable
         else throw new InvalidOperationException(callerName);
     }
 
+    private string ExplainCounters(Datum d) => $"{{{d.Counters.Select(kv => $"{kv.Key}={kv.Value}").Join("; ")}}}";
+
     public void Dispose()
     {
         if (_data.FirstOrDefault(d => d.Value.Hits != d.Value.Leaves || d.Value.Recursion != 0) is { Key: { } } item)
-            throw new InternalErgoException($"{item.Key}: {item.Value}");
+            throw new InternalErgoException($"{item.Key}: {{H={item.Value.Hits}; L={item.Value.Leaves}; R={item.Value.Recursion}; T={item.Value.TotalTime}; A={item.Value.AverageTime}; C={ExplainCounters(item.Value)}}}");
     }
 
     public string GetDiagnostics()

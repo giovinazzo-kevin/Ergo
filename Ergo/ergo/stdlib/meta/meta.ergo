@@ -6,7 +6,6 @@
     for/3
 ]).
     
-
 ignore(Goal) :- Goal, !.
 ignore(_).
 

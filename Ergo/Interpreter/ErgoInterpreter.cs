@@ -158,6 +158,7 @@ public partial class ErgoInterpreter
 
         var ctx = new InstantiationContext("L");
         // At this point we can apply local transformations such as those required by tabling
+        // TODO: This needs to happen dynamically for any sort of transformation. Maybe piggyback on expansions?
         foreach (var sig in scope.EntryModule.TabledPredicates)
         {
             var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");

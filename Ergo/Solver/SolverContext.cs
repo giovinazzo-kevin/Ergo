@@ -102,7 +102,7 @@ public sealed class SolverContext
                 yield break;
             }
 
-            await foreach (var eval in builtIn.Apply(this, scope, args))
+            await foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
             {
                 if (ct.IsCancellationRequested)
                     yield break;
@@ -140,6 +140,7 @@ public sealed class SolverContext
     // The tail of the list is fed back into this method recursively.
     private async IAsyncEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
+        var tcoPred = Maybe<Predicate>.None;
         var tcoSubs = new List<Substitution>();
     TCO:
         if (query.IsEmpty)
@@ -162,15 +163,26 @@ public sealed class SolverContext
                 scope = s.Scope;
                 tcoSubs.AddRange(s.Substitutions);
                 query = new(s.Scope.Callee.Body.Contents.AddRange(rest.Contents));
+                tcoPred = s.Scope.Callee;
                 goto TCO;
             }
-            if (scope.Callee.IsTailRecursive
-             || rest.Contents.Length > 0 && scope.Callers.Reverse().Skip(rest.Contents.Length - 1).Take(1).Any(c => Predicate.IsLastCall(rest.Contents.Last(), c.Body)))
+            if (rest.Contents.Length > 0 && tcoPred.TryGetValue(out var p))
             {
-                scope = s.Scope;
-                tcoSubs.AddRange(s.Substitutions);
-                query = new(rest.Contents);
-                goto TCO;
+                var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDefinitionAs(p));
+                if (mostRecentCaller.Equals(p))
+                {
+                    scope = s.Scope;
+                    tcoSubs.AddRange(s.Substitutions);
+                    query = new(rest.Contents);
+                    goto TCO;
+                }
+                else
+                    tcoPred = mostRecentCaller;
+            }
+            if (rest.Contents.Length == 0)
+            {
+                yield return Solution.Success(s.Scope, tcoSubs.Concat(s.Substitutions));
+                continue;
             }
             // Solve the rest of the goal
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
@@ -214,13 +226,9 @@ public sealed class SolverContext
             yield break;
         }
 
-        // If a goal is expanded, all of its possible expansions are enumerated.
-        // If a goal has no expansions, it is returned as-is.
-        var resolveExpansions = Solver.ExpandTerm(goal, scope, ct: ct)
-            // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-            // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-            .SelectMany(exp => ResolveGoal(exp, scope, ct: ct).Select(goal => (exp, goal)));
-        await foreach (var (exp, resolvedGoal) in resolveExpansions)
+        // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
+        // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
+        await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
             if (ct.IsCancellationRequested) yield break;
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
@@ -231,7 +239,7 @@ public sealed class SolverContext
 
             if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
             {
-                if (exp.Equals(WellKnown.Literals.Cut))
+                if (goal.Equals(WellKnown.Literals.Cut))
                     scope = scope.WithCut();
 
                 yield return Solution.Success(scope, resolvedGoal.Substitutions);

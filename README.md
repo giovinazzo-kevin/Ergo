@@ -17,7 +17,7 @@ Example applications include:
 
 - A scripting language for a game that organically "grows" into several domain specific languages for tasks such as layouting, rendering, enemy AI, level generation, etc. 
 - Ergo code is naturally data-driven, a paradigm that's particularly fitting for describing large, detailed systems such as those found in games; 
-- The combination of an extensible syntax and a module system allows for very simple representations of otherwise complex structures at any scale; 
+- The combination of an extensible syntax and a module system allows for domain-specific representations of otherwise complex concepts, at any scale; 
 - The serialization facilities of Ergo can be leveraged to store game data inside knowledge bases, making binary/JSON/XML serialization redundant; 
 - The inference engine of Ergo lets you query and reason about the aforementioned data in a way that's orthogonal and complementary to idiomatic C#;
 - The previous bullet points can be combined to create very smart AIs that are capable of learning by integrating new data into their models of the game world.

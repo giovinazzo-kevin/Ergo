@@ -6,7 +6,7 @@ It supports several advanced features, including:
 - Modules (libraries)
 - Last Call Optimization
 - Tabling (memoization)
-- Goal Expansions (macros)
+- Goal Expansions (macros/term rewriting)
 - C# Data Bindings (marshalling)
 - Unbounded Numeric Types
 

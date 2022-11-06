@@ -20,7 +20,7 @@ Example applications include:
 - The combination of an extensible syntax and a module system allows for domain-specific representations of otherwise complex concepts, at any scale; 
 - The serialization facilities of Ergo can be leveraged to store game data inside knowledge bases, making binary/JSON/XML serialization redundant; 
 - The inference engine of Ergo lets you query and reason about the aforementioned data in a way that's orthogonal and complementary to idiomatic C#;
-- The previous bullet points can be combined to create very smart AIs that are capable of learning by integrating new data into their models of the game world.
+- The previous bullet points can be combined to create smart agents that are capable of learning by integrating new data into their models of the game world.
 
 ## Roadmap
 At the time of writing, Ergo is fully interpreted toy language with much room for optimization. 

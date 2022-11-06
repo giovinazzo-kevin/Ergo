@@ -13,13 +13,13 @@ public readonly partial struct Complex : ITerm
     public readonly bool IsParenthesized { get; }
 
     public readonly Atom Functor;
-    public readonly ITerm[] Arguments;
+    public readonly ImmutableArray<ITerm> Arguments;
     public readonly int Arity => Arguments.Length;
     public readonly Maybe<IAbstractTerm> AbstractForm { get; }
 
     private readonly int HashCode;
 
-    public Complex(Atom functor, params ITerm[] args)
+    public Complex(Atom functor, ImmutableArray<ITerm> args)
     {
         Functor = functor;
         Arguments = args;
@@ -29,8 +29,10 @@ public readonly partial struct Complex : ITerm
         IsParenthesized = false;
         AbstractForm = default;
     }
+    public Complex(Atom functor, params ITerm[] args)
+        : this(functor, args.ToImmutableArray()) { }
 
-    private Complex(Maybe<OperatorAffix> affix, bool parenthesized, Atom functor, Maybe<IAbstractTerm> isAbstract, params ITerm[] args)
+    private Complex(Maybe<OperatorAffix> affix, bool parenthesized, Atom functor, Maybe<IAbstractTerm> isAbstract, ImmutableArray<ITerm> args)
         : this(functor, args)
     {
         Affix = affix;
@@ -42,7 +44,7 @@ public readonly partial struct Complex : ITerm
     public Complex AsParenthesized(bool parens) => new(Affix, parens, Functor, AbstractForm, Arguments);
     public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Affix, IsParenthesized, Functor, abs, Arguments);
     public Complex WithFunctor(Atom functor) => new(Affix, IsParenthesized, functor, AbstractForm, Arguments);
-    public Complex WithArguments(params ITerm[] args) => new(Affix, IsParenthesized, Functor, AbstractForm, args);
+    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Affix, IsParenthesized, Functor, AbstractForm, args);
 
     public string Explain(bool canonical = false)
     {
@@ -82,7 +84,7 @@ public readonly partial struct Complex : ITerm
             newArgs[i] = Arguments[i].Substitute(s);
         }
 
-        return WithArguments(newArgs);
+        return WithArguments(newArgs.ToImmutableArray());
     }
 
     public IEnumerable<Variable> Variables => Arguments.SelectMany(arg => arg.Variables);
@@ -122,7 +124,7 @@ public readonly partial struct Complex : ITerm
         vars ??= new();
         if (AbstractForm.TryGetValue(out var abs))
             return abs.Instantiate(ctx, vars).CanonicalForm;
-        return new Complex(Affix, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToArray());
+        return new Complex(Affix, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
     }
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 

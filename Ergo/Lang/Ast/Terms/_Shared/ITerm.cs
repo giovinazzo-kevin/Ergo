@@ -17,14 +17,14 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         _ => Maybe<Atom>.None
     };
 
-    ITerm[] GetArguments() => this switch
+    ImmutableArray<ITerm> GetArguments() => this switch
     {
         Complex c => c.Arguments,
-        _ => Array.Empty<ITerm>()
+        _ => ImmutableArray.Create<ITerm>()
     };
     public ITerm GetVariant() => this switch
     {
-        Complex c => c.WithArguments(c.Arguments.Select(x => x.GetVariant()).ToArray()),
+        Complex c => c.WithArguments(c.Arguments.Select(x => x.GetVariant()).ToImmutableArray()),
         Variable v => v,
         Atom a => new Variable(a.Explain().ToUpper()),
         var x => x
@@ -78,7 +78,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     ITerm Concat(params ITerm[] next)
     {
         if (this is Complex cplx)
-            return cplx.WithArguments(cplx.Arguments.Concat(next).ToArray());
+            return cplx.WithArguments(cplx.Arguments.AddRange(next));
         if (this is Atom a)
             return new Complex(a, next);
         return this;

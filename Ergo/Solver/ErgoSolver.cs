@@ -41,14 +41,14 @@ public partial class ErgoSolver : IDisposable
         BuiltIns = new();
     }
 
-    public async Task InitializeAsync(InterpreterScope interpreterScope, CancellationToken ct = default)
+    public void Initialize(InterpreterScope interpreterScope)
     {
         _initialized = true;
         var expansions = new Queue<Predicate>();
         var tmpScope = CreateScope(interpreterScope);
         foreach (var pred in KnowledgeBase.ToList())
         {
-            await foreach (var exp in ExpandPredicate(pred, tmpScope, ct))
+            foreach (var exp in ExpandPredicate(pred, tmpScope))
             {
                 if (!exp.Equals(pred))
                     expansions.Enqueue(exp);
@@ -168,65 +168,90 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-
-    public async IAsyncEnumerable<Predicate> ExpandPredicate(Predicate p, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    // See: https://github.com/G3Kappa/Ergo/issues/36
+    public IEnumerable<Predicate> ExpandPredicate(Predicate p, SolverScope scope)
     {
-        await foreach (var headExp in ExpandTerm(p.Head, scope, ct))
+        // Predicates are expanded only once, when they're loaded. The same applies to queries.
+        // Expansions are defined as lambdas that define a predicate and capture one variable:
+        //   - The head of the predicate is matched against the current term; if they unify:
+        //      - The body of the expansion is inserted in the current predicate in a sensible location;
+        //      - Previous references to the term are replaced with references to the captured variable.
+        foreach (var headExp in ExpandTerm(p.Head, scope))
         {
-            yield return new(
-                p.Documentation,
-                p.DeclaringModule,
-                headExp,
-                p.Body,
-                p.IsDynamic,
-                p.IsExported,
-                p.IsTailRecursive
-            );
-        }
-    }
-
-    public async IAsyncEnumerable<ITerm> ExpandTerm(ITerm term, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
-    {
-        var any = false;
-        await foreach (var exp in Inner(term, scope, ct))
-        {
-            any = true;
-            yield return exp;
-        }
-
-        if (any)
-            yield break;
-
-        // If this is a complex term, expand all of its arguments recursively and produce a combination of all solutions
-        if (term is Complex cplx)
-        {
-            var expansions = new List<ITerm>[cplx.Arity];
-            for (var i = 0; i < cplx.Arity; i++)
+            var newHead = headExp.Reduce(e => e.Binding
+                .Select(v => (ITerm)v).GetOr(e.Match), a => a);
+            var headClauses = headExp.Reduce(e => e.Expansion.Contents, _ => ImmutableArray<ITerm>.Empty);
+            var bodyExpansions = new List<Either<ExpansionResult, ITerm>>[p.Body.Contents.Length];
+            for (int i = 0; i < p.Body.Contents.Length; i++)
             {
-                expansions[i] = new();
-                await foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope, ct))
-                    expansions[i].Add(argExp);
+                bodyExpansions[i] = new();
+                foreach (var bodyExp in ExpandTerm(p.Body.Contents[i], scope))
+                    bodyExpansions[i].Add(bodyExp);
+                if (bodyExpansions[i].Count == 0)
+                    bodyExpansions[i].Add(Either<ExpansionResult, ITerm>.FromB(p.Body.Contents[i]));
             }
-
-            var cartesian = expansions.CartesianProduct();
-            foreach (var argList in cartesian)
+            var cartesian = bodyExpansions.CartesianProduct();
+            foreach (var variant in cartesian)
             {
-                any = true;
-                // TODO: This might mess with abstract forms!
-                yield return cplx.WithArguments(argList.ToArray());
+                var newBody = new List<ITerm>();
+                foreach (var clause in variant)
+                {
+                    newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()));
+                    newBody.Add(clause.Reduce(e => e.Binding.Select(x => (ITerm)x).GetOr(e.Match), a => a));
+                }
+                newBody.AddRange(headClauses);
+                yield return new Predicate(
+                    p.Documentation,
+                    p.DeclaringModule,
+                    newHead,
+                    new(newBody),
+                    p.IsDynamic,
+                    p.IsExported
+                );
             }
-
         }
 
-        if (any)
-            yield break;
-
-        yield return term;
-
-        async IAsyncEnumerable<ITerm> Inner(ITerm term, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+        IEnumerable<Either<ExpansionResult, ITerm>> ExpandTerm(ITerm term, SolverScope scope)
         {
-            if (ct.IsCancellationRequested || term is Variable)
+            if (term is Variable)
                 yield break;
+            foreach (var exp in GetExpansions(term, scope)
+                .Select(x => Either<ExpansionResult, ITerm>.FromA(x))
+                .DefaultIfEmpty(Either<ExpansionResult, ITerm>.FromB(term)))
+            {
+                // If this is a complex term, expand all of its arguments recursively and produce a combination of all solutions
+                if (exp.Reduce(e => e.Match, a => a) is Complex cplx)
+                {
+                    var expansions = new List<Either<ExpansionResult, ITerm>>[cplx.Arity];
+                    for (var i = 0; i < cplx.Arity; i++)
+                    {
+                        expansions[i] = new();
+                        foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope))
+                            expansions[i].Add(argExp);
+                        if (expansions[i].Count == 0)
+                            expansions[i].Add(Either<ExpansionResult, ITerm>.FromB(cplx.Arguments[i]));
+                    }
+                    var cartesian = expansions.CartesianProduct();
+                    foreach (var argList in cartesian)
+                    {
+                        // TODO: This might mess with abstract forms!
+                        var newCplx = cplx.WithArguments(argList
+                            .Select(x => x.Reduce(exp => exp.Binding
+                               .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
+                               .ToImmutableArray());
+                        var expClauses = new NTuple(
+                            exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
+                               .Concat(argList.SelectMany(x => x
+                                  .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))));
+                        yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
+                    }
+                }
+                else yield return exp;
+            }
+        }
+
+        IEnumerable<ExpansionResult> GetExpansions(ITerm term, SolverScope scope)
+        {
             var sig = term.GetSignature();
             // Try all modules in import order
             var modules = scope.InterpreterScope.GetVisibleModules();
@@ -237,34 +262,22 @@ public partial class ErgoSolver : IDisposable
                 scope = scope.WithModule(mod.Name);
                 foreach (var exp in expansions)
                 {
-                    // Expansions are defined as a 1ary lambda over a predicate definition.
-                    // The head or body of the predicate MUST reference the lambda variable. (this is already checked by the directive)
-                    // The head of the predicate is unified with the current term, then the body is substituted and solved.
-                    // The lambda argument is unified with the outcome of the expansion and yielded.
-
                     // [Output] >> (head :- body(Output)).
                     if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
                         continue;
-
-                    var pred = Predicate.Substitute(exp.Predicate, subs).Qualified();
-                    LogTrace(SolverTraceType.Expansion, pred.Head, scope.Depth);
-                    await foreach (var sol in SolveAsync(new Query(pred.Body), scope, ct))
+                    var pred = Predicate.Substitute(exp.Predicate, subs);
+                    // Instantiate the OutVariable, but leave the others intact
+                    var vars = new Dictionary<string, Variable>();
+                    foreach (var var in pred.Head.Variables.Concat(pred.Body.CanonicalForm.Variables)
+                        .Where(var => !var.Name.Equals(exp.OutVariable.Name)))
                     {
-                        if (ct.IsCancellationRequested)
-                            yield break;
-
-                        var simple = sol.Simplify();
-                        if (!simple.Links.Value.TryGetValue(exp.OutputVariable, out var expanded))
-                            yield return WellKnown.Literals.Discard;
-                        else yield return expanded;
-
-                        //if (sol.Scope.IsCutRequested)
-                        //    break;
+                        vars[var.Name] = var;
                     }
+                    pred = pred.Instantiate(scope.InstantiationContext, vars);
+                    yield return new(pred.Head, pred.Body, vars[exp.OutVariable.Name]);
                 }
             }
         }
-
     }
 
     /// <summary>
@@ -299,13 +312,16 @@ public partial class ErgoSolver : IDisposable
         {
             if (!Flags.HasFlag(SolverFlags.InitializeAutomatically))
                 throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
-            await InitializeAsync(scope.InterpreterScope, ct);
+            Initialize(scope.InterpreterScope);
         }
-
         var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, WellKnown.Literals.TopLevel, query.Goals, dynamic: true, exported: false, tailRecursive: false);
-        await foreach (var s in new SolverContext(this).SolveAsync(query, scope.WithCallee(topLevel), ct: ct))
+        // Solve all *expansions* of the query
+        foreach (var exp in ExpandPredicate(topLevel, scope))
         {
-            yield return s;
+            await foreach (var s in new SolverContext(this).SolveAsync(query, scope.WithCallee(exp), ct: ct))
+            {
+                yield return s;
+            }
         }
     }
 

@@ -102,7 +102,7 @@ public sealed class SolverContext
                 yield break;
             }
 
-            await foreach (var eval in builtIn.Apply(this, scope, args))
+            await foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
             {
                 if (ct.IsCancellationRequested)
                     yield break;
@@ -214,13 +214,9 @@ public sealed class SolverContext
             yield break;
         }
 
-        // If a goal is expanded, all of its possible expansions are enumerated.
-        // If a goal has no expansions, it is returned as-is.
-        var resolveExpansions = Solver.ExpandTerm(goal, scope, ct: ct)
-            // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-            // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-            .SelectMany(exp => ResolveGoal(exp, scope, ct: ct).Select(goal => (exp, goal)));
-        await foreach (var (exp, resolvedGoal) in resolveExpansions)
+        // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
+        // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
+        await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
             if (ct.IsCancellationRequested) yield break;
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
@@ -231,7 +227,7 @@ public sealed class SolverContext
 
             if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
             {
-                if (exp.Equals(WellKnown.Literals.Cut))
+                if (goal.Equals(WellKnown.Literals.Cut))
                     scope = scope.WithCut();
 
                 yield return Solution.Success(scope, resolvedGoal.Substitutions);

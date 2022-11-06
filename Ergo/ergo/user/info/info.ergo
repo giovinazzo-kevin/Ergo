@@ -1,6 +1,10 @@
 ﻿:- module(info, [
 ]).
 
-wins(paper, rock).
-wins(rock, scissors).
-wins(scissors, paper).
+:- expand([O] >> (culo :- O = ano)).
+:- expand([O] >> (culo :- O = chiappa)).
+:- expand([O] >> (figa :- O = tette)).
+:- expand([O] >> (figa :- O = sesso)).
+:- expand([O] >> (test(X) :- O = tost)).
+
+test :- test(culo), figa, pokemon.

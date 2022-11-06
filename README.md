@@ -1,7 +1,9 @@
-Ergo is a lightweight and extensible Prolog implementation written entirely in C#.
-It is a very young project, so it's neither ISO-compliant nor production-ready. 
+## Design Goals
+Ergo brings logic programming to the .NET world through a lightweight and extensible Prolog implementation written entirely in C#. It is a very young project, so it's neither ISO-compliant nor production-ready. 
 
-It supports several advanced features, including:
+Its main design goal is that of extending the C# language by providing an inference engine that's easy to work with, while being efficient enough to be used in high-demand applications such as games. This focus on inter-operability means that Ergo is extremely easy to extend and tailor to each use case, at the cost of having a reduced feature set.
+
+Ergo supports several advanced features, including:
 
 - Modules (libraries)
 - Last Call Optimization
@@ -9,9 +11,6 @@ It supports several advanced features, including:
 - Goal Expansions (macros/term rewriting)
 - C# Data Bindings (marshalling)
 - Unbounded Numeric Types
-
-## Design Goals
-Ergo brings logic programming to the .NET world through an opinionated Prolog implementation that targets the CLR. Its main design goal is that of extending the C# language by providing an inference engine that's easy to work with, while being efficient enough to be used in high-demand applications such as games. This focus on inter-operability means that Ergo is extremely easy to extend and tailor to each use case, at the cost of having a reduced feature set.
 
 Example applications include: 
 

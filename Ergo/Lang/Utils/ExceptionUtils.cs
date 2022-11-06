@@ -51,12 +51,15 @@ public static class ExceptionUtils
             InterpreterError.UndefinedDirective => string.Format("Undefined directive: {0}", args),
             InterpreterError.ModuleRedefinition => string.Format("Declaration of module {1} would shadow existing declaration: {0}", args),
             InterpreterError.ModuleNameClash => string.Format("Module {0} can't be declared because it would shadow a static module", args),
-            InterpreterError.ExpansionClashWithLiteral => string.Format("Literal {0} can't be declared because it would shadow a built-in literal", args),
-            InterpreterError.ExpansionClash => string.Format("Literal {0} was already declared in this module", args),
-            InterpreterError.LiteralCyclicDefinition => string.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args),
+            InterpreterError.CyclicLiteralDefinition => string.Format("Literal {0} can't be declared as {1} because the definition would be cyclic", args),
             InterpreterError.OperatorClash => string.Format("Operator {0} can't be declared because it would shadow a built-in operator", args),
             InterpreterError.ExpectedTermOfTypeAt => string.Format("Expected term of type {0}, found: {1}", args),
             InterpreterError.ModuleAlreadyImported => string.Format("Module already imported: {0}", args),
+            InterpreterError.ExpansionClashWithLiteral => string.Format("Literal {0} can't be declared because it would shadow a built-in literal", args),
+            InterpreterError.ExpansionClash => string.Format("Literal {0} was already declared in this module", args),
+            InterpreterError.ExpansionLambdaShouldHaveOneVariable => string.Format("Expansion lambda must only capture one variable: {0}", args),
+            InterpreterError.ExpansionBodyMustReferenceHeadVariables => string.Format("Expansion body must reference all variables found in its head: {0}", args),
+            InterpreterError.ExpansionBodyMustReferenceLambdaVariable => string.Format("Expansion body must reference captured lambda variable: {0}", args),
             _ => error.ToString()
         };
 

@@ -10,9 +10,11 @@ public enum InterpreterError
     , OperatorClash
     , ExpansionClashWithLiteral
     , ExpansionLambdaShouldHaveOneVariable
-    , ExpansionIsNotUsingLambdaVariable
+    , ExpansionBodyMustReferenceLambdaVariable
+    , ExpansionBodyMustReferenceHeadVariables
+    , ExpansionHeadCantReferenceLambdaVariable
     , ExpansionClash
-    , LiteralCyclicDefinition
+    , CyclicLiteralDefinition
     , ModuleRedefinition
     , UndefinedDirective
 }

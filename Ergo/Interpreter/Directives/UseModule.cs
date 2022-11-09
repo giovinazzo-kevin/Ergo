@@ -21,7 +21,9 @@ public class UseModule : InterpreterDirective
 
         if (!scope.Modules.TryGetValue(moduleName, out var module))
         {
-            var importScope = scope;
+            var importScope = scope
+                .WithModule(new Module(moduleName, scope.IsRuntime)
+                    .WithImport(scope.Entry));
             if (!interpreter.LoadDirectives(ref importScope, moduleName).TryGetValue(out module))
                 return false;
         }

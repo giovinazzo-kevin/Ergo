@@ -25,8 +25,7 @@ public sealed class SolverTestFixture : IDisposable
             .WithoutSearchDirectories()
             .WithSearchDirectory(testsPath)
             .WithSearchDirectory(stdlibPath)
-            .WithModule(x.EntryModule
-                .WithImport(new("tests")))
+            .WithModule(x.EntryModule)
         );
     }
 

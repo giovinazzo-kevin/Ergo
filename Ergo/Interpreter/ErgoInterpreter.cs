@@ -13,6 +13,7 @@ public partial class ErgoInterpreter
     protected readonly DiagnosticProbe Probe = new();
 
     private readonly Dictionary<Atom, Library> _libraries = new();
+    public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
 
 
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
@@ -99,7 +100,7 @@ public partial class ErgoInterpreter
         {
             linkLibrary = linkedLib;
             foreach (var dir in linkedLib.GetExportedDirectives())
-                visibleDirectives.Add(dir.Signature, dir);
+                visibleDirectives.TryAdd(dir.Signature, dir);
         }
         var directives = program.Directives.Select(d =>
         {
@@ -124,8 +125,8 @@ public partial class ErgoInterpreter
         }
 
         var module = scope.EntryModule
-            .WithProgram(program)
-            .WithLinkedLibrary(linkLibrary);
+            .WithProgram(program);
+
         foreach (Atom import in module.Imports.Contents)
         {
             if (scope.Modules.TryGetValue(import, out var importedModule))

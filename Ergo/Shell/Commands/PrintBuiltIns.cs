@@ -15,6 +15,7 @@ public sealed class PrintBuiltIns : ShellCommand
         var match = m.Groups["term"];
         var builtins = new List<SolverBuiltIn>();
         using var solver = shell.Facade.BuildSolver();
+        var visibleBuiltins = scope.InterpreterScope.GetVisibleBuiltIns();
         if (match?.Success ?? false)
         {
             var parsed = shell.Interpreter.Parse<ITerm>(scope.InterpreterScope, match.Value);
@@ -25,7 +26,7 @@ public sealed class PrintBuiltIns : ShellCommand
                 yield break;
             }
 
-            if (solver.BuiltIns.TryGetValue(term.GetSignature(), out var builtin))
+            if (visibleBuiltins.TryGetValue(term.GetSignature(), out var builtin))
             {
                 builtins.Add(builtin);
             }
@@ -38,7 +39,7 @@ public sealed class PrintBuiltIns : ShellCommand
         }
         else
         {
-            builtins.AddRange(solver.BuiltIns.Values);
+            builtins.AddRange(visibleBuiltins.Values);
         }
 
         var canonicals = builtins

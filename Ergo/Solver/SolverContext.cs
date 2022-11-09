@@ -70,12 +70,14 @@ public sealed class SolverContext
     /// </summary>
     public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
+        var builtins = scope.InterpreterScope.GetVisibleBuiltIns();
+
         var any = false;
         var sig = goal.GetSignature();
         if (!goal.IsQualified)
         {
             // Try resolving the built-in's module automatically
-            foreach (var key in Solver.BuiltIns.Keys)
+            foreach (var key in builtins.Keys)
             {
                 if (!key.Module.TryGetValue(out var module) || !scope.InterpreterScope.IsModuleVisible(module))
                     continue;
@@ -89,7 +91,7 @@ public sealed class SolverContext
             }
         }
 
-        while (Solver.BuiltIns.TryGetValue(sig, out var builtIn) || Solver.BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
+        while (builtins.TryGetValue(sig, out var builtIn) || builtins.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
         {
             if (ct.IsCancellationRequested)
                 yield break;

@@ -1,6 +1,5 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
-using Ergo.Solver.BuiltIns;
 using Ergo.Solver.DataBindings;
 using System.ComponentModel;
 
@@ -11,7 +10,6 @@ public partial class ErgoSolver : IDisposable
     private volatile bool _initialized;
 
     public readonly SolverFlags Flags;
-    public readonly Dictionary<Signature, SolverBuiltIn> BuiltIns;
 
     public readonly ErgoFacade Facade;
     public readonly KnowledgeBase KnowledgeBase;
@@ -38,7 +36,6 @@ public partial class ErgoSolver : IDisposable
         Facade = facade;
         Flags = flags;
         KnowledgeBase = kb;
-        BuiltIns = new();
     }
 
     public void Initialize(InterpreterScope interpreterScope)
@@ -67,11 +64,6 @@ public partial class ErgoSolver : IDisposable
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)
         => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: false, new("K"));
-    public void AddBuiltIn(SolverBuiltIn b)
-    {
-        if (!BuiltIns.TryAdd(b.Signature, b))
-            throw new NotSupportedException("A builtin with the same signature was already added");
-    }
     public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
     public void BindDataSource<T>(DataSource<T> data)

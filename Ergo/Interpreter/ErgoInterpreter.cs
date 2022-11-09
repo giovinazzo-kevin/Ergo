@@ -1,5 +1,5 @@
 ﻿using Ergo.Facade;
-using Ergo.Interpreter.Directives;
+using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Utils;
 using System.IO;
 
@@ -12,24 +12,26 @@ public partial class ErgoInterpreter
 
     protected readonly DiagnosticProbe Probe = new();
 
-    private readonly Dictionary<Signature, InterpreterDirective> _directives = new();
+    private readonly Dictionary<Atom, Library> _libraries = new();
+
+
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
         Flags = flags;
         Facade = facade;
     }
 
-    public void AddDirective(InterpreterDirective d)
+    public void AddLibrary(Library l)
     {
-        if (_directives.ContainsKey(d.Signature))
-            throw new NotSupportedException($"Another directive with the same signature was already added");
-        _directives[d.Signature] = d;
+        if (_libraries.ContainsKey(l.Module))
+            throw new ArgumentException($"A library for module {l.Module} was already added");
+        _libraries[l.Module] = l;
     }
 
     public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
     {
         var watch = Probe.Enter();
-        if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
+        if (scope.GetVisibleDirectives().TryGetValue(d.Body.GetSignature(), out var directive))
         {
             var sig = directive.Signature.Explain();
             var directiveWatch = Probe.Enter(sig);
@@ -68,7 +70,10 @@ public partial class ErgoInterpreter
     }
 
     public Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom module)
-        => LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    {
+        scope = scope.WithCurrentModule(module);
+        return LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    }
     public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
     {
         var watch = Probe.Enter();
@@ -86,11 +91,19 @@ public partial class ErgoInterpreter
             Probe.Leave(watch);
             return default;
         }
-
         parser.Lexer.Seek(pos);
+
+        var linkLibrary = Maybe<Library>.None;
+        var visibleDirectives = scope.GetVisibleDirectives();
+        if (_libraries.TryGetValue(scope.Entry, out var linkedLib))
+        {
+            linkLibrary = linkedLib;
+            foreach (var dir in linkedLib.GetExportedDirectives())
+                visibleDirectives.Add(dir.Signature, dir);
+        }
         var directives = program.Directives.Select(d =>
         {
-            if (_directives.TryGetValue(d.Body.GetSignature(), out var directive))
+            if (visibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
                 return (Ast: d, Builtin: directive, Defined: true);
             return (Ast: d, Builtin: default, Defined: false);
         });
@@ -111,7 +124,8 @@ public partial class ErgoInterpreter
         }
 
         var module = scope.EntryModule
-            .WithProgram(program);
+            .WithProgram(program)
+            .WithLinkedLibrary(linkLibrary);
         foreach (Atom import in module.Imports.Contents)
         {
             if (scope.Modules.TryGetValue(import, out var importedModule))
@@ -132,7 +146,6 @@ public partial class ErgoInterpreter
     {
         if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
             return default;
-
         // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
         foreach (Atom import in module.Imports.Contents)
         {

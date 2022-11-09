@@ -1,4 +1,6 @@
-﻿using Ergo.Lang.Exceptions.Handler;
+﻿using Ergo.Interpreter.Directives;
+using Ergo.Lang.Exceptions.Handler;
+using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter;
 
@@ -84,6 +86,24 @@ public readonly struct InterpreterScope
     public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Entry, Modules, SearchDirectories, IsRuntime, newHandler, KnowledgeBase);
     public InterpreterScope WithoutModules() => new(Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler, null);
     public InterpreterScope WithoutSearchDirectories() => new(Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler, KnowledgeBase);
+
+    public IDictionary<Signature, InterpreterDirective> GetVisibleDirectives()
+    {
+        return GetVisibleModules()
+            .SelectMany(m => m.LinkedLibrary
+                .Select(l => l.GetExportedDirectives())
+                .GetOr(Enumerable.Empty<InterpreterDirective>()))
+            .ToDictionary(x => x.Signature);
+    }
+
+    public IDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns()
+    {
+        return GetVisibleModules()
+            .SelectMany(m => m.LinkedLibrary
+                .Select(l => l.GetExportedBuiltins())
+                .GetOr(Enumerable.Empty<SolverBuiltIn>()))
+            .ToDictionary(x => x.Signature);
+    }
 
     /// <summary>
     /// Returns all operators that are visible from the entry module.

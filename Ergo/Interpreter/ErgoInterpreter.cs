@@ -100,7 +100,8 @@ public partial class ErgoInterpreter
         {
             linkLibrary = linkedLib;
             foreach (var dir in linkedLib.GetExportedDirectives())
-                visibleDirectives.TryAdd(dir.Signature, dir);
+                if (!visibleDirectives.TryAdd(dir.Signature, dir))
+                    break; // This library was already added
         }
         var directives = program.Directives.Select(d =>
         {

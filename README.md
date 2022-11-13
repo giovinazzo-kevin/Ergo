@@ -9,7 +9,7 @@ Ergo supports several advanced features, including:
 - Last Call Optimization
 - Tabling (memoization)
 - Goal Expansions (macros/term rewriting)
-- C# Data Bindings (marshalling of CLR objects to Ergo terms)
+- C# Data Bindings (marshalling of CLR objects to/from Ergo terms)
 - Unbounded Numeric Types
 - Lambdas
 - Abstract Term Parsers (used to implement: Lists, Tuples, Sets, Dicts...)

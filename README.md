@@ -13,6 +13,7 @@ Ergo supports several advanced features, including:
 - Unbounded Numeric Types
 - Lambdas & Higher-Kinded Predicates
 - Abstract Terms & Abstract Term Parsers (for custom types implemented on top of canonical complex terms)
+- Dynamic Predicates
 
 Example applications include: 
 

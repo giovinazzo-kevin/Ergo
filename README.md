@@ -5,7 +5,7 @@ Its main design goal is that of extending the C# language by providing an infere
 
 Ergo supports several advanced features, including:
 
-- Libraries (Entry points for C#/Ergo extensions)
+- Libraries (C# entry points for various Ergo extensions; linked to Ergo modules)
 - Last Call Optimization
 - Tabling (memoization)
 - Goal Expansions (macros/term rewriting)

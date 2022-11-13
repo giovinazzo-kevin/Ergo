@@ -1,14 +1,14 @@
 ﻿using Ergo.Interpreter.Directives;
 using Ergo.Solver.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries;
+namespace Ergo.Interpreter.Libraries.List;
 
-public class Math : Library
+public class List : Library
 {
-    public override Atom Module => WellKnown.Modules.Math;
+    public override Atom Module => WellKnown.Modules.List;
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
-        .Append(new Eval())
-        .Append(new Is())
+        .Append(new Nth0())
+        .Append(new Nth1())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

@@ -1,7 +1,7 @@
 ﻿using Ergo.Interpreter.Directives;
 using Ergo.Solver.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries;
+namespace Ergo.Interpreter.Libraries.Prologue;
 
 public class Prologue : Library
 {

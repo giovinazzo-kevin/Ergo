@@ -1,14 +1,13 @@
 ﻿using Ergo.Interpreter.Directives;
 using Ergo.Solver.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries;
+namespace Ergo.Interpreter.Libraries.Dict;
 
-public class CSharp : Library
+public class Dict : Library
 {
-    public override Atom Module => WellKnown.Modules.CSharp;
+    public override Atom Module => WellKnown.Modules.Dict;
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
-        .Append(new Pull())
-        .Append(new Push())
+        .Append(new DictKeyValue())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

@@ -33,7 +33,7 @@ public readonly struct ErgoFacade
         .AddParsersByReflection(typeof(DictParser).Assembly)
         ;
 
-    private readonly ImmutableHashSet<Library> _libraries = ImmutableHashSet<Library>.Empty;
+    private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
     private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
     private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
     private readonly ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> _dataSinks = ImmutableDictionary<Type, ImmutableHashSet<IDataSink>>.Empty;
@@ -41,7 +41,7 @@ public readonly struct ErgoFacade
 
     public ErgoFacade() { }
 
-    private ErgoFacade(ImmutableHashSet<Library> libs, ImmutableHashSet<ShellCommand> commands, ImmutableDictionary<Type, IAbstractTermParser> parsers, ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> dataSinks, ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> dataSources)
+    private ErgoFacade(ImmutableHashSet<Func<Library>> libs, ImmutableHashSet<ShellCommand> commands, ImmutableDictionary<Type, IAbstractTermParser> parsers, ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> dataSinks, ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> dataSources)
     {
         _libraries = libs;
         _commands = commands;
@@ -50,10 +50,8 @@ public readonly struct ErgoFacade
         _dataSources = dataSources;
     }
 
-    public ErgoFacade AddLibrary(Library lib)
+    public ErgoFacade AddLibrary(Func<Library> lib)
         => new(_libraries.Add(lib), _commands, _parsers, _dataSinks, _dataSources);
-    public ErgoFacade RemoveDirective(Library lib)
-        => new(_libraries.Remove(lib), _commands, _parsers, _dataSinks, _dataSources);
     public ErgoFacade AddCommand(ShellCommand command)
         => new(_libraries, _commands.Add(command), _parsers, _dataSinks, _dataSources);
     public ErgoFacade RemoveCommand(ShellCommand command)
@@ -81,8 +79,7 @@ public readonly struct ErgoFacade
         {
             if (!type.IsAssignableTo(typeof(Library))) continue;
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            var inst = (Library)Activator.CreateInstance(type);
-            newFacade = newFacade.AddLibrary(inst);
+            newFacade = newFacade.AddLibrary(() => (Library)Activator.CreateInstance(type));
         }
 
         return newFacade;
@@ -140,8 +137,8 @@ public readonly struct ErgoFacade
 
     private ErgoInterpreter ConfigureInterpreter(ErgoInterpreter interpreter)
     {
-        foreach (var lib in _libraries)
-            interpreter.AddLibrary(lib);
+        foreach (var createLib in _libraries)
+            interpreter.AddLibrary(createLib());
         return interpreter;
     }
 

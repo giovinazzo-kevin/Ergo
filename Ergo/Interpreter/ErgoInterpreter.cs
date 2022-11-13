@@ -15,11 +15,13 @@ public partial class ErgoInterpreter
     private readonly Dictionary<Atom, Library> _libraries = new();
     public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
 
+    public event Func<ErgoInterpreter, InterpreterScope, InterpreterScope> ModuleLoaded;
 
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
         Flags = flags;
         Facade = facade;
+
     }
 
     public void AddLibrary(Library l)
@@ -171,41 +173,12 @@ public partial class ErgoInterpreter
         stream.Dispose();
         scope = scope.WithModule(module = module.WithProgram(program));
 
-        var ctx = new InstantiationContext("L");
-        // At this point we can apply local transformations such as those required by tabling
-        // TODO: This needs to happen dynamically for any sort of transformation. Maybe piggyback on expansions?
-        foreach (var sig in scope.EntryModule.TabledPredicates)
-        {
-            var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");
-            var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));
-            var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(scope.Entry);
-
-            var tblPred = new Predicate(
-                "(auto-generated auxilliary predicate for tabling)",
-                scope.Entry,
-                anon,
-                new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }),
-                true,
-                true
-            );
-
-            foreach (var match in scope.KnowledgeBase.GetMatches(ctx, anon.Qualified(scope.Entry), desugar: false))
-            {
-                match.Rhs.Head.GetQualification(out var head);
-                var auxPred = new Predicate(
-                    match.Rhs.Documentation,
-                    match.Rhs.DeclaringModule,
-                    head.WithFunctor(auxFunctor),
-                    match.Rhs.Body,
-                    match.Rhs.IsDynamic,
-                    false
-                );
-                var check = program.KnowledgeBase.Retract(head);
-                program.KnowledgeBase.AssertZ(auxPred);
-            }
-            program.KnowledgeBase.AssertZ(tblPred);
-            scope = scope.WithModule(module = module.WithProgram(program));
-        }
+        // Invoke ModuleLoaded so that libraries can, e.g., rewrite predicates
+        scope = ModuleLoaded?
+            .GetInvocationList()
+            .Cast<Func<ErgoInterpreter, InterpreterScope, InterpreterScope>>()
+            .Aggregate(scope, (a, f) => f(this, a))
+            ?? scope;
 
         return module;
     }

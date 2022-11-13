@@ -14,6 +14,10 @@ public abstract class Library
     {
 
     }
+
+    protected virtual InterpreterScope Interpreter_OnModuleLoaded(ErgoInterpreter interpreter, InterpreterScope scope)
+        => scope;
+
     internal void Load(ErgoSolver solver, ref SolverScope scope)
     {
         OnLoaded(solver, ref scope);

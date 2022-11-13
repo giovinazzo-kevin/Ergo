@@ -1,4 +1,5 @@
-﻿using Ergo.Facade;
+﻿using Ergo.Events.Interpreter;
+using Ergo.Facade;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Utils;
 using System.IO;
@@ -14,8 +15,6 @@ public partial class ErgoInterpreter
 
     private readonly Dictionary<Atom, Library> _libraries = new();
     public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
-
-    public event Func<ErgoInterpreter, InterpreterScope, InterpreterScope> ModuleLoaded;
 
     internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
     {
@@ -174,12 +173,9 @@ public partial class ErgoInterpreter
         scope = scope.WithModule(module = module.WithProgram(program));
 
         // Invoke ModuleLoaded so that libraries can, e.g., rewrite predicates
-        scope = ModuleLoaded?
-            .GetInvocationList()
-            .Cast<Func<ErgoInterpreter, InterpreterScope, InterpreterScope>>()
-            .Aggregate(scope, (a, f) => f(this, a))
-            ?? scope;
-
+        scope = scope
+            .ForwardEventToLibraries(new ModuleLoadedEvent(this, scope))
+            .Arg;
         return module;
     }
 

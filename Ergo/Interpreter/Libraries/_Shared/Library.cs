@@ -1,5 +1,5 @@
-﻿using Ergo.Interpreter.Directives;
-using Ergo.Solver;
+﻿using Ergo.Events;
+using Ergo.Interpreter.Directives;
 using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries;
@@ -10,16 +10,6 @@ public abstract class Library
     public abstract Atom Module { get; }
     public abstract IEnumerable<InterpreterDirective> GetExportedDirectives();
     public abstract IEnumerable<SolverBuiltIn> GetExportedBuiltins();
-    protected virtual void OnLoaded(ErgoSolver solver, ref SolverScope scope)
-    {
+    public virtual void OnErgoEvent(ErgoEvent evt) { }
 
-    }
-
-    protected virtual InterpreterScope Interpreter_OnModuleLoaded(ErgoInterpreter interpreter, InterpreterScope scope)
-        => scope;
-
-    internal void Load(ErgoSolver solver, ref SolverScope scope)
-    {
-        OnLoaded(solver, ref scope);
-    }
 }

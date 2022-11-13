@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver;
+﻿using Ergo.Solver;
+
+namespace Ergo.Interpreter.Libraries.Meta;
 
 public sealed class MemoizationTable
 {

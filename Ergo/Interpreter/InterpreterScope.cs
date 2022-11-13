@@ -1,4 +1,6 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Events;
+using Ergo.Interpreter.Directives;
+using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Exceptions.Handler;
 using Ergo.Solver.BuiltIns;
 
@@ -86,6 +88,24 @@ public readonly struct InterpreterScope
     public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Entry, Modules, SearchDirectories, IsRuntime, newHandler, KnowledgeBase);
     public InterpreterScope WithoutModules() => new(Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler, null);
     public InterpreterScope WithoutSearchDirectories() => new(Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler, KnowledgeBase);
+
+    public T GetLibrary<T>(Atom module) where T : Library => Modules[module].LinkedLibrary
+        .GetOrThrow(new ArgumentException(null, nameof(module)))
+        as T;
+
+    public IDictionary<Atom, Library> GetVisibleLibraries() => GetVisibleModules()
+            .Select(m => (HasValue: m.LinkedLibrary.TryGetValue(out var lib), Value: lib))
+            .Where(x => x.HasValue)
+            .Select(x => x.Value)
+        .ToDictionary(l => l.Module);
+
+    public T ForwardEventToLibraries<T>(T e)
+        where T : ErgoEvent
+    {
+        foreach (var lib in GetVisibleLibraries().Values)
+            lib.OnErgoEvent(e);
+        return e;
+    }
 
     public IDictionary<Signature, InterpreterDirective> GetVisibleDirectives()
     {

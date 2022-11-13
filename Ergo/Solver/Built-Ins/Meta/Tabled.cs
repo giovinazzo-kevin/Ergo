@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Interpreter.Libraries.Meta;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Tabled : SolverBuiltIn
 {
@@ -26,15 +28,16 @@ public sealed class Tabled : SolverBuiltIn
          *     
          * Therefore args[0] is the rewritten goal that should be memoized.
          */
-
+        var memoContext = scope.InterpreterScope.GetLibrary<Meta>(WellKnown.Modules.Meta)
+            .GetMemoizationContext(context);
         // The first call for a given tabled goal is dubbed the 'pioneer'.
         args[0].GetQualification(out var variant);
-        if (!context.GetPioneer(variant).TryGetValue(out var pioneer))
+        if (!memoContext.GetPioneer(variant).TryGetValue(out var pioneer))
         {
-            context.MemoizePioneer(pioneer = variant);
+            memoContext.MemoizePioneer(pioneer = variant);
             await foreach (var sol in context.SolveAsync(new(args), scope))
             {
-                context.MemoizeSolution(pioneer, sol);
+                memoContext.MemoizeSolution(pioneer, sol);
                 yield return True(sol.Substitutions);
             }
         }
@@ -42,7 +45,7 @@ public sealed class Tabled : SolverBuiltIn
         else
         {
             var any = false;
-            foreach (var sol in context.GetSolutions(pioneer))
+            foreach (var sol in memoContext.GetSolutions(pioneer))
             {
                 pioneer.Substitute(sol.Substitutions).Unify(variant).TryGetValue(out var subs);
                 yield return True(subs);

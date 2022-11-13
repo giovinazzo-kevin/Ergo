@@ -1,68 +1,23 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.Events.Solver;
+using Ergo.Interpreter;
+using Ergo.Solver.BuiltIns;
 using System.Runtime.ExceptionServices;
 
 namespace Ergo.Solver;
 
 // TODO: Build a stack-based system that supports last call optimization
-public sealed class SolverContext
+public sealed class SolverContext : IDisposable
 {
     private readonly CancellationTokenSource ChoicePointCts = new();
     private readonly CancellationTokenSource ExceptionCts = new();
 
-    private Dictionary<ITerm, MemoizationTable> MemoizationTable = new();
-
+    public readonly InterpreterScope InterpreterScope;
     public readonly ErgoSolver Solver;
 
-    internal SolverContext(ErgoSolver solver) => Solver = solver;
-
-    public SolverContext ScopedClone()
+    internal SolverContext(ErgoSolver solver, InterpreterScope scope)
     {
-        var ret = new SolverContext(Solver);
-        ret.MemoizationTable = MemoizationTable;
-        return ret;
-    }
-
-    public void MemoizePioneer(ITerm pioneer)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out _))
-            MemoizationTable[pioneer] = new();
-        else throw new InvalidOperationException();
-    }
-
-    public void MemoizeFollower(ITerm pioneer, ITerm follower)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        tbl.Followers.Add(follower);
-    }
-
-    public void MemoizeSolution(ITerm pioneer, Solution sol)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        tbl.Solutions.Add(sol);
-    }
-
-    public Maybe<ITerm> GetPioneer(ITerm variant)
-    {
-        var key = MemoizationTable.Keys.FirstOrDefault(k => variant.IsVariantOf(k));
-        if (key != null)
-            return Maybe.Some(key);
-        return default;
-    }
-
-    public IEnumerable<ITerm> GetFollowers(ITerm pioneer)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        return tbl.Followers;
-    }
-
-    public IEnumerable<Solution> GetSolutions(ITerm pioneer)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        return tbl.Solutions;
+        Solver = solver;
+        (InterpreterScope = scope).ForwardEventToLibraries(new SolverContextCreatedEvent(this));
     }
 
     /// <summary>
@@ -285,20 +240,25 @@ public sealed class SolverContext
                     yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
                     continue;
                 }
-                var innerContext = ScopedClone();
+                using var innerCtx = new SolverContext(Solver, scope.InterpreterScope);
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                var solve = innerContext.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct);
+                var solve = innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct);
                 await foreach (var s in solve)
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                     yield return Solution.Success(s.Scope, s.Substitutions.Concat(m.Substitutions.Concat(resolvedGoal.Substitutions)));
                 }
-                if (innerContext.ChoicePointCts.IsCancellationRequested)
+                if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;
-                if (innerContext.ExceptionCts.IsCancellationRequested)
+                if (innerCtx.ExceptionCts.IsCancellationRequested)
                     ExceptionCts.Cancel(false);
 
             }
         }
+    }
+
+    public void Dispose()
+    {
+        InterpreterScope.ForwardEventToLibraries(new SolverContextDisposedEvent(this));
     }
 }

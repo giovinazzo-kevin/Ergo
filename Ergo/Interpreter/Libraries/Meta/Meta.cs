@@ -1,11 +1,38 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Events;
+using Ergo.Events.Interpreter;
+using Ergo.Events.Solver;
+using Ergo.Interpreter.Directives;
+using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries;
+namespace Ergo.Interpreter.Libraries.Meta;
 
 public class Meta : Library
 {
     public override Atom Module => WellKnown.Modules.Meta;
+
+    protected readonly Dictionary<SolverContext, MemoizationContext> MemoizationContextTable = new();
+
+    public MemoizationContext GetMemoizationContext(SolverContext ctx)
+    {
+        if (!MemoizationContextTable.TryGetValue(ctx, out var ret))
+            throw new ArgumentException(null, nameof(ctx));
+        return ret;
+    }
+
+    public void DestroyMemoizationContext(SolverContext ctx)
+    {
+        if (!MemoizationContextTable.Remove(ctx))
+            throw new ArgumentException(null, nameof(ctx));
+    }
+
+    public void CreateMemoizationContext(SolverContext ctx)
+    {
+        if (MemoizationContextTable.ContainsKey(ctx))
+            throw new ArgumentException(null, nameof(ctx));
+        MemoizationContextTable[ctx] = new();
+    }
+
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
         .Append(new BagOf())
         .Append(new Call())
@@ -18,10 +45,21 @@ public class Meta : Library
         .Append(new DeclareTabledPredicate())
         ;
 
-    protected override InterpreterScope Interpreter_OnModuleLoaded(ErgoInterpreter _, InterpreterScope scope)
+    public override void OnErgoEvent(ErgoEvent e)
     {
-        TransformTabledPredicates(ref scope);
-        return scope;
+        if (e is ModuleLoadedEvent { Arg: var scope })
+        {
+            TransformTabledPredicates(ref scope);
+            e.Arg = scope; // Update the scope
+        }
+        else if (e is SolverContextCreatedEvent { Arg: var mCtx1 })
+        {
+            CreateMemoizationContext(mCtx1);
+        }
+        else if (e is SolverContextDisposedEvent { Arg: var mCtx2 })
+        {
+            DestroyMemoizationContext(mCtx2);
+        }
 
         static void TransformTabledPredicates(ref InterpreterScope scope)
         {

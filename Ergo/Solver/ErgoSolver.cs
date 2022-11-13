@@ -190,7 +190,7 @@ public partial class ErgoSolver : IDisposable
         {
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
             var newPred = Predicate.Substitute(exp.Rhs, exp.Substitutions.Select(x => x.Inverted()));
-            await foreach (var s in ctx.SolveAsync(new(newPred.Body), scope.WithCallee(exp.Rhs), ct: ct))
+            await foreach (var s in ctx.SolveAsync(new(newPred.Body), scope.WithCallee(newPred), ct: ct))
             {
                 yield return s;
             }

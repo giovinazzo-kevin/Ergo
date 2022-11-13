@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Interpreter.Libraries;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -9,9 +10,8 @@ public readonly struct Module
     public readonly List Exports;
     public readonly List Imports;
     public readonly ImmutableArray<Operator> Operators;
-    public readonly ImmutableDictionary<Signature, ImmutableArray<Expansion>> Expansions;
     public readonly ImmutableHashSet<Signature> DynamicPredicates;
-    public readonly ImmutableHashSet<Signature> TabledPredicates;
+    public readonly Maybe<Library> LinkedLibrary;
     public readonly ErgoProgram Program;
     public readonly bool IsRuntime;
 
@@ -21,11 +21,9 @@ public readonly struct Module
               List.Empty,
               List.Empty,
               ImmutableArray<Operator>.Empty,
-              ImmutableDictionary<Signature,
-              ImmutableArray<Expansion>>.Empty,
-              ImmutableHashSet<Signature>.Empty,
               ImmutableHashSet<Signature>.Empty,
               ErgoProgram.Empty(name),
+              default,
               runtime
             )
     {
@@ -37,10 +35,9 @@ public readonly struct Module
         List import,
         List export,
         ImmutableArray<Operator> operators,
-        ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals,
         ImmutableHashSet<Signature> dynamicPredicates,
-        ImmutableHashSet<Signature> tabledPredicates,
         ErgoProgram program,
+        Maybe<Library> linkedLibrary,
         bool runtime = false
     )
     {
@@ -48,11 +45,10 @@ public readonly struct Module
         Imports = import;
         Exports = export;
         Operators = operators;
-        Expansions = literals;
         Program = program;
         IsRuntime = runtime;
         DynamicPredicates = dynamicPredicates;
-        TabledPredicates = tabledPredicates;
+        LinkedLibrary = linkedLibrary;
     }
 
     public string Explain()
@@ -61,28 +57,15 @@ public readonly struct Module
         return expl;
     }
 
-    public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, Expansions, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, Expansions, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, Expansions, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), Expansions, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), Expansions, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    public Module WithExpansions(ImmutableDictionary<Signature, ImmutableArray<Expansion>> literals) => new(Name, Imports, Exports, Operators, literals, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    public Module WithExpansion(Variable outVar, Predicate pred)
-    {
-        var signature = pred.Head.GetSignature();
-        if (!Expansions.TryGetValue(signature, out var arr))
-        {
-            arr = ImmutableArray<Expansion>.Empty;
-        }
-
-        var newLiterals = Expansions.SetItem(signature, arr.Add(new Expansion(outVar, pred)));
-        return new(Name, Imports, Exports, Operators, newLiterals, DynamicPredicates, TabledPredicates, Program, IsRuntime);
-    }
-    public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Expansions, predicates, TabledPredicates, Program, IsRuntime);
-    public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates.Add(predicate.WithModule(Name)), TabledPredicates, Program, IsRuntime);
-    public Module WithTabledPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, predicates, Program, IsRuntime);
-    public Module WithTabledPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, TabledPredicates.Add(predicate.WithModule(Name)), Program, IsRuntime);
-    public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, Expansions, DynamicPredicates, TabledPredicates, p, IsRuntime);
+    public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Add(import)), Exports, Operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime);
+    public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime);
+    public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime);
+    public Module WithoutOperator(OperatorAffix affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Affix == affix && op.Synonyms.SequenceEqual(synonyms)), DynamicPredicates, Program, LinkedLibrary, IsRuntime);
+    public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), DynamicPredicates, Program, LinkedLibrary, IsRuntime);
+    public Module WithDynamicPredicates(ImmutableHashSet<Signature> predicates) => new(Name, Imports, Exports, Operators, predicates, Program, LinkedLibrary, IsRuntime);
+    public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, DynamicPredicates.Add(predicate.WithModule(Name)), Program, LinkedLibrary, IsRuntime);
+    public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, DynamicPredicates, p, LinkedLibrary, IsRuntime);
+    public Module WithLinkedLibrary(Maybe<Library> lib) => new(Name, Imports, Exports, Operators, DynamicPredicates, Program, lib, IsRuntime);
 
     public bool ContainsExport(Signature sign)
     {

@@ -50,10 +50,17 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             // if head is in the form predicate/arity (or its built-in equivalent),
             // do some syntactic de-sugaring and convert it into an actual anonymous complex
             if (goal is Complex c
-                && WellKnown.Functors.Division.Contains(c.Functor)
-                && c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+                && WellKnown.Functors.Division.Contains(c.Functor))
             {
-                goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
+                if (c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+                {
+                    goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
+                }
+                else if (c.Matches(out var match2, new { Predicate = default(string), Arity = "*" }))
+                {
+                    return Enumerable.Range(0, 16)
+                        .SelectMany(i => GetMatches(ctx, new Atom(match2.Predicate).BuildAnonymousTerm(i), desugar));
+                }
             }
         }
         // Instantiate goal

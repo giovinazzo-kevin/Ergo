@@ -38,7 +38,7 @@ public class DeclareModule : InterpreterDirective
                 .WithExports(exports.Contents)
                 .WithImport(WellKnown.Modules.Stdlib);
         }
-
+        module = module.WithLinkedLibrary(interpreter.GetLibrary(module.Name));
         scope = scope
             .WithModule(module)
             .WithCurrentModule(module.Name);

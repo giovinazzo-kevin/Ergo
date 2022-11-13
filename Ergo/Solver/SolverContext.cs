@@ -1,68 +1,36 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.Events.Solver;
+using Ergo.Interpreter;
+using Ergo.Solver.BuiltIns;
 using System.Runtime.ExceptionServices;
 
 namespace Ergo.Solver;
 
 // TODO: Build a stack-based system that supports last call optimization
-public sealed class SolverContext
+public sealed class SolverContext : IDisposable
 {
+    public readonly SolverContext Parent;
+
     private readonly CancellationTokenSource ChoicePointCts = new();
     private readonly CancellationTokenSource ExceptionCts = new();
 
-    private Dictionary<ITerm, MemoizationTable> MemoizationTable = new();
-
+    public readonly InterpreterScope Scope;
     public readonly ErgoSolver Solver;
 
-    internal SolverContext(ErgoSolver solver) => Solver = solver;
-
-    public SolverContext ScopedClone()
+    private SolverContext(ErgoSolver solver, InterpreterScope scope, SolverContext parent)
     {
-        var ret = new SolverContext(Solver);
-        ret.MemoizationTable = MemoizationTable;
-        return ret;
+        Parent = parent;
+        Solver = solver;
+        (Scope = scope).ForwardEventToLibraries(new SolverContextCreatedEvent(this));
     }
 
-    public void MemoizePioneer(ITerm pioneer)
+    public SolverContext CreateChild() => new(Solver, Scope, this);
+    public static SolverContext Create(ErgoSolver solver, InterpreterScope scope) => new(solver, scope, null);
+    public SolverContext GetRoot()
     {
-        if (!MemoizationTable.TryGetValue(pioneer, out _))
-            MemoizationTable[pioneer] = new();
-        else throw new InvalidOperationException();
-    }
-
-    public void MemoizeFollower(ITerm pioneer, ITerm follower)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        tbl.Followers.Add(follower);
-    }
-
-    public void MemoizeSolution(ITerm pioneer, Solution sol)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        tbl.Solutions.Add(sol);
-    }
-
-    public Maybe<ITerm> GetPioneer(ITerm variant)
-    {
-        var key = MemoizationTable.Keys.FirstOrDefault(k => variant.IsVariantOf(k));
-        if (key != null)
-            return Maybe.Some(key);
-        return default;
-    }
-
-    public IEnumerable<ITerm> GetFollowers(ITerm pioneer)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        return tbl.Followers;
-    }
-
-    public IEnumerable<Solution> GetSolutions(ITerm pioneer)
-    {
-        if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
-            throw new InvalidOperationException();
-        return tbl.Solutions;
+        var root = this;
+        while (root.Parent != null)
+            root = root.Parent;
+        return root;
     }
 
     /// <summary>
@@ -70,12 +38,14 @@ public sealed class SolverContext
     /// </summary>
     public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
+        var builtins = scope.InterpreterScope.GetVisibleBuiltIns();
+
         var any = false;
         var sig = goal.GetSignature();
         if (!goal.IsQualified)
         {
             // Try resolving the built-in's module automatically
-            foreach (var key in Solver.BuiltIns.Keys)
+            foreach (var key in builtins.Keys)
             {
                 if (!key.Module.TryGetValue(out var module) || !scope.InterpreterScope.IsModuleVisible(module))
                     continue;
@@ -89,7 +59,7 @@ public sealed class SolverContext
             }
         }
 
-        while (Solver.BuiltIns.TryGetValue(sig, out var builtIn) || Solver.BuiltIns.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
+        while (builtins.TryGetValue(sig, out var builtIn) || builtins.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
         {
             if (ct.IsCancellationRequested)
                 yield break;
@@ -145,7 +115,7 @@ public sealed class SolverContext
     TCO:
         if (query.IsEmpty)
         {
-            yield return Solution.Success(scope, tcoSubs);
+            yield return new(scope, tcoSubs);
             yield break;
         }
         var goals = query.Contents;
@@ -181,15 +151,14 @@ public sealed class SolverContext
             }
             if (rest.Contents.Length == 0)
             {
-                yield return Solution.Success(s.Scope, tcoSubs.Concat(s.Substitutions));
+                yield return s.PrependSubstitutions(tcoSubs);
                 continue;
             }
             // Solve the rest of the goal
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
-                var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct();
-                yield return Solution.Success(ss.Scope, newSubs);
+                yield return ss.PrependSubstitutions(tcoSubs.Concat(s.Substitutions));
             }
         }
     }
@@ -242,7 +211,7 @@ public sealed class SolverContext
                 if (goal.Equals(WellKnown.Literals.Cut))
                     scope = scope.WithCut();
 
-                yield return Solution.Success(scope, resolvedGoal.Substitutions);
+                yield return new(scope, resolvedGoal.Substitutions);
                 if (scope.IsCutRequested)
                     ChoicePointCts.Cancel(false);
                 continue;
@@ -280,23 +249,27 @@ public sealed class SolverContext
                 if (m.Rhs.IsTailRecursive)
                 {
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
+                    yield return new(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
                     continue;
                 }
-                var innerContext = ScopedClone();
+                using var innerCtx = CreateChild();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                var solve = innerContext.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct);
-                await foreach (var s in solve)
+                await foreach (var s in innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return Solution.Success(s.Scope, s.Substitutions.Concat(m.Substitutions.Concat(resolvedGoal.Substitutions)));
+                    yield return s.AppendSubstitutions(m.Substitutions.Concat(resolvedGoal.Substitutions));
                 }
-                if (innerContext.ChoicePointCts.IsCancellationRequested)
+                if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;
-                if (innerContext.ExceptionCts.IsCancellationRequested)
+                if (innerCtx.ExceptionCts.IsCancellationRequested)
                     ExceptionCts.Cancel(false);
 
             }
         }
+    }
+
+    public void Dispose()
+    {
+        Scope.ForwardEventToLibraries(new SolverContextDisposedEvent(this));
     }
 }

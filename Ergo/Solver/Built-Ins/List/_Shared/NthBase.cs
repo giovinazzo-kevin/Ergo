@@ -1,10 +1,10 @@
 ﻿namespace Ergo.Solver.BuiltIns;
 
-public abstract class Nth : SolverBuiltIn
+public abstract class NthBase : SolverBuiltIn
 {
     public readonly int Offset;
 
-    public Nth(int offset)
+    public NthBase(int offset)
         : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
     public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
@@ -60,6 +60,4 @@ public abstract class Nth : SolverBuiltIn
         yield return False();
     }
 }
-public sealed class Nth0 : Nth { public Nth0() : base(0) { } }
-public sealed class Nth1 : Nth { public Nth1() : base(1) { } }
 

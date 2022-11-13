@@ -11,7 +11,7 @@ Ergo supports several advanced features, including:
 - Goal Expansions (macros/term rewriting)
 - C# Data Bindings (marshalling of CLR objects to/from Ergo terms)
 - Unbounded Numeric Types
-- Lambdas
+- Lambdas & Higher-Kinded Predicates
 - Abstract Term Parsers (used to implement: Lists, Tuples, Sets, Dicts...)
 
 Example applications include: 

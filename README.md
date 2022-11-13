@@ -12,7 +12,7 @@ Ergo supports several advanced features, including:
 - C# Data Bindings (marshalling of CLR objects to/from Ergo terms)
 - Unbounded Numeric Types
 - Lambdas & Higher-Kinded Predicates
-- Abstract Terms & Abstract Term Parsers (direct extensions to Ergo's AST)
+- Abstract Terms & Abstract Term Parsers (custom types implemented on top of canonical complex terms)
 
 Example applications include: 
 

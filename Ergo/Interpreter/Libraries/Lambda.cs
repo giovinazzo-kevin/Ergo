@@ -10,5 +10,6 @@ public class Lambda : Library
         .Append(new Solver.BuiltIns.Lambda())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
+        .Append(new DefineExpansion())
         ;
 }

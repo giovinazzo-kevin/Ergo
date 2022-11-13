@@ -1,4 +1,6 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿using Ergo.Interpreter.Libraries.Meta;
+
+namespace Ergo.Interpreter.Directives;
 
 public class DeclareTabledPredicate : InterpreterDirective
 {
@@ -10,12 +12,9 @@ public class DeclareTabledPredicate : InterpreterDirective
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
         if (!Signature.FromCanonical(args[0], out var sig))
-        {
             sig = args[0].GetSignature();
-        }
-
-        scope = scope.WithModule(scope.EntryModule
-            .WithTabledPredicate(sig));
+        scope.GetLibrary<Meta>(WellKnown.Modules.Meta)
+            .AddTabledPredicate(scope.Entry, sig);
         return true;
     }
 }

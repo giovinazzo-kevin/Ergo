@@ -14,6 +14,5 @@ public class Stdlib : Library
         .Append(new DeclareOperator())
         .Append(new SetModule())
         .Append(new UseModule())
-        .Append(new DefineExpansion())
         ;
 }

@@ -12,12 +12,20 @@ public class Meta : Library
     public override Atom Module => WellKnown.Modules.Meta;
 
     protected readonly Dictionary<SolverContext, MemoizationContext> MemoizationContextTable = new();
+    protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = new();
 
     public MemoizationContext GetMemoizationContext(SolverContext ctx)
     {
         if (!MemoizationContextTable.TryGetValue(ctx.GetRoot(), out var ret))
             throw new ArgumentException(null, nameof(ctx));
         return ret;
+    }
+
+    public void AddTabledPredicate(Atom module, Signature sig)
+    {
+        if (!TabledPredicates.TryGetValue(module, out var sigs))
+            TabledPredicates[module] = sigs = new();
+        sigs.Add(sig);
     }
 
     public void DestroyMemoizationContext(SolverContext ctx)
@@ -62,10 +70,12 @@ public class Meta : Library
             DestroyMemoizationContext(mCtx2);
         }
 
-        static void TransformTabledPredicates(ref InterpreterScope scope)
+        void TransformTabledPredicates(ref InterpreterScope scope)
         {
             var ctx = new InstantiationContext("L");
-            foreach (var sig in scope.EntryModule.TabledPredicates)
+            if (!TabledPredicates.TryGetValue(scope.Entry, out var signatures))
+                return;
+            foreach (var sig in signatures)
             {
                 var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");
                 var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));

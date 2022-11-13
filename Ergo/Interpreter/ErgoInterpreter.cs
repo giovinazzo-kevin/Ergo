@@ -73,11 +73,12 @@ public partial class ErgoInterpreter
 
     public Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom module)
     {
-        scope = scope.WithCurrentModule(module);
         return LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
     }
     public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
     {
+        if (scope.Modules.TryGetValue(scope.Entry, out var m) && m.Program.IsPartial)
+            return m;
         var watch = Probe.Enter();
         var operators = scope.GetOperators();
         var parser = Facade.BuildParser(stream, operators);
@@ -97,6 +98,12 @@ public partial class ErgoInterpreter
 
         var linkLibrary = Maybe<Library>.None;
         var visibleDirectives = scope.GetVisibleDirectives();
+        var directives = program.Directives.Select(d =>
+        {
+            if (visibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
+                return (Ast: d, Builtin: directive, Defined: true);
+            return (Ast: d, Builtin: default, Defined: false);
+        });
         if (_libraries.TryGetValue(scope.Entry, out var linkedLib))
         {
             linkLibrary = linkedLib;
@@ -104,12 +111,6 @@ public partial class ErgoInterpreter
                 if (!visibleDirectives.TryAdd(dir.Signature, dir))
                     break; // This library was already added
         }
-        var directives = program.Directives.Select(d =>
-        {
-            if (visibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
-                return (Ast: d, Builtin: directive, Defined: true);
-            return (Ast: d, Builtin: default, Defined: false);
-        });
         foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
         {
             stream.Dispose();
@@ -129,22 +130,14 @@ public partial class ErgoInterpreter
         var module = scope.EntryModule
             .WithProgram(program);
 
-        foreach (Atom import in module.Imports.Contents)
-        {
-            if (scope.Modules.TryGetValue(import, out var importedModule))
-                continue;
-            var importScope = scope;
-            if (!LoadDirectives(ref importScope, import).TryGetValue(out importedModule))
-                continue;
-            scope = scope.WithModule(importedModule);
-        }
-
         Probe.Leave(watch);
         return module;
     }
 
     public Maybe<Module> Load(ref InterpreterScope scope, Atom module)
-        => Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    {
+        return Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+    }
     public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream)
     {
         if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
@@ -154,7 +147,7 @@ public partial class ErgoInterpreter
         {
             if (scope.Modules[import].Program.IsPartial)
             {
-                var importScope = scope.WithoutModule(import);
+                var importScope = scope.WithCurrentModule(import);
                 if (!Load(ref importScope, import).TryGetValue(out var importModule))
                     return default;
                 scope = scope.WithModule(importModule);

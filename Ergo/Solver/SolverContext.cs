@@ -151,14 +151,14 @@ public sealed class SolverContext : IDisposable
             }
             if (rest.Contents.Length == 0)
             {
-                yield return s.WithSubstitutions(tcoSubs);
+                yield return s.PrependSubstitutions(tcoSubs);
                 continue;
             }
             // Solve the rest of the goal
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
-                yield return ss.WithSubstitutions(tcoSubs.Concat(s.Substitutions));
+                yield return ss.PrependSubstitutions(tcoSubs.Concat(s.Substitutions));
             }
         }
     }
@@ -254,11 +254,10 @@ public sealed class SolverContext : IDisposable
                 }
                 using var innerCtx = CreateChild();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                var solve = innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct);
-                await foreach (var s in solve)
+                await foreach (var s in innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return s.WithSubstitutions(m.Substitutions.Concat(resolvedGoal.Substitutions));
+                    yield return s.AppendSubstitutions(m.Substitutions.Concat(resolvedGoal.Substitutions));
                 }
                 if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;

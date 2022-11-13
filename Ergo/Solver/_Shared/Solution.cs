@@ -13,7 +13,8 @@ public readonly struct Solution
             .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs))), true);
     }
 
-    public Solution WithSubstitutions(IEnumerable<Substitution> subs) => new(Scope, subs.Concat(Substitutions).Distinct());
+    public Solution PrependSubstitutions(IEnumerable<Substitution> subs) => new(Scope, subs.Concat(Substitutions));
+    public Solution AppendSubstitutions(IEnumerable<Substitution> subs) => new(Scope, Substitutions.Concat(subs));
 
     /// <summary>
     /// Applies all redundant substitutions and removes them from the set of returned substitutions.
@@ -23,6 +24,7 @@ public readonly struct Solution
         var answers = new Queue<Substitution>();
         var retry = new Queue<Substitution>();
         var output = new HashSet<Substitution>();
+        subs = subs.Distinct();
         foreach (var s in subs
             .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false)))
             answers.Enqueue(s);

@@ -27,7 +27,7 @@ public class Expansions : Library
             {
                 foreach (var exp in ExpandPredicate(pred, tmpScope))
                 {
-                    if (!exp.Equals(pred))
+                    if (!exp.Head.Equals(pred.Head) || !exp.Body.Contents.SequenceEqual(pred.Body.Contents))
                         expansions.Enqueue(exp);
                 }
                 if (expansions.Count > 0)

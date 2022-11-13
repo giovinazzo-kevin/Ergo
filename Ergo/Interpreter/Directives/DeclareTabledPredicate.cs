@@ -1,4 +1,4 @@
-﻿using Ergo.Interpreter.Libraries.Meta;
+﻿using Ergo.Interpreter.Libraries.Tabling;
 
 namespace Ergo.Interpreter.Directives;
 
@@ -13,7 +13,7 @@ public class DeclareTabledPredicate : InterpreterDirective
     {
         if (!Signature.FromCanonical(args[0], out var sig))
             sig = args[0].GetSignature();
-        scope.GetLibrary<Meta>(WellKnown.Modules.Meta)
+        scope.GetLibrary<Tabling>(WellKnown.Modules.Tabling)
             .AddTabledPredicate(scope.Entry, sig);
         return true;
     }

@@ -1,6 +1,6 @@
 ﻿using Ergo.Solver;
 
-namespace Ergo.Interpreter.Libraries.Meta;
+namespace Ergo.Interpreter.Libraries.Tabling;
 
 public sealed class MemoizationContext
 {

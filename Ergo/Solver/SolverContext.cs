@@ -115,7 +115,7 @@ public sealed class SolverContext : IDisposable
     TCO:
         if (query.IsEmpty)
         {
-            yield return Solution.Success(scope, tcoSubs);
+            yield return new(scope, tcoSubs);
             yield break;
         }
         var goals = query.Contents;
@@ -151,15 +151,14 @@ public sealed class SolverContext : IDisposable
             }
             if (rest.Contents.Length == 0)
             {
-                yield return Solution.Success(s.Scope, tcoSubs.Concat(s.Substitutions));
+                yield return s.WithSubstitutions(tcoSubs);
                 continue;
             }
             // Solve the rest of the goal
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
-                var newSubs = tcoSubs.Concat(s.Substitutions).Concat(ss.Substitutions).Distinct();
-                yield return Solution.Success(ss.Scope, newSubs);
+                yield return ss.WithSubstitutions(tcoSubs.Concat(s.Substitutions));
             }
         }
     }
@@ -212,7 +211,7 @@ public sealed class SolverContext : IDisposable
                 if (goal.Equals(WellKnown.Literals.Cut))
                     scope = scope.WithCut();
 
-                yield return Solution.Success(scope, resolvedGoal.Substitutions);
+                yield return new(scope, resolvedGoal.Substitutions);
                 if (scope.IsCutRequested)
                     ChoicePointCts.Cancel(false);
                 continue;
@@ -250,7 +249,7 @@ public sealed class SolverContext : IDisposable
                 if (m.Rhs.IsTailRecursive)
                 {
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
+                    yield return new(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
                     continue;
                 }
                 using var innerCtx = CreateChild();
@@ -259,7 +258,7 @@ public sealed class SolverContext : IDisposable
                 await foreach (var s in solve)
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return Solution.Success(s.Scope, s.Substitutions.Concat(m.Substitutions.Concat(resolvedGoal.Substitutions)));
+                    yield return s.WithSubstitutions(m.Substitutions.Concat(resolvedGoal.Substitutions));
                 }
                 if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;

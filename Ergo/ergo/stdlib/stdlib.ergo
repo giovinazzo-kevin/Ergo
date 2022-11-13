@@ -1,5 +1,7 @@
 ﻿:- module(stdlib, []).
 :- use_module(prologue).
+:- use_module(expansions).
+:- use_module(tabling).
 :- use_module(lambda).
 :- use_module(math).
 :- use_module(csharp).

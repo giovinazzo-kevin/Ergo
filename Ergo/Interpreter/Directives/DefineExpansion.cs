@@ -1,4 +1,6 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿using Ergo.Interpreter.Libraries.Expansions;
+
+namespace Ergo.Interpreter.Directives;
 
 public class DefineExpansion : InterpreterDirective
 {
@@ -9,9 +11,9 @@ public class DefineExpansion : InterpreterDirective
 
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
-        var allExpansions = scope.GetVisibleModules()
-            .SelectMany(x => x.Expansions)
-            .ToLookup(l => l.Key);
+        var lib = scope.GetLibrary<Expansions>(WellKnown.Modules.Expansions);
+        var visibleModules = scope.GetVisibleModules().Select(x => x.Name).ToHashSet();
+        var allExpansions = lib.GetDefinedExpansions().Where(x => visibleModules.Contains(x.DeclaringModule));
         var signature = args[0].GetSignature();
         if (WellKnown.Functors.Lambda.Contains(signature.Functor) && signature.Arity.GetOr(default) == 2 && args[0] is Complex cplx)
         {
@@ -35,8 +37,7 @@ public class DefineExpansion : InterpreterDirective
                 scope.Throw(InterpreterError.ExpansionBodyMustReferenceHeadVariables, WellKnown.Types.Predicate, pred.Explain(false));
             else
             {
-                scope = scope.WithModule(scope.EntryModule
-                        .WithExpansion(lambdaVariable, pred));
+                lib.AddExpansion(scope.Entry, lambdaVariable, pred);
                 return true;
             }
             return false;

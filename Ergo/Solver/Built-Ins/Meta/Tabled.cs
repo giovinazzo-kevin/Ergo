@@ -1,4 +1,4 @@
-﻿using Ergo.Interpreter.Libraries.Meta;
+﻿using Ergo.Interpreter.Libraries.Tabling;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -28,7 +28,7 @@ public sealed class Tabled : SolverBuiltIn
          *     
          * Therefore args[0] is the rewritten goal that should be memoized.
          */
-        var memoContext = scope.InterpreterScope.GetLibrary<Meta>(WellKnown.Modules.Meta)
+        var memoContext = scope.InterpreterScope.GetLibrary<Tabling>(WellKnown.Modules.Tabling)
             .GetMemoizationContext(context);
         // The first call for a given tabled goal is dubbed the 'pioneer'.
         args[0].GetQualification(out var variant);

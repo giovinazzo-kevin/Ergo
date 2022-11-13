@@ -5,8 +5,15 @@ public readonly struct Solution
     public readonly SolverScope Scope;
     public readonly IEnumerable<Substitution> Substitutions;
     public readonly Lazy<ImmutableDictionary<ITerm, ITerm>> Links;
+    public Solution(SolverScope scope, IEnumerable<Substitution> subs)
+    {
+        Scope = scope;
+        Substitutions = subs;
+        Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty
+            .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs))), true);
+    }
 
-    public static Solution Success(SolverScope scope, IEnumerable<Substitution> subs) => new(scope, subs);
+    public Solution WithSubstitutions(IEnumerable<Substitution> subs) => new(Scope, subs.Concat(Substitutions).Distinct());
 
     /// <summary>
     /// Applies all redundant substitutions and removes them from the set of returned substitutions.
@@ -64,13 +71,5 @@ public readonly struct Solution
             .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))
             .ToArray())
             ;
-    }
-
-    private Solution(SolverScope scope, IEnumerable<Substitution> subs)
-    {
-        Scope = scope;
-        Substitutions = subs;
-        Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty
-            .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs))), true);
     }
 }

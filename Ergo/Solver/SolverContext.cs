@@ -8,16 +8,29 @@ namespace Ergo.Solver;
 // TODO: Build a stack-based system that supports last call optimization
 public sealed class SolverContext : IDisposable
 {
+    public readonly SolverContext Parent;
+
     private readonly CancellationTokenSource ChoicePointCts = new();
     private readonly CancellationTokenSource ExceptionCts = new();
 
-    public readonly InterpreterScope InterpreterScope;
+    public readonly InterpreterScope Scope;
     public readonly ErgoSolver Solver;
 
-    internal SolverContext(ErgoSolver solver, InterpreterScope scope)
+    private SolverContext(ErgoSolver solver, InterpreterScope scope, SolverContext parent)
     {
+        Parent = parent;
         Solver = solver;
-        (InterpreterScope = scope).ForwardEventToLibraries(new SolverContextCreatedEvent(this));
+        (Scope = scope).ForwardEventToLibraries(new SolverContextCreatedEvent(this));
+    }
+
+    public SolverContext CreateChild() => new(Solver, Scope, this);
+    public static SolverContext Create(ErgoSolver solver, InterpreterScope scope) => new(solver, scope, null);
+    public SolverContext GetRoot()
+    {
+        var root = this;
+        while (root.Parent != null)
+            root = root.Parent;
+        return root;
     }
 
     /// <summary>
@@ -240,7 +253,7 @@ public sealed class SolverContext : IDisposable
                     yield return Solution.Success(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
                     continue;
                 }
-                using var innerCtx = new SolverContext(Solver, scope.InterpreterScope);
+                using var innerCtx = CreateChild();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                 var solve = innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct);
                 await foreach (var s in solve)
@@ -259,6 +272,6 @@ public sealed class SolverContext : IDisposable
 
     public void Dispose()
     {
-        InterpreterScope.ForwardEventToLibraries(new SolverContextDisposedEvent(this));
+        Scope.ForwardEventToLibraries(new SolverContextDisposedEvent(this));
     }
 }

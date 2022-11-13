@@ -15,22 +15,23 @@ public class Meta : Library
 
     public MemoizationContext GetMemoizationContext(SolverContext ctx)
     {
-        if (!MemoizationContextTable.TryGetValue(ctx, out var ret))
+        if (!MemoizationContextTable.TryGetValue(ctx.GetRoot(), out var ret))
             throw new ArgumentException(null, nameof(ctx));
         return ret;
     }
 
     public void DestroyMemoizationContext(SolverContext ctx)
     {
-        if (!MemoizationContextTable.Remove(ctx))
+        var root = ctx.GetRoot();
+        if (ctx != root)
+            return;
+        if (!MemoizationContextTable.Remove(root))
             throw new ArgumentException(null, nameof(ctx));
     }
 
-    public void CreateMemoizationContext(SolverContext ctx)
+    public void EnsureMemoizationContext(SolverContext ctx)
     {
-        if (MemoizationContextTable.ContainsKey(ctx))
-            throw new ArgumentException(null, nameof(ctx));
-        MemoizationContextTable[ctx] = new();
+        MemoizationContextTable.TryAdd(ctx.GetRoot(), new());
     }
 
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
@@ -54,7 +55,7 @@ public class Meta : Library
         }
         else if (e is SolverContextCreatedEvent { Arg: var mCtx1 })
         {
-            CreateMemoizationContext(mCtx1);
+            EnsureMemoizationContext(mCtx1);
         }
         else if (e is SolverContextDisposedEvent { Arg: var mCtx2 })
         {

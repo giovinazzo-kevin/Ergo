@@ -310,7 +310,7 @@ public partial class ErgoSolver : IDisposable
         // Solve all *expansions* of the query
         foreach (var exp in ExpandPredicate(topLevel, scope))
         {
-            using var ctx = new SolverContext(this, scope.InterpreterScope);
+            using var ctx = SolverContext.Create(this, scope.InterpreterScope);
             await foreach (var s in ctx.SolveAsync(new(exp.Body), scope.WithCallee(exp), ct: ct))
             {
                 yield return s;

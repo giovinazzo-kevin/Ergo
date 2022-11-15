@@ -26,7 +26,7 @@ public sealed class CommaToList : SolverBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs.ToArray());
+            yield return new(WellKnown.Literals.True, subs);
             yield break;
         }
 
@@ -45,7 +45,7 @@ public sealed class CommaToList : SolverBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs.ToArray());
+            yield return new(WellKnown.Literals.True, subs);
             yield break;
         }
 

@@ -41,7 +41,8 @@ public abstract class NthBase : SolverBuiltIn
                     if (args[2].Unify(elem).TryGetValue(out var subs))
                     {
                         any = true;
-                        yield return True(subs.Prepend(new(args[0], new Atom(i + Offset))).ToArray());
+                        subs.Add(new(args[0], new Atom(i + Offset)));
+                        yield return True(subs);
                     }
                 }
 

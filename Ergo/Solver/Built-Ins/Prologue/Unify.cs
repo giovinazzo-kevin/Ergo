@@ -1,6 +1,4 @@
-﻿using Ergo.Interpreter;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Unify : SolverBuiltIn
 {
@@ -13,7 +11,7 @@ public sealed class Unify : SolverBuiltIn
     {
         if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
         {
-            yield return new(WellKnown.Literals.True, subs.ToArray());
+            yield return new(WellKnown.Literals.True, subs);
         }
         else
         {

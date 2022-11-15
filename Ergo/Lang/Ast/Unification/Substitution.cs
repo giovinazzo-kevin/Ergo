@@ -26,8 +26,9 @@ public readonly struct Substitution
         rhs = Rhs;
     }
 
-    public Maybe<IEnumerable<Substitution>> Unify()
+    public Maybe<SubstitutionMap> Unify()
     {
+        var map = new SubstitutionMap();
         // Set of equality statements
         var E = new List<Substitution>() { this };
         // Set of substitutions
@@ -39,8 +40,8 @@ public readonly struct Substitution
             if (!Unify(x, y))
                 return default;
         }
-
-        return Maybe.Some(S.AsEnumerable());
+        map.AddRange(S);
+        return Maybe.Some(map);
 
         void ApplySubstitution(Substitution s)
         {

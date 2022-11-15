@@ -41,7 +41,7 @@ public sealed class Lambda : SolverBuiltIn
                 yield break;
             }
 
-            var newSubs = rest[i].Unify(list.Contents[i]).GetOr(Enumerable.Empty<Substitution>());
+            var newSubs = rest[i].Unify(list.Contents[i]).GetOr(new SubstitutionMap());
             lambda = lambda.Substitute(newSubs);
         }
 

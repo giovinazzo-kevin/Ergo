@@ -110,9 +110,9 @@ public static class LanguageExtensions
         catch (Exception) { return false; }
     }
 
-    public static Maybe<IEnumerable<Substitution>> Unify(this ITerm a, ITerm b) => new Substitution(a, b).Unify();
+    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b) => new Substitution(a, b).Unify();
 
-    public static Maybe<IEnumerable<Substitution>> Unify(this Predicate predicate, ITerm head)
+    public static Maybe<SubstitutionMap> Unify(this Predicate predicate, ITerm head)
     {
         predicate.Head.GetQualification(out var qv);
         head.GetQualification(out var hv);

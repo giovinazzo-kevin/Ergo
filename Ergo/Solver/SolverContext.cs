@@ -80,7 +80,7 @@ public sealed class SolverContext : IDisposable
                 sig = goal.GetSignature();
                 await foreach (var inner in ResolveGoal(eval.Result, scope, ct))
                 {
-                    yield return new(inner.Result, inner.Substitutions.Concat(eval.Substitutions).Distinct().ToArray());
+                    yield return new(inner.Result, SubstitutionMap.MergeCopy(inner.Substitutions, eval.Substitutions));
                 }
 
                 any = true;
@@ -111,7 +111,7 @@ public sealed class SolverContext : IDisposable
     private async IAsyncEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var tcoPred = Maybe<Predicate>.None;
-        var tcoSubs = new List<Substitution>();
+        var tcoSubs = new SubstitutionMap();
     TCO:
         if (query.IsEmpty)
         {
@@ -151,14 +151,14 @@ public sealed class SolverContext : IDisposable
             }
             if (rest.Contents.Length == 0)
             {
-                yield return s.PrependSubstitutions(tcoSubs);
+                yield return s.AddSubstitutions(tcoSubs);
                 continue;
             }
             // Solve the rest of the goal
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
-                yield return ss.PrependSubstitutions(tcoSubs.Concat(s.Substitutions));
+                yield return ss.AddSubstitutions(SubstitutionMap.MergeCopy(tcoSubs, s.Substitutions));
             }
         }
     }
@@ -249,7 +249,7 @@ public sealed class SolverContext : IDisposable
                 if (m.Rhs.IsTailRecursive)
                 {
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    yield return new(innerScope, m.Substitutions.Concat(resolvedGoal.Substitutions));
+                    yield return new(innerScope, SubstitutionMap.MergeCopy(m.Substitutions, resolvedGoal.Substitutions));
                     continue;
                 }
                 using var innerCtx = CreateChild();
@@ -257,7 +257,7 @@ public sealed class SolverContext : IDisposable
                 await foreach (var s in innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return s.AppendSubstitutions(m.Substitutions.Concat(resolvedGoal.Substitutions));
+                    yield return s.AddSubstitutions(SubstitutionMap.MergeCopy(m.Substitutions, resolvedGoal.Substitutions));
                 }
                 if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;

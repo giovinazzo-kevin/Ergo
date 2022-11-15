@@ -126,7 +126,7 @@ public sealed class SolverContext : IDisposable
         await foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
             if (ct.IsCancellationRequested) yield break;
-            var rest = new NTuple(goals.Select(x => x.Substitute(tcoSubs.Concat(s.Substitutions))));
+            var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.

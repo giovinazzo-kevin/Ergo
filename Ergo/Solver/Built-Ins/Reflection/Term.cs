@@ -23,7 +23,7 @@ public sealed class Term : SolverBuiltIn
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref funSubs, listSubs));
+                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(funSubs, listSubs));
                 yield break;
             }
 
@@ -36,7 +36,7 @@ public sealed class Term : SolverBuiltIn
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref funSubs, listSubs));
+                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(funSubs, listSubs));
                 yield break;
             }
 
@@ -49,7 +49,7 @@ public sealed class Term : SolverBuiltIn
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref funSubs, listSubs));
+                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(funSubs, listSubs));
                 yield break;
             }
         }
@@ -81,7 +81,7 @@ public sealed class Term : SolverBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref argsSubs, subs));
+            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(argsSubs, subs));
         }
         else
         {

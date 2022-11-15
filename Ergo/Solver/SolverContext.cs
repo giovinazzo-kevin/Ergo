@@ -150,7 +150,7 @@ public sealed class SolverContext : IDisposable
             }
             if (rest.Contents.Length == 0)
             {
-                yield return s.AppendSubstitutions(tcoSubs);
+                yield return s.PrependSubstitutions(tcoSubs);
                 continue;
             }
             // Solve the rest of the goal
@@ -158,7 +158,7 @@ public sealed class SolverContext : IDisposable
             {
                 if (ct.IsCancellationRequested) yield break;
                 var lastSubs = SubstitutionMap.MergeCopy(tcoSubs, s.Substitutions);
-                yield return ss.AppendSubstitutions(ref lastSubs);
+                yield return ss.AppendSubstitutions(lastSubs);
             }
         }
     }
@@ -257,7 +257,8 @@ public sealed class SolverContext : IDisposable
                 await foreach (var s in innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    yield return s.PrependSubstitutions(SubstitutionMap.MergeCopy(m.Substitutions, resolvedGoal.Substitutions));
+                    var innerSubs = SubstitutionMap.MergeCopy(m.Substitutions, resolvedGoal.Substitutions);
+                    yield return s.PrependSubstitutions(innerSubs);
                 }
                 if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;

@@ -16,7 +16,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         newMap.AddRange(B);
         return newMap;
     }
-    public static SubstitutionMap MergeRef(ref SubstitutionMap A, SubstitutionMap B)
+    public static SubstitutionMap MergeRef(SubstitutionMap A, SubstitutionMap B)
     {
         A.AddRange(B);
         return A;

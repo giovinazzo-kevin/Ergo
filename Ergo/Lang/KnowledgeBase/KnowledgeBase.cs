@@ -85,7 +85,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 if (predicate.Unify(head).TryGetValue(out var matchSubs))
                 {
                     predicate = Predicate.Substitute(predicate, matchSubs);
-                    yield return new KBMatch(head, predicate, SubstitutionMap.MergeRef(ref matchSubs, subs));
+                    yield return new KBMatch(head, predicate, SubstitutionMap.MergeRef(matchSubs, subs));
                 }
             }
         }

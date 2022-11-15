@@ -36,7 +36,7 @@ public sealed class DictKeyValue : SolverBuiltIn
                     if (s2)
                     {
                         anyValue = true;
-                        yield return True(SubstitutionMap.MergeRef(ref vSubs, subs));
+                        yield return True(SubstitutionMap.MergeRef(vSubs, subs));
                     }
                     else
                     {

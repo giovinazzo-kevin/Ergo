@@ -12,11 +12,8 @@ public readonly struct Solution
         Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty
             .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs))), true);
     }
-
-    // public Solution AddSubstitutions(ref SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(ref subs, Substitutions));
-    public Solution AppendSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeCopy(subs, Substitutions));
-    public Solution PrependSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeCopy(Substitutions, subs));
-    public Solution AppendSubstitutions(ref SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(ref subs, Substitutions));
+    public Solution PrependSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(Substitutions, subs));
+    public Solution AppendSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(subs, Substitutions));
 
     /// <summary>
     /// Applies all redundant substitutions and removes them from the set of returned substitutions.

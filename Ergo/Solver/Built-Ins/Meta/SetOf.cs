@@ -23,7 +23,7 @@ public sealed class SetOf : SolutionAggregationBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref listSubs, instSubs));
+            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(listSubs, instSubs));
             any = true;
         }
 

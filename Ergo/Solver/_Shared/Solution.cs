@@ -4,13 +4,10 @@ public readonly struct Solution
 {
     public readonly SolverScope Scope;
     public readonly SubstitutionMap Substitutions;
-    public readonly Lazy<ImmutableDictionary<ITerm, ITerm>> Links;
     public Solution(SolverScope scope, SubstitutionMap subs)
     {
         Scope = scope;
         Substitutions = subs;
-        Links = new(() => ImmutableDictionary<ITerm, ITerm>.Empty
-            .AddRange(subs.Select(s => new KeyValuePair<ITerm, ITerm>(s.Lhs, s.Rhs))), true);
     }
     public Solution PrependSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(Substitutions, subs));
     public Solution AppendSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(subs, Substitutions));
@@ -18,12 +15,11 @@ public readonly struct Solution
     /// <summary>
     /// Applies all redundant substitutions and removes them from the set of returned substitutions.
     /// </summary>
-    public static IEnumerable<Substitution> Simplify(IEnumerable<Substitution> subs)
+    public static IEnumerable<Substitution> Simplify(SubstitutionMap subs)
     {
         var answers = new Queue<Substitution>();
         var retry = new Queue<Substitution>();
         var output = new HashSet<Substitution>();
-        subs = subs.Distinct();
         foreach (var s in subs
             .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false)))
             answers.Enqueue(s);

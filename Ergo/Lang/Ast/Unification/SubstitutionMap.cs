@@ -6,6 +6,8 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
     private readonly BiMap<ITerm, ITerm> Map = new();
 
+    public ITerm this[ITerm key] => Map[key];
+
     public SubstitutionMap() { }
     public SubstitutionMap(IEnumerable<Substitution> source) { AddRange(source); }
 

@@ -46,18 +46,17 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
         foreach (var sol in solutions
             .Select(sol =>
             {
-                var arg = (Complex)sol.Links.Value[variable];
+                var arg = (Complex)(sol.Substitutions[variable]);
 
                 var argVars = arg.Arguments[0];
                 var argTmpl = arg.Arguments[1];
                 var varTmpl = argTmpl.Variables
                     .ToHashSet();
 
-                var subTmpl = sol.Links.Value
-                    .Where(kv => kv.Key is Variable && kv.Value is Variable)
-                    .Select(kv => (Key: (Variable)kv.Key, Value: (Variable)kv.Value))
-                    .Where(kv => varTmpl.Contains(kv.Value) && !templateVars.Contains(kv.Key) && !freeVars.Contains(kv.Key))
-                    .Select(kv => new Substitution(kv.Key, kv.Value));
+                var subTmpl = sol.Substitutions
+                    .Where(s => s.Lhs is Variable && s.Rhs is Variable)
+                    .Where(s => varTmpl.Contains((Variable)s.Rhs) && !templateVars.Contains((Variable)s.Lhs) && !freeVars.Contains((Variable)s.Lhs))
+                    .Select(s => new Substitution(s.Lhs, s.Rhs));
 
                 argVars = argVars.Substitute(subTmpl);
                 argTmpl = argTmpl.Substitute(subTmpl);

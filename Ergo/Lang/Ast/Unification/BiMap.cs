@@ -7,6 +7,8 @@ public sealed class BiMap<T1, T2> : IEnumerable<KeyValuePair<T1, T2>>
     private readonly Dictionary<T1, T2> Fwd = new();
     private readonly Dictionary<T2, T1> Rev = new();
 
+    public T2 this[T1 key] => Fwd[key];
+
     public void Clear()
     {
         Fwd.Clear();

@@ -1,14 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Specialized;
+﻿using Anvoker.Maps;
+using System.Collections;
 
 namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
-    public int Count { get; private set; }
-
-    private readonly OrderedDictionary Forward = new();
-    private readonly OrderedDictionary Reverse = new();
+    private readonly CompositeBiMap<ITerm, ITerm> Map = new();
 
     public SubstitutionMap() { }
     public SubstitutionMap(IEnumerable<Substitution> source) { AddRange(source); }
@@ -28,9 +25,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Remove(Substitution s)
     {
-        Forward.Remove(s.Lhs);
-        Reverse.Remove(s.Rhs);
-        --Count;
+        Map.Remove(s.Lhs);
     }
 
     public void Add(Substitution s)
@@ -51,10 +46,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         //}
         //else
         {
-            Forward.Add(s.Lhs, s);
-            if (s.Rhs is Variable)
-                Reverse.Add(s.Rhs, s);
-            ++Count;
+            Map.Add(s.Lhs, s.Rhs);
         }
     }
     public void AddRange(IEnumerable<Substitution> source)
@@ -65,14 +57,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public IEnumerator<Substitution> GetEnumerator()
     {
-        return Inner().GetEnumerator();
-        IEnumerable<Substitution> Inner()
-        {
-            for (int i = 0; i < Count; i++)
-            {
-                yield return (Substitution)Forward[i];
-            }
-        }
+        return Map.Select(x => new Substitution(x.Key, x.Value)).GetEnumerator();
     }
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

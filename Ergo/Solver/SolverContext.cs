@@ -157,7 +157,8 @@ public sealed class SolverContext : IDisposable
             await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
-                yield return ss.AppendSubstitutions(SubstitutionMap.MergeCopy(tcoSubs, s.Substitutions));
+                var lastSubs = SubstitutionMap.MergeCopy(tcoSubs, s.Substitutions);
+                yield return ss.AppendSubstitutions(ref lastSubs);
             }
         }
     }

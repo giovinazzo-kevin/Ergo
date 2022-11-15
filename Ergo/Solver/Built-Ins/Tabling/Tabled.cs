@@ -5,7 +5,7 @@ namespace Ergo.Solver.BuiltIns;
 public sealed class Tabled : SolverBuiltIn
 {
     public Tabled()
-        : base("(called by tabled predicates implicitly)", new("tabled"), 1, WellKnown.Modules.Meta)
+        : base("(called by tabled predicates implicitly)", new("tabled"), 1, WellKnown.Modules.Tabling)
     {
     }
 

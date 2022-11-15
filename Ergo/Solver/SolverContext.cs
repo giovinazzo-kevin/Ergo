@@ -47,7 +47,7 @@ public sealed class SolverContext : IDisposable
             // Try resolving the built-in's module automatically
             foreach (var key in builtins.Keys)
             {
-                if (!key.Module.TryGetValue(out var module) || !scope.InterpreterScope.IsModuleVisible(module))
+                if (!key.Module.TryGetValue(out var module))
                     continue;
                 var withoutModule = key.WithModule(default);
                 if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))

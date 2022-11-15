@@ -1,4 +1,7 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Anvoker.Maps;
+using System.Collections;
+
+namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
@@ -47,5 +50,6 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     {
         return Map.Select(x => new Substitution(x.Key, x.Value)).GetEnumerator();
     }
+
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

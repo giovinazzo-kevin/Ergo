@@ -86,14 +86,14 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 
     ITerm Substitute(IEnumerable<Substitution> subs)
     {
-        var steps = subs.ToDictionary(s => s.Lhs);
+        var steps = subs.ToDictionary(s => s.Lhs, s => s.Rhs);
         var variables = Variables.Where(var => steps.ContainsKey(var));
         var @base = this;
         while (variables.Any())
         {
             foreach (var var in variables)
             {
-                @base = @base.Substitute(steps[var]);
+                @base = @base.Substitute(new Substitution(var, steps[var]));
             }
 
             variables = @base.Variables.Where(var => steps.ContainsKey(var));

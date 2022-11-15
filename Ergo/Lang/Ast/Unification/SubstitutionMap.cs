@@ -23,28 +23,19 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         return A;
     }
 
-    public void Remove(Substitution s)
-    {
-        Map.Remove(s.Lhs);
-    }
-
     public void Add(Substitution s)
     {
-        //if (Reverse.TryGetValue(s.Lhs, out var prevLhs))
-        //{
-        //    Reverse.Remove(s.Lhs);
-        //    Forward.Remove(prevLhs);
-        //    Forward.Add(prevLhs, s.Rhs);
-        //    Reverse.Add(s.Rhs, prevLhs);
-        //}
-        //else if (Forward.TryGetValue(s.Rhs, out var prevRhs))
-        //{
-        //    Forward.Remove(s.Rhs);
-        //    Reverse.Remove(prevRhs);
-        //    Forward.Add(s.Lhs, prevRhs);
-        //    Reverse.Add(prevRhs, s.Lhs);
-        //}
-        //else
+        if (Map.GetKeysWithValue(s.Lhs).SingleOrDefault() is { } prevLhs)
+        {
+            Map.Remove(prevLhs);
+            Map.Add(prevLhs, s.Rhs);
+        }
+        else if (s.Rhs is Variable { Ignored: true } && Map.TryGetValue(s.Rhs, out var prevRhs))
+        {
+            Map.Remove(s.Rhs);
+            Map.Add(s.Lhs, prevRhs);
+        }
+        else
         {
             Map.Add(s.Lhs, s.Rhs);
         }

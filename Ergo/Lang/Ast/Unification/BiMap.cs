@@ -7,6 +7,12 @@ public sealed class BiMap<T1, T2> : IEnumerable<KeyValuePair<T1, T2>>
     private readonly Dictionary<T1, T2> Fwd = new();
     private readonly Dictionary<T2, T1> Rev = new();
 
+    public void Clear()
+    {
+        Fwd.Clear();
+        Rev.Clear();
+    }
+
     public void Add(T1 left, T2 right)
     {
         Fwd[left] = right;

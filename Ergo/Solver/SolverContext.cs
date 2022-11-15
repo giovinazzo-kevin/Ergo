@@ -80,7 +80,7 @@ public sealed class SolverContext : IDisposable
                 sig = goal.GetSignature();
                 await foreach (var inner in ResolveGoal(eval.Result, scope, ct))
                 {
-                    yield return new(inner.Result, SubstitutionMap.MergeCopy(inner.Substitutions, eval.Substitutions));
+                    yield return new(inner.Result, SubstitutionMap.MergeRef(inner.Substitutions, eval.Substitutions));
                 }
 
                 any = true;
@@ -249,7 +249,7 @@ public sealed class SolverContext : IDisposable
                 if (m.Rhs.IsTailRecursive)
                 {
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    yield return new(innerScope, SubstitutionMap.MergeCopy(m.Substitutions, resolvedGoal.Substitutions));
+                    yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
                     continue;
                 }
                 using var innerCtx = CreateChild();
@@ -257,7 +257,7 @@ public sealed class SolverContext : IDisposable
                 await foreach (var s in innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
-                    var innerSubs = SubstitutionMap.MergeCopy(m.Substitutions, resolvedGoal.Substitutions);
+                    var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }
                 if (innerCtx.ChoicePointCts.IsCancellationRequested)

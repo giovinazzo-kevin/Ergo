@@ -9,6 +9,11 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     public SubstitutionMap() { }
     public SubstitutionMap(IEnumerable<Substitution> source) { AddRange(source); }
 
+    public void Clear()
+    {
+        Map.Clear();
+    }
+
     public static SubstitutionMap MergeCopy(SubstitutionMap A, SubstitutionMap B)
     {
         var newMap = new SubstitutionMap();

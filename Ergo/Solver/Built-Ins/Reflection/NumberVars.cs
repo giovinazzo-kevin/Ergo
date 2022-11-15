@@ -11,13 +11,13 @@ public sealed class NumberVars : SolverBuiltIn
 
     public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        var allSubs = Enumerable.Empty<Substitution>();
+        var allSubs = new SubstitutionMap();
         var (start, end) = (0, 0);
         if (args[1].Unify(new Atom(start)).TryGetValue(out var subs1))
         {
             if (!args[1].IsGround)
             {
-                allSubs = allSubs.Concat(subs1);
+                allSubs.AddRange(subs1);
             }
         }
         else if (args[1].IsGround && args[1] is Atom { Value: EDecimal d })
@@ -43,13 +43,13 @@ public sealed class NumberVars : SolverBuiltIn
             yield return False();
             yield break;
         }
-        allSubs = allSubs.Concat(subs0);
+        allSubs.AddRange(subs0);
 
         if (args[2].Unify(new Atom(end)).TryGetValue(out var subs2))
         {
             if (!args[2].IsGround)
             {
-                allSubs = allSubs.Concat(subs2);
+                allSubs.AddRange(subs2);
             }
         }
         else if (args[2].IsGround && args[2] is Atom { Value: EDecimal d } && d.ToInt32IfExact() != end)

@@ -1,7 +1,4 @@
-﻿using Ergo.Interpreter;
-using System.Collections.Immutable;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class Unifiable : SolverBuiltIn
 {
@@ -19,7 +16,7 @@ public sealed class Unifiable : SolverBuiltIn
             List list = new(ImmutableArray.CreateRange(equations));
             if (new Substitution(arguments[2], list.CanonicalForm).Unify().TryGetValue(out subs))
             {
-                yield return new(WellKnown.Literals.True, subs.ToArray());
+                yield return new(WellKnown.Literals.True, subs);
                 yield break;
             }
         }

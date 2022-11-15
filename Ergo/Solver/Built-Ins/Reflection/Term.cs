@@ -23,7 +23,7 @@ public sealed class Term : SolverBuiltIn
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
+                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref funSubs, listSubs));
                 yield break;
             }
 
@@ -36,7 +36,7 @@ public sealed class Term : SolverBuiltIn
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
+                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref funSubs, listSubs));
                 yield break;
             }
 
@@ -49,7 +49,7 @@ public sealed class Term : SolverBuiltIn
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, funSubs.Concat(listSubs).ToArray());
+                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref funSubs, listSubs));
                 yield break;
             }
         }
@@ -81,7 +81,7 @@ public sealed class Term : SolverBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs.Concat(argsSubs).ToArray());
+            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref argsSubs, subs));
         }
         else
         {
@@ -91,7 +91,7 @@ public sealed class Term : SolverBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs.ToArray());
+            yield return new(WellKnown.Literals.True, subs);
         }
     }
 }

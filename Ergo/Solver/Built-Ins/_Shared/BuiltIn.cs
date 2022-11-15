@@ -18,8 +18,8 @@ public abstract class SolverBuiltIn
         return False();
     }
     protected Evaluation False() => new(WellKnown.Literals.False);
-    protected Evaluation True(IEnumerable<Substitution> subs) => new(WellKnown.Literals.True, subs.ToArray());
-    protected Evaluation True(params Substitution[] subs) => new(WellKnown.Literals.True, subs);
+    protected Evaluation True(SubstitutionMap subs) => new(WellKnown.Literals.True, subs);
+    protected Evaluation True(Substitution sub) => new(WellKnown.Literals.True, sub);
 
     public abstract IAsyncEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] arguments);
 

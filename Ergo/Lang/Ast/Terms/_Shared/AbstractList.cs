@@ -33,7 +33,7 @@ public abstract class AbstractList : IAbstractTerm
         var joined = Contents.Join(t => t.Explain());
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
-    public virtual Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other)
+    public virtual Maybe<SubstitutionMap> Unify(IAbstractTerm other)
     {
         if (other is not AbstractList list)
             return CanonicalForm.Unify(other.CanonicalForm);

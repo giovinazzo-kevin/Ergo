@@ -19,7 +19,7 @@ public sealed class BagOf : SolutionAggregationBuiltIn
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, listSubs.Concat(instSubs).ToArray());
+            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(ref instSubs, listSubs));
             any = true;
         }
 

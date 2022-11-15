@@ -5,7 +5,7 @@ public interface IAbstractTerm : IExplainable
     ITerm CanonicalForm { get; }
     Signature Signature { get; }
 
-    Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other);
+    Maybe<SubstitutionMap> Unify(IAbstractTerm other);
     IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
     IAbstractTerm Substitute(Substitution s);
 

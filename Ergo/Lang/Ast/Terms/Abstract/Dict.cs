@@ -39,7 +39,7 @@ public sealed class Dict : IAbstractTerm
         return $"{functor}{{{joinedArgs}}}";
     }
 
-    public Maybe<IEnumerable<Substitution>> Unify(IAbstractTerm other)
+    public Maybe<SubstitutionMap> Unify(IAbstractTerm other)
     {
         if (other is not Dict dict)
             return CanonicalForm.Unify(other.CanonicalForm);
@@ -49,9 +49,10 @@ public sealed class Dict : IAbstractTerm
         var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
         if (!set.Any() && dict.Dictionary.Count != 0 && dict.Dictionary.Count != 0)
             return default;
-        return Maybe.Some(set
+        var subs = set
             .Select(key => new Substitution(Dictionary[key], dict.Dictionary[key]))
-            .Prepend(new Substitution(dxFunctor, dyFunctor)));
+            .Prepend(new Substitution(dxFunctor, dyFunctor));
+        return Maybe.Some(new SubstitutionMap(subs));
     }
 
     public IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

@@ -81,14 +81,13 @@ public partial class ErgoShell
     public virtual void Load(ref ShellScope scope, string fileName)
     {
         var copy = scope;
-        //var preds = GetInterpreterPredicates(copy);
-        //var oldPredicates = preds.Count();
+        var numPredsBefore = scope.InterpreterScope.KnowledgeBase.Count;
         var interpreterScope = copy.InterpreterScope;
         var loaded = Interpreter.Load(ref interpreterScope, new Atom(fileName));
         loaded.Do(some =>
         {
-            //var newPredicates = preds.Count();
-            var delta = 0;// newPredicates - oldPredicates;
+            var numPredsAfter = interpreterScope.KnowledgeBase.Count;
+            var delta = numPredsAfter - numPredsBefore;
             WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
             copy = copy.WithInterpreterScope(interpreterScope);
         });

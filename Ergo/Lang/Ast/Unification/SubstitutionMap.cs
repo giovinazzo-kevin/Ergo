@@ -1,7 +1,4 @@
-﻿using Anvoker.Maps;
-using System.Collections;
-
-namespace Ergo.Lang.Ast;
+﻿namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {

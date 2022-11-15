@@ -51,13 +51,16 @@ public sealed class PersonGenerator
 
     public async IAsyncEnumerable<Person> Generate()
     {
-        var gender = Rng.Next(2) == 0 ? "male" : "female";
-        var firstName = gender == "male" ? Choose(MaleNames) : Choose(FemaleNames);
-        var lastName = Choose(LastNames);
-        var email = Rng.Next(2) == 0 ? null : $"{firstName.ToLower()}.{lastName.ToLower()}@company.com";
-        var phone = Rng.Next(2) == 0 ? null : $"+{RandomDigits(2)} {RandomDigits(10)}";
-        var birthDate = DateTime.Now.AddYears(-100 + Rng.Next(81)).AddDays(Rng.Next(366 * 10)).ToShortDateString();
-        yield return new Person(firstName, lastName, email, phone, birthDate, gender);
-        await foreach (var p in Generate()) { yield return p; }
+        while (true)
+        {
+            var gender = Rng.Next(2) == 0 ? "male" : "female";
+            var firstName = gender == "male" ? Choose(MaleNames) : Choose(FemaleNames);
+            var lastName = Choose(LastNames);
+            var email = Rng.Next(2) == 0 ? null : $"{firstName.ToLower()}.{lastName.ToLower()}@company.com";
+            var phone = Rng.Next(2) == 0 ? null : $"+{RandomDigits(2)} {RandomDigits(10)}";
+            var birthDate = DateTime.Now.AddYears(-100 + Rng.Next(81)).AddDays(Rng.Next(366 * 10)).ToShortDateString();
+            yield return new Person(firstName, lastName, email, phone, birthDate, gender);
+            await Task.Delay(100);
+        }
     }
 }

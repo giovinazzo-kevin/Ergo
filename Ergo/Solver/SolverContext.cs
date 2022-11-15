@@ -142,7 +142,6 @@ public sealed class SolverContext : IDisposable
                 if (mostRecentCaller.Equals(p))
                 {
                     scope = s.Scope;
-                    tcoSubs.AddRange(s.Substitutions);
                     query = new(rest.Contents);
                     goto TCO;
                 }

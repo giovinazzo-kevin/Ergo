@@ -35,8 +35,8 @@ public abstract class WriteBuiltIn : SolverBuiltIn
             {
                 var any = false;
                 await foreach (var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
-                    any = true; // Do nothing, the hook is responsible for writing the term at this point.
-                if (any) goto ret;
+                    any = true;
+                if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }
             Console.Write(AsQuoted(arg, Quoted).Explain(Canonical));
         }

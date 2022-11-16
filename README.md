@@ -6,7 +6,7 @@ Its main design goal is that of extending the C# language by providing an infere
 Ergo already supports several advanced features, including:
 
 - Libraries (C# entry points for various Ergo extensions; linked to Ergo modules)
-- Last Call Optimization
+- Tail Call Optimization (for the execution of tail recursive predicates)
 - Tabling (memoization)
 - Predicate Expansions (macros/term rewriting, but slightly more powerful)
 - C# Data Bindings (marshalling of CLR objects to/from Ergo terms)

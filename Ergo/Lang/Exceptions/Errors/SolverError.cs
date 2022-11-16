@@ -8,5 +8,6 @@ public enum SolverError
     , CannotRetractImportedPredicate
     , CannotRetractStaticPredicate
     , UndefinedPredicate
+    , ExpectedNArgumentsGotM
     , StackOverflow
 }

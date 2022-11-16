@@ -2,10 +2,8 @@
 
 namespace Ergo.Interpreter.Libraries;
 
-public sealed class Hook
+public readonly record struct Hook(Signature Signature)
 {
-    public readonly Signature Signature;
-
     public bool IsDefined(SolverContext ctx) => ctx.Solver.KnowledgeBase.Get(Signature).TryGetValue(out _);
 
     public async IAsyncEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args, [EnumeratorCancellation] CancellationToken ct = default)

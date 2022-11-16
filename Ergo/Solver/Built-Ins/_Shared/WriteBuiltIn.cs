@@ -29,8 +29,18 @@ public abstract class WriteBuiltIn : SolverBuiltIn
     {
         // TODO: Move In/Out streams to the interpreter!!
         foreach (var arg in args)
+        {
+            // https://www.swi-prolog.org/pldoc/man?predicate=portray/1
+            if (arg is not Variable && WellKnown.Hooks.IO.Portray_1.IsDefined(context))
+            {
+                var any = false;
+                await foreach (var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
+                    any = true; // Do nothing, the hook is responsible for writing the term at this point.
+                if (any) goto ret;
+            }
             Console.Write(AsQuoted(arg, Quoted).Explain(Canonical));
-
+        }
+    ret:
         yield return new(WellKnown.Literals.True);
     }
 }

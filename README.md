@@ -3,12 +3,12 @@ Ergo brings logic programming to the .NET world through a lightweight and extens
 
 Its main design goal is that of extending the C# language by providing an inference engine that's easy to work with, while being efficient enough to be used in high-demand applications such as games. This focus on inter-operability means that Ergo is extremely easy to extend and tailor to each use case, at the cost of having a reduced feature set.
 
-Ergo supports several advanced features, including:
+Ergo already supports several advanced features, including:
 
 - Libraries (C# entry points for various Ergo extensions; linked to Ergo modules)
 - Last Call Optimization
 - Tabling (memoization)
-- Predicate Expansions (macros/term rewriting)
+- Predicate Expansions (macros/term rewriting, but slightly more powerful)
 - C# Data Bindings (marshalling of CLR objects to/from Ergo terms)
 - Unbounded Numeric Types
 - Lambdas & Higher-Kinded Predicates

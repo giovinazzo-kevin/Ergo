@@ -83,6 +83,7 @@ public readonly struct Predicate : IExplainable
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
         => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)((IAbstractTerm)k.Body).Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive);
 
+    public Predicate WithHead(ITerm newHead) => new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
     public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive);
     public Predicate Dynamic() => new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive);
     public Predicate Exported() => new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive);

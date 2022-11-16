@@ -72,6 +72,8 @@ public readonly struct InterpreterScope
                 foreach (var pred in module.Program.KnowledgeBase)
                 {
                     var newPred = pred.WithModuleName(module.Name);
+                    if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
+                        newPred = newPred.WithModuleName(newModule).WithHead(newHead);
                     if (!pred.IsExported)
                         newPred = newPred.Qualified();
                     KnowledgeBase.AssertZ(newPred);

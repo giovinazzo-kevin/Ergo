@@ -7,22 +7,25 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
     {
     }
 
-    protected static Predicate GetPredicate(SolverScope scope, ITerm arg)
+    protected static Maybe<Predicate> GetPredicate(SolverScope scope, ITerm arg)
     {
         if (!Predicate.FromCanonical(arg, scope.InterpreterScope.Entry, out var pred))
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope.InterpreterScope, WellKnown.Types.Predicate, arg.Explain());
+            scope.InterpreterScope.Throw(InterpreterError.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
+            return default;
         }
 
         pred = pred.Dynamic();
-        if (scope.InterpreterScope.EntryModule.ContainsExport(pred.Head.GetSignature()))
+        if (scope.InterpreterScope.Modules.TryGetValue(pred.DeclaringModule, out var declaringModule) && declaringModule.ContainsExport(pred.Head.GetSignature()))
             pred = pred.Exported();
+
         return pred.Qualified();
     }
 
     protected static bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
     {
-        var pred = GetPredicate(scope, arg);
+        if (!GetPredicate(scope, arg).TryGetValue(out var pred))
+            return false;
         if (!z)
         {
             solver.KnowledgeBase.AssertA(pred);

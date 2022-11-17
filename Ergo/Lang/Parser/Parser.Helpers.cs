@@ -31,7 +31,7 @@ public partial class ErgoParser
             .Or(() => Fail<string>(pos));
     }
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type) => Expect<T>(type, _ => true);
-    protected Maybe<T> Parenthesized<T>(string opening, string closing, Func<Maybe<T>> tryParse)
+    public Maybe<T> Parenthesized<T>(string opening, string closing, Func<Maybe<T>> tryParse)
     {
         var key = $"Parenthesized{opening}{typeof(T).Name}{closing}";
         var watch = Probe.Enter(key);
@@ -97,7 +97,7 @@ public partial class ErgoParser
         Maybe<IEnumerable<ITerm>> Unfold(Maybe<ITerm> term)
         {
             return term
-                .Where(t => t is Complex)
+                .Where(t => t is Complex { IsParenthesized: false })
                 .Select(t => (Complex)t)
                 .Where(c => separator.Synonyms.Contains(c.Functor) && c.Arguments.Length == 2)
                 .Map(c => Unfold(Maybe.Some(c.Arguments[1])).Select(u => u.Prepend(c.Arguments[0])))

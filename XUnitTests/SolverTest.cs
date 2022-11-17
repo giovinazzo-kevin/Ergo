@@ -155,4 +155,15 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
         var f = number < 0 ? WellKnown.Functors.Subtraction.First() : WellKnown.Functors.Addition.First();
         return ShouldParse(query, new Expression(new Complex(f, new Atom(Math.Abs(number))).AsOperator(OperatorAffix.Prefix), InterpreterScope));
     }
+
+    [Fact]
+    public Task ShouldParsePathologicalCases_ParensInArgs1()
+        => ShouldParse("f((V,L,R))",
+            new Complex(new Atom("f"),
+                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }).CanonicalForm.AsParenthesized(true)));
+    [Fact]
+    public Task ShouldParsePathologicalCases_ParensInArgs2()
+        => ShouldParse("f(N, n, (V,L,R))",
+            new Complex(new Atom("f"), new Variable("N"), new Atom("n"),
+                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }).CanonicalForm.AsParenthesized(true)));
 }

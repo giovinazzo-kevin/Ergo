@@ -63,17 +63,11 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 }
             }
         }
-        // Instantiate goal
-        var inst = goal.Instantiate(ctx);
-        if (!inst.Unify(goal).TryGetValue(out var subs))
-            return Enumerable.Empty<KBMatch>();
-
-        var head = goal.Substitute(subs);
         // Return predicate matches
-        if (Get(head.GetSignature()).TryGetValue(out var list))
+        if (Get(goal.GetSignature()).TryGetValue(out var list))
             return Inner(list);
 
-        if (head.IsQualified && head.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
+        if (goal.IsQualified && goal.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
             return Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module));
 
         return Enumerable.Empty<KBMatch>();
@@ -82,10 +76,10 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             foreach (var k in list.ToArray())
             {
                 var predicate = k.Instantiate(ctx);
-                if (predicate.Unify(head).TryGetValue(out var matchSubs))
+                if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                 {
                     predicate = Predicate.Substitute(predicate, matchSubs);
-                    yield return new KBMatch(head, predicate, SubstitutionMap.MergeRef(matchSubs, subs));
+                    yield return new KBMatch(goal, predicate, matchSubs);
                 }
             }
         }
@@ -139,7 +133,6 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             .SelectMany(l => l)
             .GetEnumerator();
     }
-
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 

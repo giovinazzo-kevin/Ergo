@@ -8,7 +8,7 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
     public Maybe<L> Parse(ErgoParser parser)
     {
         var empty = Construct(ImmutableArray<ITerm>.Empty);
-        var ret = parser.Sequence2(
+        var ret = parser.Sequence(
               empty.Functor
             , empty.EmptyElement
             , empty.Braces.Open

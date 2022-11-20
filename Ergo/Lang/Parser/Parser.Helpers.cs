@@ -78,7 +78,7 @@ public partial class ErgoParser
             : Maybe.Some(list.AsEnumerable());
     }
 
-    public Maybe<UntypedSequence> Sequence2(
+    public Maybe<UntypedSequence> Sequence(
         Atom functor,
         Atom emptyElement,
         string openingDelim,
@@ -103,49 +103,5 @@ public partial class ErgoParser
                 .Map(c => Unfold(Maybe.Some(c.Arguments[1])).Select(u => u.Prepend(c.Arguments[0])))
                 .Or(() => term.Select(t => new[] { t }.AsEnumerable()));
         }
-    }
-
-    public Maybe<UntypedSequence> Sequence(
-    Atom functor,
-    Atom emptyElement,
-    Func<Maybe<ITerm>> tryParseElement,
-    string openingDelim,
-    Operator separator,
-    string closingDelim,
-    bool @throw)
-    {
-        var pos = Lexer.State;
-        var args = new List<(ITerm Term, bool Parens)>();
-        if (openingDelim != null)
-        {
-            if (!ExpectDelimiter(p => p == openingDelim).TryGetValue(out _))
-            {
-                return Fail<UntypedSequence>(pos);
-            }
-
-            if (closingDelim != null && ExpectDelimiter(p => p == closingDelim).TryGetValue(out var _))
-            {
-                // Empty list
-                return new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty);
-            }
-        }
-
-        while (tryParseElement().TryGetValue(out var term))
-        {
-            args.Add((term, term.IsParenthesized));
-            if (!ExpectDelimiter(p => true).TryGetValue(out var q) || !separator.Synonyms.Any(s => q.Equals(s.Value)) && q != closingDelim)
-            {
-                if (@throw)
-                    Throw(pos, ErrorType.ExpectedArgumentDelimiterOrClosedParens, separator, closingDelim);
-                return Fail<UntypedSequence>(pos);
-            }
-
-            if (closingDelim != null && q == closingDelim)
-            {
-                break;
-            }
-        }
-
-        return new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(args.Select(a => a.Term)));
     }
 }

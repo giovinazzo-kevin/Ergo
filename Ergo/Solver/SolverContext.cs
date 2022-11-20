@@ -217,25 +217,13 @@ public sealed class SolverContext : IDisposable
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
             var matches = ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope)
                 .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x.Term, desugar: false))
-                .FirstOrDefault(x => x.Any());
-            if (matches is null)
-            {
-                var signature = resolvedGoal.Result.GetSignature();
-                if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
-                    continue;
-                var dyn = scope.InterpreterScope.Modules.Values
-                    .SelectMany(m => m.DynamicPredicates)
-                    .SelectMany(p => new[] { p, p.WithModule(default) })
-                    .ToHashSet();
-                if (dyn.Contains(signature))
-                    continue;
-                if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
-                    scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                ChoicePointCts.Cancel(false);
-                yield break;
-            }
+                .Where(x => x.Any())
+                .Take(1)
+                .SelectMany(m => m);
+            var any = false;
             foreach (var m in matches)
             {
+                any = true;
                 if (ct.IsCancellationRequested)
                     break;
                 // Create a new scope and context for this procedure call, essentially creating a choice point
@@ -259,6 +247,22 @@ public sealed class SolverContext : IDisposable
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }
+            }
+            if (!any)
+            {
+                var signature = resolvedGoal.Result.GetSignature();
+                if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
+                    continue;
+                var dyn = scope.InterpreterScope.Modules.Values
+                    .SelectMany(m => m.DynamicPredicates)
+                    .SelectMany(p => new[] { p, p.WithModule(default) })
+                    .ToHashSet();
+                if (dyn.Contains(signature))
+                    continue;
+                if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                    scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
+                ChoicePointCts.Cancel(false);
+                yield break;
             }
         }
     }

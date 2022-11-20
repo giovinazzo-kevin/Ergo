@@ -7,7 +7,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
     {
     }
 
-    protected async IAsyncEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
     {
         var (template, goal, instances) = (args[0], args[1], args[2]);
         scope = scope.WithDepth(scope.Depth + 1)
@@ -41,7 +41,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
                 new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
             .AsOperator(OperatorAffix.Infix)
         });
-        var solutions = (await solver.SolveAsync(new(goalClauses), scope).CollectAsync())
+        var solutions = solver.Solve(new(goalClauses), scope)
             .Select(s => s.Simplify());
         foreach (var sol in solutions
             .Select(sol =>

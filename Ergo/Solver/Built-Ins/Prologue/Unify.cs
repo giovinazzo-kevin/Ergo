@@ -7,7 +7,7 @@ public sealed class Unify : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
         {

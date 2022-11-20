@@ -7,10 +7,10 @@ public sealed class Pull : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         var any = false;
-        await foreach (var item in context.Solver.GetDataSourceMatches(args[0]))
+        foreach (var item in context.Solver.GetDataSourceMatches(args[0]).ToEnumerable())
         {
             if (item.Rhs.Unify(args[0]).TryGetValue(out var subs))
             {

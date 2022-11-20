@@ -38,7 +38,7 @@ public sealed class SolverContext : IDisposable
     /// <summary>
     /// Attempts to resolve 'goal' as a built-in call, and evaluates its result. On failure evaluates 'goal' as-is.
     /// </summary>
-    public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    public IEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, CancellationToken ct = default)
     {
         var any = false;
         var sig = goal.GetSignature();
@@ -72,7 +72,7 @@ public sealed class SolverContext : IDisposable
                 yield break;
             }
 
-            await foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
+            foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
             {
                 if (ct.IsCancellationRequested)
                     yield break;
@@ -87,12 +87,12 @@ public sealed class SolverContext : IDisposable
             yield return new(goal);
     }
 
-    public async IAsyncEnumerable<Solution> SolveAsync(Query goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    public IEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
-        await foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
+        foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
         {
             yield return s;
         }
@@ -104,7 +104,7 @@ public sealed class SolverContext : IDisposable
 
     // This method takes a list of goals and solves them one at a time.
     // The tail of the list is fed back into this method recursively.
-    private async IAsyncEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    private IEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, CancellationToken ct = default)
     {
         var tcoPred = Maybe<Predicate>.None;
         var tcoSubs = new SubstitutionMap();
@@ -119,7 +119,7 @@ public sealed class SolverContext : IDisposable
         goals = goals.RemoveAt(0);
 
         // Get first solution for the current subgoal
-        await foreach (var s in SolveTerm(subGoal, scope, ct: ct))
+        foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
             if (ct.IsCancellationRequested) yield break;
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
@@ -151,7 +151,7 @@ public sealed class SolverContext : IDisposable
                 continue;
             }
             // Solve the rest of the goal
-            await foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
+            foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
                 if (ct.IsCancellationRequested) yield break;
                 var lastSubs = SubstitutionMap.MergeCopy(tcoSubs, s.Substitutions);
@@ -161,7 +161,7 @@ public sealed class SolverContext : IDisposable
     }
 
 
-    private async IAsyncEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    private IEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, CancellationToken ct = default)
     {
         if (ct.IsCancellationRequested) yield break;
 
@@ -187,14 +187,14 @@ public sealed class SolverContext : IDisposable
                 goal = expr.Contents.Single();
                 goto begin; // gotos are used to prevent allocating unnecessary stack frames whenever possible
             }
-            await foreach (var s in SolveQuery(expr, scope, ct: ct))
+            foreach (var s in SolveQuery(expr, scope, ct: ct))
                 yield return s;
             yield break;
         }
 
         // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
         // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-        await foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
+        foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
             if (ct.IsCancellationRequested) yield break;
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
@@ -241,7 +241,7 @@ public sealed class SolverContext : IDisposable
                 }
                 using var innerCtx = CreateChild();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                await foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))
+                foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);

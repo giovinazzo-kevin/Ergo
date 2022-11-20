@@ -59,7 +59,7 @@ public sealed class SolverContext : IDisposable
             }
         }
 
-        while (builtins.TryGetValue(sig, out var builtIn) || builtins.TryGetValue(sig = sig.WithArity(Maybe<int>.None), out builtIn))
+        if (builtins.TryGetValue(sig, out var builtIn))
         {
             if (ct.IsCancellationRequested)
                 yield break;
@@ -78,11 +78,7 @@ public sealed class SolverContext : IDisposable
                     yield break;
                 goal = eval.Result;
                 sig = goal.GetSignature();
-                await foreach (var inner in ResolveGoal(eval.Result, scope, ct))
-                {
-                    yield return new(inner.Result, SubstitutionMap.MergeRef(inner.Substitutions, eval.Substitutions));
-                }
-
+                yield return eval;
                 any = true;
             }
         }

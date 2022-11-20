@@ -38,8 +38,12 @@ public readonly struct InterpreterScope
     public Module EntryModule => Modules[Entry];
 
     public readonly ImmutableHashSet<Atom> VisibleModules;
-    public readonly ImmutableDictionary<Atom, Library> VisibleLibraries;
+    public readonly ImmutableHashSet<Library> VisibleLibraries;
     public readonly ImmutableDictionary<Signature, SolverBuiltIn> VisibleBuiltIns;
+    /// <summary>
+    /// List optimized for enumeration otherwise identical to VisibleBuiltIns.Keys
+    /// </summary>
+    public readonly IReadOnlyList<Signature> VisibleBuiltInsKeys;
     public readonly ImmutableDictionary<Signature, InterpreterDirective> VisibleDirectives;
 
     public InterpreterScope(Module userModule)
@@ -58,6 +62,7 @@ public readonly struct InterpreterScope
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
+        VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
     }
 
     private InterpreterScope(
@@ -78,6 +83,7 @@ public readonly struct InterpreterScope
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
+        VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
         if (kb is null)
         {
             foreach (var module in VisibleModules)
@@ -111,17 +117,17 @@ public readonly struct InterpreterScope
     public T ForwardEventToLibraries<T>(T e)
         where T : ErgoEvent
     {
-        foreach (var lib in VisibleLibraries.Values)
+        foreach (var lib in VisibleLibraries)
             lib.OnErgoEvent(e);
         return e;
     }
 
-    private static ImmutableDictionary<Atom, Library> GetVisibleLibraries(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableHashSet<Library> GetVisibleLibraries(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .Select(m => (HasValue: modules[m].LinkedLibrary.TryGetValue(out var lib), Value: lib))
             .Where(x => x.HasValue)
             .Select(x => x.Value)
-        .ToImmutableDictionary(l => l.Module);
+        .ToImmutableHashSet();
     private static ImmutableDictionary<Signature, InterpreterDirective> GetVisibleDirectives(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary

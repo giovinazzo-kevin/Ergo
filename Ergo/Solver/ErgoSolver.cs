@@ -46,7 +46,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, 0, interpreterScope.Entry, default, ImmutableArray<Predicate>.Empty, cut: false, new("K"));
+        => new(interpreterScope, interpreterScope.Entry, new("K"));
     public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
     public void BindDataSource<T>(DataSource<T> data)
@@ -177,7 +177,7 @@ public partial class ErgoSolver : IDisposable
                 throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
             Initialize(scope.InterpreterScope);
         }
-        var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Cast<ITerm>().ToArray());
+        var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
         var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false);
         // Assert the top level query as a predicate, so that libraries are free to transform it
         KnowledgeBase.AssertA(topLevel);

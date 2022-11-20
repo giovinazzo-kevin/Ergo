@@ -52,6 +52,16 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
             Add(s);
     }
 
+    public void Prune(IEnumerable<Variable> keep)
+    {
+        foreach (var (lhs, rhs) in Map)
+        {
+            if (lhs is Variable lhsV && keep.Contains(lhsV) || rhs is Variable rhsV && keep.Contains(rhsV))
+                continue;
+            Map.Remove(lhs);
+        }
+    }
+
     public IEnumerator<Substitution> GetEnumerator()
     {
         return Map.Select(x => new Substitution(x.Key, x.Value)).GetEnumerator();

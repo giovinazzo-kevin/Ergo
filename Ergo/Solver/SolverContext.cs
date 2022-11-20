@@ -124,8 +124,10 @@ public sealed class SolverContext : IDisposable
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
-                scope = s.Scope;
+                scope = s.Scope.WithoutLastCaller();
                 tcoSubs.AddRange(s.Substitutions);
+                // Remove all substitutions that don't pertain to any variables in the current scope
+                tcoSubs.Prune(scope.Callee.Body.CanonicalForm.Variables);
                 query = new(s.Scope.Callee.Body.Contents.AddRange(rest.Contents));
                 tcoPred = s.Scope.Callee;
                 goto TCO;
@@ -135,7 +137,6 @@ public sealed class SolverContext : IDisposable
                 var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDefinitionAs(p));
                 if (mostRecentCaller.Equals(p))
                 {
-                    scope = s.Scope;
                     query = new(rest.Contents);
                     goto TCO;
                 }

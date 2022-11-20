@@ -33,7 +33,7 @@ public partial class ErgoInterpreter
     public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
     {
         var watch = Probe.Enter();
-        if (scope.GetVisibleDirectives().TryGetValue(d.Body.GetSignature(), out var directive))
+        if (scope.VisibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
         {
             var sig = directive.Signature.Explain();
             var directiveWatch = Probe.Enter(sig);
@@ -97,7 +97,7 @@ public partial class ErgoInterpreter
         parser.Lexer.Seek(pos);
 
         var linkLibrary = Maybe<Library>.None;
-        var visibleDirectives = scope.GetVisibleDirectives();
+        var visibleDirectives = scope.VisibleDirectives;
         var directives = program.Directives.Select(d =>
         {
             if (visibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
@@ -108,8 +108,11 @@ public partial class ErgoInterpreter
         {
             linkLibrary = linkedLib;
             foreach (var dir in linkedLib.GetExportedDirectives())
-                if (!visibleDirectives.TryAdd(dir.Signature, dir))
+            {
+                if (visibleDirectives.ContainsKey(dir.Signature))
                     break; // This library was already added
+                visibleDirectives = visibleDirectives.Add(dir.Signature, dir);
+            }
         }
         foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
         {

@@ -38,7 +38,7 @@ public sealed class SolverContext : IDisposable
     /// </summary>
     public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        var builtins = scope.InterpreterScope.GetVisibleBuiltIns();
+        var builtins = scope.InterpreterScope.VisibleBuiltIns;
 
         var any = false;
         var sig = goal.GetSignature();

@@ -37,6 +37,11 @@ public readonly struct InterpreterScope
     /// </summary>
     public Module EntryModule => Modules[Entry];
 
+    public readonly ImmutableHashSet<Atom> VisibleModules;
+    public readonly ImmutableDictionary<Atom, Library> VisibleLibraries;
+    public readonly ImmutableDictionary<Signature, SolverBuiltIn> VisibleBuiltIns;
+    public readonly ImmutableDictionary<Signature, InterpreterDirective> VisibleDirectives;
+
     public InterpreterScope(Module userModule)
     {
         Entry = userModule.Name;
@@ -49,6 +54,10 @@ public readonly struct InterpreterScope
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;
         KnowledgeBase = null;
+        VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableHashSet();
+        VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
+        VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
+        VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
     }
 
     private InterpreterScope(
@@ -65,13 +74,17 @@ public readonly struct InterpreterScope
         IsRuntime = runtime;
         ExceptionHandler = handler;
         KnowledgeBase = kb ?? new();
+        VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableHashSet();
+        VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
+        VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
+        VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
         if (kb is null)
         {
-            foreach (var module in GetVisibleModules())
+            foreach (var module in VisibleModules)
             {
-                foreach (var pred in module.Program.KnowledgeBase)
+                foreach (var pred in Modules[module].Program.KnowledgeBase)
                 {
-                    var newPred = pred.WithModuleName(module.Name);
+                    var newPred = pred.WithModuleName(module);
                     if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
                         newPred = newPred.WithModuleName(newModule).WithHead(newHead);
                     if (!pred.IsExported)
@@ -95,37 +108,33 @@ public readonly struct InterpreterScope
         .GetOrThrow(new ArgumentException(null, nameof(module)))
         as T;
 
-    public IDictionary<Atom, Library> GetVisibleLibraries() => GetVisibleModules()
-            .Select(m => (HasValue: m.LinkedLibrary.TryGetValue(out var lib), Value: lib))
-            .Where(x => x.HasValue)
-            .Select(x => x.Value)
-        .ToDictionary(l => l.Module);
-
     public T ForwardEventToLibraries<T>(T e)
         where T : ErgoEvent
     {
-        foreach (var lib in GetVisibleLibraries().Values)
+        foreach (var lib in VisibleLibraries.Values)
             lib.OnErgoEvent(e);
         return e;
     }
 
-    public IDictionary<Signature, InterpreterDirective> GetVisibleDirectives()
-    {
-        return GetVisibleModules()
-            .SelectMany(m => m.LinkedLibrary
+    private static ImmutableDictionary<Atom, Library> GetVisibleLibraries(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+        => visibleModules
+            .Select(m => (HasValue: modules[m].LinkedLibrary.TryGetValue(out var lib), Value: lib))
+            .Where(x => x.HasValue)
+            .Select(x => x.Value)
+        .ToImmutableDictionary(l => l.Module);
+    private static ImmutableDictionary<Signature, InterpreterDirective> GetVisibleDirectives(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+        => visibleModules
+            .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedDirectives())
                 .GetOr(Enumerable.Empty<InterpreterDirective>()))
-            .ToDictionary(x => x.Signature);
-    }
+            .ToImmutableDictionary(x => x.Signature);
 
-    public IDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns()
-    {
-        return GetVisibleModules()
-            .SelectMany(m => m.LinkedLibrary
+    private static ImmutableDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+        => visibleModules
+            .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedBuiltins())
                 .GetOr(Enumerable.Empty<SolverBuiltIn>()))
-            .ToDictionary(x => x.Signature);
-    }
+            .ToImmutableDictionary(x => x.Signature);
 
     /// <summary>
     /// Returns all operators that are visible from the entry module.
@@ -178,22 +187,18 @@ public readonly struct InterpreterScope
     /// <summary>
     /// Returns all modules that are visible from the entry module.
     /// </summary>
-    public IEnumerable<Module> GetVisibleModules()
+    private static IEnumerable<Atom> GetVisibleModules(Atom entry, ImmutableDictionary<Atom, Module> modules, HashSet<Atom> seen = null)
     {
-        return Inner(this, Entry);
-        IEnumerable<Module> Inner(InterpreterScope scope, Atom entry, HashSet<Atom> seen = default)
+        seen ??= new();
+        if (seen.Contains(entry) || !modules.ContainsKey(entry))
+            yield break;
+        var current = modules[entry];
+        yield return entry;
+        seen.Add(entry);
+        foreach (var import in current.Imports.Contents.Cast<Atom>()
+            .SelectMany(i => GetVisibleModules(i, modules, seen)))
         {
-            seen ??= new();
-            if (seen.Contains(entry) || !scope.Modules.ContainsKey(entry))
-                yield break;
-            var current = scope.Modules[entry];
-            yield return current;
-            seen.Add(entry);
-            foreach (var import in current.Imports.Contents.Cast<Atom>()
-                .SelectMany(i => Inner(scope, i, seen)))
-            {
-                yield return import;
-            }
+            yield return import;
         }
     }
 

@@ -38,14 +38,12 @@ public sealed class SolverContext : IDisposable
     /// </summary>
     public async IAsyncEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        var builtins = scope.InterpreterScope.GetVisibleBuiltIns();
-
         var any = false;
         var sig = goal.GetSignature();
         if (!goal.IsQualified)
         {
             // Try resolving the built-in's module automatically
-            foreach (var key in builtins.Keys)
+            foreach (var key in scope.InterpreterScope.VisibleBuiltIns.Keys)
             {
                 if (!key.Module.TryGetValue(out var module))
                     continue;
@@ -59,7 +57,7 @@ public sealed class SolverContext : IDisposable
             }
         }
 
-        if (builtins.TryGetValue(sig, out var builtIn))
+        if (scope.InterpreterScope.VisibleBuiltIns.TryGetValue(sig, out var builtIn))
         {
             if (ct.IsCancellationRequested)
                 yield break;

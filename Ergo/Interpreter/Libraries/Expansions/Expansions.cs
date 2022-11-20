@@ -170,11 +170,11 @@ public class Expansions : Library
         {
             var sig = term.GetSignature();
             // Try all modules in import order
-            var modules = scope.InterpreterScope.GetVisibleModules();
+            var modules = scope.InterpreterScope.VisibleModules;
             foreach (var mod in modules.Reverse())
             {
-                scope = scope.WithModule(mod.Name);
-                foreach (var exp in GetDefinedExpansions(mod.Name, sig))
+                scope = scope.WithModule(mod);
+                foreach (var exp in GetDefinedExpansions(mod, sig))
                 {
                     // [Output] >> (head :- body(Output)).
                     if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))

@@ -40,6 +40,10 @@ public readonly struct InterpreterScope
     public readonly ImmutableHashSet<Atom> VisibleModules;
     public readonly ImmutableDictionary<Atom, Library> VisibleLibraries;
     public readonly ImmutableDictionary<Signature, SolverBuiltIn> VisibleBuiltIns;
+    /// <summary>
+    /// List optimized for enumeration otherwise identical to VisibleBuiltIns.Keys
+    /// </summary>
+    public readonly IReadOnlyList<Signature> VisibleBuiltInsKeys;
     public readonly ImmutableDictionary<Signature, InterpreterDirective> VisibleDirectives;
 
     public InterpreterScope(Module userModule)
@@ -58,6 +62,7 @@ public readonly struct InterpreterScope
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
+        VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
     }
 
     private InterpreterScope(
@@ -78,6 +83,7 @@ public readonly struct InterpreterScope
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
+        VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
         if (kb is null)
         {
             foreach (var module in VisibleModules)

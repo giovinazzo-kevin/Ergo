@@ -45,12 +45,12 @@ public sealed class SolverContext : IDisposable
         if (!goal.IsQualified)
         {
             // Try resolving the built-in's module automatically
-            foreach (var key in scope.InterpreterScope.VisibleBuiltIns.Keys)
+            foreach (var key in scope.InterpreterScope.VisibleBuiltInsKeys)
             {
                 if (!key.Module.TryGetValue(out var module))
                     continue;
                 var withoutModule = key.WithModule(default);
-                if (withoutModule.Equals(sig) || withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
+                if (withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
                 {
                     goal = goal.Qualified(module);
                     sig = key;

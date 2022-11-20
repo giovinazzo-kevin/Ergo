@@ -41,16 +41,6 @@ public abstract class AbstractList : IAbstractTerm
             return default;
         var u = CanonicalForm.WithAbstractForm(default).Unify(list.CanonicalForm.WithAbstractForm(default));
         return u;
-        //IEnumerable<Substitution> Inner()
-        //{
-        //    foreach (var sub in u.GetOrThrow())
-        //    {
-        //        var ret = sub;
-        //        if (Unfold(ret.Rhs, Functor) is { HasValue: true } unfold)
-        //            ret = ret.WithRhs(Create(ImmutableArray.CreateRange(unfold.GetOrThrow())).CanonicalForm);
-        //        yield return ret;
-        //    }
-        //}
     }
 
     public virtual IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

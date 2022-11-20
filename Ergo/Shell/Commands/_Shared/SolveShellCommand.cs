@@ -72,7 +72,7 @@ public abstract class SolveShellCommand : ShellCommand
             };
         }
 
-        var solutions = solver.SolveAsync(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
+        var solutions = solver.Solve(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
@@ -86,7 +86,7 @@ public abstract class SolveShellCommand : ShellCommand
         if (Interactive)
         {
             var any = false;
-            await foreach (var s in solutions)
+            foreach (var s in solutions)
             {
                 if (!any)
                 {
@@ -136,7 +136,7 @@ public abstract class SolveShellCommand : ShellCommand
         }
         else
         {
-            var rowsDict = (await solutions.CollectAsync())
+            var rowsDict = solutions
                 .Select(s => s.Simplify()
                     .Substitutions
                     .ToDictionary(r => r.Lhs.Explain(), r => r.Rhs.Explain()))

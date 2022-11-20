@@ -21,7 +21,7 @@ public abstract class SolverBuiltIn
     protected Evaluation True(SubstitutionMap subs) => new(WellKnown.Literals.True, subs);
     protected Evaluation True(Substitution sub) => new(WellKnown.Literals.True, sub);
 
-    public abstract IAsyncEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] arguments);
+    public abstract IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] arguments);
 
     public SolverBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
     {

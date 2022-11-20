@@ -169,7 +169,7 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    public async IAsyncEnumerable<Solution> SolveAsync(Query query, SolverScope scope, [EnumeratorCancellation] CancellationToken ct = default)
+    public IEnumerable<Solution> Solve(Query query, SolverScope scope, CancellationToken ct = default)
     {
         if (!_initialized)
         {
@@ -190,7 +190,7 @@ public partial class ErgoSolver : IDisposable
         {
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
             var newPred = Predicate.Substitute(exp.Rhs, exp.Substitutions.Select(x => x.Inverted()));
-            await foreach (var s in ctx.SolveAsync(new(newPred.Body), scope.WithCallee(newPred), ct: ct))
+            foreach (var s in ctx.Solve(new(newPred.Body), scope.WithCallee(newPred), ct: ct))
             {
                 yield return s;
             }

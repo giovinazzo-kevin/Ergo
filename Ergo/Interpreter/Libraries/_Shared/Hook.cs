@@ -6,7 +6,7 @@ public readonly record struct Hook(Signature Signature)
 {
     public bool IsDefined(SolverContext ctx) => ctx.Solver.KnowledgeBase.Get(Signature).TryGetValue(out _);
 
-    public async IAsyncEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args, [EnumeratorCancellation] CancellationToken ct = default)
+    public IEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args, CancellationToken ct = default)
     {
         if (!IsDefined(ctx))
         {
@@ -24,7 +24,7 @@ public readonly record struct Hook(Signature Signature)
             anon = cplx.WithArguments(args);
         anon = anon
             .Qualified(Signature.Module.GetOr(WellKnown.Modules.User));
-        await foreach (var s in ctx.SolveAsync(new(anon), scope, ct: ct))
+        foreach (var s in ctx.Solve(new(anon), scope, ct: ct))
             yield return s;
     }
 }

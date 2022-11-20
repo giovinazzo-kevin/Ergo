@@ -7,7 +7,7 @@ public sealed class Retract : DynamicPredicateBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         var any = false;
         while (Retract(context.Solver, scope, arguments[0], all: false))

@@ -7,7 +7,7 @@ public sealed class Eval : MathBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Evaluation(new Atom(Evaluate(context.Solver, scope, arguments[0]))));
         yield return eval.GetOr(False());

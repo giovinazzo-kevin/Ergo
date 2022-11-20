@@ -25,7 +25,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
         );
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         // TODO: Move In/Out streams to the interpreter!!
         foreach (var arg in args)
@@ -34,7 +34,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
             if (arg is not Variable && WellKnown.Hooks.IO.Portray_1.IsDefined(context))
             {
                 var any = false;
-                await foreach (var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
+                foreach(var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
                     any = true;
                 if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }

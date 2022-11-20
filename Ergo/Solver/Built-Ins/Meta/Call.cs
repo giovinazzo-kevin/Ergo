@@ -8,7 +8,7 @@ public sealed class Call : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
@@ -32,7 +32,7 @@ public sealed class Call : SolverBuiltIn
         }
 
         var any = false;
-        await foreach (var solution in context.Solver.SolveAsync(new(comma), scope))
+        foreach (var solution in context.Solver.Solve(new(comma), scope))
         {
             yield return True(solution.Substitutions);
             any = true;

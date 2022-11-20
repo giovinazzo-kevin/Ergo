@@ -9,7 +9,7 @@ public sealed class Nonvar : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
         yield return new(new Atom(arguments[0] is not Variable));
     }

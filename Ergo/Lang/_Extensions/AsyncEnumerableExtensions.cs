@@ -15,15 +15,4 @@ public static class EnumerableExtensions
                 accseq => sequence,
                 (accseq, item) => accseq.Concat(new[] { item })));
     }
-
-    public static async Task<List<T>> CollectAsync<T>(this IAsyncEnumerable<T> solutions)
-    {
-        var bag = new List<T>();
-        await foreach (var item in solutions)
-        {
-            bag.Add(item);
-        }
-
-        return bag;
-    }
 }

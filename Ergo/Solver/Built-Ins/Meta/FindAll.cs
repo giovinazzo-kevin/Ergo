@@ -8,7 +8,7 @@ public sealed class FindAll : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
@@ -18,7 +18,7 @@ public sealed class FindAll : SolverBuiltIn
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
         }
 
-        var solutions = (await context.Solver.SolveAsync(new(comma), scope).CollectAsync())
+        var solutions = context.Solver.Solve(new(comma), scope)
             .Select(s => s.Simplify())
             .ToArray();
         if (solutions.Length == 0)

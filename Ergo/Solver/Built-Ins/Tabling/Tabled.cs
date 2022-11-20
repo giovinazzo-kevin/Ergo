@@ -9,7 +9,7 @@ public sealed class Tabled : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         /* tabled/1 overrides the regular SLD resolution with SLDT resolution.
          * Predicates tagged by the 'table' directive are rewritten as follows:
@@ -35,7 +35,7 @@ public sealed class Tabled : SolverBuiltIn
         if (!memoContext.GetPioneer(variant).TryGetValue(out var pioneer))
         {
             memoContext.MemoizePioneer(pioneer = variant);
-            await foreach (var sol in context.SolveAsync(new(args), scope))
+            foreach(var sol in context.Solve(new(args), scope))
             {
                 memoContext.MemoizeSolution(pioneer, sol);
                 yield return True(sol.Substitutions);
@@ -60,7 +60,7 @@ public sealed class Tabled : SolverBuiltIn
                  * the first clause of the predicate. Re-execution will be repeated until no new answers can
                  * be generated, i.e., when the fixpoint is reached
                 */
-                //await foreach (var sol in context.Solve(new(args), scope))
+                //foreach(var sol in context.Solve(new(args), scope))
                 //{
                 //    context.MemoizeSolution(variant, sol);
                 //    yield return True(sol.Substitutions);

@@ -7,9 +7,9 @@ public sealed class SetupCallCleanup : SolverBuiltIn
     {
     }
 
-    public override async IAsyncEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        var once = await new Call().Apply(context, scope, new[] { args[0] }).FirstOrDefaultAsync();
+        var once = new Call().Apply(context, scope, new[] { args[0] }).FirstOrDefault();
         if (once.Equals(default(Evaluation)) || once.Result.Equals(WellKnown.Literals.False))
         {
             yield return new(WellKnown.Literals.False);
@@ -17,7 +17,7 @@ public sealed class SetupCallCleanup : SolverBuiltIn
         }
 
         var any = false;
-        await foreach (var sol in new Call().Apply(context, scope, new[] { args[1] }))
+        foreach (var sol in new Call().Apply(context, scope, new[] { args[1] }))
         {
             if (sol.Result.Equals(WellKnown.Literals.False))
             {
@@ -29,7 +29,7 @@ public sealed class SetupCallCleanup : SolverBuiltIn
             any = true;
         }
 
-        await new Call().Apply(context, scope, new[] { args[2] }).FirstOrDefaultAsync();
+        new Call().Apply(context, scope, new[] { args[2] }).FirstOrDefault();
         if (!any)
         {
             yield return new(WellKnown.Literals.False);

@@ -8,6 +8,11 @@ public readonly struct Substitution
     public readonly ITerm Lhs;
     public readonly ITerm Rhs;
 
+    // Set of equality statements
+    private readonly Queue<Substitution> E = new();
+    // Set of substitutions
+    private readonly Queue<Substitution> S = new();
+
     public Substitution(ITerm lhs, ITerm rhs)
     {
         Lhs = lhs;
@@ -29,67 +34,73 @@ public readonly struct Substitution
     public Maybe<SubstitutionMap> Unify()
     {
         var map = new SubstitutionMap();
-        // Set of equality statements
-        var E = new List<Substitution>() { this };
-        // Set of substitutions
-        var S = new List<Substitution>();
-        while (E.Count > 0)
+        E.Clear();
+        E.Enqueue(this);
+        while (E.TryDequeue(out var sub))
         {
-            var (x, y) = E[0];
-            E.RemoveAt(0);
-            if (!Unify(x, y))
+            if (!Unify(sub.Lhs, sub.Rhs))
                 return default;
         }
         map.AddRange(S);
         return Maybe.Some(map);
+    }
 
-        void ApplySubstitution(Substitution s)
+    private void ApplySubstitution(Substitution s)
+    {
+        for (int i = 0; i < E.Count; i++)
         {
-            E = new List<Substitution>(E.Select(eq => new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s))).Distinct());
-            S = new List<Substitution>(S.Select(eq => new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s))).Append(s).Distinct());
+            var eq = E.Dequeue();
+            E.Enqueue(new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s)));
         }
-
-        bool Unify(ITerm x, ITerm y)
+        for (int i = 0; i < S.Count; i++)
         {
-            if (!x.Equals(y))
+            var eq = S.Dequeue();
+            S.Enqueue(new Substitution(eq.Lhs.Substitute(s), eq.Rhs.Substitute(s)));
+        }
+        S.Enqueue(s);
+    }
+
+    private bool Unify(ITerm x, ITerm y)
+    {
+        if (!x.Equals(y))
+        {
+            var absUnif = x.AbstractForm.Map(X => y.AbstractForm.Map(Y => X.Unify(Y)));
+            if (absUnif.TryGetValue(out var subs))
             {
-                var absUnif = x.AbstractForm.Map(X => y.AbstractForm.Map(Y => X.Unify(Y)));
-                if (absUnif.TryGetValue(out var subs))
-                {
-                    E.AddRange(subs);
-                    return true;
-                }
+                foreach (var s in subs)
+                    E.Enqueue(s);
+                return true;
+            }
 
-                if (y is Variable)
-                {
-                    ApplySubstitution(new Substitution(y, x));
-                }
-                else if (x is Variable)
-                {
-                    ApplySubstitution(new Substitution(x, y));
-                }
-                else if (x is Complex cx && y is Complex cy)
-                {
-                    if (!cx.Matches(cy))
-                    {
-                        return false;
-                    }
-
-                    for (var i = 0; i < cx.Arguments.Length; i++)
-                    {
-                        E.Add(new Substitution(cx.Arguments[i], cy.Arguments[i]));
-                    }
-
-                    return true;
-                }
-                else
+            if (y is Variable)
+            {
+                ApplySubstitution(new Substitution(y, x));
+            }
+            else if (x is Variable)
+            {
+                ApplySubstitution(new Substitution(x, y));
+            }
+            else if (x is Complex cx && y is Complex cy)
+            {
+                if (!cx.Matches(cy))
                 {
                     return false;
                 }
-            }
 
-            return true;
+                for (var i = 0; i < cx.Arguments.Length; i++)
+                {
+                    E.Enqueue(new Substitution(cx.Arguments[i], cy.Arguments[i]));
+                }
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
+
+        return true;
     }
 
     public override bool Equals(object obj)

@@ -50,7 +50,7 @@ public sealed class SolverContext : IDisposable
                 if (!key.Module.TryGetValue(out var module))
                     continue;
                 var withoutModule = key.WithModule(default);
-                if (withoutModule.Equals(sig.WithArity(Maybe<int>.None)))
+                if (withoutModule.Equals(sig))
                 {
                     goal = goal.Qualified(module);
                     sig = key;

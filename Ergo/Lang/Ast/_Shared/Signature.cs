@@ -46,7 +46,7 @@ public readonly struct Signature
         }
 
         return Functor.Equals(other.Functor)
-            && (!Arity.TryGetValue(out _) || !other.Arity.TryGetValue(out _) || Arity.Equals(other.Arity))
+            && (!Arity.TryGetValue(out var a) || !other.Arity.TryGetValue(out var b) || a.Equals(b))
             && Module.Equals(other.Module);
     }
 

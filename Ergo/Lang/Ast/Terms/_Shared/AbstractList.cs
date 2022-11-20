@@ -46,10 +46,22 @@ public abstract class AbstractList : IAbstractTerm
     public virtual IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        return Create(ImmutableArray.CreateRange(Contents.Select(c => c.Instantiate(ctx, vars))));
+        var builder = Contents.ToBuilder();
+        for (int i = 0; i < builder.Count; i++)
+        {
+            builder[i] = Contents[i].Instantiate(ctx, vars);
+        }
+        return Create(builder.MoveToImmutable());
     }
     public virtual IAbstractTerm Substitute(Substitution s)
-        => Create(ImmutableArray.CreateRange(Contents.Select(c => c.Substitute(s))));
+    {
+        var builder = Contents.ToBuilder();
+        for (int i = 0; i < builder.Count; i++)
+        {
+            builder[i] = Contents[i].Substitute(s);
+        }
+        return Create(builder.MoveToImmutable());
+    }
 
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
@@ -90,9 +102,6 @@ public abstract class AbstractList : IAbstractTerm
     /// </summary>
     public static ITerm FoldNoEmptyTailParensSingle(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
-        var nintendo = new (int A, int B)[] { (1, 1), (1, 6), (3, 1), (8, 1), (7, 1), (1, 1), (4, 1), (3, 1), (8, 1), (2, 1), (1, 1), (3, 2) }
-            .Aggregate("nintendo", (a, b) => a + a[b.A..(b.A + b.B)])[8..];
-
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;

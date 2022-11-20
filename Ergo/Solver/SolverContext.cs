@@ -10,21 +10,23 @@ public sealed class SolverContext : IDisposable
 {
     public readonly SolverContext Parent;
 
-    private readonly CancellationTokenSource ChoicePointCts = new();
-    private readonly CancellationTokenSource ExceptionCts = new();
+    private readonly CancellationTokenSource ChoicePointCts;
+    private readonly CancellationTokenSource ExceptionCts;
 
     public readonly InterpreterScope Scope;
     public readonly ErgoSolver Solver;
 
-    private SolverContext(ErgoSolver solver, InterpreterScope scope, SolverContext parent)
+    private SolverContext(ErgoSolver solver, InterpreterScope scope, SolverContext parent, CancellationTokenSource choicePointCts, CancellationTokenSource exceptionCts)
     {
         Parent = parent;
         Solver = solver;
         (Scope = scope).ForwardEventToLibraries(new SolverContextCreatedEvent(this));
+        ChoicePointCts = choicePointCts;
+        ExceptionCts = exceptionCts;
     }
 
-    public SolverContext CreateChild() => new(Solver, Scope, this);
-    public static SolverContext Create(ErgoSolver solver, InterpreterScope scope) => new(solver, scope, null);
+    public SolverContext CreateChild() => new(Solver, Scope, this, ChoicePointCts, ExceptionCts);
+    public static SolverContext Create(ErgoSolver solver, InterpreterScope scope) => new(solver, scope, null, new(), new());
     public SolverContext GetRoot()
     {
         var root = this;
@@ -234,6 +236,8 @@ public sealed class SolverContext : IDisposable
             }
             foreach (var m in matches)
             {
+                if (ct.IsCancellationRequested)
+                    break;
                 // Create a new scope and context for this procedure call, essentially creating a choice point
                 var innerScope = scope
                     .WithDepth(scope.Depth + 1)
@@ -249,17 +253,12 @@ public sealed class SolverContext : IDisposable
                 }
                 using var innerCtx = CreateChild();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
-                await foreach (var s in innerCtx.SolveAsync(new(m.Rhs.Body), innerScope, ct: ct))
+                await foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))
                 {
                     Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }
-                if (innerCtx.ChoicePointCts.IsCancellationRequested)
-                    break;
-                if (innerCtx.ExceptionCts.IsCancellationRequested)
-                    ExceptionCts.Cancel(false);
-
             }
         }
     }

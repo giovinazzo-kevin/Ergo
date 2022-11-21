@@ -129,7 +129,7 @@ public sealed class SolverContext : IDisposable
                 scope = s.Scope.WithoutLastCaller();
                 tcoSubs.AddRange(s.Substitutions);
                 // Remove all substitutions that don't pertain to any variables in the current scope
-                tcoSubs.Prune(scope.Callee.Body.CanonicalForm.Variables);
+                tcoSubs.Prune(s.Scope.Callee.Body.CanonicalForm.Variables);
                 query = new(s.Scope.Callee.Body.Contents.AddRange(rest.Contents));
                 tcoPred = s.Scope.Callee;
                 goto TCO;
@@ -163,8 +163,6 @@ public sealed class SolverContext : IDisposable
 
     private IEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, CancellationToken ct = default)
     {
-        if (ct.IsCancellationRequested) yield break;
-
         try
         {
             RuntimeHelpers.EnsureSufficientExecutionStack();
@@ -196,7 +194,6 @@ public sealed class SolverContext : IDisposable
         // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
         foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
-            if (ct.IsCancellationRequested) yield break;
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
                 Solver.LogTrace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False, scope.Depth);
@@ -215,17 +212,14 @@ public sealed class SolverContext : IDisposable
             }
 
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
+            var noMatches = true;
             var matches = ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope)
-                .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x.Term, desugar: false))
-                .Where(x => x.Any())
+                .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x, desugar: false))
+                .Where(x => x.TryGetValue(out _) && !(noMatches = false))
                 .Take(1)
-                .SelectMany(m => m);
-            var any = false;
+                .SelectMany(m => m.AsEnumerable().SelectMany(x => x));
             foreach (var m in matches)
             {
-                any = true;
-                if (ct.IsCancellationRequested)
-                    break;
                 // Create a new scope and context for this procedure call, essentially creating a choice point
                 var innerScope = scope
                     .WithDepth(scope.Depth + 1)
@@ -248,7 +242,7 @@ public sealed class SolverContext : IDisposable
                     yield return s.PrependSubstitutions(innerSubs);
                 }
             }
-            if (!any)
+            if (noMatches)
             {
                 var signature = resolvedGoal.Result.GetSignature();
                 if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))

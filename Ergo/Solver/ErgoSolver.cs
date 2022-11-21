@@ -146,25 +146,14 @@ public partial class ErgoSolver : IDisposable
     /// <summary>
     /// Enumerates all implicit qualifications of 'goal' that are worth trying in the current scope.
     /// </summary>
-    public static IEnumerable<(ITerm Term, bool Dynamic)> GetImplicitGoalQualifications(ITerm goal, SolverScope scope)
+    public static IEnumerable<ITerm> GetImplicitGoalQualifications(ITerm goal, SolverScope scope)
     {
-        var isDynamic = false;
-        yield return (goal, isDynamic);
+        yield return goal;
         if (!goal.IsQualified)
         {
+            foreach (var m in scope.InterpreterScope.VisibleModules)
             {
-                var qualified = goal.Qualified(scope.Module);
-                if ((isDynamic = scope.InterpreterScope.Modules[scope.Module].DynamicPredicates.Contains(qualified.GetSignature())) || true)
-                {
-                    yield return (qualified, isDynamic);
-                }
-            }
-            {
-                var qualified = goal.Qualified(scope.InterpreterScope.EntryModule.Name);
-                if ((isDynamic = scope.InterpreterScope.EntryModule.DynamicPredicates.Contains(qualified.GetSignature())) || true)
-                {
-                    yield return (qualified, isDynamic);
-                }
+                yield return goal.Qualified(m);
             }
         }
     }
@@ -184,6 +173,8 @@ public partial class ErgoSolver : IDisposable
         scope.InterpreterScope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, scope));
         var queryExpansions = KnowledgeBase
             .GetMatches(scope.InstantiationContext, topLevelHead, desugar: false)
+            .AsEnumerable()
+            .SelectMany(x => x)
             .ToList();
         KnowledgeBase.RetractAll(topLevelHead);
         foreach (var exp in queryExpansions)

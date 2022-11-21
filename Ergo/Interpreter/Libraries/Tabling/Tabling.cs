@@ -83,7 +83,8 @@ public class Tabling : Library
                     true
                 );
 
-                foreach (var match in scope.KnowledgeBase.GetMatches(ctx, anon.Qualified(scope.Entry), desugar: false))
+                foreach (var match in scope.KnowledgeBase.GetMatches(ctx, anon.Qualified(scope.Entry), desugar: false)
+                    .AsEnumerable().SelectMany(x => x))
                 {
                     match.Rhs.Head.GetQualification(out var head);
                     var auxPred = new Predicate(

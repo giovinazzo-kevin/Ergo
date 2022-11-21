@@ -44,7 +44,8 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
         if (!term.IsQualified)
             term = term.Qualified(scope.Module);
         var toRemove = new List<ITerm>();
-        foreach (var match in solver.KnowledgeBase.GetMatches(new("R"), term, desugar: true))
+        foreach (var match in solver.KnowledgeBase.GetMatches(new("R"), term, desugar: true)
+            .AsEnumerable().SelectMany(x => x))
         {
             if (!match.Rhs.IsDynamic)
             {

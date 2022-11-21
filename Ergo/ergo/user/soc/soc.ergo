@@ -1,6 +1,8 @@
 ﻿:- module(soc, [
 ]).
 
+power(X) :- skill(2, X).
+
 skill(9, command).
 skill(3, archery).
 skill(3, combat_training).
@@ -38,7 +40,6 @@ skill(2, eager).
 skill(2, attuned).
 skill(2, speed_of_winds).
 
-power(X) :- skill(2, X).
 
 wielder { 
 	name:"Sla-Kin, Scholar of Rana", 
@@ -49,7 +50,6 @@ wielder {
 	skills: [
 		s(1, [command, learning, archery, destruction_magic, channeling, scouting, impressive], []),
 		s(1, [cunning, positioning], [archery]),
-		s(1, [creation_magic, arcana_magic], [destruction_magic]),
 		s(1, [creation_magic, arcana_magic], [destruction_magic]),
 		s(1, [essence_burst], [essence_leech]),
 		s(1, [raider], [scouting]),
@@ -76,18 +76,17 @@ wielder {
 }.
 
 % --------------------------------------------
-wielder_lvl_skill_requirement_helper_(Skills, Requirement, SubRequirement) :-
-	member(s(Lvl, S, R), Skills),
-	member(Requirement, S),
-	( member(SubRequirement_, R), 
-	  wielder_lvl_skill_requirement_helper_(Skills, SubRequirement_, SubRequirement)
-	; SubRequirement = SubRequirement_
-	).
 
 wielder_lvl_skill_requirement(WielderName, Lvl, Skill, Requirement) :-
 	wielder { name: WielderName, skills: Skills },
 	member(s(Lvl, S, R), Skills),
-	member(Skill, S),
-	( member(Requirement_, R),
-	  wielder_lvl_skill_requirement_helper_(Skills, Requirement_, Requirement)
-	) -> true ; Requirement = none.
+	(  R == [], Requirement = none
+	;  member(Requirement, R)
+	),
+	member(Skill, S).
+
+wielder_power(WielderName, Lvl, Power) :-
+	wielder { name: WielderName, skills: Skills },
+	member(s(Lvl, S, R), Skills),
+	member(Power, S),
+	power(Power).

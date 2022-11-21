@@ -43,7 +43,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return default;
     }
 
-    public IEnumerable<KBMatch> GetMatches(InstantiationContext ctx, ITerm goal, bool desugar)
+    public Maybe<IEnumerable<KBMatch>> GetMatches(InstantiationContext ctx, ITerm goal, bool desugar)
     {
         if (desugar)
         {
@@ -56,21 +56,16 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 {
                     goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
                 }
-                else if (c.Matches(out var match2, new { Predicate = default(string), Arity = "*" }))
-                {
-                    return Enumerable.Range(0, 16)
-                        .SelectMany(i => GetMatches(ctx, new Atom(match2.Predicate).BuildAnonymousTerm(i), desugar));
-                }
             }
         }
         // Return predicate matches
         if (Get(goal.GetSignature()).TryGetValue(out var list))
-            return Inner(list);
+            return Maybe.Some(Inner(list));
 
         if (goal.IsQualified && goal.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
-            return Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module));
+            return Maybe.Some(Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module)));
 
-        return Enumerable.Empty<KBMatch>();
+        return default;
         IEnumerable<KBMatch> Inner(List<Predicate> list)
         {
             foreach (var k in list.ToArray())

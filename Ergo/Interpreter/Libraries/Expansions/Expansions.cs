@@ -47,7 +47,8 @@ public class Expansions : Library
             var expansions = new Queue<Predicate>();
             var tmpScope = qse.Solver.CreateScope(qse.Scope.InterpreterScope);
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Cast<ITerm>().ToArray());
-            foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false))
+            foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
+                .AsEnumerable().SelectMany(x => x))
             {
                 var pred = Predicate.Substitute(match.Rhs, match.Substitutions.Select(x => x.Inverted()));
 

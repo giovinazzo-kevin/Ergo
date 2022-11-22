@@ -161,6 +161,11 @@ immune_to(ground, electric).
 immune_to(steel, poison).
 immune_to(fairy, dragon).
 
+num_weaknesses(T1, N, List) :-
+	type(T1),
+	bagof(T2, (super_eff(T2, T1)), List),
+	length(List, N).
+
 dual_type(T1-T2) :- 
 	type(T1), T1 \== none,
 	type(T2), T2 \== T1.

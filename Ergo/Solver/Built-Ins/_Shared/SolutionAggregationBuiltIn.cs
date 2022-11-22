@@ -12,7 +12,8 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
         var (template, goal, instances) = (args[0], args[1], args[2]);
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
-            .WithCallee(GetStub(args));
+            .WithCallee(GetStub(args))
+            .WithChoicePoint();
 
         if (goal is Variable)
         {

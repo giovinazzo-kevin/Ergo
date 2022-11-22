@@ -14,7 +14,6 @@ public sealed class SolverTestFixture : IDisposable
 
     public SolverTestFixture()
     {
-        // Run at start
         var basePath = Directory.GetCurrentDirectory();
         var stdlibPath = Path.Combine(basePath, @"..\..\..\..\Ergo\ergo");
         var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
@@ -41,5 +40,5 @@ public sealed class SolverTestFixture : IDisposable
         Dispose();
     }
 
-    public void Dispose() => GC.SuppressFinalize(this);// Run at end
+    public void Dispose() => GC.SuppressFinalize(this);
 }

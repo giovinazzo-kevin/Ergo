@@ -1,2 +1,6 @@
 ﻿:- module(tests, [
+	fail/0, succeed/0
 ]).
+
+fail :- false.
+succeed.

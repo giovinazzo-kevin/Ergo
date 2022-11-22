@@ -1,5 +1,6 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
+using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions.Handler;
 
 namespace Tests;
@@ -17,16 +18,20 @@ public sealed class SolverTestFixture : IDisposable
         var basePath = Directory.GetCurrentDirectory();
         var stdlibPath = Path.Combine(basePath, @"..\..\..\..\Ergo\ergo");
         var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
+        var moduleName = new Atom("tests");
 
         Interpreter = ErgoFacade.Standard
             .BuildInterpreter(InterpreterFlags.Default);
-        InterpreterScope = Interpreter.CreateScope(x => x
+        var scope = Interpreter.CreateScope(x => x
             .WithExceptionHandler(ThrowingExceptionHandler)
             .WithoutSearchDirectories()
             .WithSearchDirectory(testsPath)
             .WithSearchDirectory(stdlibPath)
-            .WithModule(x.EntryModule)
         );
+        var module = Interpreter.Load(ref scope, moduleName).GetOrThrow(new InvalidOperationException());
+        InterpreterScope = scope
+            .WithModule(module)
+            .WithCurrentModule(module.Name);
     }
 
     ~SolverTestFixture()

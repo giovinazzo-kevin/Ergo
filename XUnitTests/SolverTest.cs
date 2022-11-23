@@ -121,6 +121,10 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     #endregion
     public Task ShouldSolveFromKnowledgeBase(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
+    [Theory]
+    [InlineData("select([1,2,3],[A,B,C],[X,Y] >> (Y := X * 2))", 1, "A/2;B/4;C/6")]
+    public Task ShouldSolveHigherOrderPredicates(string query, int numSolutions, params string[] expected)
+        => ShouldSolve(query, numSolutions, true, expected);
     #region Rows
     [Theory]
     [InlineData("fibonacci(1000,X)", 1, "X/43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875")]

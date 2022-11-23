@@ -192,7 +192,7 @@ score_matchup_dual(T1-T2, U1-U2, S) :-
 	   - (SU1T1 * SU1T2) 
 	   - (SU2T1 * SU2T2)
 	   ) / 8.
-
+	   
 best_matchup_dual(T1-T2, U1-U2) :- 
 	score_matchup(T1, U1, 2), 
 	score_matchup(T1, U2, 2), 

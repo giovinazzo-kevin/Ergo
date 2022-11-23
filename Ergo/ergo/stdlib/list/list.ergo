@@ -1,5 +1,6 @@
 ﻿:- module(list, [
-	member/2, length/2, append/3
+	member/2, length/2, append/3,
+	select/3
 ]).
 
 :- op(15, xfy, ['|']).
@@ -13,3 +14,8 @@ length([_|T], L) :- length(T, M), L := M + 1 .
 
 append([], L, L).
 append([H|T], L, [H|R]) :- append(T, L, R).
+
+select([], [], _) :- !.
+select([H1|T1], [H2|T2], Lambda) :-
+	call(Lambda, H1, H2), !,
+	select(T1, T2, Lambda).

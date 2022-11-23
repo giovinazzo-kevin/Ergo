@@ -61,8 +61,6 @@ public sealed class SolverContext : IDisposable
 
         if (scope.InterpreterScope.VisibleBuiltIns.TryGetValue(sig, out var builtIn))
         {
-            if (ct.IsCancellationRequested)
-                yield break;
             goal.GetQualification(out goal);
             var args = goal.GetArguments();
             Solver.LogTrace(SolverTraceType.BuiltInResolution, goal, scope.Depth);
@@ -74,8 +72,6 @@ public sealed class SolverContext : IDisposable
 
             foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
             {
-                if (ct.IsCancellationRequested)
-                    yield break;
                 goal = eval.Result;
                 sig = goal.GetSignature();
                 yield return eval;
@@ -121,7 +117,8 @@ public sealed class SolverContext : IDisposable
         // Get first solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
-            if (ct.IsCancellationRequested) yield break;
+            if (ct.IsCancellationRequested)
+                yield break; // break on cuts and exceptions
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             if (s.Scope.Callee.IsTailRecursive)
             {
@@ -153,7 +150,6 @@ public sealed class SolverContext : IDisposable
             // Solve the rest of the goal
             foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
-                if (ct.IsCancellationRequested) yield break;
                 var lastSubs = SubstitutionMap.MergeCopy(tcoSubs, s.Substitutions);
                 yield return ss.AppendSubstitutions(lastSubs);
             }

@@ -103,7 +103,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [Theory]
     [InlineData("fail", 0)]
     [InlineData("succeed", 1, "")]
-    [InlineData("case01(X,N,L)", 3, "X/1;L/[1,2];N/2", "X/2;L/[3];N/1", "X/3;L/[3,1,2];N/3")]
+    [InlineData("case01(X,N,L)", 3, "X/1;L/[1,2];N/2", "X/2;L/[3];N/1", "X/3;L/[3,1,2];N/3") /*Not caused by TCO*/]
     #endregion
     public Task ShouldSolveFromKnowledgeBase(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);

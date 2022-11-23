@@ -51,7 +51,7 @@ public class Tabling : Library
     {
         if (e is ModuleLoadedEvent { Scope: var scope } mle)
         {
-            TransformTabledPredicates(ref scope);
+            TransformTabledPredicates(ref scope, mle.ModuleName);
             mle.Scope = scope; // Update the scope
         }
         else if (e is SolverContextCreatedEvent { Context: var mCtx1 })
@@ -63,27 +63,27 @@ public class Tabling : Library
             DestroyMemoizationContext(mCtx2);
         }
 
-        void TransformTabledPredicates(ref InterpreterScope scope)
+        void TransformTabledPredicates(ref InterpreterScope scope, Atom moduleName)
         {
             var ctx = new InstantiationContext("L");
-            if (!TabledPredicates.TryGetValue(scope.Entry, out var signatures))
+            if (!TabledPredicates.TryGetValue(moduleName, out var signatures))
                 return;
             foreach (var sig in signatures)
             {
                 var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");
                 var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));
-                var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(scope.Entry);
+                var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(moduleName);
 
                 var tblPred = new Predicate(
                     "(auto-generated auxilliary predicate for tabling)",
-                    scope.Entry,
+                    moduleName,
                     anon,
                     new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }),
                     true,
                     true
                 );
-
-                foreach (var match in scope.KnowledgeBase.GetMatches(ctx, anon.Qualified(scope.Entry), desugar: false)
+                var kb = scope.Modules[moduleName].Program.KnowledgeBase;
+                foreach (var match in kb.GetMatches(ctx, anon, desugar: false)
                     .AsEnumerable().SelectMany(x => x))
                 {
                     match.Rhs.Head.GetQualification(out var head);
@@ -95,10 +95,14 @@ public class Tabling : Library
                         match.Rhs.IsDynamic,
                         false
                     );
-                    scope.EntryModule.Program.KnowledgeBase.Retract(head);
-                    scope.EntryModule.Program.KnowledgeBase.AssertZ(auxPred);
+                    if (!kb.Retract(head))
+                    {
+                        scope.Throw(InterpreterError.TransformationFailed, head);
+                        return;
+                    }
+                    kb.AssertZ(auxPred);
                 }
-                scope.EntryModule.Program.KnowledgeBase.AssertZ(tblPred);
+                kb.AssertZ(tblPred);
             }
         }
     }

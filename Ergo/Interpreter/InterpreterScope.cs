@@ -25,10 +25,6 @@ public readonly struct InterpreterScope
     /// </summary>
     public readonly ExceptionHandler ExceptionHandler;
     /// <summary>
-    /// Contains all predicates that were defined in Modules. Can be used to create ErgoSolvers.
-    /// </summary>
-    public readonly KnowledgeBase KnowledgeBase;
-    /// <summary>
     /// The name of the entry module.
     /// </summary>
     public readonly Atom Entry;
@@ -57,7 +53,6 @@ public readonly struct InterpreterScope
             ;
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;
-        KnowledgeBase = null;
         VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableHashSet();
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
@@ -70,45 +65,46 @@ public readonly struct InterpreterScope
         ImmutableDictionary<Atom, Module> modules,
         ImmutableArray<string> dirs,
         bool runtime,
-        ExceptionHandler handler,
-        KnowledgeBase kb)
+        ExceptionHandler handler)
     {
         Modules = modules;
         SearchDirectories = dirs;
         Entry = currentModule;
         IsRuntime = runtime;
         ExceptionHandler = handler;
-        KnowledgeBase = kb ?? new();
         VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableHashSet();
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
         VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
-        if (kb is null)
-        {
-            foreach (var module in VisibleModules)
-            {
-                foreach (var pred in Modules[module].Program.KnowledgeBase)
-                {
-                    var newPred = pred.WithModuleName(module);
-                    if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
-                        newPred = newPred.WithModuleName(newModule).WithHead(newHead);
-                    if (!pred.IsExported)
-                        newPred = newPred.Qualified();
-                    KnowledgeBase.AssertZ(newPred);
-                }
-            }
-        }
     }
 
-    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, IsRuntime, ExceptionHandler, KnowledgeBase);
-    public InterpreterScope WithModule(Module m) => new(Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler, null);
-    public InterpreterScope WithoutModule(Atom m) => new(Entry, Modules.Remove(m), SearchDirectories, IsRuntime, ExceptionHandler, null);
-    public InterpreterScope WithSearchDirectory(string s) => new(Entry, Modules, SearchDirectories.Add(s), IsRuntime, ExceptionHandler, KnowledgeBase);
-    public InterpreterScope WithRuntime(bool runtime) => new(Entry, Modules, SearchDirectories, runtime, ExceptionHandler, KnowledgeBase);
-    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Entry, Modules, SearchDirectories, IsRuntime, newHandler, KnowledgeBase);
-    public InterpreterScope WithoutModules() => new(Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler, null);
-    public InterpreterScope WithoutSearchDirectories() => new(Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler, KnowledgeBase);
+    public KnowledgeBase BuildKnowledgeBase()
+    {
+        var kb = new KnowledgeBase();
+        foreach (var module in VisibleModules)
+        {
+            foreach (var pred in Modules[module].Program.KnowledgeBase)
+            {
+                var newPred = pred.WithModuleName(module);
+                if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
+                    newPred = newPred.WithModuleName(newModule).WithHead(newHead);
+                if (!pred.IsExported)
+                    newPred = newPred.Qualified();
+                kb.AssertZ(newPred);
+            }
+        }
+        return kb;
+    }
+
+    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithModule(Module m) => new(Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutModule(Atom m) => new(Entry, Modules.Remove(m), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithSearchDirectory(string s) => new(Entry, Modules, SearchDirectories.Add(s), IsRuntime, ExceptionHandler);
+    public InterpreterScope WithRuntime(bool runtime) => new(Entry, Modules, SearchDirectories, runtime, ExceptionHandler);
+    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Entry, Modules, SearchDirectories, IsRuntime, newHandler);
+    public InterpreterScope WithoutModules() => new(Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutSearchDirectories() => new(Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
 
     public T GetLibrary<T>(Atom module) where T : Library => Modules[module].LinkedLibrary
         .GetOrThrow(new ArgumentException(null, nameof(module)))

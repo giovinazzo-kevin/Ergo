@@ -28,6 +28,7 @@ public sealed class Tabled : SolverBuiltIn
          *     
          * Therefore args[0] is the rewritten goal that should be memoized.
          */
+        scope = scope.WithDepth(scope.Depth + 1);
         var memoContext = scope.InterpreterScope.GetLibrary<Tabling>(WellKnown.Modules.Tabling)
             .GetMemoizationContext(context);
         // The first call for a given tabled goal is dubbed the 'pioneer'.
@@ -35,11 +36,15 @@ public sealed class Tabled : SolverBuiltIn
         if (!memoContext.GetPioneer(variant).TryGetValue(out var pioneer))
         {
             memoContext.MemoizePioneer(pioneer = variant);
-            foreach(var sol in context.Solve(new(args), scope))
+            var any = false;
+            foreach (var sol in context.Solve(new(args), scope))
             {
-                memoContext.MemoizeSolution(pioneer, sol);
+                any = true;
+                memoContext.MemoizeSolution(pioneer, sol.Clone());
                 yield return True(sol.Substitutions);
             }
+            if (!any)
+                yield return False();
         }
         // Subsequent variant calls are dubbed 'followers' of that pioneer. 
         else
@@ -47,7 +52,7 @@ public sealed class Tabled : SolverBuiltIn
             var any = false;
             foreach (var sol in memoContext.GetSolutions(pioneer))
             {
-                pioneer.Substitute(sol.Substitutions).Unify(variant).TryGetValue(out var subs);
+                variant.Unify(pioneer.Substitute(sol.Substitutions)).TryGetValue(out var subs);
                 yield return True(subs);
                 any = true;
             }

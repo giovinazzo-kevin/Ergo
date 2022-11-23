@@ -62,6 +62,18 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         }
     }
 
+    public void Invert()
+    {
+        var toAdd = new Queue<Substitution>();
+        foreach (var (lhs, rhs) in Map)
+        {
+            Map.Remove(lhs);
+            toAdd.Enqueue(new(rhs, lhs));
+        }
+        while (toAdd.TryDequeue(out var s))
+            Add(s);
+    }
+
     public IEnumerator<Substitution> GetEnumerator()
     {
         return Map.Select(x => new Substitution(x.Key, x.Value)).GetEnumerator();

@@ -14,7 +14,7 @@ public abstract class PredicatesShellCommand : ShellCommand
         var term = m.Groups["term"];
         var shellScope = scope;
         var interpreterScope = scope.InterpreterScope;
-        var predicates = interpreterScope.KnowledgeBase.AsEnumerable();
+        var predicates = scope.KnowledgeBase.AsEnumerable();
         if (term?.Success ?? false)
         {
             var parsed = shell.Interpreter.Parse<Query>(interpreterScope, $"{term.Value}, true");
@@ -27,7 +27,7 @@ public abstract class PredicatesShellCommand : ShellCommand
 
             var yes = interpreterScope.ExceptionHandler.TryGet(() =>
             {
-                var matches = interpreterScope.KnowledgeBase.GetMatches(new("S"), tuple.Goals.Contents.First(), desugar: true)
+                var matches = scope.KnowledgeBase.GetMatches(new("S"), tuple.Goals.Contents.First(), desugar: true)
                     .AsEnumerable().SelectMany(x => x);
                 if (matches.Any())
                 {

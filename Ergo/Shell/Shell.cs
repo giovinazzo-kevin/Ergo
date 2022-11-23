@@ -27,7 +27,13 @@ public partial class ErgoShell
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
 
-    public ShellScope CreateScope() => new(Interpreter.CreateScope(x => x.WithExceptionHandler(LoggingExceptionHandler)).WithRuntime(true), false);
+    public ShellScope CreateScope()
+    {
+        var interpreterScope = Interpreter.CreateScope(x => x.WithExceptionHandler(LoggingExceptionHandler))
+            .WithRuntime(true);
+        var kb = interpreterScope.BuildKnowledgeBase();
+        return new(interpreterScope, false, kb);
+    }
 
     internal ErgoShell(
         ErgoFacade facade,
@@ -81,20 +87,23 @@ public partial class ErgoShell
     public virtual void Load(ref ShellScope scope, string fileName)
     {
         var copy = scope;
-        var numPredsBefore = scope.InterpreterScope.KnowledgeBase.Count;
+        var numPredsBefore = scope.KnowledgeBase.Count;
         var interpreterScope = copy.InterpreterScope;
         var loaded = Interpreter.Load(ref interpreterScope, new Atom(fileName));
         loaded.Do(some =>
         {
-            var numPredsAfter = interpreterScope.KnowledgeBase.Count;
+            var newKb = interpreterScope.BuildKnowledgeBase();
+            copy = copy
+                .WithInterpreterScope(interpreterScope)
+                .WithKnowledgeBase(newKb);
+            var numPredsAfter = newKb.Count;
             var delta = numPredsAfter - numPredsBefore;
             WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
-            copy = copy.WithInterpreterScope(interpreterScope);
         });
         scope = copy;
     }
 
-    public virtual async IAsyncEnumerable<ShellScope> Repl(Func<ShellScope> createScope = null, Func<string, bool> exit = null)
+    public virtual async IAsyncEnumerable<ShellScope> Repl(Func<ShellScope, ShellScope> transformScope = null, Func<string, bool> exit = null)
     {
         var encoding = new UnicodeEncoding(false, false);
         Out = new StreamWriter(Console.OpenStandardOutput(), encoding);
@@ -103,7 +112,9 @@ public partial class ErgoShell
         Console.SetOut(Out);
         Console.SetIn(In);
 
-        var scope = createScope?.Invoke() ?? CreateScope();
+        var scope = CreateScope();
+        if (transformScope != null)
+            scope = transformScope(scope);
 
         WriteLine("Welcome to the Ergo shell. To list the available commands, enter '?' (without quotes)." +
             "\r\nWhile evaluating solutions, press:" +

@@ -24,6 +24,7 @@ public sealed class MemoizationContext
     {
         if (!MemoizationTable.TryGetValue(pioneer, out var tbl))
             throw new InvalidOperationException();
+        sol.Substitutions.Prune(pioneer.Variables);
         tbl.Solutions.Add(sol);
     }
 

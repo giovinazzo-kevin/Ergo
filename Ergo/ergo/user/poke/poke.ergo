@@ -1,6 +1,8 @@
 ﻿:- module(poke, [
 ]).
 
+:- table(score_matchup_/3).
+
 type(none).
 type(normal).
 type(fire).
@@ -161,11 +163,31 @@ immune_to(ground, electric).
 immune_to(steel, poison).
 immune_to(fairy, dragon).
 
-num_weaknesses(T1, N, List) :-
-	type(T1),
-	bagof(T2, (super_eff(T2, T1)), List),
-	length(List, N).
-
 dual_type(T1-T2) :- 
 	type(T1), T1 \== none,
 	type(T2), T2 \== T1.
+
+score_matchup_(T1, T2, 0.0) :- immune_to(T2, T1), !.
+score_matchup_(T1, T2, 0.5) :- not_very_eff(T1, T2), !.
+score_matchup_(T1, T2, 2.0) :- super_eff(T1, T2), !.
+score_matchup_(_, _, 1.0).
+
+score_matchup(T1, T2, S) :-
+	type(T1), type(T2),
+	score_matchup_(T1, T2, S).
+
+score_matchup_dual(T1-T2, T3-T4, S) :-
+	dual_type(T1-T2), 
+	dual_type(T3-T4),
+	score_matchup_(T1, T3, ST1T3),
+	score_matchup_(T1, T4, ST1T4),
+	score_matchup_(T2, T3, ST2T3),
+	score_matchup_(T2, T4, ST2T4),
+	score_matchup_(T3, T1, ST3T1),
+	score_matchup_(T3, T2, ST3T2),
+	score_matchup_(T4, T1, ST4T1),
+	score_matchup_(T4, T2, ST4T2),
+	S := (ST1T3 - ST3T1) 
+	   + (ST1T4 - ST4T1) 
+	   + (ST2T3 - ST3T2) 
+	   + (ST2T4 - ST4T2).

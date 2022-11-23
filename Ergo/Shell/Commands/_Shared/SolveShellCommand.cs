@@ -37,7 +37,7 @@ public abstract class SolveShellCommand : ShellCommand
             userQuery += '.';
         }
 
-        using var solver = shell.Facade.BuildSolver(scope.InterpreterScope.KnowledgeBase);
+        using var solver = shell.Facade.BuildSolver(scope.KnowledgeBase);
         var parsed = shell.Interpreter.Parse<Query>(scope.InterpreterScope, userQuery);
         if (!parsed.TryGetValue(out var query))
         {

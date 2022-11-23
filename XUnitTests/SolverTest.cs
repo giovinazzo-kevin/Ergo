@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
 using Ergo.Solver;
@@ -9,11 +10,13 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
 {
     public readonly ErgoInterpreter Interpreter;
     public readonly InterpreterScope InterpreterScope;
+    public readonly KnowledgeBase KnowledgeBase;
 
     public SolverTests(SolverTestFixture fixture)
     {
         Interpreter = fixture.Interpreter;
         InterpreterScope = fixture.InterpreterScope;
+        KnowledgeBase = fixture.KnowledgeBase;
     }
     // "⊤" : "⊥"
     public async Task ShouldParse<T>(string query, T expected)
@@ -28,7 +31,7 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     {
         if (expected.Length != 0)
             Assert.Equal(expectedSolutions, expected.Length);
-        using var solver = Interpreter.Facade.BuildSolver(InterpreterScope.KnowledgeBase, SolverFlags.Default);
+        using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, SolverFlags.Default);
         var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)

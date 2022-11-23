@@ -170,7 +170,7 @@ public partial class ErgoInterpreter
 
         // Invoke ModuleLoaded so that libraries can, e.g., rewrite predicates
         scope = scope
-            .ForwardEventToLibraries(new ModuleLoadedEvent(this) { Scope = scope })
+            .ForwardEventToLibraries(new ModuleLoadedEvent(this, module.Name) { Scope = scope })
             .Scope;
         return module;
     }

@@ -1,5 +1,6 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
+using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions.Handler;
 
@@ -11,6 +12,7 @@ public sealed class SolverTestFixture : IDisposable
     public readonly ExceptionHandler ThrowingExceptionHandler = new(ex => throw ex);
     public readonly ErgoInterpreter Interpreter;
     public readonly InterpreterScope InterpreterScope;
+    public readonly KnowledgeBase KnowledgeBase;
 
     public SolverTestFixture()
     {
@@ -32,8 +34,8 @@ public sealed class SolverTestFixture : IDisposable
             .Load(ref scope, moduleName)
             .GetOrThrow(new InvalidOperationException());
         InterpreterScope = scope
-            .WithModule(scope.EntryModule.WithImport(module.Name))
-        ;
+            .WithModule(scope.EntryModule.WithImport(module.Name));
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase();
     }
 
     ~SolverTestFixture()

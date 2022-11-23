@@ -17,4 +17,5 @@ public enum InterpreterError
     , CyclicLiteralDefinition
     , ModuleRedefinition
     , UndefinedDirective
+    , TransformationFailed
 }

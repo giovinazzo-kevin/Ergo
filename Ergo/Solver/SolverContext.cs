@@ -25,7 +25,7 @@ public sealed class SolverContext : IDisposable
         ExceptionCts = exceptionCts;
     }
 
-    public SolverContext CreateChild() => new(Solver, Scope, this, ChoicePointCts, ExceptionCts);
+    public SolverContext CreateChild() => new(Solver, Scope, this, new(), ExceptionCts);
     public static SolverContext Create(ErgoSolver solver, InterpreterScope scope) => new(solver, scope, null, new(), new());
     public SolverContext GetRoot()
     {
@@ -87,7 +87,7 @@ public sealed class SolverContext : IDisposable
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
-        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ChoicePointCts.Token, ExceptionCts.Token).Token;
+        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ExceptionCts.Token).Token;
         foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
         {
             yield return s;
@@ -117,7 +117,7 @@ public sealed class SolverContext : IDisposable
         // Get first solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
-            if (ct.IsCancellationRequested)
+            if (ct.IsCancellationRequested || ChoicePointCts.IsCancellationRequested)
                 yield break; // break on cuts and exceptions
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             if (s.Scope.Callee.IsTailRecursive)
@@ -237,6 +237,8 @@ public sealed class SolverContext : IDisposable
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }
+                if (innerCtx.ChoicePointCts.IsCancellationRequested)
+                    break;
             }
             if (noMatches)
             {

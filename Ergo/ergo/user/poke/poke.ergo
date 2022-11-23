@@ -176,18 +176,27 @@ score_matchup(T1, T2, S) :-
 	type(T1), type(T2),
 	score_matchup_(T1, T2, S).
 
-score_matchup_dual(T1-T2, T3-T4, S) :-
+score_matchup_dual(T1-T2, U1-U2, S) :-
 	dual_type(T1-T2), 
-	dual_type(T3-T4),
-	score_matchup_(T1, T3, ST1T3),
-	score_matchup_(T1, T4, ST1T4),
-	score_matchup_(T2, T3, ST2T3),
-	score_matchup_(T2, T4, ST2T4),
-	score_matchup_(T3, T1, ST3T1),
-	score_matchup_(T3, T2, ST3T2),
-	score_matchup_(T4, T1, ST4T1),
-	score_matchup_(T4, T2, ST4T2),
-	S := (ST1T3 - ST3T1) 
-	   + (ST1T4 - ST4T1) 
-	   + (ST2T3 - ST3T2) 
-	   + (ST2T4 - ST4T2).
+	dual_type(U1-U2),
+	score_matchup_(T1, U1, ST1U1),
+	score_matchup_(T1, U2, ST1U2),
+	score_matchup_(T2, U1, ST2U1),
+	score_matchup_(T2, U2, ST2U2),
+	score_matchup_(U1, T1, SU1T1),
+	score_matchup_(U1, T2, SU1T2),
+	score_matchup_(U2, T1, SU2T1),
+	score_matchup_(U2, T2, SU2T2),
+	S :=((ST1U1 * ST1U2) 
+	   + (ST2U1 * ST2U2) 
+	   - (SU1T1 * SU1T2) 
+	   - (SU2T1 * SU2T2)
+	   ) / 8.
+
+best_matchup_dual(T1-T2, U1-U2) :- 
+	score_matchup(T1, U1, 2), 
+	score_matchup(T1, U2, 2), 
+	U2 \== U1, 
+	score_matchup(T2, U1, 2), 
+	T2 \== T1,
+	score_matchup(T2, U2, 2).

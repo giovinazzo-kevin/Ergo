@@ -45,6 +45,8 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 => ((EDecimal)Evaluate(solver, c.Arguments[0])).Pow(Evaluate(solver, c.Arguments[1])),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.SquareRoot.Contains(f)
                 => ((EDecimal)Evaluate(solver, c.Arguments[0])).Sqrt(null),
+                var f when c.Arguments.Length == 1 && WellKnown.Functors.AbsoluteValue.Contains(f)
+                => ((EDecimal)Evaluate(solver, c.Arguments[0])).Abs(),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Minus.Contains(f)
                 => -Evaluate(solver, c.Arguments[0]),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)

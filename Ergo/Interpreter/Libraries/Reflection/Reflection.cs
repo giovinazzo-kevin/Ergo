@@ -17,6 +17,7 @@ public class Reflection : Library
         .Append(new SequenceType())
         .Append(new Term())
         .Append(new TermType())
+        .Append(new Variant())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

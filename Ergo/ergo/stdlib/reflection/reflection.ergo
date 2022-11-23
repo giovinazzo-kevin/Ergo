@@ -37,12 +37,7 @@
 %: ⊤ iff the result of A == B will not change due to further instantiation of either term.
 '?='(A,B) :- \+unifiable(A,B,[_H|_T]).
 %: Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
-'=@='(A, B) :-
-	copy_term(A, Ac),
-	copy_term(B, Bc),
-	numbervars(Ac, 0, N),
-	numbervars(Bc, 0, N),
-	Ac == Bc.
+'=@='(A, B) :- variant(A, B).
 '\\=@='(A, B) :- \+(A =@= B).
 %: Anonymous type declaration. (TODO: remove?)
 '/'(Functor, Arity) :- anon(Functor, Arity).

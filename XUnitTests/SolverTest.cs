@@ -69,6 +69,17 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     #endregion
     public Task ShouldSolveConjunctionsAndDisjunctions(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, false, expected);
+    [Theory]
+    [InlineData("a =@= A", 0)]
+    [InlineData("A =@= B", 1, "")]
+    [InlineData("x(A,A) =@= x(B,C)", 0)]
+    [InlineData("x(A,A) =@= x(B,B)", 1, "")]
+    [InlineData("x(A,A) =@= x(A,B)", 0)]
+    [InlineData("x(A,B) =@= x(C,D)", 1, "")]
+    [InlineData("x(A,B) =@= x(B,A)", 1, "")]
+    [InlineData("x(A,B) =@= x(C,A)", 1, "")]
+    public Task ShouldSolveVariants(string query, int numSolutions, params string[] expected)
+        => ShouldSolve(query, numSolutions, false, expected);
     #region Rows
     [Theory]
     [InlineData("min(3,5,3)", 1, "")]

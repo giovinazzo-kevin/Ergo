@@ -118,8 +118,14 @@ public sealed class SolverTests : IClassFixture<SolverTestFixture>
     [InlineData("fail", 0)]
     [InlineData("succeed", 1, "")]
     [InlineData("case01(X,N,L)", 3, "X/1;L/[1,2];N/2", "X/2;L/[3];N/1", "X/3;L/[3,1,2];N/3") /*Not caused by TCO*/]
+    [InlineData("case02([1,2,3],[2,4,6])", 1, "")]
+    [InlineData("case02([1,2,3],L)", 1, "L/[2,4,6]")]
     #endregion
     public Task ShouldSolveFromKnowledgeBase(string query, int numSolutions, params string[] expected)
+        => ShouldSolve(query, numSolutions, true, expected);
+    [Theory]
+    [InlineData("select([1,2,3],[A,B,C],[X,Y] >> (Y := X * 2))", 1, "A/2;B/4;C/6")]
+    public Task ShouldSolveHigherOrderPredicates(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
     #region Rows
     [Theory]

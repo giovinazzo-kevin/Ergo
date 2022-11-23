@@ -26,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\case02\case02.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\case01\case01.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

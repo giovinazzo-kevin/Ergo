@@ -123,7 +123,8 @@ public sealed class SolverContext : IDisposable
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
-                scope = s.Scope.WithoutLastCaller();
+                if (s.Scope.Callers.Any())
+                    scope = s.Scope.WithoutLastCaller();
                 tcoSubs.AddRange(s.Substitutions);
                 // Remove all substitutions that don't pertain to any variables in the current scope
                 tcoSubs.Prune(s.Scope.Callee.Body.CanonicalForm.Variables);

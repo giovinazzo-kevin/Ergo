@@ -101,22 +101,30 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         return @base;
     }
 
-    ITerm ToNumberVars()
-    {
-        return Substitute(Variables.Select((v, i) => new Substitution(v, new Variable($"$VAR({i})"))));
-    }
-
     /// <summary>
     /// Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
     /// </summary>
-    bool IsVariantOf(ITerm other)
+    bool IsVariantOf(ITerm b)
     {
-        var ctx = new InstantiationContext("__IsVariantOf");
-        var Ac = Instantiate(ctx);
-        var Bc = other.Instantiate(ctx);
-        var An = Ac.ToNumberVars();
-        var Bn = Bc.ToNumberVars();
-        return An.Equals(Bn);
+        // TODO: Fix for cyclic terms
+        if (this is Atom && b is Atom)
+            return Equals(b);
+        if (this is Variable && b is Variable)
+            return true;
+        if (this is Complex ca && b is Complex cb)
+        {
+            if (!cb.Arity.Equals(cb.Arity))
+                return false;
+            if (!ca.Functor.Equals(cb.Functor))
+                return false;
+            for (int i = 0; i < ca.Arity; i++)
+            {
+                if (!ca.Arguments[i].IsVariantOf(cb.Arguments[i]))
+                    return false;
+            }
+            return true;
+        }
+        return false;
     }
 }
 

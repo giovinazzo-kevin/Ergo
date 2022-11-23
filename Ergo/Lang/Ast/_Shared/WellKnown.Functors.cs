@@ -27,6 +27,7 @@ public static partial class WellKnown
         public static readonly HashSet<Atom> Power = new(new Atom[] { new("^") });
         public static readonly HashSet<Atom> SquareRoot = new(new Atom[] { new("√"), new("sqrt") });
         public static readonly HashSet<Atom> Modulo = new(new Atom[] { new("mod") });
+        public static readonly HashSet<Atom> AbsoluteValue = new(new Atom[] { new("abs") });
         public static readonly HashSet<Atom> Unification = new(new Atom[] { new("=") });
         public static readonly HashSet<Atom> Gt = new(new Atom[] { new(">") });
         public static readonly HashSet<Atom> Gte = new(new Atom[] { new("≥"), new(">=") });

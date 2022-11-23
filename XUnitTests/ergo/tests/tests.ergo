@@ -2,5 +2,7 @@
 	fail/0, succeed/0
 ]).
 
+:- use_module(case01).
+
 fail :- false.
 succeed.

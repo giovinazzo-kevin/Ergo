@@ -66,6 +66,7 @@ public readonly struct Module
     public Module WithDynamicPredicate(Signature predicate) => new(Name, Imports, Exports, Operators, DynamicPredicates.Add(predicate.WithModule(Name)), Program, LinkedLibrary, IsRuntime);
     public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, DynamicPredicates, p, LinkedLibrary, IsRuntime);
     public Module WithLinkedLibrary(Maybe<Library> lib) => new(Name, Imports, Exports, Operators, DynamicPredicates, Program, lib, IsRuntime);
+    public Module AsRuntime(bool runtime) => new(Name, Imports, Exports, Operators, DynamicPredicates, Program, LinkedLibrary, runtime);
 
     public bool ContainsExport(Signature sign)
     {

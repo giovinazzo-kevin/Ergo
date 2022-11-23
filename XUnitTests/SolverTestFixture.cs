@@ -27,12 +27,13 @@ public sealed class SolverTestFixture : IDisposable
             .WithSearchDirectory(testsPath)
             .WithSearchDirectory(stdlibPath)
         );
+        scope = scope.WithRuntime(true);
         var module = Interpreter
             .Load(ref scope, moduleName)
             .GetOrThrow(new InvalidOperationException());
         InterpreterScope = scope
-            .WithModule(module)
-            .WithCurrentModule(module.Name);
+            .WithModule(scope.EntryModule.WithImport(module.Name))
+        ;
     }
 
     ~SolverTestFixture()

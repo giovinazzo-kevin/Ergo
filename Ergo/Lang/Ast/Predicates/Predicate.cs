@@ -13,6 +13,9 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsDynamic;
     public readonly bool IsExported;
     public readonly bool IsTailRecursive;
+    //public readonly bool IsDeterminate;
+
+    //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
 
     private static bool GetIsTailRecursive(ITerm head, NTuple body)
     {

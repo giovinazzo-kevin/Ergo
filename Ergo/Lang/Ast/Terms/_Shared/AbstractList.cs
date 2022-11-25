@@ -62,7 +62,15 @@ public abstract class AbstractList : IAbstractTerm
         }
         return Create(builder.MoveToImmutable());
     }
-
+    public virtual IAbstractTerm Substitute(SubstitutionMap s)
+    {
+        var builder = Contents.ToBuilder();
+        for (int i = 0; i < builder.Count; i++)
+        {
+            builder[i] = Contents[i].Substitute(s);
+        }
+        return Create(builder.MoveToImmutable());
+    }
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
     /// </summary>

@@ -122,9 +122,9 @@ public sealed class SolverContext : IDisposable
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
             if (s.Scope.Callee.IsTailRecursive)
             {
+                // PROBLEM
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
-                if (s.Scope.Callers.Any())
-                    scope = s.Scope.WithoutLastCaller();
+                scope = s.Scope.WithoutLastCaller();
                 tcoSubs.AddRange(s.Substitutions);
                 // Remove all substitutions that don't pertain to any variables in the current scope
                 tcoSubs.Prune(s.Scope.Callee.Body.CanonicalForm.Variables);
@@ -226,6 +226,10 @@ public sealed class SolverContext : IDisposable
                     .WithChoicePoint();
                 if (m.Rhs.IsTailRecursive)
                 {
+                    // PROBLEM: This branch should only be entered iff the predicate is known to be determinate at this point
+                    // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/Last-Clause-Determinacy-Detection.html
+                    // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/What-is-Detected.html#What-is-Detected
+                    // https://www.mercurylang.org/information/doc-latest/mercury_ref/Determinism.html#Determinism-categories
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
                     yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
                     continue;

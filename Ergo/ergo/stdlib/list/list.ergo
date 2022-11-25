@@ -8,9 +8,11 @@
 member(_, []) :- false.
 member(X, [Y|T]) :- (X = Y; member(X, T)).
 
-length([], 0).
-length([_|[]], 1) :- !.
-length([_|T], L) :- length(T, M), L := M + 1 .
+length([], N, N).
+length([_|List], N, N0) :-
+  N1 is N0+1,
+  length(List, N, N1).
+length(L, N) :- length(L, N, 0).
 
 append([], L, L).
 append([H|T], L, [H|R]) :- append(T, L, R).
@@ -19,3 +21,8 @@ select([], [], _) :- !.
 select([H1|T1], [H2|T2], Lambda) :-
 	call(Lambda, H1, H2),
 	select(T1, T2, Lambda).
+
+my_select([], []) :- !.
+my_select([H1|T1], [H2|T2]) :-
+	H2 := H1 * 2,
+	my_select(T1, T2).

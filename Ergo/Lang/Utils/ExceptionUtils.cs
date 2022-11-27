@@ -1,10 +1,27 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Lang.Compiler;
 using Ergo.Solver;
 
 namespace Ergo.Lang.Utils;
 
 public static class ExceptionUtils
 {
+    public static string GetCompilerError(ErgoCompiler.ErrorType error, params object[] args)
+    {
+        var msg = error switch
+        {
+            ErgoCompiler.ErrorType.NotEnoughMemoryToEmitNextInstruction => "The compiler attempted to allocate {1} bytes, but only {0} were available.",
+            _ => error.ToString()
+        };
+
+        if (args != null && args.Length > 0)
+        {
+            msg = string.Format(msg, args);
+        }
+
+        return msg;
+    }
+
     public static string GetParserError(ErgoParser.ErrorType error, params object[] args)
     {
         var msg = error switch

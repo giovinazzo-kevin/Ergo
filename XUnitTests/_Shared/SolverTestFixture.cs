@@ -6,7 +6,7 @@ using Ergo.Lang.Exceptions.Handler;
 
 namespace Tests;
 
-public sealed class SolverTestFixture : IDisposable
+public sealed class ErgoTestFixture : IDisposable
 {
     public readonly ExceptionHandler NullExceptionHandler = default;
     public readonly ExceptionHandler ThrowingExceptionHandler = new(ex => throw ex);
@@ -14,7 +14,7 @@ public sealed class SolverTestFixture : IDisposable
     public readonly InterpreterScope InterpreterScope;
     public readonly KnowledgeBase KnowledgeBase;
 
-    public SolverTestFixture()
+    public ErgoTestFixture()
     {
         var basePath = Directory.GetCurrentDirectory();
         var stdlibPath = Path.Combine(basePath, @"..\..\..\..\Ergo\ergo");
@@ -38,7 +38,7 @@ public sealed class SolverTestFixture : IDisposable
         KnowledgeBase = InterpreterScope.BuildKnowledgeBase();
     }
 
-    ~SolverTestFixture()
+    ~ErgoTestFixture()
     {
         Dispose();
     }

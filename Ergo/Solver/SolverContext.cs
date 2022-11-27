@@ -120,6 +120,7 @@ public sealed class SolverContext : IDisposable
             if (ct.IsCancellationRequested || ChoicePointCts.IsCancellationRequested)
                 yield break; // break on cuts and exceptions
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
+#if _ERGO_SOLVER_ENABLE_TCO
             if (s.Scope.Callee.IsTailRecursive)
             {
                 // PROBLEM
@@ -133,6 +134,7 @@ public sealed class SolverContext : IDisposable
                 tcoPred = s.Scope.Callee;
                 goto TCO;
             }
+#endif
             if (rest.Contents.Length > 0 && tcoPred.TryGetValue(out var p))
             {
                 var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDefinitionAs(p));
@@ -225,16 +227,21 @@ public sealed class SolverContext : IDisposable
                     .WithCallee(m.Rhs)
                     .WithCaller(scope.Callee)
                     .WithChoicePoint();
+                var callerVars = scope.Callee.Body.CanonicalForm.Variables;
+                var calleeVars = m.Rhs.Body.CanonicalForm.Variables;
+#if _ERGO_SOLVER_ENABLE_TCO
                 if (m.Rhs.IsTailRecursive)
                 {
                     // PROBLEM: This branch should only be entered iff the predicate is known to be determinate at this point
                     // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/Last-Clause-Determinacy-Detection.html
                     // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/What-is-Detected.html#What-is-Detected
                     // https://www.mercurylang.org/information/doc-latest/mercury_ref/Determinism.html#Determinism-categories
+                    // https://www.metalevel.at/prolog/fun
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
                     yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
                     continue;
                 }
+#endif
                 using var innerCtx = CreateChild();
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                 foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))

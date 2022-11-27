@@ -21,9 +21,16 @@ internal static class AbstractTermCache
     {
         if (!Misses.TryGetValue(type, out var set))
             set = Misses[type] = new();
-        set.Add(t.GetHashCode());
+        lock (set)
+            set.Add(t.GetHashCode());
     }
-    public static bool IsNot(ITerm t, Type type) => Misses.TryGetValue(type, out var set) && set.Contains(t.GetHashCode());
+    public static bool IsNot(ITerm t, Type type)
+    {
+        if (!Misses.TryGetValue(type, out var set))
+            return false;
+        lock (set)
+            return set.Contains(t.GetHashCode());
+    }
     public static Maybe<IAbstractTerm> Get(ITerm t, Type checkType)
     {
         if (Cache.TryGetValue(t.GetHashCode(), out var x) && x.GetType().Equals(checkType))

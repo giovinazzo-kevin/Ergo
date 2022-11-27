@@ -6,7 +6,7 @@ list_element_rest([L|Ls], L, Ls).
 list_element_rest([L|Ls0], E, [L|Ls]) :-
         list_element_rest(Ls0, E, Ls).
 
-my_select([], []) :- !.
+my_select([], []).
 my_select([H1|T1], [H2|T2]) :-
 	H2 := H1 * 2,
 	my_select(T1, T2).

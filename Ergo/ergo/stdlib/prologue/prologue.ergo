@@ -13,6 +13,7 @@
 :- op(50, xfx, ['=']).
 :- op(50, xfx, ['≠', '\\=']).
 :- op(1000, xfy, [':']).
+:- op(920, fx, ['*']).
 
 % OPERATOR IMPLEMENTATIONS
 
@@ -35,3 +36,5 @@ If -> Then :- If, !, Then.
 '='(A, B) :- unify(A, B).
 %: Negation of the unification of A and B.
 '≠'(A, B) :- \+(A = B).
+% Used for declarative debugging; "comments out" the following statement.
+*_. 

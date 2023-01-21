@@ -9,7 +9,17 @@ public static class FileStreamUtils
     public static ErgoStream FileStream(IEnumerable<string> searchDirectories, string module)
     {
         var fileName = searchDirectories
-            .SelectMany(d => Directory.EnumerateFiles(d, "*.ergo", SearchOption.AllDirectories))
+            .SelectMany(d =>
+            {
+                try
+                {
+                    return Directory.EnumerateFiles(d, "*.ergo", SearchOption.AllDirectories);
+                }
+                catch
+                {
+                    return Enumerable.Empty<string>();
+                }
+            })
             .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(module));
         if (fileName is null)
         {

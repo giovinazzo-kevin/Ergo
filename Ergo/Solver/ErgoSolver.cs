@@ -163,7 +163,7 @@ public partial class ErgoSolver : IDisposable
         if (!_initialized)
         {
             if (!Flags.HasFlag(SolverFlags.InitializeAutomatically))
-                throw new InvalidOperationException("Solver uninitialized. Call InitializeAsync() first.");
+                throw new InvalidOperationException("Solver uninitialized. Call Initialize() first.");
             Initialize(scope.InterpreterScope);
         }
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());

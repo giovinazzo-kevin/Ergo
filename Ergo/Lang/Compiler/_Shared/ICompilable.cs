@@ -4,5 +4,5 @@ namespace Ergo.Lang.Compiler;
 
 public interface ICompilable
 {
-    IEnumerable<ErgoInstruction> Compile(ErgoCompiler compiler, CompilerScope scope);
+    IEnumerable<ErgoInstruction> Compile();
 }

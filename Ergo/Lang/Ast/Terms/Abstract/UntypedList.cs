@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Ast;
 
 public sealed class UntypedSequence : AbstractList
 {
@@ -16,4 +18,5 @@ public sealed class UntypedSequence : AbstractList
         CanonicalForm = Fold(Functor, EmptyElement, head).Reduce<ITerm>(a => a, v => v, c => c);
     }
     protected override AbstractList Create(ImmutableArray<ITerm> head) => throw new NotImplementedException();
+    public override Maybe<IAbstractTerm> FromCanonicalTerm(ITerm canonical) => throw new NotImplementedException();
 }

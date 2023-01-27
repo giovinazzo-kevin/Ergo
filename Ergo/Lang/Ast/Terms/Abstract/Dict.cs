@@ -90,4 +90,5 @@ public sealed class Dict : IAbstractTerm
         var args = list.Contents.Cast<Complex>().Select(c => new KeyValuePair<Atom, ITerm>((Atom)c.Arguments[0], c.Arguments[1]));
         return Maybe.Some<Dict>(new(functor, args));
     }
+    Maybe<IAbstractTerm> IAbstractTerm.FromCanonicalTerm(ITerm canonical) => FromCanonical(canonical).Select(x => (IAbstractTerm)x);
 }

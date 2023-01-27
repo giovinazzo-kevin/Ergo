@@ -46,30 +46,30 @@ public abstract class AbstractList : IAbstractTerm
     public virtual IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        var builder = Contents.ToBuilder();
-        for (int i = 0; i < builder.Count; i++)
+        var builder = Contents.ToArray();
+        for (int i = 0; i < builder.Length; i++)
         {
             builder[i] = Contents[i].Instantiate(ctx, vars);
         }
-        return Create(builder.MoveToImmutable());
+        return Create(builder.ToImmutableArray());
     }
     public virtual IAbstractTerm Substitute(Substitution s)
     {
-        var builder = Contents.ToBuilder();
-        for (int i = 0; i < builder.Count; i++)
+        var builder = Contents.ToArray();
+        for (int i = 0; i < builder.Length; i++)
         {
             builder[i] = Contents[i].Substitute(s);
         }
-        return Create(builder.MoveToImmutable());
+        return Create(builder.ToImmutableArray());
     }
     public virtual IAbstractTerm Substitute(SubstitutionMap s)
     {
-        var builder = Contents.ToBuilder();
-        for (int i = 0; i < builder.Count; i++)
+        var builder = Contents.ToArray();
+        for (int i = 0; i < builder.Length; i++)
         {
             builder[i] = Contents[i].Substitute(s);
         }
-        return Create(builder.MoveToImmutable());
+        return Create(builder.ToImmutableArray());
     }
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
@@ -146,4 +146,5 @@ public abstract class AbstractList : IAbstractTerm
         }
     }
 
+    public abstract Maybe<IAbstractTerm> FromCanonicalTerm(ITerm c);
 }

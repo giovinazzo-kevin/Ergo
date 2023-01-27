@@ -153,10 +153,14 @@ public class Expansions : Library
                     foreach (var argList in cartesian)
                     {
                         // TODO: This might mess with abstract forms!
-                        var newCplx = cplx.WithArguments(argList
+                        var newCplx = cplx
+                            .WithAbstractForm(default)
+                            .WithArguments(argList
                             .Select(x => x.Reduce(exp => exp.Binding
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
+                        if (cplx.AbstractForm.TryGetValue(out var abs))
+                            newCplx = newCplx.WithAbstractForm(abs.FromCanonicalTerm(newCplx));
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                                .Concat(argList.SelectMany(x => x

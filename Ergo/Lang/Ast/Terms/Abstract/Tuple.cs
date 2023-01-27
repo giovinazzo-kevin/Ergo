@@ -21,6 +21,8 @@ public sealed class NTuple : AbstractList
     public override ITerm CanonicalForm { get; }
     protected override AbstractList Create(ImmutableArray<ITerm> head) => new NTuple(head);
     public static Maybe<NTuple> FromCanonical(ITerm term) => FromPseudoCanonical(term, true, true);
+    public override Maybe<IAbstractTerm> FromCanonicalTerm(ITerm canonical) => FromCanonical(canonical).Select(x => (IAbstractTerm)x);
+
     public static Maybe<NTuple> FromPseudoCanonical(ITerm term, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
     {
         if (parenthesized.TryGetValue(out var parens) && term is Complex { IsParenthesized: var p } && p != parens)

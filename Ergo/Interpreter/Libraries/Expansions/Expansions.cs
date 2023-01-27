@@ -32,7 +32,8 @@ public class Expansions : Library
                 }
                 if (expansions.Count > 0)
                 {
-                    if (!sie.Solver.KnowledgeBase.Retract(pred.Head))
+                    // TODO: fix Fiero
+                    if (!sie.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
@@ -111,12 +112,12 @@ public class Expansions : Library
             foreach (var variant in cartesian)
             {
                 var newBody = new List<ITerm>();
+                newBody.AddRange(headClauses);
                 foreach (var clause in variant)
                 {
                     newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()));
                     newBody.Add(clause.Reduce(e => e.Binding.Select(x => (ITerm)x).GetOr(e.Match), a => a));
                 }
-                newBody.AddRange(headClauses);
                 yield return new Predicate(
                     p.Documentation,
                     p.DeclaringModule,

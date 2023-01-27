@@ -95,7 +95,8 @@ public partial class ErgoShell
             var newKb = interpreterScope.BuildKnowledgeBase();
             copy = copy
                 .WithInterpreterScope(interpreterScope)
-                .WithKnowledgeBase(newKb);
+                .WithKnowledgeBase(newKb)
+                ;
             var numPredsAfter = newKb.Count;
             var delta = numPredsAfter - numPredsBefore;
             WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);

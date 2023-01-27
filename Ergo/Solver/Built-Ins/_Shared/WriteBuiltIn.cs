@@ -4,12 +4,14 @@ public abstract class WriteBuiltIn : SolverBuiltIn
 {
     public readonly bool Canonical;
     public readonly bool Quoted;
+    public readonly bool Portrayed;
 
-    protected WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon, bool quoted)
+    protected WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon, bool quoted, bool portray)
         : base(documentation, functor, arity, WellKnown.Modules.IO)
     {
         Canonical = canon;
         Quoted = quoted;
+        Portrayed = portray;
     }
 
     static ITerm AsQuoted(ITerm t, bool quoted)
@@ -31,10 +33,10 @@ public abstract class WriteBuiltIn : SolverBuiltIn
         foreach (var arg in args)
         {
             // https://www.swi-prolog.org/pldoc/man?predicate=portray/1
-            if (arg is not Variable && WellKnown.Hooks.IO.Portray_1.IsDefined(context))
+            if (Portrayed && arg is not Variable && WellKnown.Hooks.IO.Portray_1.IsDefined(context))
             {
                 var any = false;
-                foreach(var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
+                foreach (var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
                     any = true;
                 if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }

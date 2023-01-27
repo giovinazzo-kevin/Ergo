@@ -1,6 +1,7 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Utils;
 using System.Reflection;
+using System.Text;
 
 namespace Ergo.Lang.Extensions;
 public static class LanguageExtensions
@@ -158,5 +159,25 @@ public static class LanguageExtensions
         return new Complex(functor, Enumerable.Range(0, arity)
             .Select(i => (ITerm)new Variable($"__A{i}"))
             .ToArray());
+    }
+
+    public static string ToErgoCase(this string s)
+    {
+        // Assume PascalCase
+        var wasUpper = true;
+        var sb = new StringBuilder();
+        for (var i = 0; i < s.Length; ++i)
+        {
+            var isUpper = char.IsUpper(s[i]);
+            if (i > 0 && !wasUpper && isUpper)
+            {
+                sb.Append("_");
+            }
+
+            sb.Append(char.ToLower(s[i]));
+            wasUpper = isUpper;
+        }
+
+        return sb.ToString();
     }
 }

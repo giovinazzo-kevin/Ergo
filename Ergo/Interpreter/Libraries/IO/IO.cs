@@ -10,6 +10,7 @@ public class IO : Library
         .Append(new Write())
         .Append(new WriteCanonical())
         .Append(new WriteQuoted())
+        .Append(new WriteRaw())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

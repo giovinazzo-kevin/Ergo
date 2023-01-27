@@ -101,6 +101,24 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
         return false;
     }
+    public bool Retract(Predicate pred)
+    {
+        if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
+        {
+            for (var i = matches.Count - 1; i >= 0; i--)
+            {
+                var predicate = matches[i];
+                if (predicate.Unify(pred.Head).TryGetValue(out _)
+                && predicate.Body.Unify(pred.Body).TryGetValue(out _))
+                {
+                    matches.RemoveAt(i);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     public int RetractAll(ITerm head)
     {

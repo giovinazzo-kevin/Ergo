@@ -47,9 +47,25 @@ public sealed class DataSink<T> : IDataSink, IDisposable
         DataPushed += DataPushedHandler;
     }
 
+    public async Task<T> PullOneAsync(CancellationToken ct = default)
+    {
+        if (_disposed) throw new ObjectDisposedException(nameof(DataSink<T>));
+
+        var item = await Buffer.Reader.ReadAsync(ct);
+        var ret = TermMarshall.FromTerm<T>(item);
+        return ret;
+
+    }
+
     public async IAsyncEnumerable<T> Pull([EnumeratorCancellation] CancellationToken ct = default)
     {
         if (_disposed) throw new ObjectDisposedException(nameof(DataSink<T>));
+
+        if (DataPushedHandler != null)
+        {
+            DataPushed -= DataPushedHandler;
+            DataPushedHandler = null;
+        }
 
         if (!Buffer.Writer.TryComplete())
             throw new InvalidOperationException();
@@ -57,12 +73,6 @@ public sealed class DataSink<T> : IDataSink, IDisposable
         await foreach (var item in Buffer.Reader.ReadAllAsync(ct))
         {
             yield return TermMarshall.FromTerm<T>(item);
-        }
-
-        if (DataPushedHandler != null)
-        {
-            DataPushed -= DataPushedHandler;
-            DataPushedHandler = null;
         }
 
         RegenerateBuffer();

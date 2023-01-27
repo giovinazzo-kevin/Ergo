@@ -52,6 +52,13 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Complex c => c.AsParenthesized(parens),
         var x => x
     };
+    ITerm AsQuoted(bool quote) => this switch
+    {
+        Atom a => a.AsQuoted(quote),
+        Variable v => v,
+        Complex c => c,
+        var x => x
+    };
 
     ITerm Qualified(Atom m)
     {

@@ -26,6 +26,18 @@ public readonly struct Either<TA, TB>
         return mapB(B);
     }
 
+    public void Do(Action<TA> mapA, Action<TB> mapB)
+    {
+        if (IsA)
+        {
+            mapA(A);
+        }
+        else
+        {
+            mapB(B);
+        }
+    }
+
     private Either(TA a, TB b, bool isA)
     {
         A = a;

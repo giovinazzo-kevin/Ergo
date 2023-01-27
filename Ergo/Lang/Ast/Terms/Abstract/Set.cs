@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Interfaces;
-
-namespace Ergo.Lang.Ast;
+﻿namespace Ergo.Lang.Ast;
 
 public sealed class Set : AbstractList
 {

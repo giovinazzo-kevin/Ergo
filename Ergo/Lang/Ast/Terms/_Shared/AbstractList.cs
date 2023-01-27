@@ -146,4 +146,5 @@ public abstract class AbstractList : IAbstractTerm
         }
     }
 
+    public abstract Maybe<IAbstractTerm> FromCanonicalTerm(ITerm c);
 }

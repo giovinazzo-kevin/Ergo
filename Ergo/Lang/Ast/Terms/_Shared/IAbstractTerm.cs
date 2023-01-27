@@ -8,6 +8,8 @@ public interface IAbstractTerm : IExplainable
     Maybe<SubstitutionMap> Unify(IAbstractTerm other);
     IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
     IAbstractTerm Substitute(Substitution s);
+    /// Instance version of the static FromCanonical used by reflection, implemented by some abstract terms
+    Maybe<IAbstractTerm> FromCanonicalTerm(ITerm c);
 
     string Explain();
     string IExplainable.Explain(bool canonical)

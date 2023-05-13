@@ -17,7 +17,7 @@ public sealed class PrintBuiltIns : ShellCommand
         using var solver = shell.Facade.BuildSolver();
         if (match?.Success ?? false)
         {
-            var parsed = shell.Interpreter.Parse<ITerm>(scope.InterpreterScope, match.Value);
+            var parsed = shell.Interpreter.Facade.Parse<ITerm>(scope.InterpreterScope, match.Value);
             if (!parsed.TryGetValue(out var term))
             {
                 shell.No();

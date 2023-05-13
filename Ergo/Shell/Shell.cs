@@ -23,9 +23,11 @@ public partial class ErgoShell
     public readonly ExceptionHandler LoggingExceptionHandler;
     public readonly ExceptionHandler ThrowingExceptionHandler;
     public readonly ErgoFacade Facade;
+    public readonly Encoding Encoding = new UnicodeEncoding(false, false);
 
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
+    public TextWriter Err { get; private set; }
 
     public ShellScope CreateScope()
     {
@@ -49,11 +51,29 @@ public partial class ErgoShell
             WriteLine(ex.Message, LogLevel.Err);
         });
         ThrowingExceptionHandler = new ExceptionHandler((ex) => ExceptionDispatchInfo.Capture(ex).Throw());
-        Console.InputEncoding = Encoding.Unicode;
-        Console.OutputEncoding = Encoding.Unicode;
         SetConsoleOutputCP(1200);
         SetConsoleCP(1200);
+        Console.InputEncoding = Encoding;
+        Console.OutputEncoding = Encoding;
         Clear();
+    }
+
+    public void SetIn(TextReader input)
+    {
+        In = input;
+        Console.SetIn(In);
+    }
+
+    public void SetOut(TextWriter output)
+    {
+        Out = output;
+        Console.SetOut(Out);
+    }
+
+    public void SetErr(TextWriter err)
+    {
+        Err = err;
+        Console.SetError(err);
     }
 
     public void AddCommand(ShellCommand s) => Dispatcher.Add(s);
@@ -106,12 +126,6 @@ public partial class ErgoShell
 
     public virtual async IAsyncEnumerable<ShellScope> Repl(Func<ShellScope, ShellScope> transformScope = null, Func<string, bool> exit = null)
     {
-        var encoding = new UnicodeEncoding(false, false);
-        Out = new StreamWriter(Console.OpenStandardOutput(), encoding);
-        In = new StreamReader(Console.OpenStandardInput(), encoding);
-
-        Console.SetOut(Out);
-        Console.SetIn(In);
 
         var scope = CreateScope();
         if (transformScope != null)

@@ -21,7 +21,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)
     {
-        var parsed = Interpreter.Parse<T>(InterpreterScope, query)
+        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         Assert.Equal(parsed, expected);
     }
@@ -32,7 +32,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         if (expected.Length != 0)
             Assert.Equal(expectedSolutions, expected.Length);
         using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, SolverFlags.Default);
-        var parsed = Interpreter.Parse<Query>(InterpreterScope, query)
+        var parsed = Interpreter.Facade.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
             Assert.Equal(query, parsed.Goals.Explain());

@@ -66,6 +66,12 @@ public readonly struct Maybe<T>
             return Value;
         return other;
     }
+    public T GetOrLazy(Func<T> other)
+    {
+        if (HasValue)
+            return Value;
+        return other();
+    }
     public Maybe<T> Or(Func<Maybe<T>> other)
     {
         if (HasValue)

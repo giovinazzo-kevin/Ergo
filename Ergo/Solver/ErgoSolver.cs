@@ -3,9 +3,11 @@ using Ergo.Facade;
 using Ergo.Interpreter;
 using Ergo.Solver.DataBindings;
 using System.ComponentModel;
+using System.IO;
 
 namespace Ergo.Solver;
 
+// TODO: make thread safe
 public partial class ErgoSolver : IDisposable
 {
     private volatile bool _initialized;
@@ -16,6 +18,10 @@ public partial class ErgoSolver : IDisposable
     public readonly KnowledgeBase KnowledgeBase;
     public readonly HashSet<Atom> DataSinks = new();
     public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
+
+    public TextReader In { get; private set; }
+    public TextWriter Out { get; private set; }
+    public TextWriter Err { get; private set; }
 
     public event Action<SolverTraceType, string> Trace;
     public event Action<ErgoSolver, ITerm> DataPushed;
@@ -37,6 +43,9 @@ public partial class ErgoSolver : IDisposable
         Facade = facade;
         Flags = flags;
         KnowledgeBase = kb;
+        In = Console.In;
+        Out = Console.Out;
+        Err = Console.Error;
     }
 
     public void Initialize(InterpreterScope scope)
@@ -194,6 +203,27 @@ public partial class ErgoSolver : IDisposable
         if (Trace is null || Trace.GetInvocationList().Length == 0)
             return;
         Trace.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s()}");
+    }
+
+    public void SetIn(TextReader newIn)
+    {
+        if (newIn is null)
+            throw new ArgumentNullException(nameof(newIn));
+        In = TextReader.Synchronized(newIn);
+    }
+
+    public void SetOut(TextWriter newOut)
+    {
+        if (newOut is null)
+            throw new ArgumentNullException(nameof(newOut));
+        Out = TextWriter.Synchronized(newOut);
+    }
+
+    public void SetErr(TextWriter newErr)
+    {
+        if (newErr is null)
+            throw new ArgumentNullException(nameof(newErr));
+        Err = TextWriter.Synchronized(newErr);
     }
 
     public void Dispose()

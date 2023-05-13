@@ -22,6 +22,10 @@ public static partial class WellKnown
         public const string LambdaParameters = nameof(LambdaParameters);
         public const string Signature = nameof(Signature);
         public const string Predicate = nameof(Predicate);
+        public static class Managed
+        {
+            public const string Stream = nameof(Managed) + "." + nameof(Stream);
+        }
     }
 
 }

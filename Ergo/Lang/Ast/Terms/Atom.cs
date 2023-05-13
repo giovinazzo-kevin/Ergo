@@ -39,7 +39,11 @@ public readonly struct Atom : ITerm
     {
         if (AbstractForm.TryGetValue(out var abs))
             return abs.Explain(canonical);
-        if (Value is bool b)
+        if (Value is null)
+        {
+            return string.Empty;
+        }
+        else if (Value is bool b)
         {
             return b ? "⊤" : "⊥";
         }
@@ -55,7 +59,7 @@ public readonly struct Atom : ITerm
         }
         else
         {
-            return Value.ToString();
+            return $"'{Escape(Value.ToString())}'";
         }
 
         static string Escape(string s) => s

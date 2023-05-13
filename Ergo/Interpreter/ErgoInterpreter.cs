@@ -157,7 +157,7 @@ public partial class ErgoInterpreter
             }
         }
 
-        using var parser = Facade.BuildParser(stream, scope.GetOperators());
+        var parser = Facade.BuildParser(stream, scope.GetOperators());
         if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
@@ -172,6 +172,9 @@ public partial class ErgoInterpreter
         scope = scope
             .ForwardEventToLibraries(new ModuleLoadedEvent(this, module.Name) { Scope = scope })
             .Scope;
+
+        scope.ExceptionHandler.Try(() => parser.Dispose());
+
         return module;
     }
 

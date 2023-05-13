@@ -68,7 +68,7 @@ public partial class ErgoSolver : IDisposable
         sink.Connect(this);
         Disposing += _ =>
         {
-            sink.Disconnect(this);
+            sink?.Disconnect(this);
             DataSinks.Remove(sink.Functor);
         };
     }

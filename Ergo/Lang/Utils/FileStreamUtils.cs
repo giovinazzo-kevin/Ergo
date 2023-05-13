@@ -8,19 +8,26 @@ public static class FileStreamUtils
     public static ErgoStream MemoryStream(string contents, string fileName = "") => new(new MemoryStream(Encoding.UTF8.GetBytes(contents)), fileName);
     public static ErgoStream FileStream(IEnumerable<string> searchDirectories, string module)
     {
+        module = module.Replace("/", @"\");
+        var i = module.LastIndexOf(@"\");
+        var (prefix, name) = i > -1
+            ? (module[..(i + 1)], module[(i + 1)..])
+            : (string.Empty, module);
+
         var fileName = searchDirectories
             .SelectMany(d =>
             {
                 try
                 {
-                    return Directory.EnumerateFiles(d, "*.ergo", SearchOption.AllDirectories);
+                    var path = Path.Combine(d, prefix);
+                    return Directory.EnumerateFiles(path, "*.ergo", SearchOption.AllDirectories);
                 }
                 catch
                 {
                     return Enumerable.Empty<string>();
                 }
             })
-            .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(module));
+            .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(name));
         if (fileName is null)
         {
             throw new FileNotFoundException(module);

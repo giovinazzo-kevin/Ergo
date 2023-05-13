@@ -33,6 +33,6 @@ public sealed class Compare : SolverBuiltIn
             yield break;
         }
 
-        yield return new(WellKnown.Literals.True, new Substitution(arguments[0], new Atom(cmp)));
+        yield return True(new Substitution(arguments[0], new Atom(cmp)));
     }
 }

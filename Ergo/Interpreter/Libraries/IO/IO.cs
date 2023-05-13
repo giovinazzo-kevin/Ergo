@@ -11,6 +11,11 @@ public class IO : Library
         .Append(new WriteCanonical())
         .Append(new WriteQuoted())
         .Append(new WriteRaw())
+        .Append(new Read())
+        .Append(new ReadLine())
+        .Append(new GetChar())
+        .Append(new GetSingleChar())
+        .Append(new PeekChar())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

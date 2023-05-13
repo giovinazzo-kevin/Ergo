@@ -29,7 +29,6 @@ public abstract class WriteBuiltIn : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        // TODO: Move In/Out streams to the interpreter!!
         foreach (var arg in args)
         {
             // https://www.swi-prolog.org/pldoc/man?predicate=portray/1
@@ -40,7 +39,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
                     any = true;
                 if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }
-            Console.Write(AsQuoted(arg, Quoted).Explain(Canonical));
+            context.Solver.Out.Write(AsQuoted(arg, Quoted).Explain(Canonical));
         }
     ret:
         yield return new(WellKnown.Literals.True);

@@ -17,7 +17,9 @@ public abstract class SolverBuiltIn
         scope.InterpreterScope.ExceptionHandler.Throw(new SolverException(error, scope, args));
         return False();
     }
+    protected Evaluation Bool(bool b) => b ? True() : False();
     protected Evaluation False() => new(WellKnown.Literals.False);
+    protected Evaluation True() => new(WellKnown.Literals.True);
     protected Evaluation True(SubstitutionMap subs) => new(WellKnown.Literals.True, subs);
     protected Evaluation True(Substitution sub) => new(WellKnown.Literals.True, sub);
 

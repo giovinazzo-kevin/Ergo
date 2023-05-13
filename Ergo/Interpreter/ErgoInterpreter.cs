@@ -194,16 +194,4 @@ public partial class ErgoInterpreter
 #endif
         return scope;
     }
-
-    public Maybe<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
-    {
-        onParseFail ??= (str =>
-        {
-            scope.Throw(InterpreterError.CouldNotParseTerm, typeof(T), data);
-            return Maybe<T>.None;
-        });
-        var userDefinedOps = scope.GetOperators();
-        return scope.ExceptionHandler.TryGet(() => new Parsed<T>(Facade, data, onParseFail, userDefinedOps.ToArray())
-            .Value).Map(x => x);
-    }
 }

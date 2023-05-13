@@ -239,4 +239,5 @@ public readonly struct InterpreterScope
     /// Throws an InterpreterException through the ExceptionHandler.
     /// </summary>
     public void Throw(InterpreterError error, params object[] args) => ExceptionHandler.Throw(new InterpreterException(error, this, args));
+
 }

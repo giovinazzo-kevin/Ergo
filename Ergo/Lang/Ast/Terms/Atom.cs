@@ -57,10 +57,12 @@ public readonly struct Atom : ITerm
 
             return $"'{Escape(s)}'";
         }
-        else
+        else if (Value is object
+            && Value is not EDecimal)
         {
             return $"'{Escape(Value.ToString())}'";
         }
+        return Value.ToString();
 
         static string Escape(string s) => s
             .Replace("'", "\\'")

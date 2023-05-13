@@ -168,9 +168,9 @@ public readonly struct ErgoFacade
 
     private ErgoShell ConfigureShell(ErgoShell shell)
     {
-        shell.SetIn(Input.GetOrLazy(() => new StreamReader(Console.OpenStandardInput(), shell.Encoding)));
-        shell.SetOut(Output.GetOrLazy(() => new StreamWriter(Console.OpenStandardOutput(), shell.Encoding)));
-        shell.SetErr(Error.GetOrLazy(() => new StreamWriter(Console.OpenStandardError(), shell.Encoding)));
+        shell.SetIn(Input.GetOrLazy(() => new StreamReader(Console.OpenStandardInput(), ErgoShell.Encoding)));
+        shell.SetOut(Output.GetOrLazy(() => new StreamWriter(Console.OpenStandardOutput(), ErgoShell.Encoding)));
+        shell.SetErr(Error.GetOrLazy(() => new StreamWriter(Console.OpenStandardError(), ErgoShell.Encoding)));
         foreach (var command in _commands)
             shell.AddCommand(command);
         return shell;

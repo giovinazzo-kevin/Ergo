@@ -23,7 +23,7 @@ public partial class ErgoShell
     public readonly ExceptionHandler LoggingExceptionHandler;
     public readonly ExceptionHandler ThrowingExceptionHandler;
     public readonly ErgoFacade Facade;
-    public readonly Encoding Encoding = new UnicodeEncoding(false, false);
+    public static readonly Encoding Encoding = new UnicodeEncoding(false, false);
 
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }

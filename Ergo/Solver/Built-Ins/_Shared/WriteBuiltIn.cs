@@ -40,6 +40,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
                 if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }
             context.Solver.Out.Write(AsQuoted(arg, Quoted).Explain(Canonical));
+            context.Solver.Out.Flush();
         }
     ret:
         yield return new(WellKnown.Literals.True);

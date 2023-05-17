@@ -9,6 +9,7 @@ public class Math : Library
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
         .Append(new Eval())
         .Append(new Is())
+        .Append(new NumberString())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

@@ -13,7 +13,7 @@ public static class FileStreamUtils
         var (prefix, name) = i > -1
             ? (module[..(i + 1)], module[(i + 1)..])
             : (string.Empty, module);
-
+        var nameNoExt = Path.GetFileNameWithoutExtension(name);
         var fileName = searchDirectories
             .SelectMany(d =>
             {
@@ -27,7 +27,7 @@ public static class FileStreamUtils
                     return Enumerable.Empty<string>();
                 }
             })
-            .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(name));
+            .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(nameNoExt));
         if (fileName is null)
         {
             throw new FileNotFoundException(module);

@@ -169,7 +169,7 @@ public static class LanguageExtensions
         for (var i = 0; i < s.Length; ++i)
         {
             var isUpper = char.IsUpper(s[i]);
-            if (i > 0 && !wasUpper && isUpper)
+            if (i > 0 && !wasUpper && isUpper && s[i - 1] != '_')
             {
                 sb.Append("_");
             }

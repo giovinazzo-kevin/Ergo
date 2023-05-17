@@ -16,6 +16,7 @@ public sealed class ReadLine : SolverBuiltIn
 
         while ((value = context.Solver.In.Read()) != -1 && value != '\n')
         {
+            if (value == '\r') continue;
             builder.Append((char)value);
         }
 

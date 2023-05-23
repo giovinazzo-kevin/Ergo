@@ -1,7 +1,23 @@
-﻿using System.Collections.Concurrent;
+﻿using PeterO.Numbers;
+using System.Collections.Concurrent;
 using System.Reflection;
 
 namespace Ergo.Lang;
+
+public sealed class TermMarshallingContext
+{
+    public readonly Stack<object> ReferenceStack = new();
+
+    public static bool MayCauseCycles(Type type)
+    {
+        if (type.IsClass && !type.IsSealed && !type.IsPrimitive && !type.IsEnum
+            && type != typeof(string) && type != typeof(EDecimal))
+        {
+            return true;
+        }
+        return false;
+    }
+}
 
 public sealed class TermMarshall
 {
@@ -40,11 +56,11 @@ public sealed class TermMarshall
             TermMarshalling.Named => EnsureNamedResolver(typeof(T)).ToTerm(value, functor),
             _ => throw new NotImplementedException()
         };
-    public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default) =>
+    public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null) =>
         GetMode(type, mode) switch
         {
-            TermMarshalling.Positional => EnsurePositionalResolver(type).ToTerm(value, functor),
-            TermMarshalling.Named => EnsureNamedResolver(type).ToTerm(value, functor),
+            TermMarshalling.Positional => EnsurePositionalResolver(type).ToTerm(value, functor, default, ctx ?? new()),
+            TermMarshalling.Named => EnsureNamedResolver(type).ToTerm(value, functor, default, ctx ?? new()),
             _ => throw new NotImplementedException()
         };
     public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default) =>

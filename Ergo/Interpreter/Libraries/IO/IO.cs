@@ -10,6 +10,7 @@ public class IO : Library
         .Append(new Write())
         .Append(new WriteCanonical())
         .Append(new WriteQuoted())
+        .Append(new WriteDict())
         .Append(new WriteRaw())
         .Append(new Read())
         .Append(new ReadLine())

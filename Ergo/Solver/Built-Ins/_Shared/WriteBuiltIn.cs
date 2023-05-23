@@ -27,6 +27,8 @@ public abstract class WriteBuiltIn : SolverBuiltIn
         );
     }
 
+    protected virtual string TransformText(string text) => text;
+
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         foreach (var arg in args)
@@ -39,7 +41,9 @@ public abstract class WriteBuiltIn : SolverBuiltIn
                     any = true;
                 if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }
-            context.Solver.Out.Write(AsQuoted(arg, Quoted).Explain(Canonical));
+            var text = AsQuoted(arg, Quoted).Explain(Canonical);
+            text = TransformText(text);
+            context.Solver.Out.Write(text);
             context.Solver.Out.Flush();
         }
     ret:

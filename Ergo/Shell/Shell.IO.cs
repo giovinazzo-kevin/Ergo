@@ -108,15 +108,23 @@ public partial class ErgoShell
         if (overrideBg.HasValue) colors.Background = overrideBg.Value;
         WithColors(() =>
         {
-            foreach (var line in lines.Take(lines.Length - 1))
-            {
-                Out.WriteLine(LineFormatter(line));
-                Out.Flush();
-            }
-
-            Out.Write(LineFormatter(lines.Last()));
-            Out.Flush();
+            foreach (var line in lines)
+                EncodeAndWrite(line);
         }, colors);
+
+        void EncodeAndWrite(LogLine line)
+        {
+            var str = LineFormatter(line);
+            if (!UseUnicodeSymbols)
+            {
+                str = str.Replace("⊤", "true");
+                str = str.Replace("⊥", "false");
+            }
+            var bytes = Out.Encoding.GetBytes(str);
+            var encodedString = Out.Encoding.GetString(bytes);
+            Out.Write(encodedString);
+            Out.Flush();
+        }
     }
 
     public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, SolverTraceType trc = SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
@@ -127,26 +135,26 @@ public partial class ErgoShell
 
     public virtual void Yes(bool nl = true, LogLevel lvl = LogLevel.Ans)
     {
-        if (UseUnicode)
+        if (UseANSIEscapeSequences)
         {
-            Write("\u001b[1m⊤\u001b[0m", lvl);
+            Write($"\u001b[1m⊤\u001b[0m", lvl);
         }
         else
         {
-            Write("true", lvl);
+            Write("⊤", lvl);
         }
         if (nl) WriteLine();
     }
 
     public virtual void No(bool nl = true, LogLevel lvl = LogLevel.Ans)
     {
-        if (UseUnicode)
+        if (UseANSIEscapeSequences)
         {
-            Write("\u001b[1m⊥\u001b[0m", lvl, overrideFg: ConsoleColor.DarkRed);
+            Write($"\u001b[1m⊥\u001b[0m", lvl, overrideFg: ConsoleColor.DarkRed);
         }
         else
         {
-            Write("false", lvl, overrideFg: ConsoleColor.DarkRed);
+            Write("⊥", lvl, overrideFg: ConsoleColor.DarkRed);
         }
         if (nl) WriteLine();
     }
@@ -305,7 +313,14 @@ public partial class ErgoShell
 
                 if (i > 0 && i < described.Length - 1 && j == described[i].Length - 1)
                 {
-                    Write("\u001b[4m " + described[i][j] + " \u001b[0m");
+                    if (UseANSIEscapeSequences)
+                    {
+                        Write("\u001b[4m " + described[i][j] + " \u001b[0m");
+                    }
+                    else
+                    {
+                        Write(" " + described[i][j] + " ");
+                    }
                 }
                 else
                 {
@@ -324,6 +339,9 @@ public partial class ErgoShell
 
         void AlternateColors(int i)
         {
+            if (!UseColors)
+                return;
+
             if (i % 2 != 0)
             {
                 Console.ForegroundColor = accent;

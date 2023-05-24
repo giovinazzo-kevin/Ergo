@@ -23,14 +23,15 @@ public partial class ErgoShell
     public readonly ExceptionHandler LoggingExceptionHandler;
     public readonly ExceptionHandler ThrowingExceptionHandler;
     public readonly ErgoFacade Facade;
-    public static readonly Encoding Encoding = new UnicodeEncoding(false, false);
+    public readonly Encoding Encoding = new UnicodeEncoding(false, false);
 
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
     public TextWriter Err { get; private set; }
 
     public bool UseColors { get; set; } = true;
-    public bool UseUnicode { get; set; } = true;
+    public bool UseANSIEscapeSequences { get; set; } = true;
+    public bool UseUnicodeSymbols { get; set; } = true;
 
     public ShellScope CreateScope()
     {
@@ -42,20 +43,30 @@ public partial class ErgoShell
 
     internal ErgoShell(
         ErgoFacade facade,
-        Func<LogLine, string> formatter = null
+        Func<LogLine, string> formatter = null,
+        Encoding encoding = null
     )
     {
         Facade = facade;
         Interpreter = facade.BuildInterpreter();
         Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
         LineFormatter = formatter ?? DefaultLineFormatter;
+        Encoding = encoding ?? Encoding;
         LoggingExceptionHandler = new ExceptionHandler((ex) =>
         {
             WriteLine(ex.Message, LogLevel.Err);
         });
         ThrowingExceptionHandler = new ExceptionHandler((ex) => ExceptionDispatchInfo.Capture(ex).Throw());
-        SetConsoleOutputCP(1200);
-        SetConsoleCP(1200);
+        if (Encoding.IsSingleByte) // Assume ASCII
+        {
+            SetConsoleOutputCP(437);
+            SetConsoleCP(437);
+        }
+        else // Assume UTF-16
+        {
+            SetConsoleOutputCP(1200);
+            SetConsoleCP(1200);
+        }
         Console.InputEncoding = Encoding;
         Console.OutputEncoding = Encoding;
         Clear();
@@ -134,11 +145,11 @@ public partial class ErgoShell
         if (transformScope != null)
             scope = transformScope(scope);
 
-        WriteLine("Welcome to the Ergo shell. To list the available commands, enter '?' (without quotes)." +
-            "\r\nWhile evaluating solutions, press:" +
-            "\r\n\t- spacebar to yield the next solution;" +
-            "\r\n\t- 'c' to enumerate solutions automatically;" +
-            "\r\n\t- any other key to abort.", LogLevel.Cmt);
+        WriteLine("Welcome to the Ergo shell. To list the available commands, enter '?' (without quotes).", LogLevel.Cmt);
+        WriteLine("While evaluating solutions, press:", LogLevel.Cmt);
+        WriteLine("\t- spacebar to yield the next solution;", LogLevel.Cmt);
+        WriteLine("\t- 'c' to enumerate solutions automatically;", LogLevel.Cmt);
+        WriteLine("\t- any other key to abort.", LogLevel.Cmt);
 
         while (true)
         {

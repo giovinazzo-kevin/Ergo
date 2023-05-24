@@ -10,6 +10,7 @@ using Ergo.Solver.DataBindings;
 using Ergo.Solver.DataBindings.Interfaces;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace Ergo.Facade;
 
@@ -168,9 +169,9 @@ public readonly struct ErgoFacade
 
     private ErgoShell ConfigureShell(ErgoShell shell)
     {
-        shell.SetIn(Input.GetOrLazy(() => new StreamReader(Console.OpenStandardInput(), ErgoShell.Encoding)));
-        shell.SetOut(Output.GetOrLazy(() => new StreamWriter(Console.OpenStandardOutput(), ErgoShell.Encoding)));
-        shell.SetErr(Error.GetOrLazy(() => new StreamWriter(Console.OpenStandardError(), ErgoShell.Encoding)));
+        shell.SetIn(Input.GetOrLazy(() => new StreamReader(Console.OpenStandardInput(), shell.Encoding)));
+        shell.SetOut(Output.GetOrLazy(() => new StreamWriter(Console.OpenStandardOutput(), shell.Encoding)));
+        shell.SetErr(Error.GetOrLazy(() => new StreamWriter(Console.OpenStandardError(), shell.Encoding)));
         foreach (var command in _commands)
             shell.AddCommand(command);
         return shell;
@@ -189,8 +190,8 @@ public readonly struct ErgoFacade
         => ConfigureInterpreter(new(this, flags));
     public ErgoSolver BuildSolver(KnowledgeBase kb = null, SolverFlags flags = SolverFlags.Default)
         => ConfigureSolver(new(this, kb ?? new(), flags));
-    public ErgoShell BuildShell(Func<LogLine, string> formatter = null)
-        => ConfigureShell(new(this, formatter));
+    public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
+        => ConfigureShell(new(this, formatter, encoding));
 
     public Maybe<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
     {

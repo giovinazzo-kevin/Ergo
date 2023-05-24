@@ -1,26 +1,11 @@
-﻿using PeterO.Numbers;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Reflection;
 
 namespace Ergo.Lang;
 
-public sealed class TermMarshallingContext
-{
-    public readonly Stack<object> ReferenceStack = new();
-
-    public static bool MayCauseCycles(Type type)
-    {
-        if (type.IsClass && !type.IsSealed && !type.IsPrimitive && !type.IsEnum
-            && type != typeof(string) && type != typeof(EDecimal))
-        {
-            return true;
-        }
-        return false;
-    }
-}
-
 public sealed class TermMarshall
 {
+
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
 
@@ -49,20 +34,29 @@ public sealed class TermMarshall
     private static TermMarshalling GetMode(Type type, Maybe<TermMarshalling> mode = default) => mode
         .GetOr(type.GetCustomAttribute<TermAttribute>()?.Marshalling ?? TermMarshalling.Positional);
 
-    public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default) =>
-        GetMode(typeof(T), mode) switch
+
+    public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
+    {
+        ctx ??= new();
+        return GetMode(typeof(T), mode) switch
         {
-            TermMarshalling.Positional => EnsurePositionalResolver(typeof(T)).ToTerm(value, functor),
-            TermMarshalling.Named => EnsureNamedResolver(typeof(T)).ToTerm(value, functor),
+            var m when ctx.TryGetCached(m, value, typeof(T), functor, out var cached) => cached,
+            TermMarshalling.Positional => ctx.Cache(TermMarshalling.Positional, value, typeof(T), EnsurePositionalResolver(typeof(T)).ToTerm(value, functor, default, ctx)),
+            TermMarshalling.Named => ctx.Cache(TermMarshalling.Named, value, typeof(T), EnsureNamedResolver(typeof(T)).ToTerm(value, functor, default, ctx)),
             _ => throw new NotImplementedException()
         };
-    public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null) =>
-        GetMode(type, mode) switch
+    }
+    public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
+    {
+        ctx ??= new();
+        return GetMode(type, mode) switch
         {
-            TermMarshalling.Positional => EnsurePositionalResolver(type).ToTerm(value, functor, default, ctx ?? new()),
-            TermMarshalling.Named => EnsureNamedResolver(type).ToTerm(value, functor, default, ctx ?? new()),
+            var m when ctx.TryGetCached(m, value, type, functor, out var cached) => cached,
+            TermMarshalling.Positional => ctx.Cache(TermMarshalling.Positional, value, type, EnsurePositionalResolver(type).ToTerm(value, functor, default, ctx)),
+            TermMarshalling.Named => ctx.Cache(TermMarshalling.Named, value, type, EnsureNamedResolver(type).ToTerm(value, functor, default, ctx)),
             _ => throw new NotImplementedException()
         };
+    }
     public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default) =>
         GetMode(typeof(T), mode) switch
         {

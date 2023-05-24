@@ -86,6 +86,11 @@ public partial class ErgoShell
 
     protected virtual void WithColors(Action action, (ConsoleColor Foreground, ConsoleColor Background) colors)
     {
+        if (!UseColors)
+        {
+            action();
+            return;
+        }
         var oldFg = Console.ForegroundColor;
         var oldBg = Console.BackgroundColor;
         (Console.ForegroundColor, Console.BackgroundColor) = colors;
@@ -122,13 +127,27 @@ public partial class ErgoShell
 
     public virtual void Yes(bool nl = true, LogLevel lvl = LogLevel.Ans)
     {
-        Write("\u001b[1m⊤\u001b[0m", lvl);
+        if (UseUnicode)
+        {
+            Write("\u001b[1m⊤\u001b[0m", lvl);
+        }
+        else
+        {
+            Write("true", lvl);
+        }
         if (nl) WriteLine();
     }
 
     public virtual void No(bool nl = true, LogLevel lvl = LogLevel.Ans)
     {
-        Write("\u001b[1m⊥\u001b[0m", lvl, overrideFg: ConsoleColor.DarkRed);
+        if (UseUnicode)
+        {
+            Write("\u001b[1m⊥\u001b[0m", lvl, overrideFg: ConsoleColor.DarkRed);
+        }
+        else
+        {
+            Write("false", lvl, overrideFg: ConsoleColor.DarkRed);
+        }
         if (nl) WriteLine();
     }
 

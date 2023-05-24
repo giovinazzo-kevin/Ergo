@@ -29,6 +29,9 @@ public partial class ErgoShell
     public TextWriter Out { get; private set; }
     public TextWriter Err { get; private set; }
 
+    public bool UseColors { get; set; } = true;
+    public bool UseUnicode { get; set; } = true;
+
     public ShellScope CreateScope()
     {
         var interpreterScope = Interpreter.CreateScope(x => x.WithExceptionHandler(LoggingExceptionHandler))

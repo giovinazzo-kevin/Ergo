@@ -40,6 +40,15 @@ public readonly struct Maybe<T>
         return Maybe<U>.None;
     }
 
+    public U Reduce<U>(Func<T, U> some, Func<U> none)
+    {
+        if (HasValue)
+        {
+            return some(Value);
+        }
+        return none();
+    }
+
     public Maybe<T> Where(Func<T, bool> cond)
     {
         if (HasValue && cond(Value))

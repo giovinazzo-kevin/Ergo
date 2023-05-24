@@ -167,7 +167,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         {
             if (Type.IsEnum)
             {
-                return Enum.Parse(Type, ((Atom)t).Value.ToString());
+                return Enum.Parse(Type, ((Atom)t).Value.ToString().ToCSharpCase(), ignoreCase: true);
             }
 
             return t switch

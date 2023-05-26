@@ -44,11 +44,22 @@ public readonly struct Predicate : IExplainable
         return false;
     }
 
-    public bool IsSameDefinitionAs(Predicate other)
+    public bool IsSameDeclarationAs(Predicate other)
     {
         if (other.DeclaringModule != DeclaringModule)
             return false;
         if (!other.Head.GetSignature().Equals(Head.GetSignature()))
+            return false;
+        return true;
+    }
+
+    public bool IsSameDefinitionAs(Predicate other)
+    {
+        if (!IsSameDeclarationAs(other))
+            return false;
+        if (!Head.NumberVars().Equals(other.Head.NumberVars()))
+            return false;
+        if (!Body.CanonicalForm.NumberVars().Equals(other.Body.CanonicalForm.NumberVars()))
             return false;
         return true;
     }

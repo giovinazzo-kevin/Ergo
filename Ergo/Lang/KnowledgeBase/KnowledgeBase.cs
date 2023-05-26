@@ -108,8 +108,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
-                if (predicate.Unify(pred.Head).TryGetValue(out _)
-                && predicate.Body.Unify(pred.Body).TryGetValue(out _))
+                if (predicate.IsSameDefinitionAs(pred))
                 {
                     matches.RemoveAt(i);
                     return true;

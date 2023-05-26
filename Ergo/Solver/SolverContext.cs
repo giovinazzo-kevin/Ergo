@@ -137,7 +137,7 @@ public sealed class SolverContext : IDisposable
 #endif
             if (rest.Contents.Length > 0 && tcoPred.TryGetValue(out var p))
             {
-                var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDefinitionAs(p));
+                var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDeclarationAs(p));
                 if (mostRecentCaller.Equals(p))
                 {
                     query = new(rest.Contents);

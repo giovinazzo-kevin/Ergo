@@ -27,16 +27,16 @@ public class Expansions : Library
             {
                 foreach (var exp in ExpandPredicate(pred, tmpScope))
                 {
-                    if (!exp.Head.Equals(pred.Head) || !exp.Body.Contents.SequenceEqual(pred.Body.Contents))
+                    if (!exp.IsSameDefinitionAs(pred))
                         expansions.Enqueue(exp);
                 }
                 if (expansions.Count > 0)
                 {
-                    // TODO: fix Fiero
                     if (!sie.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
+                        sie.Solver.KnowledgeBase.Retract(exp);
                         sie.Solver.KnowledgeBase.AssertZ(exp);
                     }
                     expansions.Clear();
@@ -55,15 +55,16 @@ public class Expansions : Library
 
                 foreach (var exp in ExpandPredicate(pred, tmpScope))
                 {
-                    if (!exp.Equals(pred))
+                    if (!exp.IsSameDefinitionAs(pred))
                         expansions.Enqueue(exp);
                 }
                 if (expansions.Count > 0)
                 {
-                    if (!qse.Solver.KnowledgeBase.Retract(pred.Head))
+                    if (!qse.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
+                        qse.Solver.KnowledgeBase.Retract(exp);
                         qse.Solver.KnowledgeBase.AssertZ(exp);
                     }
                     expansions.Clear();

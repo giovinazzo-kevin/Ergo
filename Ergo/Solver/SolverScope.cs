@@ -39,7 +39,7 @@ public readonly struct SolverScope
     public SolverScope WithCut() => new(InterpreterScope, Depth, Module, Callee, Callers, true, InstantiationContext);
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
-    public bool ContainsCaller(Predicate caller) => Callers.Reverse().Any(c => c.IsSameDefinitionAs(caller));
+    public bool ContainsCaller(Predicate caller) => Callers.Reverse().Any(c => c.IsSameDeclarationAs(caller));
 
     public string Explain()
     {

@@ -74,7 +74,6 @@ public readonly struct Variable : ITerm
         {
             return false;
         }
-
         return Equals(Name, other.Name);
     }
     public bool Equals(ITerm obj) => Equals((object)obj);

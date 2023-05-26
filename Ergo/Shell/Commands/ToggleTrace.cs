@@ -15,10 +15,10 @@ public sealed class ToggleTrace : ShellCommand
         shell.WriteLine($"Trace mode {(scope.TraceEnabled ? "enabled" : "disabled")}.", LogLevel.Inf);
         if (scope.TraceEnabled)
         {
-            shell.WriteLine("While in trace mode, press:" +
-                "\r\n\t- spacebar to creep through;" +
-                "\r\n\t- 'c' to continue until the next solution;" +
-                "\r\n\t- any other key to abort.", LogLevel.Cmt);
+            shell.WriteLine("While in trace mode, press:", LogLevel.Cmt);
+            shell.WriteLine("\t- spacebar to creep through;", LogLevel.Cmt);
+            shell.WriteLine("\t- 'c' to continue until the next solution;", LogLevel.Cmt);
+            shell.WriteLine("\t- any other key to abort.", LogLevel.Cmt);
         }
 
         yield return scope;

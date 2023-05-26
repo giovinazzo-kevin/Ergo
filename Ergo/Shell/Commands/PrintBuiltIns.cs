@@ -42,7 +42,9 @@ public sealed class PrintBuiltIns : ShellCommand
         }
 
         var canonicals = builtins
-            .Select(r => new[] { r.Signature.Explain(), r.Documentation })
+            .Select(r => new[] { r.Signature.Explain(), r.Signature.Module.GetOr(default).Explain(), r.Documentation })
+            .OrderBy(r => r[1])
+            .ThenBy(r => r[0])
             .ToArray();
 
         if (canonicals.Length == 0)
@@ -52,7 +54,7 @@ public sealed class PrintBuiltIns : ShellCommand
             yield break;
         }
 
-        shell.WriteTable(new[] { "Built-In", "Documentation" }, canonicals, ConsoleColor.DarkRed);
+        shell.WriteTable(new[] { "Built-In", "Module", "Documentation" }, canonicals, ConsoleColor.DarkRed);
         yield return scope;
     }
 }

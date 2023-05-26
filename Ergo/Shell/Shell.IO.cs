@@ -41,7 +41,7 @@ public partial class ErgoShell
         .Replace("\n", $"\n{lvl} ");
     }
 
-    public virtual char ReadChar(bool intercept = false) => Console.ReadKey(intercept).KeyChar;
+    public virtual char ReadChar(bool intercept = false) => InputReader.ReadChar(intercept);
 
     public virtual string ReadLine(string until = "\r\n")
     {
@@ -129,8 +129,13 @@ public partial class ErgoShell
 
     public virtual void WriteLine(string str = "", LogLevel lvl = LogLevel.Rpl, SolverTraceType trc = SolverTraceType.Call, ConsoleColor? overrideFg = null, ConsoleColor? overrideBg = null)
     {
-        Write(str, lvl, trc, overrideFg, overrideBg);
-        Out.WriteLine();
+        var lines = str.Split(Environment.NewLine);
+        foreach (var line in lines)
+        {
+            Write(line, lvl, trc, overrideFg, overrideBg);
+            Out.WriteLine();
+            Out.Flush();
+        }
     }
 
     public virtual void Yes(bool nl = true, LogLevel lvl = LogLevel.Ans)

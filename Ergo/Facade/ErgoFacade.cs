@@ -43,6 +43,7 @@ public readonly struct ErgoFacade
     public readonly Maybe<TextReader> Input = default;
     public readonly Maybe<TextWriter> Output = default;
     public readonly Maybe<TextWriter> Error = default;
+    public readonly Maybe<IAsyncInputReader> InputReader = default;
 
     public ErgoFacade() { }
 
@@ -54,7 +55,8 @@ public readonly struct ErgoFacade
         ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> dataSources,
         Maybe<TextReader> inStream,
         Maybe<TextWriter> outStream,
-        Maybe<TextWriter> errStream
+        Maybe<TextWriter> errStream,
+        Maybe<IAsyncInputReader> inReader
     )
     {
         _libraries = libs;
@@ -65,29 +67,30 @@ public readonly struct ErgoFacade
         Input = inStream;
         Output = outStream;
         Error = errStream;
+        InputReader = inReader;
     }
 
     public ErgoFacade AddLibrary(Func<Library> lib)
-        => new(_libraries.Add(lib), _commands, _parsers, _dataSinks, _dataSources, Input, Output, Error);
+        => new(_libraries.Add(lib), _commands, _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade AddCommand(ShellCommand command)
-        => new(_libraries, _commands.Add(command), _parsers, _dataSinks, _dataSources, Input, Output, Error);
+        => new(_libraries, _commands.Add(command), _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade RemoveCommand(ShellCommand command)
-        => new(_libraries, _commands.Remove(command), _parsers, _dataSinks, _dataSources, Input, Output, Error);
+        => new(_libraries, _commands.Remove(command), _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade AddAbstractParser<A>(IAbstractTermParser<A> parser) where A : IAbstractTerm
-        => new(_libraries, _commands, _parsers.SetItem(typeof(A), parser), _dataSinks, _dataSources, Input, Output, Error);
+        => new(_libraries, _commands, _parsers.SetItem(typeof(A), parser), _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade RemoveAbstractParser<A>() where A : IAbstractTerm
-        => new(_libraries, _commands, _parsers.Remove(typeof(A)), _dataSinks, _dataSources, Input, Output, Error);
+        => new(_libraries, _commands, _parsers.Remove(typeof(A)), _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade AddDataSink<A>(DataSink<A> sink) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks.SetItem(typeof(A), (_dataSinks.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSink>.Empty).Add(sink)), _dataSources, Input, Output, Error);
+        => new(_libraries, _commands, _parsers, _dataSinks.SetItem(typeof(A), (_dataSinks.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSink>.Empty).Add(sink)), _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade RemoveDataSink<A>(DataSink<A> sink) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks.SetItem(typeof(A), (_dataSinks.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSink>.Empty).Remove(sink)), _dataSources, Input, Output, Error);
+        => new(_libraries, _commands, _parsers, _dataSinks.SetItem(typeof(A), (_dataSinks.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSink>.Empty).Remove(sink)), _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade AddDataSource<A>(DataSource<A> source) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Add(source)), Input, Output, Error);
+        => new(_libraries, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Add(source)), Input, Output, Error, InputReader);
     public ErgoFacade RemoveDataSource<A>(DataSource<A> source) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Remove(source)), Input, Output, Error);
-    public ErgoFacade SetInput(TextReader input) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, Output, Error);
-    public ErgoFacade SetOutput(TextWriter output) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, output, Error);
-    public ErgoFacade SetError(TextWriter err) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, Output, err);
+        => new(_libraries, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Remove(source)), Input, Output, Error, InputReader);
+    public ErgoFacade SetInput(TextReader input, Maybe<IAsyncInputReader> reader = default) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, input, Output, Error, reader);
+    public ErgoFacade SetOutput(TextWriter output) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, output, Error, InputReader);
+    public ErgoFacade SetError(TextWriter err) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, Output, err, InputReader);
     /// <summary>
     /// Adds all libraries with a public parameterless constructor in the target assembly.
     /// </summary>
@@ -169,7 +172,7 @@ public readonly struct ErgoFacade
 
     private ErgoShell ConfigureShell(ErgoShell shell)
     {
-        shell.SetIn(Input.GetOrLazy(() => new StreamReader(Console.OpenStandardInput(), shell.Encoding)));
+        shell.SetIn(Input.GetOrLazy(() => new StreamReader(Console.OpenStandardInput(), shell.Encoding)), InputReader.GetOr(shell.InputReader));
         shell.SetOut(Output.GetOrLazy(() => new StreamWriter(Console.OpenStandardOutput(), shell.Encoding)));
         shell.SetErr(Error.GetOrLazy(() => new StreamWriter(Console.OpenStandardError(), shell.Encoding)));
         foreach (var command in _commands)

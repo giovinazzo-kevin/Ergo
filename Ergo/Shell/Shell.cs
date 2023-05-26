@@ -7,12 +7,6 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 
 namespace Ergo.Shell;
-/*
- ImmutableArray<string>.Empty
-    .Add(string.Empty)
-    .Add("./ergo/stdlib/")
-    .Add("./ergo/user/")
-*/
 
 public partial class ErgoShell
 {
@@ -26,6 +20,7 @@ public partial class ErgoShell
     public readonly Encoding Encoding = new UnicodeEncoding(false, false);
 
     public TextReader In { get; private set; }
+    public IAsyncInputReader InputReader { get; private set; }
     public TextWriter Out { get; private set; }
     public TextWriter Err { get; private set; }
 
@@ -33,12 +28,14 @@ public partial class ErgoShell
     public bool UseANSIEscapeSequences { get; set; } = true;
     public bool UseUnicodeSymbols { get; set; } = true;
 
-    public ShellScope CreateScope()
+    public ShellScope CreateScope(Maybe<InterpreterScope> interpreterScope, Func<ShellScope, ShellScope> transformShell = null)
     {
-        var interpreterScope = Interpreter.CreateScope(x => x.WithExceptionHandler(LoggingExceptionHandler))
+        transformShell ??= s => s;
+        var scope = interpreterScope.GetOr(Interpreter.CreateScope())
+            .WithExceptionHandler(LoggingExceptionHandler)
             .WithRuntime(true);
-        var kb = interpreterScope.BuildKnowledgeBase();
-        return new(interpreterScope, false, kb);
+        var kb = scope.BuildKnowledgeBase();
+        return transformShell(new(scope, false, kb));
     }
 
     internal ErgoShell(
@@ -52,6 +49,7 @@ public partial class ErgoShell
         Dispatcher = new CommandDispatcher(s => WriteLine($"Unknown command: {s}", LogLevel.Err));
         LineFormatter = formatter ?? DefaultLineFormatter;
         Encoding = encoding ?? Encoding;
+        InputReader = new ConsoleInputReader();
         LoggingExceptionHandler = new ExceptionHandler((ex) =>
         {
             WriteLine(ex.Message, LogLevel.Err);
@@ -72,9 +70,10 @@ public partial class ErgoShell
         Clear();
     }
 
-    public void SetIn(TextReader input)
+    public void SetIn(TextReader input, IAsyncInputReader inputReader)
     {
         In = input;
+        InputReader = inputReader;
         Console.SetIn(In);
     }
 
@@ -138,12 +137,10 @@ public partial class ErgoShell
         scope = copy;
     }
 
-    public virtual async IAsyncEnumerable<ShellScope> Repl(Func<ShellScope, ShellScope> transformScope = null, Func<string, bool> exit = null)
+    public virtual async IAsyncEnumerable<ShellScope> Repl(Maybe<InterpreterScope> interpreterScope = default, Func<ShellScope, ShellScope> transformScope = null, Func<string, bool> exit = null)
     {
 
-        var scope = CreateScope();
-        if (transformScope != null)
-            scope = transformScope(scope);
+        var scope = CreateScope(interpreterScope, transformScope);
 
         WriteLine("Welcome to the Ergo shell. To list the available commands, enter '?' (without quotes).", LogLevel.Cmt);
         WriteLine("While evaluating solutions, press:", LogLevel.Cmt);

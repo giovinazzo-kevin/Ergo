@@ -3,7 +3,7 @@
 public sealed class Is : MathBuiltIn
 {
     public Is()
-        : base("", new("is"), Maybe<int>.Some(2))
+        : base("", new("eval_is"), Maybe<int>.Some(2))
     {
     }
 

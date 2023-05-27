@@ -103,7 +103,10 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
                 @base = @base.Substitute(new Substitution(var, steps[var]));
             }
 
-            variables = @base.Variables.Where(var => steps.ContainsKey(var));
+            var newVariables = @base.Variables.Where(var => steps.ContainsKey(var));
+            if (variables.SequenceEqual(newVariables))
+                break;
+            variables = newVariables;
         }
         return @base;
     }

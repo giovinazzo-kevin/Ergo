@@ -43,7 +43,7 @@ public class Expansions : Library
                 }
             }
         }
-        else if (evt is QuerySubmittedEvent qse)
+        if (evt is QuerySubmittedEvent qse)
         {
             var expansions = new Queue<Predicate>();
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
@@ -206,18 +206,22 @@ public class Expansions : Library
                 scope = scope.WithModule(mod);
                 foreach (var exp in GetDefinedExpansions(mod, sig))
                 {
-                    // [Output] >> (head :- body(Output)).
-                    if (!exp.Predicate.Head.Unify(term).TryGetValue(out var subs))
+                    // Example expansion:
+                    // [Output] >> (head(A) :- body(A, Output)).
+                    // 1. Instantiate expansion, keep track of Output:
+                    // [__K1] >> (head(__K2) :- body(__K2, __K1)).
+                    // Output = __K1
+                    // 2. Unify term with expansion head:
+                    // head(__K2) / head(test)
+                    // __K2 = test
+                    // 3. Substitute expansion:
+                    // [__K1] >> (head(test) :- body(test, __K1)).
+                    var expVars = new Dictionary<string, Variable>();
+                    var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
+                    if (!term.Unify(expInst.Head).TryGetValue(out var subs))
                         continue;
-                    var pred = Predicate.Substitute(exp.Predicate, subs);
-                    // Instantiate the OutVariable, but leave the others intact
-                    var vars = new Dictionary<string, Variable>();
-                    pred = pred.Instantiate(scope.InstantiationContext, vars);
-                    if (term.Unify(pred.Head).TryGetValue(out var unif))
-                    {
-                        pred = Predicate.Substitute(pred, unif);
-                    }
-                    yield return new(pred.Head, pred.Body, vars[exp.OutVariable.Name]);
+                    var pred = Predicate.Substitute(expInst, subs);
+                    yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);
                 }
             }
         }

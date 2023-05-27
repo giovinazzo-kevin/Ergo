@@ -40,7 +40,7 @@
 % OPERATORS
 
 %: Assignment of A to the arithmetic evaluation of B.
-':='(A, B) :- is(A, B).
+':='(A, B) :- eval_is(A, B).
 %: Equivalence of the arithmetic evaluations of A and B.
 '=:='(A, B) :- eval(A) == eval(B).
 %: Inequivalence of the arithmetic evaluations of A and B.

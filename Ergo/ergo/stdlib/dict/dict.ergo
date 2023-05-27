@@ -1,9 +1,13 @@
 ﻿:- module(dict, [
-	'.'/2
+	'='/2
 ]).
 
-:- op(9000, yfx, ['.']).
-:- expand([O] >> (D.Key :- D = dict(Tag, Args), dict_key_value_(dict(Tag, Args), Key, O))).
+:- op(900, yfx, ['.']).
 
-dict_key_value_(dict(Tag, Args), Key, Eval) :- 
-	dict_key_value(dict(Tag, Args), Key, Eval), !.
+D.Key = Val :- 
+	ground(D),
+	% Recursively expands itself to handle nested dictionaries!
+	D = dict(Tag, Args), 
+	dict_key_value(dict(Tag, Args), Key, Val), 
+	% Cut to prevent regular unification from providing another solution
+	!.

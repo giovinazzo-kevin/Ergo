@@ -91,7 +91,7 @@ public readonly struct InterpreterScope
                     newPred = newPred.WithModuleName(newModule).WithHead(newHead);
                 if (!pred.IsExported)
                     newPred = newPred.Qualified();
-                kb.AssertZ(newPred);
+                kb.AssertA(newPred);
             }
         }
         return kb;

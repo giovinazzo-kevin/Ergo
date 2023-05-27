@@ -122,7 +122,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 m =>
                 {
                     var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
-                    var overrideMemberFunctor = attr is null ? Maybe<Atom>.None : new Atom(attr.Functor);
+                    var overrideMemberFunctor = attr?.Functor is null ? Maybe<Atom>.None : new Atom(attr.Functor);
                     var overrideMemberMarshalling = attr is null ? marshalling : attr.Marshalling;
                     var memberValue = o == null ? null : GetMemberValue(m, o);
                     var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling, ctx);

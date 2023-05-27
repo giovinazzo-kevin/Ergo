@@ -33,7 +33,7 @@ public readonly struct InterpreterScope
     /// </summary>
     public Module EntryModule => Modules[Entry];
 
-    public readonly ImmutableHashSet<Atom> VisibleModules;
+    public readonly ImmutableArray<Atom> VisibleModules;
     public readonly ImmutableHashSet<Library> VisibleLibraries;
     public readonly ImmutableDictionary<Signature, SolverBuiltIn> VisibleBuiltIns;
     /// <summary>
@@ -53,7 +53,7 @@ public readonly struct InterpreterScope
             ;
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;
-        VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableHashSet();
+        VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableArray();
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
@@ -72,7 +72,7 @@ public readonly struct InterpreterScope
         Entry = currentModule;
         IsRuntime = runtime;
         ExceptionHandler = handler;
-        VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableHashSet();
+        VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableArray();
         VisibleLibraries = GetVisibleLibraries(VisibleModules, Modules);
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
@@ -91,7 +91,7 @@ public readonly struct InterpreterScope
                     newPred = newPred.WithModuleName(newModule).WithHead(newHead);
                 if (!pred.IsExported)
                     newPred = newPred.Qualified();
-                kb.AssertA(newPred);
+                kb.AssertZ(newPred);
             }
         }
         return kb;
@@ -118,20 +118,20 @@ public readonly struct InterpreterScope
         return e;
     }
 
-    private static ImmutableHashSet<Library> GetVisibleLibraries(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableHashSet<Library> GetVisibleLibraries(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .Select(m => (HasValue: modules[m].LinkedLibrary.TryGetValue(out var lib), Value: lib))
             .Where(x => x.HasValue)
             .Select(x => x.Value)
         .ToImmutableHashSet();
-    private static ImmutableDictionary<Signature, InterpreterDirective> GetVisibleDirectives(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableDictionary<Signature, InterpreterDirective> GetVisibleDirectives(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedDirectives())
                 .GetOr(Enumerable.Empty<InterpreterDirective>()))
             .ToImmutableDictionary(x => x.Signature);
 
-    private static ImmutableDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns(ImmutableHashSet<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedBuiltins())
@@ -189,18 +189,25 @@ public readonly struct InterpreterScope
     /// <summary>
     /// Returns all modules that are visible from the entry module.
     /// </summary>
-    private static IEnumerable<Atom> GetVisibleModules(Atom entry, ImmutableDictionary<Atom, Module> modules, HashSet<Atom> seen = null)
+    private static IEnumerable<Atom> GetVisibleModules(Atom entry, ImmutableDictionary<Atom, Module> modules)
     {
-        seen ??= new();
-        if (seen.Contains(entry) || !modules.ContainsKey(entry))
-            yield break;
-        var current = modules[entry];
-        yield return entry;
-        seen.Add(entry);
-        foreach (var import in current.Imports.Contents.Cast<Atom>()
-            .SelectMany(i => GetVisibleModules(i, modules, seen)))
+        return Inner(entry, modules, new())
+            .Select((x, i) => (x.A, x.D, i))
+            .OrderBy(x => x.D)
+            .ThenByDescending(x => x.i)
+            .Select(x => x.A);
+        static IEnumerable<(Atom A, int D)> Inner(Atom entry, ImmutableDictionary<Atom, Module> modules, HashSet<Atom> seen, int depth = 0)
         {
-            yield return import;
+            if (seen.Contains(entry) || !modules.ContainsKey(entry))
+                yield break;
+            var current = modules[entry];
+            yield return (entry, depth);
+            seen.Add(entry);
+            foreach (var import in current.Imports.Contents.Cast<Atom>()
+                .SelectMany(i => Inner(i, modules, seen, depth + 1)))
+            {
+                yield return import;
+            }
         }
     }
 

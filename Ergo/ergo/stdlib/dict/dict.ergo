@@ -3,11 +3,11 @@
 ]).
 
 :- op(900, yfx, ['.']).
-
-D.Key = Val :- 
-	ground(D),
+	
+Val = D.Key :-
+	nonvar(D), 
+	term_type(Key, atom),
 	% Recursively expands itself to handle nested dictionaries!
-	D = dict(Tag, Args), 
-	dict_key_value(dict(Tag, Args), Key, Val), 
-	% Cut to prevent regular unification from providing another solution
+	dict(Tag, Args) = D, 
+	dict_key_value(dict(Tag, Args), Key, Val),
 	!.

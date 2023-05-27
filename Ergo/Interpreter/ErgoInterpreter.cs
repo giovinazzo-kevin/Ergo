@@ -137,11 +137,11 @@ public partial class ErgoInterpreter
         return module;
     }
 
-    public Maybe<Module> Load(ref InterpreterScope scope, Atom module)
+    public Maybe<Module> Load(ref InterpreterScope scope, Atom module, int loadOrder = 0)
     {
-        return Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+        return Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)), loadOrder);
     }
-    public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream)
+    public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream, int loadOrder = 0)
     {
         if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
             return default;
@@ -151,7 +151,7 @@ public partial class ErgoInterpreter
             if (scope.Modules[import].Program.IsPartial)
             {
                 var importScope = scope.WithCurrentModule(import);
-                if (!Load(ref importScope, import).TryGetValue(out var importModule))
+                if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
                     return default;
                 scope = scope.WithModule(importModule);
             }
@@ -166,7 +166,9 @@ public partial class ErgoInterpreter
         }
 
         stream.Dispose();
-        scope = scope.WithModule(module = module.WithProgram(program));
+        scope = scope.WithModule(module = module
+            .WithProgram(program)
+            .WithLoadOrder(loadOrder));
 
         // Invoke ModuleLoaded so that libraries can, e.g., rewrite predicates
         scope = scope

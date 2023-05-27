@@ -12,12 +12,12 @@ public partial class ErgoParser
         Lexer.Seek(s);
         return default;
     }
-    public Maybe<T> Expect<T>(ErgoLexer.TokenType type, Func<T, bool> pred)
+    public Maybe<T> Expect<T>(IEnumerable<ErgoLexer.TokenType> types, Func<T, bool> pred)
     {
         var pos = Lexer.State;
         var watch = Probe.Enter();
         return Lexer.ReadNext()
-            .Where(token => token.Type == type && token.Value is T t && pred(t))
+            .Where(token => types.Contains(token.Type) && token.Value is T t && pred(t))
             .Select(token => (T)token.Value)
             .Or(() => Fail<T>(pos))
             .Do(() => Probe.Leave(watch))
@@ -29,7 +29,9 @@ public partial class ErgoParser
         return Expect(ErgoLexer.TokenType.Punctuation, condition)
             .Or(() => Fail<string>(pos));
     }
+    public Maybe<T> Expect<T>(ErgoLexer.TokenType type, Func<T, bool> cond) => Expect<T>(new[] { type }, cond);
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type) => Expect<T>(type, _ => true);
+    public Maybe<T> Expect<T>(IEnumerable<ErgoLexer.TokenType> types) => Expect<T>(types, _ => true);
     public Maybe<T> Parenthesized<T>(string opening, string closing, Func<Maybe<T>> tryParse)
     {
         var key = $"Parenthesized{opening}{typeof(T).Name}{closing}";

@@ -44,4 +44,8 @@ public class ParserTests : ErgoTests
         => ShouldParse("f(N, n, (V,L,R))",
             new Complex(new Atom("f"), new Variable("N"), new Atom("n"),
                 new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }).CanonicalForm.AsParenthesized(true)));
+    [Fact]
+    public void ShouldParsePathologicalCases_PeriodAsInfix()
+        => ShouldParse("a.b",
+            new Expression(new Complex(new Atom("."), new Atom("a"), new Atom("b")).AsOperator(OperatorAffix.Infix), InterpreterScope));
 }

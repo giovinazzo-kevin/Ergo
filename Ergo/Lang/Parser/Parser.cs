@@ -245,7 +245,8 @@ public partial class ErgoParser : IDisposable
     public Maybe<Operator> ExpectOperator(Func<Operator, bool> match)
     {
         var watch = Probe.Enter();
-        return Expect<string>(ErgoLexer.TokenType.Operator)
+        var pos = Lexer.State;
+        return Expect<string>(new[] { ErgoLexer.TokenType.Operator, ErgoLexer.TokenType.Term })
             .Map(str => GetOperatorsFromFunctor(new Atom(str)))
             .Where(ops => ops.Any(match))
             .Select(ops => ops.Single(match))
@@ -466,7 +467,7 @@ public partial class ErgoParser : IDisposable
         try
         {
             return Lexer.PeekNext()
-                //.Where(x => x.Type == ErgoLexer.TokenType.Operator)
+                .Where(x => x.Type == ErgoLexer.TokenType.Operator || x.Type == ErgoLexer.TokenType.Term)
                 .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value)))
                 .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence))
                 .Do(() => Probe.Leave(watch))

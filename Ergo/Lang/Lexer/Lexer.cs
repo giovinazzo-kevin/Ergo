@@ -165,11 +165,11 @@ public partial class ErgoLexer : IDisposable
                 return ReadNumber();
             }
 
-
             if (IsIdentifierStart(ch))
             {
                 return ReadIdentifier();
             }
+
             if (IsOperatorPiece(ch, 0))
             {
                 return ReadOperator();
@@ -284,13 +284,13 @@ public partial class ErgoLexer : IDisposable
             {
                 if (c == '.' && index == 0)
                 {
-                    // Disambiguate between . as an operator, and . as a clause terminator or decimal separator
-                    if (!TryPeekAhead(1, out var next, skipWhitespace: true))
+                    // Disambiguate between . as an operator for dict dereferencing, and . as a clause terminator or decimal separator
+                    if (!TryPeekAhead(1, out var next, skipWhitespace: false))
                         // - EOF, which means that this is not an operator
                         return false;
                     if (IsPunctuationPiece(next))
                         return false;
-                    if (IsNewline(next) || IsSingleLineCommentStart(next) || IsDocumentationCommentStart(next))
+                    if (char.IsWhiteSpace(next) || IsSingleLineCommentStart(next) || IsDocumentationCommentStart(next))
                         // - End of clause, which means that this is not an operator
                         return false;
                     if (IsDigit(c))
@@ -508,8 +508,9 @@ public partial class ErgoLexer : IDisposable
 
                 peek = Peek();
             }
-
-            return Token.FromOperator(set.OrderBy(s => s.Length).First());
+            var op = set.OrderBy(s => s.Length).First();
+            var token = Token.FromOperator(op);
+            return token;
         }
     }
 

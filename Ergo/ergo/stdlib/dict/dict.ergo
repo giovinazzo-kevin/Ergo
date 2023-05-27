@@ -5,7 +5,7 @@
 :- use_module(list).
 
  %: TODO: Fix parsing and replace this operator with '.'/2
-%:- op(9000, yfx, ['.']).
+:- op(9000, yfx, ['.']).
 
 %:- expand([O] >> (D$Key :- D = dict(Tag, Args), dict_key_value_(dict(Tag, Args), Key, O))).
 

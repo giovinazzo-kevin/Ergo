@@ -4,11 +4,8 @@
     coalesce/3
 ]).
 
-%: Depends on operators defined in this module.
-:- use_module(dict).
-
 :- op(700, xfy, ['??']).
-:- expand([O] >> (A ?? B :- coalesce(A, B, O))).
+:- expand([O] >> ('??'(A,B) :- coalesce(A, B, O))).
 
 named_arg(Name:Arg, Name, Arg) :- ground(Name).
 

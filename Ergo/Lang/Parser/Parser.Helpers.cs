@@ -27,7 +27,6 @@ public partial class ErgoParser
     {
         var pos = Lexer.State;
         return Expect(ErgoLexer.TokenType.Punctuation, condition)
-            .Or(() => Expect(ErgoLexer.TokenType.Operator, condition))
             .Or(() => Fail<string>(pos));
     }
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type) => Expect<T>(type, _ => true);

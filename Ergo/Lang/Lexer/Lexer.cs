@@ -165,11 +165,11 @@ public partial class ErgoLexer : IDisposable
                 return ReadNumber();
             }
 
+
             if (IsIdentifierStart(ch))
             {
                 return ReadIdentifier();
             }
-
             if (IsOperatorPiece(ch, 0))
             {
                 return ReadOperator();
@@ -219,19 +219,24 @@ public partial class ErgoLexer : IDisposable
             return ret;
         }
 
-        char PeekAhead(int n, bool skipWhitespace = true)
+        bool TryPeekAhead(int n, out char c, bool skipWhitespace = true)
         {
             var p = State;
-            char c = (char)0;
+            c = (char)0;
             if (!Eof)
                 c = Read();
+            if (skipWhitespace)
+            {
+                while (!Eof && char.IsWhiteSpace(c = Peek()) && !IsNewline(c))
+                    Read();
+            }
+            var ret = !Eof;
             for (int i = 0; i < n; i++)
             {
-                while (!Eof && char.IsWhiteSpace(c = Read()))
-                    ;
+                if (ret = !Eof) c = Read();
             }
             Seek(p);
-            return c;
+            return ret;
         }
 
         char Read()
@@ -262,7 +267,7 @@ public partial class ErgoLexer : IDisposable
         bool IsCarriageReturn(char c) => c == '\r';
         bool IsNewline(char c) => c == '\n';
         bool IsDigit(char c) => char.IsDigit(c);
-        bool IsDecimalDelimiter(char c) => c == '.' && IsDigit(PeekAhead(1));
+        bool IsDecimalDelimiter(char c) => c == '.' && TryPeekAhead(1, out var d, skipWhitespace: true) && IsDigit(d);
         bool IsDocumentationCommentStart(char c) => c == ':';
         bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c);
         bool IsNumberPiece(char c) => IsDecimalDelimiter(c) || IsDigit(c);
@@ -270,7 +275,33 @@ public partial class ErgoLexer : IDisposable
         bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
         bool IsKeyword(string s) => KeywordSymbols.Contains(s);
         bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);
-        bool IsOperatorPiece(char c, int index) => OperatorSymbols.Select(o => o.ElementAtOrDefault(index)).Where(x => x != default(char)).Contains(c) || c == '\\';
+        bool IsOperatorPiece(char c, int index)
+        {
+            if (c == '\\') return true;
+            var symbols = OperatorSymbols.Select(o => o.ElementAtOrDefault(index)).Where(x => x != 0)
+                .ToHashSet();
+            if (symbols.Contains(c))
+            {
+                if (c == '.' && index == 0)
+                {
+                    // Disambiguate between . as an operator, and . as a clause terminator or decimal separator
+                    if (!TryPeekAhead(1, out var next, skipWhitespace: true))
+                        // - EOF, which means that this is not an operator
+                        return false;
+                    if (IsPunctuationPiece(next))
+                        return false;
+                    if (IsNewline(next) || IsSingleLineCommentStart(next) || IsDocumentationCommentStart(next))
+                        // - End of clause, which means that this is not an operator
+                        return false;
+                    if (IsDigit(c))
+                        // Decimal separator
+                        return false;
+                    return true;
+                }
+                return true;
+            }
+            return false;
+        }
 
         void SkipWhitespace()
         {

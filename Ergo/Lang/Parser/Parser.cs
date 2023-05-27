@@ -466,8 +466,9 @@ public partial class ErgoParser : IDisposable
         try
         {
             return Lexer.PeekNext()
-                .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value))
-                    .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence)))
+                //.Where(x => x.Type == ErgoLexer.TokenType.Operator)
+                .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value)))
+                .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence))
                 .Do(() => Probe.Leave(watch))
                 ;
         }

@@ -5,9 +5,11 @@
 :- use_module(list).
 
  %: TODO: Fix parsing and replace this operator with '.'/2
-:- op(900, xfy, ['$']).
+%:- op(9000, yfx, ['.']).
 
-:- expand([O] >> (dict(Tag, Args)$Key :- dict_key_value_(dict(Tag, Args), Key, O))).
+%:- expand([O] >> (D$Key :- D = dict(Tag, Args), dict_key_value_(dict(Tag, Args), Key, O))).
 
-dict_key_value_(dict(Tag, Args), Key, Eval) :- 
-	dict_key_value(dict(Tag, Args), Key, Eval), !.
+%dict_key_value_(dict(Tag, Args), Key, Eval) :- 
+%	dict_key_value(dict(Tag, Args), Key, Eval), !.
+
+fiero.

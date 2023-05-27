@@ -43,6 +43,11 @@ public abstract class WriteBuiltIn : SolverBuiltIn
             }
             var text = AsQuoted(arg, Quoted).Explain(Canonical);
             text = TransformText(text);
+            if (context.Solver.Out.Encoding.IsSingleByte)
+            {
+                text = text.Replace("⊤", "true");
+                text = text.Replace("⊥", "false");
+            }
             context.Solver.Out.Write(text);
             context.Solver.Out.Flush();
         }

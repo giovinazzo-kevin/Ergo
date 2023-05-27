@@ -16,6 +16,20 @@ public readonly struct Either<TA, TB>
         return new Either<TC, TD>(default, mapB(B), IsA);
     }
 
+    public bool TryGetA(out TA a)
+    {
+        a = default;
+        if (IsA) a = A;
+        return IsA;
+    }
+
+    public bool TryGetB(out TB b)
+    {
+        b = default;
+        if (!IsA) b = B;
+        return !IsA;
+    }
+
     public TC Reduce<TC>(Func<TA, TC> mapA, Func<TB, TC> mapB)
     {
         if (IsA)

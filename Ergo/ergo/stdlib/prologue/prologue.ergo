@@ -36,5 +36,5 @@ If -> Then :- If, !, Then.
 '='(A, B) :- unify(A, B).
 %: Negation of the unification of A and B.
 '≠'(A, B) :- \+(A = B).
-% Used for declarative debugging; "comments out" the following statement.
+%: Used for declarative debugging; "comments out" the following statement.
 *_. 

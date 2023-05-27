@@ -46,14 +46,13 @@ public class Expansions : Library
         else if (evt is QuerySubmittedEvent qse)
         {
             var expansions = new Queue<Predicate>();
-            var tmpScope = qse.Solver.CreateScope(qse.Scope.InterpreterScope);
-            var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Cast<ITerm>().ToArray());
+            var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
             foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
                 var pred = Predicate.Substitute(match.Rhs, match.Substitutions.Select(x => x.Inverted()));
 
-                foreach (var exp in ExpandPredicate(pred, tmpScope))
+                foreach (var exp in ExpandPredicate(pred, qse.Scope))
                 {
                     if (!exp.IsSameDefinitionAs(pred))
                         expansions.Enqueue(exp);
@@ -90,46 +89,64 @@ public class Expansions : Library
     // See: https://github.com/G3Kappa/Ergo/issues/36
     public IEnumerable<Predicate> ExpandPredicate(Predicate p, SolverScope scope)
     {
-        // Predicates are expanded only once, when they're loaded. The same applies to queries.
-        // Expansions are defined as lambdas that define a predicate and capture one variable:
-        //   - The head of the predicate is matched against the current term; if they unify:
-        //      - The body of the expansion is inserted in the current predicate in a sensible location;
-        //      - Previous references to the term are replaced with references to the captured variable.
-        foreach (var headExp in ExpandTerm(p.Head, scope))
+        Predicate currentPredicate = p;
+        while (true)
         {
-            var newHead = headExp.Reduce(e => e.Binding
-                .Select(v => (ITerm)v).GetOr(e.Match), a => a);
-            var headClauses = headExp.Reduce(e => e.Expansion.Contents, _ => ImmutableArray<ITerm>.Empty);
-            var bodyExpansions = new List<Either<ExpansionResult, ITerm>>[p.Body.Contents.Length];
-            for (int i = 0; i < p.Body.Contents.Length; i++)
+            var newPredicate = default(Predicate);
+            foreach (var expanded in ExpandPredicateOnce(currentPredicate, scope))
             {
-                bodyExpansions[i] = new();
-                foreach (var bodyExp in ExpandTerm(p.Body.Contents[i], scope))
-                    bodyExpansions[i].Add(bodyExp);
-                if (bodyExpansions[i].Count == 0)
-                    bodyExpansions[i].Add(Either<ExpansionResult, ITerm>.FromB(p.Body.Contents[i]));
+                newPredicate = expanded;
+                yield return expanded;
             }
-            var cartesian = bodyExpansions.CartesianProduct();
-            foreach (var variant in cartesian)
+            if (newPredicate.Equals(default) || newPredicate.IsSameDefinitionAs(currentPredicate))
             {
-                var newBody = new List<ITerm>();
-                newBody.AddRange(headClauses);
-                foreach (var clause in variant)
+                // No further expansion possible
+                break;
+            }
+            currentPredicate = newPredicate;
+        }
+        IEnumerable<Predicate> ExpandPredicateOnce(Predicate p, SolverScope scope)
+        {
+            // Predicates are expanded only once, when they're loaded. The same applies to queries.
+            // Expansions are defined as lambdas that define a predicate and capture one variable:
+            //   - The head of the predicate is matched against the current term; if they unify:
+            //      - The body of the expansion is inserted in the current predicate in a sensible location;
+            //      - Previous references to the term are replaced with references to the captured variable.
+            foreach (var headExp in ExpandTerm(p.Head, scope))
+            {
+                var newHead = headExp.Reduce(e => e.Binding
+                    .Select(v => (ITerm)v).GetOr(e.Match), a => a);
+                var headClauses = headExp.Reduce(e => e.Expansion.Contents, _ => ImmutableArray<ITerm>.Empty);
+                var bodyExpansions = new List<Either<ExpansionResult, ITerm>>[p.Body.Contents.Length];
+                for (int i = 0; i < p.Body.Contents.Length; i++)
                 {
-                    newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()));
-                    newBody.Add(clause.Reduce(e => e.Binding.Select(x => (ITerm)x).GetOr(e.Match), a => a));
+                    bodyExpansions[i] = new();
+                    foreach (var bodyExp in ExpandTerm(p.Body.Contents[i], scope))
+                        bodyExpansions[i].Add(bodyExp);
+                    if (bodyExpansions[i].Count == 0)
+                        bodyExpansions[i].Add(Either<ExpansionResult, ITerm>.FromB(p.Body.Contents[i]));
                 }
-                yield return new Predicate(
-                    p.Documentation,
-                    p.DeclaringModule,
-                    newHead,
-                    new(newBody),
-                    p.IsDynamic,
-                    p.IsExported
-                );
+                var cartesian = bodyExpansions.CartesianProduct();
+                foreach (var variant in cartesian)
+                {
+                    var newBody = new List<ITerm>();
+                    newBody.AddRange(headClauses);
+                    foreach (var clause in variant)
+                    {
+                        newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()));
+                        newBody.Add(clause.Reduce(e => e.Binding.Select(x => (ITerm)x).GetOr(e.Match), a => a));
+                    }
+                    yield return new Predicate(
+                        p.Documentation,
+                        p.DeclaringModule,
+                        newHead,
+                        new(newBody),
+                        p.IsDynamic,
+                        p.IsExported
+                    );
+                }
             }
         }
-
         IEnumerable<Either<ExpansionResult, ITerm>> ExpandTerm(ITerm term, SolverScope scope)
         {
             if (term is Variable)
@@ -145,31 +162,37 @@ public class Expansions : Library
                     for (var i = 0; i < cplx.Arity; i++)
                     {
                         expansions[i] = new();
-                        foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope))
+                        foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope).Distinct())
+                        {
                             expansions[i].Add(argExp);
+                        }
                         if (expansions[i].Count == 0)
                             expansions[i].Add(Either<ExpansionResult, ITerm>.FromB(cplx.Arguments[i]));
                     }
                     var cartesian = expansions.CartesianProduct();
                     foreach (var argList in cartesian)
                     {
-                        // TODO: This might mess with abstract forms!
                         var newCplx = cplx
                             .WithAbstractForm(default)
                             .WithArguments(argList
                             .Select(x => x.Reduce(exp => exp.Binding
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
+
                         if (cplx.AbstractForm.TryGetValue(out var abs))
                             newCplx = newCplx.WithAbstractForm(abs.FromCanonicalTerm(newCplx));
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                                .Concat(argList.SelectMany(x => x
                                   .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))));
+
                         yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
                     }
                 }
-                else yield return exp;
+                else
+                {
+                    yield return exp;
+                }
             }
         }
 
@@ -189,12 +212,11 @@ public class Expansions : Library
                     var pred = Predicate.Substitute(exp.Predicate, subs);
                     // Instantiate the OutVariable, but leave the others intact
                     var vars = new Dictionary<string, Variable>();
-                    foreach (var var in pred.Head.Variables.Concat(pred.Body.CanonicalForm.Variables)
-                        .Where(var => !var.Name.Equals(exp.OutVariable.Name)))
-                    {
-                        vars[var.Name] = var;
-                    }
                     pred = pred.Instantiate(scope.InstantiationContext, vars);
+                    if (term.Unify(pred.Head).TryGetValue(out var unif))
+                    {
+                        pred = Predicate.Substitute(pred, unif);
+                    }
                     yield return new(pred.Head, pred.Body, vars[exp.OutVariable.Name]);
                 }
             }

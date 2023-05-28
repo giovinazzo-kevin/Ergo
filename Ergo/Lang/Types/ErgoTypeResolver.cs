@@ -71,7 +71,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
     public abstract void SetMemberValue(string name, object instance, object value);
     public abstract IEnumerable<string> GetMembers();
     public abstract ITerm GetArgument(string name, ITerm value);
-    public abstract ITerm TransformMember(string name, ITerm value);
+    public abstract ITerm TransformMember(string name, Maybe<string> key, ITerm value);
     public abstract ITerm TransformTerm(Atom functor, ITerm[] args);
     public abstract Type GetParameterType(string name, ConstructorInfo info);
     public abstract ITerm CycleDetectedLiteral(Atom functor);
@@ -124,9 +124,10 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                     var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
                     var overrideMemberFunctor = attr?.Functor is null ? Maybe<Atom>.None : new Atom(attr.Functor);
                     var overrideMemberMarshalling = attr is null ? marshalling : attr.Marshalling;
+                    var ovrrideMemberKey = attr is null ? Maybe<string>.None : attr.Key ?? m;
                     var memberValue = o == null ? null : GetMemberValue(m, o);
                     var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling, ctx);
-                    var member = TransformMember(m, term);
+                    var member = TransformMember(m, ovrrideMemberKey, term);
                     if (member.IsAbstract<List>().TryGetValue(out var list))
                     {
                         member = new List(list.Contents.Select(x =>

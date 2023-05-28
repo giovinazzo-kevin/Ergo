@@ -6,7 +6,7 @@ internal class PositionalPropertyTypeResolver<T> : ErgoPropertyResolver<T>
 {
     public override TermMarshalling Marshalling => TermMarshalling.Positional;
     public override IEnumerable<string> GetMembers() => Properties.Select((p, i) => i.ToString());
-    public override ITerm TransformMember(string name, ITerm value) => value;
+    public override ITerm TransformMember(string name, Maybe<string> key, ITerm value) => value;
     public override ITerm GetArgument(string name, ITerm value) => ((Complex)value).Arguments[int.Parse(name)];
     public override ITerm TransformTerm(Atom functor, ITerm[] args) => new Complex(functor, args)
         .AsParenthesized(WellKnown.Functors.Conjunction.Contains(functor));

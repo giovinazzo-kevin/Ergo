@@ -11,7 +11,7 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
     public override IEnumerable<string> GetMembers() => Properties.Select(p => p.Name);
     public override ITerm TransformMember(string name, ITerm value) =>
         new Complex(WellKnown.Functors.NamedArgument.First(), new Atom(name.ToErgoCase()), value)
-            .AsOperator(OperatorAffix.Infix);
+            .AsOperator(Fixity.Infix);
     public override ITerm GetArgument(string name, ITerm value)
     {
         if (!value.IsAbstract<Dict>().TryGetValue(out var dict))

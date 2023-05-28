@@ -26,13 +26,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ergo\case02\case02.ergo">
+    <None Update="ergo\case03.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\case01\case01.ergo">
+    <None Update="ergo\case02.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\tests\tests.ergo">
+    <None Update="ergo\case01.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ergo\tests.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

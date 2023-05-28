@@ -253,10 +253,24 @@ public partial class ErgoParser : IDisposable
             .Do(() => Probe.Leave(watch))
             ;
     }
-
     public Expression BuildExpression(Operator op, ITerm lhs, Maybe<ITerm> maybeRhs = default, bool exprParenthesized = false)
     {
         var watch = Probe.Enter();
+        if (!lhs.IsParenthesized
+            && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized)
+            && lhsExpr.Operator.Fixity != Fixity.Infix
+            && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
+            && lhsExpr.Operator.Precedence < op.Precedence)
+        {
+            // $K.a.b.c -> $(.(.(.(K, a), b), c))
+            if (op.Fixity == Fixity.Infix)
+            {
+                var inner = BuildExpression(op, lhsExpr.Left, maybeRhs);
+                var ret = BuildExpression(lhsExpr.Operator, inner.Complex, default, exprParenthesized);
+                Probe.Leave(watch);
+                return ret;
+            }
+        }
         return maybeRhs
             .Select(rhs => Associate(lhs, rhs))
             .Do(() => Probe.Leave(watch))
@@ -268,15 +282,17 @@ public partial class ErgoParser : IDisposable
             // When the lhs represents an expression with the same precedence as this (and thus associativity, by design)
             // and right associativity, we have to swap the arguments around until they look right.
             if (!lhs.IsParenthesized
-            && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized)
-            && lhsExpr.Operator.Affix == OperatorAffix.Infix
-            && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
-            && lhsExpr.Operator.Precedence == op.Precedence)
+            && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized))
             {
-                // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
-                var lhsRhs = lhsExpr.Right.GetOrThrow(new InvalidOperationException());
-                var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
-                return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
+                if (lhsExpr.Operator.Fixity == Fixity.Infix
+                    && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
+                    && lhsExpr.Operator.Precedence == op.Precedence)
+                {
+                    // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
+                    var lhsRhs = lhsExpr.Right.GetOrThrow(new InvalidOperationException());
+                    var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
+                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
+                }
             }
             // Special case for comma-lists: always parse them as NTuples
             if (WellKnown.Operators.Conjunction.Equals(op))
@@ -296,8 +312,8 @@ public partial class ErgoParser : IDisposable
                 return false;
             var op = ops.Where(op => cplx.Arity switch
             {
-                1 => op.Affix != OperatorAffix.Infix,
-                _ => op.Affix == OperatorAffix.Infix
+                1 => op.Fixity != Fixity.Infix,
+                _ => op.Fixity == Fixity.Infix
             }).MinBy(x => x.Precedence);
             if (cplx.Arguments.Length == 1)
             {
@@ -324,7 +340,7 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return ExpectOperator(op => op.Affix == OperatorAffix.Prefix)
+        return ExpectOperator(op => op.Fixity == Fixity.Prefix)
             .Map(op => Term()
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
             .Or(() => MemoizeFailureAndFail<Expression>(pos))
@@ -342,13 +358,12 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Term()
-            .Map(arg => ExpectOperator(op => op.Affix == OperatorAffix.Postfix)
+            .Map(arg => ExpectOperator(op => op.Fixity == Fixity.Postfix)
                 .Select(op => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
             .Or(() => MemoizeFailureAndFail<Expression>(pos))
             .Do(() => Probe.Leave(watch))
             ;
     }
-
     public Maybe<Expression> Expression()
     {
         var watch = Probe.Enter();
@@ -358,6 +373,7 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
+
         if (Primary().TryGetValue(out var lhs))
         {
             if (WithMinPrecedence(lhs, 0).TryGetValue(out var expr))
@@ -365,6 +381,7 @@ public partial class ErgoParser : IDisposable
                 return Maybe.Some(expr)
                     .Do(() => Probe.Leave(watch));
             }
+
             // Special case for unary expressions
             if (lhs is not Complex cplx
                 || cplx.Arguments.Length > 1
@@ -374,10 +391,16 @@ public partial class ErgoParser : IDisposable
                     .Do(() => Probe.Leave(watch));
             }
 
-            var op = ops.Single(op => op.Affix != OperatorAffix.Infix);
-            expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
-            return Maybe.Some(expr)
-                .Do(() => Probe.Leave(watch));
+            var op = ops.Single(op => op.Fixity != Fixity.Infix);
+            if (!PeekNextOperator().TryGetValue(out var nextOperator)
+                || nextOperator.Precedence < op.Precedence)
+            {
+                expr = BuildExpression(op, cplx.Arguments[0], Maybe<ITerm>.None);
+                return Maybe.Some(expr)
+                    .Do(() => Probe.Leave(watch));
+            }
+            return MemoizeFailureAndFail<Expression>(pos)
+                    .Do(() => Probe.Leave(watch));
         }
 
         return MemoizeFailureAndFail<Expression>(pos)
@@ -395,15 +418,14 @@ public partial class ErgoParser : IDisposable
                 ;
         }
 
-        if (lookahead.Affix != OperatorAffix.Infix || lookahead.Precedence < minPrecedence)
+        if (lookahead.Fixity != Fixity.Infix || lookahead.Precedence < minPrecedence)
         {
             return Fail<Expression>(pos)
                 .Do(() => Probe.Leave(watch))
                 ;
         }
-
         var expr = default(Expression);
-        while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence >= minPrecedence)
+        while (lookahead.Fixity == Fixity.Infix && lookahead.Precedence >= minPrecedence)
         {
             Lexer.ReadNext();
             var op = lookahead;
@@ -421,7 +443,7 @@ public partial class ErgoParser : IDisposable
                 break;
             }
 
-            while (lookahead.Affix == OperatorAffix.Infix && lookahead.Precedence > op.Precedence
+            while (lookahead.Fixity == Fixity.Infix && lookahead.Precedence > op.Precedence
                 || lookahead.Associativity == OperatorAssociativity.Right && lookahead.Precedence == op.Precedence)
             {
                 if (!WithMinPrecedence(rhs, op.Precedence + 1).TryGetValue(out var newRhs))
@@ -469,7 +491,7 @@ public partial class ErgoParser : IDisposable
             return Lexer.PeekNext()
                 .Where(x => x.Type == ErgoLexer.TokenType.Operator || x.Type == ErgoLexer.TokenType.Term)
                 .Map(lookahead => GetOperatorsFromFunctor(new Atom(lookahead.Value)))
-                .Select(ops => ops.Where(op => op.Affix == OperatorAffix.Infix).MinBy(x => x.Precedence))
+                .Select(ops => ops.Where(op => op.Fixity == Fixity.Infix).MinBy(x => x.Precedence))
                 .Do(() => Probe.Leave(watch))
                 ;
         }
@@ -604,7 +626,7 @@ public partial class ErgoParser : IDisposable
         {
             var sign = p.Head.GetSignature();
             var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow(new NotSupportedException())))
-                .AsOperator(OperatorAffix.Infix);
+                .AsOperator(Fixity.Infix);
             if (exported.Contents.Any(x => x.Equals(form)))
                 return p.Exported();
             return p;

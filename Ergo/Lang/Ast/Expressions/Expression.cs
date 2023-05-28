@@ -18,8 +18,8 @@ public readonly partial struct Expression
                 .Distinct();
         }
         Operator = ops.Single(op => op.Synonyms.Contains(fromComplex.Functor) &&
-            (op.Affix == OperatorAffix.Infix && fromComplex.Arguments.Length == 2
-            || op.Affix != OperatorAffix.Infix && fromComplex.Arguments.Length == 1));
+            (op.Fixity == Fixity.Infix && fromComplex.Arguments.Length == 2
+            || op.Fixity != Fixity.Infix && fromComplex.Arguments.Length == 1));
         Left = fromComplex.Arguments[0];
         Right = fromComplex.Arguments.Length > 1 ? Maybe.Some(fromComplex.Arguments[1]) : default;
         Complex = fromComplex;
@@ -31,7 +31,7 @@ public readonly partial struct Expression
         Left = left;
         Right = right;
         Complex = new Complex(op.CanonicalFunctor, right.Select(some => new[] { left, some }).GetOr(new[] { left }))
-            .AsOperator(op.Affix)
+            .AsOperator(op.Fixity)
             .AsParenthesized(parenthesized);
     }
 }

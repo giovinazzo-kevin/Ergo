@@ -9,13 +9,13 @@ public readonly partial struct Operator
     public readonly HashSet<Atom> Synonyms;
     public readonly Atom DeclaringModule;
     public readonly int Precedence;
-    public readonly OperatorAffix Affix;
+    public readonly Fixity Fixity;
     public readonly OperatorAssociativity Associativity;
 
-    public Operator(Atom module, OperatorAffix affix, OperatorAssociativity assoc, int precedence, HashSet<Atom> functors)
+    public Operator(Atom module, Fixity affix, OperatorAssociativity assoc, int precedence, HashSet<Atom> functors)
     {
         DeclaringModule = module;
-        Affix = affix;
+        Fixity = affix;
         Associativity = assoc;
         Synonyms = functors;
         CanonicalFunctor = Synonyms.First();
@@ -24,38 +24,40 @@ public readonly partial struct Operator
     public Operator(Atom module, OperatorType type, int precedence, HashSet<Atom> functors)
     {
         DeclaringModule = module;
-        (Affix, Associativity) = GetAffixAndAssociativity(type);
+        (Fixity, Associativity) = GetAffixAndAssociativity(type);
         Synonyms = functors;
         CanonicalFunctor = Synonyms.First();
         Precedence = precedence;
     }
 
-    public static (OperatorAffix, OperatorAssociativity) GetAffixAndAssociativity(OperatorType type)
+    public static (Fixity, OperatorAssociativity) GetAffixAndAssociativity(OperatorType type)
     {
         return type switch
         {
-            OperatorType.fx => (OperatorAffix.Prefix, OperatorAssociativity.Right),
-            OperatorType.xf => (OperatorAffix.Postfix, OperatorAssociativity.Left),
-            OperatorType.xfx => (OperatorAffix.Infix, OperatorAssociativity.None),
-            OperatorType.xfy => (OperatorAffix.Infix, OperatorAssociativity.Right),
-            OperatorType.yfx => (OperatorAffix.Infix, OperatorAssociativity.Left),
+            OperatorType.fx => (Fixity.Prefix, OperatorAssociativity.None),
+            OperatorType.xf => (Fixity.Postfix, OperatorAssociativity.None),
+            OperatorType.fy => (Fixity.Prefix, OperatorAssociativity.Right),
+            OperatorType.yf => (Fixity.Postfix, OperatorAssociativity.Left),
+            OperatorType.xfx => (Fixity.Infix, OperatorAssociativity.None),
+            OperatorType.xfy => (Fixity.Infix, OperatorAssociativity.Right),
+            OperatorType.yfx => (Fixity.Infix, OperatorAssociativity.Left),
             _ => throw new NotSupportedException()
         };
     }
 
-    public static OperatorType GetOperatorType(OperatorAffix affix, OperatorAssociativity associativity)
+    public static OperatorType GetOperatorType(Fixity affix, OperatorAssociativity associativity)
     {
         return (affix, associativity) switch
         {
-            (OperatorAffix.Prefix, OperatorAssociativity.Right) => OperatorType.fx,
-            (OperatorAffix.Postfix, OperatorAssociativity.Left) => OperatorType.xf,
-            (OperatorAffix.Infix, OperatorAssociativity.None) => OperatorType.xfx,
-            (OperatorAffix.Infix, OperatorAssociativity.Right) => OperatorType.xfy,
-            (OperatorAffix.Infix, OperatorAssociativity.Left) => OperatorType.yfx,
+            (Fixity.Prefix, OperatorAssociativity.Right) => OperatorType.fx,
+            (Fixity.Postfix, OperatorAssociativity.Left) => OperatorType.xf,
+            (Fixity.Infix, OperatorAssociativity.None) => OperatorType.xfx,
+            (Fixity.Infix, OperatorAssociativity.Right) => OperatorType.xfy,
+            (Fixity.Infix, OperatorAssociativity.Left) => OperatorType.yfx,
             _ => throw new NotSupportedException()
         };
     }
 
-    public string Explain() => $"← op({Precedence}, {GetOperatorType(Affix, Associativity)}, [{Synonyms.Join(s => s.Explain())}])";
+    public string Explain() => $"← op({Precedence}, {GetOperatorType(Fixity, Associativity)}, [{Synonyms.Join(s => s.Explain())}])";
 }
 

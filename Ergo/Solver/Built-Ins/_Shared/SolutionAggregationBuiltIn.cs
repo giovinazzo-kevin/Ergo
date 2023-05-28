@@ -40,7 +40,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
             new Complex(WellKnown.Functors.Unification.First(),
                 variable,
                 new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
-            .AsOperator(OperatorAffix.Infix)
+            .AsOperator(Fixity.Infix)
         });
         var solutions = solver.Solve(new(goalClauses), scope)
             .Select(s => s.Simplify());

@@ -68,7 +68,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         ITerm Inner(ITerm t)
         {
             return new Complex(WellKnown.Functors.Module.First(), m, t)
-                .AsOperator(OperatorAffix.Infix);
+                .AsOperator(Fixity.Infix);
         }
     }
     Maybe<Atom> GetQualification(out ITerm head)

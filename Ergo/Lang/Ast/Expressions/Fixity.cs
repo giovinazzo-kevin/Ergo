@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang.Ast;
 
-public enum OperatorAffix
+public enum Fixity
 {
     Prefix,
     Infix,

@@ -10,11 +10,11 @@ public static partial class WellKnown
         // As few operators as possible are defined here; most are defined in the standard library for consistency.
 
         // The Horn operator is fundamental to Prolog, so it must be defined a-priori. It's necessary for both directives and clauses.
-        public static readonly Operator UnaryHorn = new(WellKnown.Modules.Stdlib, OperatorAffix.Prefix, OperatorAssociativity.Right, 10, Functors.Horn);
-        public static readonly Operator BinaryHorn = new(WellKnown.Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.None, 10, Functors.Horn);
+        public static readonly Operator UnaryHorn = new(WellKnown.Modules.Stdlib, Fixity.Prefix, OperatorAssociativity.Right, 10, Functors.Horn);
+        public static readonly Operator BinaryHorn = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.None, 10, Functors.Horn);
         // The arity indicator is a bootstrapping operator that's used while parsing directives; the real definition is the division operator in the math module.
-        public static readonly Operator ArityIndicator = new(WellKnown.Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Left, 500, Functors.Arity);
-        public static readonly Operator Conjunction = new(WellKnown.Modules.Stdlib, OperatorAffix.Infix, OperatorAssociativity.Right, 40, Functors.Conjunction);
+        public static readonly Operator ArityIndicator = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Left, 500, Functors.Arity);
+        public static readonly Operator Conjunction = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Right, 40, Functors.Conjunction);
 
         public static readonly Operator[] DefinedOperators = new[] {
             UnaryHorn, BinaryHorn, ArityIndicator, Conjunction

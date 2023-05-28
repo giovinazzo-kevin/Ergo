@@ -12,7 +12,7 @@ public sealed class Unifiable : SolverBuiltIn
         if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
         {
             var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Functors.Unification.First(), s.Lhs, s.Rhs)
-                .AsOperator(OperatorAffix.Infix));
+                .AsOperator(Fixity.Infix));
             List list = new(ImmutableArray.CreateRange(equations));
             if (new Substitution(arguments[2], list.CanonicalForm).Unify().TryGetValue(out subs))
             {

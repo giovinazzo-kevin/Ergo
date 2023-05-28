@@ -3,11 +3,19 @@
 ]).
 
 :- op(900, yfx, ['.']).
-	
-Val = D.Key :-
+:- op(890, fy, ['&']).
+%: Directly dereferences and evaluates a dictionary property
+:- expand([Val] >> (
+	 '&'(D.Key) :- dict_deref_(D, Key, Val)
+)).
+
+dict_deref_(D, Key, Val) :-
 	nonvar(D), 
 	term_type(Key, atom),
 	% Recursively expands itself to handle nested dictionaries!
 	dict(Tag, Args) = D, 
 	dict_key_value(dict(Tag, Args), Key, Val),
+	% Prevent further unification
 	!.
+%: Dereferences D.Key and unifies the result with Val
+Val = D.Key :- dict_deref_(D, Key, Val).

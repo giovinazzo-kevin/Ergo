@@ -20,7 +20,7 @@ public sealed class Dict : IAbstractTerm
         Dictionary = ImmutableDictionary.CreateRange(args);
         KeyValuePairs = Dictionary
             .Select(kv => (ITerm)new Complex(WellKnown.Functors.NamedArgument.First(), kv.Key, kv.Value)
-                    .AsOperator(OperatorAffix.Infix))
+                    .AsOperator(Fixity.Infix))
             .OrderBy(o => o)
             .ToArray();
         CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).CanonicalForm })

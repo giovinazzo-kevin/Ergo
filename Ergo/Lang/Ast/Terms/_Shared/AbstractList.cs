@@ -84,7 +84,7 @@ public abstract class AbstractList : IAbstractTerm
             .Append(emptyElement)
             .Reverse()
             .Aggregate((a, b) => new Complex(functor, b, a)
-                .AsOperator(OperatorAffix.Infix));
+                .AsOperator(Fixity.Infix));
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public abstract class AbstractList : IAbstractTerm
         return args
             .Reverse()
             .Aggregate((a, b) => new Complex(functor, b, a)
-                .AsOperator(OperatorAffix.Infix));
+                .AsOperator(Fixity.Infix));
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public abstract class AbstractList : IAbstractTerm
         return args
             .Reverse()
             .Aggregate((a, b) => new Complex(functor, b, a)
-                .AsOperator(OperatorAffix.Infix));
+                .AsOperator(Fixity.Infix));
     }
 
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, HashSet<Atom> functors)

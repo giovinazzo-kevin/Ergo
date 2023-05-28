@@ -31,7 +31,7 @@ public class ParserTests : ErgoTests
     public void ShouldParseSignedNumbers(string query, decimal number)
     {
         var f = number < 0 ? WellKnown.Functors.Subtraction.First() : WellKnown.Functors.Addition.First();
-        ShouldParse(query, new Expression(new Complex(f, new Atom(Math.Abs(number))).AsOperator(OperatorAffix.Prefix), InterpreterScope));
+        ShouldParse(query, new Expression(new Complex(f, new Atom(Math.Abs(number))).AsOperator(Fixity.Prefix), InterpreterScope));
     }
 
     [Fact]
@@ -47,5 +47,5 @@ public class ParserTests : ErgoTests
     [Fact]
     public void ShouldParsePathologicalCases_PeriodAsInfix()
         => ShouldParse("a.b",
-            new Expression(new Complex(new Atom("."), new Atom("a"), new Atom("b")).AsOperator(OperatorAffix.Infix), InterpreterScope));
+            new Expression(new Complex(new Atom("."), new Atom("a"), new Atom("b")).AsOperator(Fixity.Infix), InterpreterScope));
 }

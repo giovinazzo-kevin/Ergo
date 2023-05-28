@@ -2,6 +2,6 @@
 
 public enum OperatorType
 {
-    fx, xf, xfx, xfy, yfx
+    fx, fy, xf, yf, xfx, xfy, yfx
 }
 

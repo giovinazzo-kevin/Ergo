@@ -24,7 +24,7 @@ public sealed class PrintOperators : ShellCommand
         var canonicals = operators
             .Select(r => new[] {
                 r.Precedence.ToString(),
-                Operator.GetOperatorType(r.Affix, r.Associativity).ToString(),
+                Operator.GetOperatorType(r.Fixity, r.Associativity).ToString(),
                 $"[{r.Synonyms.Join(x => x.AsQuoted(true).Explain(true))}]",
                 r.DeclaringModule.Explain() })
             .ToArray();

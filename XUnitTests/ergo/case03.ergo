@@ -1,0 +1,5 @@
+﻿:- module(case03, [
+	case03/3
+]).
+
+case03(_{killer: _K}) :- true.

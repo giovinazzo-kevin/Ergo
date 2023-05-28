@@ -32,12 +32,21 @@ public sealed class Dict : IAbstractTerm
 
     public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder());
 
-    public string Explain()
+    public string Explain(bool canonical, bool concise)
     {
-        var functor = Functor.Reduce(a => a.WithAbstractForm(default).Explain(false), b => b.WithAbstractForm(default).Explain(false));
-        var joinedArgs = KeyValuePairs.Join(kv => kv.WithAbstractForm(default).Explain(false));
+        var functor = Functor.Reduce(a => a.WithAbstractForm(default).Explain(canonical), b => b.WithAbstractForm(default).Explain(canonical));
+        if (concise)
+            return $"{functor}{{{(Dictionary.Any() ? "..." : "")}}}";
+        var joinedArgs = Dictionary.Join(kv =>
+        {
+            if (kv.Value.IsAbstract<Dict>().TryGetValue(out var inner))
+                return $"{kv.Key.Explain(canonical)}: {inner.Explain(canonical, concise)}";
+            return $"{kv.Key.Explain(canonical)}: {kv.Value.Explain(canonical)}";
+        });
         return $"{functor}{{{joinedArgs}}}";
     }
+
+    public string Explain() => Explain(false, true);
 
     public Maybe<SubstitutionMap> Unify(IAbstractTerm other)
     {

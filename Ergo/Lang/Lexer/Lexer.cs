@@ -267,7 +267,6 @@ public partial class ErgoLexer : IDisposable
         bool IsCarriageReturn(char c) => c == '\r';
         bool IsNewline(char c) => c == '\n';
         bool IsDigit(char c) => char.IsDigit(c);
-        bool IsDecimalDelimiter(char c) => c == '.' && TryPeekAhead(1, out var d, skipWhitespace: true) && IsDigit(d);
         bool IsDocumentationCommentStart(char c) => c == ':';
         bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c);
         bool IsNumberPiece(char c) => IsDecimalDelimiter(c) || IsDigit(c);
@@ -275,6 +274,7 @@ public partial class ErgoLexer : IDisposable
         bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
         bool IsKeyword(string s) => KeywordSymbols.Contains(s);
         bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);
+        bool IsDecimalDelimiter(char c) => c == '.' && TryPeekAhead(1, out var d, skipWhitespace: true) && IsDigit(d);
         bool IsOperatorPiece(char c, int index)
         {
             if (c == '\\') return true;

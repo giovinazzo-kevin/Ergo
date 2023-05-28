@@ -2,9 +2,8 @@
 
 public sealed class AnonymousComplex : SolverBuiltIn
 {
-    // TODO: Remove once Reflection module is up and running
     public AnonymousComplex()
-        : base("", new("anon"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
+        : base("", new("anon"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
@@ -20,15 +19,28 @@ public sealed class AnonymousComplex : SolverBuiltIn
         {
             if (args[0].GetQualification(out var qs).TryGetValue(out var qm) && qs is Atom functor_)
             {
-                var cplx = functor_.BuildAnonymousTerm(arity);
-                yield return new(cplx.Qualified(qm));
+                var cplx = functor_.BuildAnonymousTerm(arity)
+                    .Qualified(qm);
+                if (cplx.Unify(args[2]).TryGetValue(out var subs))
+                {
+                    yield return True(subs);
+                    yield break;
+                }
+                yield return False();
                 yield break;
             }
 
             yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Functor, args[0].Explain());
             yield break;
         }
-
-        yield return new(functor.BuildAnonymousTerm(arity));
+        var anon = functor.BuildAnonymousTerm(arity)
+            .Qualified(scope.InterpreterScope.Entry);
+        if (anon.Unify(args[2]).TryGetValue(out var subs_))
+        {
+            yield return True(subs_);
+            yield break;
+        }
+        yield return False();
+        yield break;
     }
 }

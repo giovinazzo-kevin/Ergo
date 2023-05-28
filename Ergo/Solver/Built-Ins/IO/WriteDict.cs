@@ -6,6 +6,14 @@ public sealed class WriteDict : WriteBuiltIn
         : base("", new("write_dict"), default, canon: false, quoted: false, portray: false)
     {
     }
+
+    protected override string Explain(ITerm arg)
+    {
+        if (arg.IsAbstract<Dict>().TryGetValue(out var dict))
+            return dict.Explain(Canonical, concise: false);
+        return AsQuoted(arg, Quoted).Explain(Canonical);
+    }
+
     public static string FormatDict(string json, string indent = "  ")
     {
         var indentation = 0;

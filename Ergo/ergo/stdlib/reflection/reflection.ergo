@@ -7,6 +7,7 @@
 	atom_concat/3
 ]).
 
+:- op(60, fy, ['@']).
 :- op(51, xfy, ['@>']).
 :- op(51, xfy, ['@≥', '@>=']).
 :- op(49, yfx, ['@<']).
@@ -18,9 +19,12 @@
 :- op(50, xfx, ['==', '≡']).
 :- op(50, xfx, ['\\==', '≢']).
 
+:- expand([Anon] >> (
+	@Functor/Arity :- anon(Functor, Arity, Anon)
+)).
 
 %: Term expansion.
-'=..'(Term, [Functor|Args]) :- term(Functor, Args, Term).
+'=..'(Term, [Functor|Args]) :- term(Functor, Args, Term), !.
 %: Term comparison (gt).
 '@>'(A, B)  :- compare(X, A, B), X  > 0.
 %: Term comparison (lt).
@@ -39,8 +43,6 @@
 %: Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
 '=@='(A, B) :- variant(A, B).
 '\\=@='(A, B) :- \+(A =@= B).
-%: Anonymous type declaration. (TODO: remove?)
-'/'(Functor, Arity) :- anon(Functor, Arity).
 %: True when Term is a term with functor Name/Arity.
 functor(Term, Name, Arity) :-
 	Term =.. [Name|Args],

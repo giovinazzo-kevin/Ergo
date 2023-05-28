@@ -58,11 +58,14 @@ public readonly partial struct Complex : ITerm
         {
             if (absForm.TryGetValue(out var abs))
                 return abs.Explain(canonical);
+            var f = c.Functor.AsQuoted(false).Explain(canonical);
+            var ls = char.IsLetter(f.First()) ? " " : "";
+            var rs = char.IsLetter(f.Last()) ? " " : "";
             return c.Fixity.Select(some => canonical ? Ast.Fixity.Prefix : some).GetOr(Ast.Fixity.Prefix) switch
             {
-                Ast.Fixity.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)} {c.Functor.AsQuoted(false).Explain(canonical)} {c.Arguments[1].Explain(canonical)}",
-                Ast.Fixity.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{c.Functor.AsQuoted(false).Explain(canonical)}",
-                _ when !c.Functor.IsQuoted && !canonical && c.Fixity.TryGetValue(out _) => $"{c.Functor.AsQuoted(false).Explain(canonical)}{c.Arguments.Single().Explain(canonical)}",
+                Ast.Fixity.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{ls}{f}{rs}{c.Arguments[1].Explain(canonical)}",
+                Ast.Fixity.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{f}",
+                _ when !c.Functor.IsQuoted && !canonical && c.Fixity.TryGetValue(out _) => $"{f}{c.Arguments.Single().Explain(canonical)}",
                 _ => $"{c.Functor.Explain(canonical)}({c.Arguments.Join(arg => arg.Explain(canonical))})",
             };
         }

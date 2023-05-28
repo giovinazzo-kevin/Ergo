@@ -14,7 +14,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
         Portrayed = portray;
     }
 
-    static ITerm AsQuoted(ITerm t, bool quoted)
+    protected static ITerm AsQuoted(ITerm t, bool quoted)
     {
         if (quoted)
             return t;
@@ -29,6 +29,8 @@ public abstract class WriteBuiltIn : SolverBuiltIn
 
     protected virtual string TransformText(string text) => text;
 
+    protected virtual string Explain(ITerm arg) => AsQuoted(arg, Quoted).Explain(Canonical);
+
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         foreach (var arg in args)
@@ -41,8 +43,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
                     any = true;
                 if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
             }
-            var text = AsQuoted(arg, Quoted).Explain(Canonical);
-            text = TransformText(text);
+            var text = TransformText(Explain(arg));
             if (context.Solver.Out.Encoding.IsSingleByte)
             {
                 text = text.Replace("⊤", "true");

@@ -258,7 +258,7 @@ public partial class ErgoParser : IDisposable
         var watch = Probe.Enter();
         if (!lhs.IsParenthesized
             && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized)
-            && lhsExpr.Operator.Fixity != Fixity.Infix
+            && lhsExpr.Operator.Fixity == Fixity.Prefix
             && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
             && lhsExpr.Operator.Precedence < op.Precedence)
         {
@@ -285,6 +285,7 @@ public partial class ErgoParser : IDisposable
             && TryConvertExpression(lhs, out var lhsExpr, exprParenthesized))
             {
                 if (lhsExpr.Operator.Fixity == Fixity.Infix
+                    && op.Fixity == Fixity.Infix
                     && lhsExpr.Operator.Associativity == OperatorAssociativity.Right
                     && lhsExpr.Operator.Precedence == op.Precedence)
                 {
@@ -292,6 +293,17 @@ public partial class ErgoParser : IDisposable
                     var lhsRhs = lhsExpr.Right.GetOrThrow(new InvalidOperationException());
                     var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
                     return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
+                }
+                if (TryConvertExpression(rhs, out var rhsExpr, exprParenthesized)
+                    && lhsExpr.Operator.Fixity == Fixity.Infix
+                    && rhsExpr.Operator.Fixity == Fixity.Postfix
+                    && rhsExpr.Operator.Associativity == OperatorAssociativity.Left
+                    && lhsExpr.Operator.Precedence > rhsExpr.Operator.Precedence)
+                {
+                    // lhs: K.a.b rhs: c$ op: .
+                    var inner = BuildExpression(op, lhsExpr.Left, Maybe.Some(rhsExpr.Left));
+                    var ret = BuildExpression(rhsExpr.Operator, inner.Complex, default, exprParenthesized);
+                    return ret;
                 }
             }
             // Special case for comma-lists: always parse them as NTuples

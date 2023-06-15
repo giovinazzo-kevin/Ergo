@@ -9,7 +9,7 @@ public readonly partial struct Complex : ITerm
     public bool IsGround => Arguments.All(arg => arg.IsGround);
     public readonly bool IsQualified { get; }
 
-    public readonly Maybe<Fixity> Fixity;
+    public readonly Maybe<Operator> Operator;
     public readonly bool IsParenthesized { get; }
 
     public readonly Atom Functor;
@@ -25,26 +25,26 @@ public readonly partial struct Complex : ITerm
         Arguments = args;
         HashCode = Arguments.Aggregate(Functor.GetHashCode(), (hash, a) => System.HashCode.Combine(hash, a));
         IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
-        Fixity = Maybe<Fixity>.None;
+        Operator = Maybe<Operator>.None;
         IsParenthesized = false;
         AbstractForm = default;
     }
     public Complex(Atom functor, params ITerm[] args)
         : this(functor, args.ToImmutableArray()) { }
 
-    private Complex(Maybe<Fixity> affix, bool parenthesized, Atom functor, Maybe<IAbstractTerm> isAbstract, ImmutableArray<ITerm> args)
+    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, Maybe<IAbstractTerm> isAbstract, ImmutableArray<ITerm> args)
         : this(functor, args)
     {
-        Fixity = affix;
+        Operator = op;
         IsParenthesized = parenthesized;
         AbstractForm = isAbstract;
     }
-    public Complex AsOperator(Maybe<Fixity> affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
-    public Complex AsOperator(Fixity affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
-    public Complex AsParenthesized(bool parens) => new(Fixity, parens, Functor, AbstractForm, Arguments);
-    public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Fixity, IsParenthesized, Functor, abs, Arguments);
-    public Complex WithFunctor(Atom functor) => new(Fixity, IsParenthesized, functor, AbstractForm, Arguments);
-    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Fixity, IsParenthesized, Functor, AbstractForm, args);
+    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
+    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
+    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, AbstractForm, Arguments);
+    public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Operator, IsParenthesized, Functor, abs, Arguments);
+    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, AbstractForm, Arguments);
+    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, AbstractForm, args);
 
     public string Explain(bool canonical = false)
     {
@@ -59,16 +59,27 @@ public readonly partial struct Complex : ITerm
             if (absForm.TryGetValue(out var abs))
                 return abs.Explain(canonical);
             var f = c.Functor.AsQuoted(false).Explain(canonical);
-            var ls = char.IsLetter(f.First()) ? " " : "";
-            var rs = char.IsLetter(f.Last()) ? " " : "";
-            return c.Fixity.Select(some => canonical ? Ast.Fixity.Prefix : some).GetOr(Ast.Fixity.Prefix) switch
+            if (c.Operator.TryGetValue(out var op))
             {
-                Ast.Fixity.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{ls}{f}{rs}{c.Arguments[1].Explain(canonical)}",
-                Ast.Fixity.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{f}",
-                _ when !c.Functor.IsQuoted && !canonical && c.Fixity.TryGetValue(out _) => $"{f}{c.Arguments.Single().Explain(canonical)}",
-                _ => $"{c.Functor.Explain(canonical)}({c.Arguments.Join(arg => arg.Explain(canonical))})",
-            };
+                var ps = op.Fixity == Fixity.Infix ? " " : "";
+                var ls = ps == "" ? RequiresSpace(f.First()) ? " " : "" : ps;
+                var rs = ps == "" ? RequiresSpace(f.Last()) ? " " : "" : ps;
+                return op.Fixity switch
+                {
+                    Fixity.Infix when !c.Functor.IsQuoted => $"{c.Arguments[0].Explain(canonical)}{ls}{f}{rs}{c.Arguments[1].Explain(canonical)}",
+                    Fixity.Postfix when !c.Functor.IsQuoted => $"{c.Arguments.Single().Explain(canonical)}{f}",
+                    _ when !c.Functor.IsQuoted && !canonical && c.Operator.TryGetValue(out _) => $"{f}{c.Arguments.Single().Explain(canonical)}",
+                    _ => $"{c.Functor.Explain(canonical)}({c.Arguments.Join(arg => arg.Explain(canonical))})",
+                };
+            }
+            else
+            {
+                return $"{c.Functor.Explain(canonical)}({c.Arguments.Join(arg => arg.Explain(canonical))})";
+            }
         }
+
+        static bool RequiresSpace(char c) => char.IsLetter(c)
+            || c == '=';
     }
 
     public ITerm Substitute(Substitution s)
@@ -127,7 +138,7 @@ public readonly partial struct Complex : ITerm
         vars ??= new();
         if (AbstractForm.TryGetValue(out var abs))
             return abs.Instantiate(ctx, vars).CanonicalForm;
-        return new Complex(Fixity, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
+        return new Complex(Operator, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
     }
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 

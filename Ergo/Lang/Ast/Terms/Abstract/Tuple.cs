@@ -9,13 +9,13 @@ public sealed class NTuple : AbstractList
     public NTuple(ImmutableArray<ITerm> head)
         : base(head)
     {
-        CanonicalForm = FoldNoEmptyTailParensSingle(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
+        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
     public NTuple(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents)) { }
-    public override Atom Functor => WellKnown.Functors.Tuple.First();
+    public override Operator Operator => WellKnown.Operators.Conjunction;
     public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
     public override (string Open, string Close) Braces => ("(", ")");
     public override ITerm CanonicalForm { get; }

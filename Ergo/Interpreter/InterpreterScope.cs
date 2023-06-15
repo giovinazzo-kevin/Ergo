@@ -178,7 +178,7 @@ public readonly struct InterpreterScope
             // Add well-known operators in a way that allows for their re-definition by modules down the import chain.
             // An example is the arity indicator (/)/2, that gets re-defined by the math module as the division operator.
             // In practice user code will only ever see the division operator, but the arity indicator ensures proper semantics when the math module is not loaded.
-            foreach (var op in WellKnown.Operators.DefinedOperators)
+            foreach (var op in WellKnown.Operators.DeclaredOperators)
             {
                 if (op.DeclaringModule == entryModule)
                     yield return (op, int.MaxValue);

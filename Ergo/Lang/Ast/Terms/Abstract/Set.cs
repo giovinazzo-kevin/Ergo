@@ -9,13 +9,13 @@ public sealed class Set : AbstractList
     public Set(ImmutableArray<ITerm> head)
         : base(head.OrderBy(x => x).Distinct())
     {
-        CanonicalForm = FoldNoEmptyTail(Functor, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), ImmutableArray.CreateRange(Contents))
+        CanonicalForm = FoldNoEmptyTail(Operator, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), ImmutableArray.CreateRange(Contents))
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
     public Set(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents)) { }
-    public override Atom Functor => WellKnown.Functors.Set.First();
+    public override Operator Operator => WellKnown.Operators.Set;
     public override Atom EmptyElement => WellKnown.Literals.EmptyBracyList;
     public override (string Open, string Close) Braces => ("{", "}");
     public override ITerm CanonicalForm { get; }

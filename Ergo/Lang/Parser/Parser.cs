@@ -637,8 +637,8 @@ public partial class ErgoParser : IDisposable
         var exportedPredicates = predicates.Select(p =>
         {
             var sign = p.Head.GetSignature();
-            var form = new Complex(WellKnown.Functors.Arity.First(), sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow(new NotSupportedException())))
-                .AsOperator(Fixity.Infix);
+            var form = new Complex(WellKnown.Operators.ArityIndicator.CanonicalFunctor, sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow(new NotSupportedException())))
+                .AsOperator(WellKnown.Operators.ArityIndicator);
             if (exported.Contents.Any(x => x.Equals(form)))
                 return p.Exported();
             return p;

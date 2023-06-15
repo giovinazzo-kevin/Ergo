@@ -200,3 +200,7 @@ best_matchup_dual(T1-T2, U1-U2) :-
 	score_matchup(T2, U1, 2), 
 	T2 \== T1,
 	score_matchup(T2, U2, 2).
+
+total_matchup_dual(T1-T2, S) :-
+	type(T3), T3 \== none,
+	findall(Score, score_matchup_dual(T1-T2, T3-none, Score), Scores),

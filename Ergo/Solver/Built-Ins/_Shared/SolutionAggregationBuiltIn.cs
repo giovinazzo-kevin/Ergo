@@ -37,10 +37,10 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 
         var goalClauses = new NTuple(new ITerm[] {
             goal,
-            new Complex(WellKnown.Functors.Unification.First(),
+            new Complex(WellKnown.Operators.Unification.CanonicalFunctor,
                 variable,
                 new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
-            .AsOperator(Fixity.Infix)
+            .AsOperator(WellKnown.Operators.Unification)
         });
         var solutions = solver.Solve(new(goalClauses), scope)
             .Select(s => s.Simplify());

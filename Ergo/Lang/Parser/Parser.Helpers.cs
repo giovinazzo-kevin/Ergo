@@ -80,7 +80,7 @@ public partial class ErgoParser
     }
 
     public Maybe<UntypedSequence> Sequence(
-        Atom functor,
+        Operator op,
         Atom emptyElement,
         string openingDelim,
         Operator separator,
@@ -90,8 +90,8 @@ public partial class ErgoParser
         return
             Parenthesized(openingDelim, closingDelim, () =>
                 Unfold(ExpressionOrTerm())
-                .Select(t => new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(t)))
-                .Or(() => new UntypedSequence(functor, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty)))
+                .Select(t => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(t)))
+                .Or(() => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty)))
             .Or(() => Fail<UntypedSequence>(pos))
         ;
 

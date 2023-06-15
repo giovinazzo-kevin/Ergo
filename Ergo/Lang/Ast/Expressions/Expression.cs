@@ -11,7 +11,7 @@ public readonly partial struct Expression
 
     public Expression(Complex fromComplex, Maybe<InterpreterScope> maybeScope = default)
     {
-        var ops = WellKnown.Operators.DefinedOperators.AsEnumerable();
+        var ops = WellKnown.Operators.DeclaredOperators.AsEnumerable();
         if (maybeScope.TryGetValue(out var scope))
         {
             ops = ops.Concat(scope.GetOperators())
@@ -31,7 +31,7 @@ public readonly partial struct Expression
         Left = left;
         Right = right;
         Complex = new Complex(op.CanonicalFunctor, right.Select(some => new[] { left, some }).GetOr(new[] { left }))
-            .AsOperator(op.Fixity)
+            .AsOperator(op)
             .AsParenthesized(parenthesized);
     }
 }

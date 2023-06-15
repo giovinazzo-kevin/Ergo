@@ -10,8 +10,8 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
     public override TermMarshalling Marshalling => TermMarshalling.Named;
     public override IEnumerable<string> GetMembers() => Properties.Select(p => p.Name);
     public override ITerm TransformMember(string name, Maybe<string> key, ITerm value) =>
-        new Complex(WellKnown.Functors.NamedArgument.First(), new Atom(key.GetOr(name.ToErgoCase())), value)
-            .AsOperator(Fixity.Infix);
+        new Complex(WellKnown.Operators.NamedArgument.CanonicalFunctor, new Atom(key.GetOr(name.ToErgoCase())), value)
+            .AsOperator(WellKnown.Operators.NamedArgument);
     public override ITerm GetArgument(string name, ITerm value)
     {
         if (!value.IsAbstract<Dict>().TryGetValue(out var dict))

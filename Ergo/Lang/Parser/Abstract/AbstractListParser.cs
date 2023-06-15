@@ -9,7 +9,7 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
     {
         var empty = Construct(ImmutableArray<ITerm>.Empty);
         var ret = parser.Sequence(
-              empty.Functor
+              empty.Operator
             , empty.EmptyElement
             , empty.Braces.Open
             , WellKnown.Operators.Conjunction

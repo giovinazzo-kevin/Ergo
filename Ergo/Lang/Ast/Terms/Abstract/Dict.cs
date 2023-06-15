@@ -18,9 +18,10 @@ public sealed class Dict : IAbstractTerm
         args ??= Enumerable.Empty<KeyValuePair<Atom, ITerm>>();
         Functor = functor;
         Dictionary = ImmutableDictionary.CreateRange(args);
+        var op = WellKnown.Operators.NamedArgument;
         KeyValuePairs = Dictionary
-            .Select(kv => (ITerm)new Complex(WellKnown.Functors.NamedArgument.First(), kv.Key, kv.Value)
-                    .AsOperator(Fixity.Infix))
+            .Select(kv => (ITerm)new Complex(op.CanonicalFunctor, kv.Key, kv.Value)
+                    .AsOperator(op))
             .OrderBy(o => o)
             .ToArray();
         CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new List(KeyValuePairs).CanonicalForm })

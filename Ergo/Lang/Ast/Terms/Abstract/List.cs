@@ -10,14 +10,14 @@ public sealed class List : AbstractList
         : base(contents)
     {
         Tail = tail.GetOr(EmptyElement.WithAbstractForm(Empty ?? this));
-        CanonicalForm = Fold(Functor, Tail, contents)
+        CanonicalForm = Fold(Operator, Tail, contents)
             .Reduce<ITerm>(a => a, v => v, c => c)
             .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
     }
     public List(IEnumerable<ITerm> contents, Maybe<ITerm> tail = default)
         : this(ImmutableArray.CreateRange(contents), tail) { }
 
-    public override Atom Functor => WellKnown.Functors.List.First();
+    public override Operator Operator => WellKnown.Operators.List;
     public override Atom EmptyElement => WellKnown.Literals.EmptyList;
     public override (string Open, string Close) Braces => ("[", "]");
     public override ITerm CanonicalForm { get; }

@@ -8,7 +8,7 @@ public static partial class WellKnown
             '@', '_', '(', ')', '[', ']'
         };
         public static readonly char[] QuotablePunctuation = new char[] {
-            ','
+            ',', '.'
         };
     }
 

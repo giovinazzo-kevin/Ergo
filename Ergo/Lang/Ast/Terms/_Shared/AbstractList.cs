@@ -9,7 +9,7 @@ public abstract class AbstractList : IAbstractTerm
     public readonly ImmutableArray<ITerm> Contents;
     public readonly bool IsEmpty;
 
-    public abstract Atom Functor { get; }
+    public abstract Operator Operator { get; }
     public abstract Atom EmptyElement { get; }
     public abstract (string Open, string Close) Braces { get; }
     public Signature Signature { get; }
@@ -74,42 +74,49 @@ public abstract class AbstractList : IAbstractTerm
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
     /// </summary>
-    public static ITerm Fold(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm Fold(Operator op, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
+        if (op.Fixity != Fixity.Infix)
+            throw new InvalidOperationException("Cannot fold a non-infix operator.");
         if (args.Length == 0)
             return emptyElement;
         if (args.Length == 1)
-            return new Complex(functor, args[0], emptyElement);
+            return new Complex(op.CanonicalFunctor, args[0], emptyElement)
+                .AsOperator(op);
         return args
             .Append(emptyElement)
             .Reverse()
-            .Aggregate((a, b) => new Complex(functor, b, a)
-                .AsOperator(Fixity.Infix));
+            .Aggregate((a, b) => new Complex(op.CanonicalFunctor, b, a)
+                .AsOperator(op));
     }
 
     /// <summary>
     /// Folds a list in a non-canonical way that omits the trailing empty element.
     /// Note that the empty element is still returned for 0-length lists.
     /// </summary>
-    public static ITerm FoldNoEmptyTail(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm FoldNoEmptyTail(Operator op, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
+        if (op.Fixity != Fixity.Infix)
+            throw new InvalidOperationException("Cannot fold a non-infix operator.");
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;
         if (args.Length == 1)
-            return new Complex(functor, args[0]);
+            return new Complex(op.CanonicalFunctor, args[0]);
         return args
             .Reverse()
-            .Aggregate((a, b) => new Complex(functor, b, a)
-                .AsOperator(Fixity.Infix));
+            .Aggregate((a, b) => new Complex(op.CanonicalFunctor, b, a)
+                .AsOperator(op));
     }
 
     /// <summary>
     /// Folds a list in a non-canonical way that omits the trailing empty element and parenthesizes the single element instead of returning a malformed complex.
     /// Note that the empty element is still returned for 0-length lists.
     /// </summary>
-    public static ITerm FoldNoEmptyTailParensSingle(Atom functor, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm FoldNoEmptyTailParensSingle(Operator op, ITerm emptyElement, ImmutableArray<ITerm> args)
     {
+        if (op.Fixity != Fixity.Infix)
+            throw new InvalidOperationException("Cannot fold a non-infix operator.");
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;
@@ -117,8 +124,8 @@ public abstract class AbstractList : IAbstractTerm
             return args[0].AsParenthesized(true);
         return args
             .Reverse()
-            .Aggregate((a, b) => new Complex(functor, b, a)
-                .AsOperator(Fixity.Infix));
+            .Aggregate((a, b) => new Complex(op.CanonicalFunctor, b, a)
+                .AsOperator(op));
     }
 
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, HashSet<Atom> functors)

@@ -1,7 +1,15 @@
 ﻿using Ergo.Lang.Ast;
-
-
 namespace Tests;
+
+public static class MockWellKnown
+{
+    public static class Operators
+    {
+        public static readonly Operator Addition = new(WellKnown.Modules.Math, Fixity.Infix, OperatorAssociativity.None, 500, WellKnown.Functors.Addition);
+        public static readonly Operator Subtraction = new(WellKnown.Modules.Math, Fixity.Infix, OperatorAssociativity.None, 500, WellKnown.Functors.Subtraction);
+        public static readonly Operator DictAccess = new(WellKnown.Modules.Math, Fixity.Infix, OperatorAssociativity.Left, 900, WellKnown.Functors.DictAccess);
+    }
+}
 
 public class ParserTests : ErgoTests
 {
@@ -30,8 +38,8 @@ public class ParserTests : ErgoTests
     [InlineData("+.  015", +.015)]
     public void ShouldParseSignedNumbers(string query, decimal number)
     {
-        var f = number < 0 ? WellKnown.Functors.Subtraction.First() : WellKnown.Functors.Addition.First();
-        ShouldParse(query, new Expression(new Complex(f, new Atom(Math.Abs(number))).AsOperator(Fixity.Prefix), InterpreterScope));
+        var op = number < 0 ? MockWellKnown.Operators.Subtraction : MockWellKnown.Operators.Addition;
+        ShouldParse(query, new Expression(new Complex(op.CanonicalFunctor, new Atom(Math.Abs(number))).AsOperator(op), InterpreterScope));
     }
 
     [Fact]
@@ -47,5 +55,6 @@ public class ParserTests : ErgoTests
     [Fact]
     public void ShouldParsePathologicalCases_PeriodAsInfix()
         => ShouldParse("a.b",
-            new Expression(new Complex(new Atom("."), new Atom("a"), new Atom("b")).AsOperator(Fixity.Infix), InterpreterScope));
+            new Expression(new Complex(MockWellKnown.Operators.DictAccess.CanonicalFunctor, new Atom("a"), new Atom("b"))
+                .AsOperator(MockWellKnown.Operators.DictAccess), InterpreterScope));
 }

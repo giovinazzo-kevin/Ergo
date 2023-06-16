@@ -253,7 +253,7 @@ public sealed class SolverContext : IDisposable
                 Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
                 foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))
                 {
-                    Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head, s.Scope.Depth);
+                    Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head.Substitute(s.Substitutions), s.Scope.Depth);
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }

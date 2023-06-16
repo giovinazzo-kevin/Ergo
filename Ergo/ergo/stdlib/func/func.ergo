@@ -1,3 +1,15 @@
 ﻿:- module(func, [
+	map/3, reduce/4
 ]).
 
+map([], _, []) :- !.
+map([H1|T1], Lambda, [H2|T2]) :-
+	call(Lambda, H1, H2),
+	map(T1, Lambda, T2).
+
+reduce([], _, _) :- !.
+reduce([Result], _, Result) :- !.
+reduce([A, B|T], Lambda, Result) :-
+	call(Lambda, A, B, PartialA),
+	reduce(T, Lambda, PartialB),
+	call(Lambda, PartialA, PartialB, Result).

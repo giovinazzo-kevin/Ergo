@@ -88,9 +88,12 @@ public sealed class SolverContext : IDisposable
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
         ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ExceptionCts.Token).Token;
-        foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
+        if (!ct.IsCancellationRequested)
         {
-            yield return s;
+            foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
+            {
+                yield return s;
+            }
         }
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught -= Cancel;
@@ -103,6 +106,7 @@ public sealed class SolverContext : IDisposable
     private IEnumerable<Solution> SolveQuery(NTuple query, SolverScope scope, CancellationToken ct = default)
     {
         var tcoPred = Maybe<Predicate>.None;
+        var tcoVars = new HashSet<Variable>();
         var tcoSubs = new SubstitutionMap();
     TCO:
         if (query.IsEmpty)
@@ -117,40 +121,43 @@ public sealed class SolverContext : IDisposable
         // Get first solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
-            if (ct.IsCancellationRequested || ChoicePointCts.IsCancellationRequested)
-                yield break; // break on cuts and exceptions
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
-#if _ERGO_SOLVER_ENABLE_TCO
-            if (s.Scope.Callee.IsTailRecursive)
+#if !ERGO_SOLVER_DISABLE_TCO
+            if (s.Scope.Callee.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Body))
             {
-                // PROBLEM
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
                 if (s.Scope.Callers.Any())
                     scope = s.Scope.WithoutLastCaller();
                 tcoSubs.AddRange(s.Substitutions);
+                tcoVars.UnionWith(s.Variables);
                 // Remove all substitutions that don't pertain to any variables in the current scope
-                tcoSubs.Prune(s.Scope.Callee.Body.CanonicalForm.Variables);
-                query = new(s.Scope.Callee.Body.Contents.AddRange(rest.Contents));
+                tcoSubs.Prune(tcoVars);
+                query = new(s.Scope.Callee.Body.Contents.Concat(rest.Contents));
                 tcoPred = s.Scope.Callee;
                 goto TCO;
             }
-#endif
             if (rest.Contents.Length > 0 && tcoPred.TryGetValue(out var p))
             {
                 var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDeclarationAs(p));
                 if (mostRecentCaller.Equals(p))
                 {
-                    query = new(rest.Contents);
+                    tcoSubs.AddRange(s.Substitutions);
+                    tcoVars.UnionWith(s.Variables);
+                    tcoSubs.Prune(tcoVars);
+                    query = rest;
                     goto TCO;
                 }
                 else
                     tcoPred = mostRecentCaller;
             }
+#endif
             if (rest.Contents.Length == 0)
             {
                 yield return s.PrependSubstitutions(tcoSubs);
                 continue;
             }
+            if (ct.IsCancellationRequested || ChoicePointCts.IsCancellationRequested)
+                yield break; // break on cuts and exceptions
             // Solve the rest of the goal
             foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
             {
@@ -229,7 +236,7 @@ public sealed class SolverContext : IDisposable
                     .WithChoicePoint();
                 var callerVars = scope.Callee.Body.CanonicalForm.Variables;
                 var calleeVars = m.Rhs.Body.CanonicalForm.Variables;
-#if _ERGO_SOLVER_ENABLE_TCO
+#if !ERGO_SOLVER_DISABLE_TCO
                 if (m.Rhs.IsTailRecursive)
                 {
                     // PROBLEM: This branch should only be entered iff the predicate is known to be determinate at this point

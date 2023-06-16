@@ -21,8 +21,3 @@ select([], [], _) :- !.
 select([H1|T1], [H2|T2], Lambda) :-
 	call(Lambda, H1, H2),
 	select(T1, T2, Lambda).
-
-my_select([], []) :- !.
-my_select([H1|T1], [H2|T2]) :-
-	H2 := H1 * 2,
-	my_select(T1, T2).

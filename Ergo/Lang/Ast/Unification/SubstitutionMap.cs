@@ -31,7 +31,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
-        if (Map.TryGetRvalue(s.Lhs, out var prevLhs))
+        if (s.Lhs is Variable { Ignored: true } && Map.TryGetRvalue(s.Lhs, out var prevLhs))
         {
             Map.Remove(prevLhs);
             Map.Add(prevLhs, s.Rhs);
@@ -56,7 +56,8 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     {
         foreach (var (lhs, rhs) in Map)
         {
-            if (lhs is Variable lhsV && keep.Contains(lhsV) || rhs is Variable rhsV && keep.Contains(rhsV))
+            var vars = lhs.Variables.Concat(rhs.Variables);
+            if (keep.Intersect(vars).Any() || vars.Any(v => !v.Ignored))
                 continue;
             Map.Remove(lhs);
         }

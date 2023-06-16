@@ -4,6 +4,8 @@ public readonly struct Solution
 {
     public readonly SolverScope Scope;
     public readonly SubstitutionMap Substitutions;
+    public IEnumerable<Variable> Variables => Substitutions.SelectMany(x => x.Rhs.Variables).Distinct();
+
     public Solution(SolverScope scope, SubstitutionMap subs)
     {
         Scope = scope;

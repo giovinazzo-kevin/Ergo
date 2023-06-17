@@ -7,7 +7,7 @@
 	atom_concat/3
 ]).
 
-:- op(0, fx, ['@']).
+:- op(5, fx, ['@']).
 :- op(51, xfy, ['@>']).
 :- op(51, xfy, ['@≥', '@>=']).
 :- op(49, yfx, ['@<']).
@@ -20,7 +20,7 @@
 :- op(50, xfx, ['\\==', '≢']).
 
 :- expand([Anon] >> (
-	@Functor/Arity :- anon(Functor, Arity, Anon)
+	@(Functor/Arity) :- anon(Functor, Arity, Anon)
 )).
 
 %: Term expansion.

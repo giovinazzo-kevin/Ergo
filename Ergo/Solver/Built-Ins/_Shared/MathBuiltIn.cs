@@ -30,15 +30,15 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Lte.Contains(f)
                 => Evaluate(solver, c.Arguments[0]).CompareTo(Evaluate(solver, c.Arguments[1])) <= 0,
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Modulo.Contains(f)
-                => Evaluate(solver, c.Arguments[0]) % Evaluate(solver, c.Arguments[1]),
+                => Remainder(c),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Addition.Contains(f)
-                => Evaluate(solver, c.Arguments[0]) + Evaluate(solver, c.Arguments[1]),
+                => Add(c),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Subtraction.Contains(f)
-                => Evaluate(solver, c.Arguments[0]) - Evaluate(solver, c.Arguments[1]),
+                => Subtract(c),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Multiplication.Contains(f)
-                => Evaluate(solver, c.Arguments[0]) * Evaluate(solver, c.Arguments[1]),
+                => Multiply(c),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Division.Contains(f)
-                => Evaluate(solver, c.Arguments[0]) / Evaluate(solver, c.Arguments[1]),
+                => Divide(c),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.IntDivision.Contains(f)
                 => (((EDecimal)Evaluate(solver, c.Arguments[0])).DivideToIntegerNaturalScale(Evaluate(solver, c.Arguments[1]))),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Power.Contains(f)
@@ -53,6 +53,61 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 => Evaluate(solver, c.Arguments[0]),
                 _ => Throw(c)
             };
+        }
+
+        dynamic Divide(Complex c)
+        {
+            var a = Evaluate(solver, c.Arguments[0]);
+            var b = Evaluate(solver, c.Arguments[1]);
+            if (a is EDecimal A && b is EDecimal B)
+            {
+                return A.Divide(B, EContext.CliDecimal);
+            }
+            return a / b;
+        }
+
+        dynamic Remainder(Complex c)
+        {
+            var a = Evaluate(solver, c.Arguments[0]);
+            var b = Evaluate(solver, c.Arguments[1]);
+            if (a is EDecimal A && b is EDecimal B)
+            {
+                return A.Remainder(B, EContext.CliDecimal);
+            }
+            return a % b;
+        }
+
+        dynamic Add(Complex c)
+        {
+            var a = Evaluate(solver, c.Arguments[0]);
+            var b = Evaluate(solver, c.Arguments[1]);
+            if (a is EDecimal A && b is EDecimal B)
+            {
+                return A.Add(B, EContext.CliDecimal);
+            }
+            return a + b;
+        }
+
+        dynamic Subtract(Complex c)
+        {
+            var a = Evaluate(solver, c.Arguments[0]);
+            var b = Evaluate(solver, c.Arguments[1]);
+            if (a is EDecimal A && b is EDecimal B)
+            {
+                return A.Subtract(B, EContext.CliDecimal);
+            }
+            return a - b;
+        }
+
+        dynamic Multiply(Complex c)
+        {
+            var a = Evaluate(solver, c.Arguments[0]);
+            var b = Evaluate(solver, c.Arguments[1]);
+            if (a is EDecimal A && b is EDecimal B)
+            {
+                return A.Multiply(B, EContext.CliDecimal);
+            }
+            return a * b;
         }
 
         double Throw(ITerm t) => throw new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Number, t.Explain());

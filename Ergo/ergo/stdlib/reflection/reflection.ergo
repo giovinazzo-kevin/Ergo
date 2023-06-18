@@ -7,7 +7,7 @@
 	atom_concat/3
 ]).
 
-:- op(5, fx, ['@']).
+:- op(700, fx, ['@']).
 :- op(51, xfy, ['@>']).
 :- op(51, xfy, ['@≥', '@>=']).
 :- op(49, yfx, ['@<']).
@@ -18,10 +18,6 @@
 :- op(50, xfx, ['=..']).
 :- op(50, xfx, ['==', '≡']).
 :- op(50, xfx, ['\\==', '≢']).
-
-:- expand([Anon] >> (
-	@(Functor/Arity) :- anon(Functor, Arity, Anon)
-)).
 
 %: Term expansion.
 '=..'(Term, [Functor|Args]) :- term(Functor, Args, Term), !.

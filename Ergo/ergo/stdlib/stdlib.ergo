@@ -13,11 +13,3 @@
 :- use_module(string).
 :- use_module(meta).
 :- use_module(reflection).
-
-%: Exclusive assert. Only one instance of this rule may exist.
-assertx(X) :-
-	term(Functor, Args, X),
-    length(Args, Arity),
-	ignore(retractall(@Functor/Arity)),
-	asserta(X),
-	!.

@@ -2,7 +2,6 @@
 	ignore/1,
 	once/1, repeat/2, forever/1,
 	forall/2,
-	maplist/2, maplist/3, maplist/4, maplist/5,
     for/3
 ]).
     
@@ -14,38 +13,6 @@ repeat(Times, Goal) :- range(0<=X<Times), once(Goal).
 forever(Goal) :- once(Goal) ; forever(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
-
-maplist(Goal, List) :-
-    maplist_(List, Goal).
-
-maplist_([], _).
-maplist_([Elem|Tail], Goal) :-
-    call(Goal, Elem),
-    maplist_(Tail, Goal).
-
-maplist(Goal, List1, List2) :-
-    maplist_(List1, List2, Goal).
-
-maplist_([], [], _).
-maplist_([Elem1|Tail1], [Elem2|Tail2], Goal) :-
-    call(Goal, Elem1, Elem2),
-    maplist_(Tail1, Tail2, Goal).
-
-maplist(Goal, List1, List2, List3) :-
-    maplist_(List1, List2, List3, Goal).
-
-maplist_([], [], [], _).
-maplist_([Elem1|Tail1], [Elem2|Tail2], [Elem3|Tail3], Goal) :-
-    call(Goal, Elem1, Elem2, Elem3),
-    maplist_(Tail1, Tail2, Tail3, Goal).
-
-maplist(Goal, List1, List2, List3, List4) :-
-    maplist_(List1, List2, List3, List4, Goal).
-
-maplist_([], [], [], [], _).
-maplist_([Elem1|Tail1], [Elem2|Tail2], [Elem3|Tail3], [Elem4|Tail4], Goal) :-
-    call(Goal, Elem1, Elem2, Elem3, Elem4),
-    maplist_(Tail1, Tail2, Tail3, Tail4, Goal).
     
 for(Int, Int, _Upper).
 for(Int, Lower, Upper) :-

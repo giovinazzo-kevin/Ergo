@@ -245,6 +245,7 @@ public sealed class SolverContext : IDisposable
                     // https://www.mercurylang.org/information/doc-latest/mercury_ref/Determinism.html#Determinism-categories
                     // https://www.metalevel.at/prolog/fun
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
+                    Solver.LogTrace(SolverTraceType.TailCallOptimization, m.Lhs, scope.Depth);
                     yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
                     continue;
                 }

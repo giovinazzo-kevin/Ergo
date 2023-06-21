@@ -3,6 +3,14 @@ public static class Maybe
 {
     public static Maybe<T> Some<T>(T some) => Maybe<T>.Some(some);
     public static Maybe<T> None<T>() => Maybe<T>.None;
+
+    public static Maybe<T> FromTryGet<T>(Func<(bool, T)> tryGet)
+    {
+        var (success, value) = tryGet();
+        if (success)
+            return Some(value);
+        return Maybe<T>.None;
+    }
 }
 
 public readonly struct Maybe<T>

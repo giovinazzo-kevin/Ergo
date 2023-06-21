@@ -8,4 +8,5 @@ public enum SolverTraceType
     [Description("Resv")] BuiltInResolution,
     [Description("Call")] Call,
     [Description("Exit")] Exit,
+    [Description("+TCO")] TailCallOptimization,
 }

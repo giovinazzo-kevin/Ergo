@@ -78,6 +78,7 @@ public partial class ErgoShell
                 SolverTraceType.Exit => (ConsoleColor.DarkGray, ConsoleColor.White),
                 SolverTraceType.Expansion => (ConsoleColor.DarkGreen, ConsoleColor.White),
                 SolverTraceType.BuiltInResolution => (ConsoleColor.DarkYellow, ConsoleColor.White),
+                SolverTraceType.TailCallOptimization => (ConsoleColor.DarkCyan, ConsoleColor.White),
                 _ => (ConsoleColor.Black, ConsoleColor.White),
             },
             _ => (Console.ForegroundColor, Console.BackgroundColor),

@@ -23,6 +23,10 @@ type(dark).
 type(steel).
 type(fairy).
 
+dual_type(T1-T2) :- 
+	type(T1), T1 \== none,
+	type(T2), T2 \== T1.
+
 not_very_eff(normal, rock).
 not_very_eff(normal, steel).
 
@@ -163,10 +167,6 @@ immune_to(ground, electric).
 immune_to(steel, poison).
 immune_to(fairy, dragon).
 
-dual_type(T1-T2) :- 
-	type(T1), T1 \== none,
-	type(T2), T2 \== T1.
-
 score_matchup_(T1, T2, 0.0) :- immune_to(T2, T1), !.
 score_matchup_(T1, T2, 0.5) :- not_very_eff(T1, T2), !.
 score_matchup_(T1, T2, 2.0) :- super_eff(T1, T2), !.
@@ -176,31 +176,14 @@ score_matchup(T1, T2, S) :-
 	type(T1), type(T2),
 	score_matchup_(T1, T2, S).
 
-score_matchup_dual(T1-T2, U1-U2, S) :-
-	dual_type(T1-T2), 
-	dual_type(U1-U2),
-	score_matchup_(T1, U1, ST1U1),
-	score_matchup_(T1, U2, ST1U2),
-	score_matchup_(T2, U1, ST2U1),
-	score_matchup_(T2, U2, ST2U2),
-	score_matchup_(U1, T1, SU1T1),
-	score_matchup_(U1, T2, SU1T2),
-	score_matchup_(U2, T1, SU2T1),
-	score_matchup_(U2, T2, SU2T2),
-	S :=((ST1U1 * ST1U2) 
-	   + (ST2U1 * ST2U2) 
-	   - (SU1T1 * SU1T2) 
-	   - (SU2T1 * SU2T2)
-	   ) / 8.
-	   
-best_matchup_dual(T1-T2, U1-U2) :- 
-	score_matchup(T1, U1, 2), 
-	score_matchup(T1, U2, 2), 
-	U2 \== U1, 
-	score_matchup(T2, U1, 2), 
-	T2 \== T1,
-	score_matchup(T2, U2, 2).
-
-total_matchup_dual(T1-T2, S) :-
+score_matchup_dual(T1-T2, T3, S) :-
+	dual_type(T1-T2),
 	type(T3), T3 \== none,
-	findall(Score, score_matchup_dual(T1-T2, T3-none, Score), Scores),
+	score_matchup_(T3, T1, S1),
+	score_matchup_(T3, T2, S2),
+	S := S1 * S2.
+
+score_matchup_total(T1-T2, S) :- 
+	dual_type(T1-T2),
+	findall(SubScore, score_matchup_dual(T1-T2, _, SubScore), Scores),
+	reduce([A,B,C]>>(C:=A+B), Scores, S).

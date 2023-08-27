@@ -1,10 +1,10 @@
 ﻿
 namespace Ergo.Solver.BuiltIns;
 
-public sealed class ListSet : SolverBuiltIn
+public sealed class Sort : SolverBuiltIn
 {
-    public ListSet()
-        : base("", new("list_set"), 2, WellKnown.Modules.List)
+    public Sort()
+        : base("", new("sort"), 2, WellKnown.Modules.List)
     {
     }
 
@@ -12,8 +12,8 @@ public sealed class ListSet : SolverBuiltIn
     {
         if (args[0].IsAbstract<List>().TryGetValue(out var list))
         {
-            var set = new Set(list.Contents);
-            if (args[1].Unify(set.CanonicalForm).TryGetValue(out var subs))
+            var sorted = new List(list.Contents.OrderBy(x => x));
+            if (args[1].Unify(sorted.CanonicalForm).TryGetValue(out var subs))
                 yield return True(subs);
             else goto fail;
         }

@@ -9,6 +9,7 @@ public class List : Library
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
         .Append(new Nth0())
         .Append(new Nth1())
+        .Append(new Sort())
         .Append(new ListSet())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()

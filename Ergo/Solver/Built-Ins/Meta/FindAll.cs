@@ -19,7 +19,6 @@ public sealed class FindAll : SolverBuiltIn
         }
 
         var solutions = context.Solver.Solve(new(comma), scope)
-            .Select(s => s.Simplify())
             .ToArray();
         if (solutions.Length == 0)
         {
@@ -39,7 +38,7 @@ public sealed class FindAll : SolverBuiltIn
         else
         {
             var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))));
-            if (args[2].IsGround && args[2] == list.CanonicalForm)
+            if (args[2].IsGround && args[2].Equals(list.CanonicalForm))
             {
                 yield return new Evaluation(WellKnown.Literals.True);
             }

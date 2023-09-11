@@ -137,7 +137,14 @@ public partial class ErgoShell
         scope = copy;
     }
 
-    public virtual async IAsyncEnumerable<ShellScope> Repl(Maybe<InterpreterScope> interpreterScope = default, Func<ShellScope, ShellScope> transformScope = null, Func<string, bool> exit = null)
+    public static void CancelConsoleInput()
+    {
+        var handle = GetStdHandle(STD_INPUT_HANDLE);
+        CancelIoEx(handle, IntPtr.Zero);
+    }
+
+    public virtual async IAsyncEnumerable<ShellScope> Repl(
+        Maybe<InterpreterScope> interpreterScope = default, Func<ShellScope, ShellScope> transformScope = null, Func<string, bool> exit = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
 
         var scope = CreateScope(interpreterScope, transformScope);
@@ -151,24 +158,27 @@ public partial class ErgoShell
         while (true)
         {
             Write($"{scope.InterpreterScope.Entry.Explain()}> ");
-            var prompt = Prompt();
-            if (exit != null && exit(prompt)) break;
-            await foreach (var result in DoAsync(scope, prompt))
+            var prompt = await Task.Run(() => Prompt(), ct);
+            if (exit != null && exit(prompt))
+                break;
+            await foreach (var result in DoAsync(scope, prompt, ct))
             {
                 yield return result;
                 scope = result;
             }
         }
 
-        Out.Dispose();
-        In.Dispose();
+        //Out.Dispose();
+        //In.Dispose();
     }
 
-    public async IAsyncEnumerable<ShellScope> DoAsync(ShellScope scope, string command)
+    public async IAsyncEnumerable<ShellScope> DoAsync(ShellScope scope, string command, [EnumeratorCancellation] CancellationToken ct)
     {
         await foreach (var result in Dispatcher.Dispatch(this, scope, command))
         {
             yield return result;
+            if (ct.IsCancellationRequested)
+                yield break;
         }
     }
 }

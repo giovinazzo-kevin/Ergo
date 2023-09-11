@@ -21,11 +21,18 @@ internal class TreeNode<T>
 public partial class ErgoShell
 {
 
+    const int STD_INPUT_HANDLE = -10;
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetConsoleOutputCP(uint wCodePageID);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetConsoleCP(uint wCodePageID);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    internal static extern IntPtr GetStdHandle(int nStdHandle);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool CancelIoEx(IntPtr handle, IntPtr lpOverlapped);
 
     protected virtual string DefaultLineFormatter(LogLine line)
     {

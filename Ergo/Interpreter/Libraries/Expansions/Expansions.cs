@@ -170,6 +170,8 @@ public class Expansions : Library
                             expansions[i].Add(Either<ExpansionResult, ITerm>.FromB(cplx.Arguments[i]));
                     }
                     var cartesian = expansions.CartesianProduct();
+                    var isLambda = WellKnown.Functors.Lambda.Contains(cplx.Functor) && cplx.Arity == 2
+                        && cplx.Arguments[0].IsAbstract<Lang.Ast.List>().TryGetValue(out _);
                     foreach (var argList in cartesian)
                     {
                         var newCplx = cplx
@@ -185,8 +187,18 @@ public class Expansions : Library
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                                .Concat(argList.SelectMany(x => x
                                   .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))));
-
-                        yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
+                        if (isLambda)
+                        {
+                            // Stuff 'expClauses' inside the lambda instead of returning them to the parent predicate
+                            var body = newCplx.Arguments[1];
+                            var closure = new NTuple(expClauses.Contents.Append(body));
+                            newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure.CanonicalForm));
+                            yield return Either<ExpansionResult, ITerm>.FromB(newCplx);
+                        }
+                        else
+                        {
+                            yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
+                        }
                     }
                 }
                 else

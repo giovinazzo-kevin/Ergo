@@ -36,7 +36,7 @@ public sealed class Dict : IAbstractTerm
     public string Explain(bool canonical, bool concise)
     {
         var functor = Functor.Reduce(a => a.WithAbstractForm(default).Explain(canonical), b => b.WithAbstractForm(default).Explain(canonical));
-        if (concise)
+        if (false && concise)
             return $"{functor}{{{(Dictionary.Any() ? "..." : "")}}}";
         var joinedArgs = Dictionary.Join(kv =>
         {

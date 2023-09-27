@@ -37,6 +37,7 @@ public readonly struct SolverScope
     public SolverScope WithCallee(Predicate callee) => new(InterpreterScope, Depth, Module, callee, Callers, IsCutRequested, InstantiationContext);
     public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, false, InstantiationContext);
     public SolverScope WithCut() => new(InterpreterScope, Depth, Module, Callee, Callers, true, InstantiationContext);
+    public SolverScope WithInterpreterScope(InterpreterScope scope) => new(scope, Depth, Module, Callee, Callers, IsCutRequested, InstantiationContext);
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
     public bool ContainsCaller(Predicate caller) => Callers.Reverse().Any(c => c.IsSameDeclarationAs(caller));

@@ -268,7 +268,8 @@ public partial class ErgoLexer : IDisposable
         bool IsNewline(char c) => c == '\n';
         bool IsDigit(char c) => char.IsDigit(c);
         bool IsDocumentationCommentStart(char c) => c == ':';
-        bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c);
+        bool IsSign(char c) => c == '-' || c == '+';
+        bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c) || IsSign(c);
         bool IsNumberPiece(char c) => IsDecimalDelimiter(c) || IsDigit(c);
         bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_' || c == '!' || c == '⊤' || c == '⊥';
         bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
@@ -366,6 +367,11 @@ public partial class ErgoLexer : IDisposable
         {
             var number = 0d;
             var integralPlaces = -1;
+            var sign = true;
+            if (IsSign(Peek()))
+            {
+                sign = Read() == '+';
+            }
             for (var i = 0; !Eof && IsNumberPiece(Peek()); ++i)
             {
                 if (IsDigit(Peek()))
@@ -397,7 +403,7 @@ public partial class ErgoLexer : IDisposable
                 }
             }
 
-            return Token.FromNumber(number);
+            return Token.FromNumber(number * (sign ? 1 : -1));
         }
 
         Token ReadIdentifier()

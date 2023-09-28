@@ -164,6 +164,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
     public virtual object FromTerm(ITerm t)
     {
+        if (t is Variable)
+            return null;
         if (IsAtomic.Value)
         {
             if (Type.IsEnum)
@@ -223,7 +225,9 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 {
                     var type = GetMemberType(name);
                     var arg = GetArgument(name, (Ast.Complex)t);
-                    var value = TermMarshall.FromTerm(arg, type, Marshalling);
+                    var value = TermMarshall.FromTerm(arg, type);
+                    if (value is null)
+                        continue;
                     if (value is EDecimal dec)
                         value = Convert.ChangeType(dec.ToDecimal(), type);
                     else

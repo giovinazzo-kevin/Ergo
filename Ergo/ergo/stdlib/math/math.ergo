@@ -3,7 +3,8 @@
 	'>'/2, '<'/2, '>='/2, '<='/2,
 	range/2, range/1,
 	between/3, between/6,
-	plus/3,
+	plus/3, minus/3,
+	increment/2, decrement/2,
 	fibonacci/2, factorial/2,
 	max/3, min/3,
 	test/1
@@ -79,6 +80,13 @@ range(R) :- range(R, 1).
 plus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A + B.
 plus(A, B, C) :- ground(A), \+ground(B), ground(C), B := C - A.
 plus(A, B, C) :- \+ground(A), ground(B), ground(C), A := C - B. 
+
+minus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A - B.
+minus(A, B, C) :- ground(A), \+ground(B), ground(C), B := A - C.
+minus(A, B, C) :- \+ground(A), ground(B), ground(C), A := B + C. 
+
+increment(A, A1) :- A1 := A + 1.
+decrement(A, A1) :- A1 := A - 1.
 		
 fibonacci(0, 0).
 fibonacci(1, 1).

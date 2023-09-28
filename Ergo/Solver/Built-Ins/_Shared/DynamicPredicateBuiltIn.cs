@@ -42,7 +42,7 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
     {
         var sig = term.GetSignature();
         if (!term.IsQualified)
-            term = term.Qualified(scope.Module);
+            term = term.Qualified(scope.InterpreterScope.Entry);
         var toRemove = new List<ITerm>();
         foreach (var match in solver.KnowledgeBase.GetMatches(new("R"), term, desugar: true)
             .AsEnumerable().SelectMany(x => x))

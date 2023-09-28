@@ -8,6 +8,7 @@ public static partial class WellKnown
         public const string HexString = nameof(HexString);
         public const string Integer = nameof(Integer);
         public const string Boolean = nameof(Boolean);
+        public const string Dictionary = nameof(Dictionary);
         public const string FreeVariable = nameof(FreeVariable);
         public const string String = nameof(String);
         public const string Atom = nameof(Atom);

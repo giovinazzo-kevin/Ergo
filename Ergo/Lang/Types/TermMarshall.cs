@@ -8,6 +8,16 @@ public sealed class TermMarshall
 
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
+    internal static readonly ConcurrentDictionary<Type, List<Func<object, object>>> Transforms = new();
+
+    public static Action RegisterTransform<T>(Func<T, T> transform)
+    {
+        if (!Transforms.TryGetValue(typeof(T), out var list))
+            Transforms[typeof(T)] = list = new();
+        var cast = (object x) => (object)transform((T)x);
+        list.Add(cast);
+        return () => list.Remove(cast);
+    }
 
     internal static ITypeResolver EnsurePositionalResolver(Type t)
     {
@@ -57,18 +67,33 @@ public sealed class TermMarshall
             _ => throw new NotImplementedException()
         };
     }
+    internal static object Transform(object o)
+    {
+        if (o is null) return null;
+        foreach (var (key, list) in Transforms)
+        {
+            if (key.IsAssignableFrom(o.GetType()))
+            {
+                foreach (var tx in list)
+                {
+                    o = tx(o);
+                }
+            }
+        }
+        return o;
+    }
     public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default) =>
         GetMode(typeof(T), mode) switch
         {
-            TermMarshalling.Positional => (T)Convert.ChangeType(EnsurePositionalResolver(typeof(T)).FromTerm(value), typeof(T)),
-            TermMarshalling.Named => (T)Convert.ChangeType(EnsureNamedResolver(typeof(T)).FromTerm(value), typeof(T)),
+            TermMarshalling.Positional => (T)Transform(Convert.ChangeType(EnsurePositionalResolver(typeof(T)).FromTerm(value), typeof(T))),
+            TermMarshalling.Named => (T)Transform(Convert.ChangeType(EnsureNamedResolver(typeof(T)).FromTerm(value), typeof(T))),
             _ => throw new NotImplementedException()
         };
     public static object FromTerm(ITerm value, Type type, Maybe<TermMarshalling> mode = default) =>
         GetMode(type, mode) switch
         {
-            TermMarshalling.Positional => EnsurePositionalResolver(type).FromTerm(value),
-            TermMarshalling.Named => EnsureNamedResolver(type).FromTerm(value),
+            TermMarshalling.Positional => Transform(EnsurePositionalResolver(type).FromTerm(value)),
+            TermMarshalling.Named => Transform(EnsureNamedResolver(type).FromTerm(value)),
             _ => throw new NotImplementedException()
         };
 }

@@ -268,7 +268,8 @@ public partial class ErgoLexer : IDisposable
         bool IsNewline(char c) => c == '\n';
         bool IsDigit(char c) => char.IsDigit(c);
         bool IsDocumentationCommentStart(char c) => c == ':';
-        bool IsSign(char c) => (c == '-' || c == '+') && TryPeekAhead(1, out var d, skipWhitespace: true) && IsDigit(d);
+        bool IsAfterWhitespace() => State.Context?.LastOrDefault() is var b && (b == 0 || char.IsWhiteSpace(b ?? ' '));
+        bool IsSign(char c) => IsAfterWhitespace() && (c == '-' || c == '+') && IsDigit(Peek());
         bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c) || IsSign(c);
         bool IsNumberPiece(char c) => IsDecimalDelimiter(c) || IsDigit(c);
         bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_' || c == '!' || c == '⊤' || c == '⊥';

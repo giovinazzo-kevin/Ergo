@@ -25,6 +25,15 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             .GetOrThrow(new InvalidOperationException());
         Assert.Equal(parsed, expected);
     }
+    // "⊤" : "⊥"
+    protected void ShouldNotParse<T>(string query, T expected)
+    {
+        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query, onParseFail: _ => default);
+        if (parsed.TryGetValue(out var value))
+        {
+            Assert.NotEqual(value, expected);
+        }
+    }
 
     // "⊤" : "⊥"
     protected void ShouldSolve(string query, int expectedSolutions, bool checkParse, params string[] expected)

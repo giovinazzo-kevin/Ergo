@@ -61,7 +61,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Divide(B, EContext.Unlimited);
+                return A.Divide(B, EContext.CliDecimal);
             }
             return a / b;
         }
@@ -72,7 +72,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Remainder(B, EContext.Unlimited);
+                return A.Remainder(B, EContext.CliDecimal);
             }
             return a % b;
         }
@@ -83,7 +83,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Add(B, EContext.Unlimited);
+                return A.Add(B, EContext.CliDecimal);
             }
             return a + b;
         }
@@ -94,7 +94,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Subtract(B, EContext.Unlimited);
+                return A.Subtract(B, EContext.CliDecimal);
             }
             return a - b;
         }
@@ -105,7 +105,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Multiply(B, EContext.Unlimited);
+                return A.Multiply(B, EContext.CliDecimal);
             }
             return a * b;
         }

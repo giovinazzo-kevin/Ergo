@@ -268,38 +268,46 @@ public partial class ErgoLexer : IDisposable
         bool IsNewline(char c) => c == '\n';
         bool IsDigit(char c) => char.IsDigit(c);
         bool IsDocumentationCommentStart(char c) => c == ':';
-        bool IsAfterWhitespace() => State.Context?.LastOrDefault() is var b && (b == 0 || char.IsWhiteSpace(b ?? ' '));
-        bool IsSign(char c) => IsAfterWhitespace() && (c == '-' || c == '+') && IsDigit(Peek());
-        bool IsNumberStart(char c) => IsDecimalDelimiter(c) || IsDigit(c) || IsSign(c);
-        bool IsNumberPiece(char c) => IsDecimalDelimiter(c) || IsDigit(c);
+        bool IsOnWhiteSpace() => (State.Context?.LastOrDefault() ?? ' ') is var b && (b == 0 || char.IsWhiteSpace(b));
+        bool IsSign(char c, int p = 0) => IsOnWhiteSpace() && (c == '-' || c == '+') && TryPeekAhead(p + 1, out var d, skipWhitespace: false) && IsNumberPiece(d, p + 1);
+        bool IsNumberStart(char c) => IsSign(c) || IsNumberPiece(c);
+        bool IsNumberPiece(char c, int p = 0) => IsDecimalDelimiter(c, p) || IsDigit(c);
         bool IsIdentifierStart(char c) => char.IsLetter(c) || c == '_' || c == '!' || c == '⊤' || c == '⊥';
         bool IsIdentifierPiece(char c) => IsIdentifierStart(c) || IsDigit(c);
         bool IsKeyword(string s) => KeywordSymbols.Contains(s);
         bool IsPunctuationPiece(char c) => PunctuationSymbols.SelectMany(p => p).Contains(c);
-        bool IsDecimalDelimiter(char c) => c == '.' && TryPeekAhead(1, out var d, skipWhitespace: true) && IsDigit(d);
+        bool IsDecimalDelimiter(char c, int p = 0) => c == '.' && TryPeekAhead(p + 1, out var d, skipWhitespace: false) && IsDigit(d);
         bool IsOperatorPiece(char c, int index)
         {
             if (c == '\\') return true;
+            // Disambiguate between . as an operator for dict dereferencing, and . as a clause terminator or decimal separator
+            if (Eof)
+                return false;
+            if (!TryPeekAhead(1, out var next, skipWhitespace: false))
+                // - EOF, which means that this is not an operator
+                return false;
             var symbols = OperatorSymbols.Select(o => o.ElementAtOrDefault(index)).Where(x => x != 0)
                 .ToHashSet();
             if (symbols.Contains(c))
             {
                 if (c == '.' && index == 0)
                 {
-                    // Disambiguate between . as an operator for dict dereferencing, and . as a clause terminator or decimal separator
-                    if (!TryPeekAhead(1, out var next, skipWhitespace: false))
-                        // - EOF, which means that this is not an operator
-                        return false;
                     if (IsPunctuationPiece(next))
                         return false;
                     if (char.IsWhiteSpace(next) || IsSingleLineCommentStart(next) || IsDocumentationCommentStart(next))
                         // - End of clause, which means that this is not an operator
                         return false;
-                    if (IsDigit(c))
-                        // Decimal separator
-                        return false;
+                    //if (IsDigit(next) && next != c)
+                    //    // Decimal separator
+                    //    return false;
                     return true;
                 }
+                //if ((c == '+' || c == '-') && index == 0)
+                //{
+                //    if (IsNumberPiece(next))
+                //        // Signed number
+                //        return !IsOnWhiteSpace();
+                //}
                 return true;
             }
             return false;
@@ -370,7 +378,7 @@ public partial class ErgoLexer : IDisposable
             var integralPlaces = -1;
             var sign = true;
             var s = State;
-            if (IsSign(Peek()))
+            if (!Eof && IsSign(Peek()))
             {
                 sign = Read() == '+';
             }
@@ -379,7 +387,6 @@ public partial class ErgoLexer : IDisposable
                 if (IsDigit(Peek()))
                 {
                     var digit = int.Parse(Read().ToString());
-                    SkipWhitespace();
                     if (integralPlaces == -1)
                     {
                         number = number * 10 + digit;
@@ -394,7 +401,6 @@ public partial class ErgoLexer : IDisposable
                     if (integralPlaces != -1) break;
                     s = State;
                     Read();
-                    SkipWhitespace();
                     if (!Eof && !IsNumberPiece(Peek()))
                     {
                         Seek(s);

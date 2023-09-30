@@ -1,9 +1,15 @@
-﻿using static Ergo.Lang.ErgoParser;
+﻿using Ergo.Lang.Utils;
+using static Ergo.Lang.ErgoParser;
 
 namespace Ergo.Lang.Parser;
 
 public sealed class DictParser : IAbstractTermParser<Dict>
 {
+    public void Register(AbstractTermCache cache)
+    {
+        cache.Register(new("dict"), typeof(Dict));
+    }
+
     public Maybe<Dict> Parse(ErgoParser parser)
     {
         var functor = parser

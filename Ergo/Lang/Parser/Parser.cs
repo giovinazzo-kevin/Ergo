@@ -16,7 +16,6 @@ public partial class ErgoParser : IDisposable
 
     public readonly ErgoLexer Lexer;
     public readonly ErgoFacade Facade;
-
     private string GetMemoKey(ErgoLexer.StreamState state, string callerName) => $"{state}@{callerName}";
 
     private bool IsFailureMemoized(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")

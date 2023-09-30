@@ -25,7 +25,7 @@ public readonly struct Parsed<T>
             (ErgoParser p) => p.Expression()
                 .Map(x => x.Complex.IsAbstract<NTuple>()
                     .Select(expr => new Query(expr))
-                    .Or(() => new Query(x.Complex))
+                    .Or(() => new Query())
                     .Map(q => Cast<Query, T>(q)))
                 .Or(() => p.Term()
                     .Map(t => Cast<Query, T>(new Query(t)))

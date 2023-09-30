@@ -132,7 +132,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                     {
                         member = new List(list.Contents.Select(x =>
                         {
-                            if (x is Ast.Complex cplx)
+                            if (x is Complex cplx)
                                 return cplx.WithFunctor(new(attr?.Functor ?? cplx.Functor.Value));
                             return x;
                         })).CanonicalForm;

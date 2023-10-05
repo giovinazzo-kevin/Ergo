@@ -4,5 +4,4 @@
 ]).
 
 add_postfix(Postfix, ListIn, ListOut) :-
-    maplist([In,Out]>>atom_concat(In,Postfix,Out),
-            ListIn, ListOut).
+    map([In,Out]>>atom_concat(In,Postfix,Out), ListIn, ListOut).

@@ -24,6 +24,11 @@ public sealed class With : SolverBuiltIn
             }
             else if (args[2].IsAbstract<Dict>().TryGetValue(out var d))
             {
+                if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(a.Dictionary[k]).TryGetValue(out _)))
+                {
+                    yield return False();
+                    yield break;
+                }
                 var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
                 var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                     .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
@@ -39,6 +44,11 @@ public sealed class With : SolverBuiltIn
             && GetPairs(b).TryGetValue(out var kvps)
             && args[2].IsAbstract<Dict>().TryGetValue(out var d))
         {
+            if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(kvps[k]).TryGetValue(out _)))
+            {
+                yield return False();
+                yield break;
+            }
             var diff = d.Dictionary.Keys.Except(kvps.Select(k => k.Key)).ToHashSet();
             var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                 .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
@@ -62,7 +72,7 @@ public sealed class With : SolverBuiltIn
             return new(d.Functor, builder);
         }
 
-        static Maybe<List<KeyValuePair<Atom, ITerm>>> GetPairs(Set set)
+        static Maybe<Dictionary<Atom, ITerm>> GetPairs(Set set)
         {
             var ret = new List<KeyValuePair<Atom, ITerm>>();
             foreach (var item in set.Contents)
@@ -72,7 +82,7 @@ public sealed class With : SolverBuiltIn
                     ret.Add(new(a, c.Arguments[1]));
                 else return default;
             }
-            return ret;
+            return ret.ToDictionary(x => x.Key, x => x.Value);
         }
     }
 }

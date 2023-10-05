@@ -1,5 +1,4 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Lang.Utils;
 using PeterO.Numbers;
 using System.Diagnostics;
 
@@ -36,8 +35,6 @@ public readonly struct Atom : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (!canonical && AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Explain(false);
         if (Value is null)
         {
             return string.Empty;

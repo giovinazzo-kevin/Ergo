@@ -1,10 +1,11 @@
 ﻿:- module(dict, [
-	'='/2, with/2
+	'='/2
 ]).
 
 :- op(900, yfx, ['.']).
 :- op(890, fy, ['&']).
 :- op(850, xfy, [with]).
+:- op(850, xfy, [without]).
 %: Directly dereferences and evaluates a dictionary property
 :- expand([Val] >> (
 	 '&'(D.Key) :- dict_deref_(D, Key, Val)
@@ -24,6 +25,10 @@ Val = D.Key :- dict_deref_(D, Key, Val).
 %: Creates a new dictionary and adds or replaces the specified keys
 C = A with B :-
 	with(A, B, C), !.
+%: Creates a new dictionary and removes the specified keys
+C = A without B :- 
+	map([X, Y]>>(Y = X:_), B, B_),
+	A = C with B_.
 
 dict_merge(dict(T1, A1), dict(_, A2), dict(T1, A3)) :-
 	union(A1, A2, A3).

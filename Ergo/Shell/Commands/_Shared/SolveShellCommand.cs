@@ -47,16 +47,17 @@ public abstract class SolveShellCommand : ShellCommand
 
         shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
         var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
+        var solverScope = solver.CreateScope(scope.InterpreterScope);
         if (scope.TraceEnabled)
         {
-            solver.Trace += (type, trace) =>
+            solverScope.Tracer.Trace += (_, __, type, trace) =>
             {
                 shell.Write(trace, LogLevel.Trc, type);
                 shell.Write("? ", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
                 switch (char.ToLower(nonInteractiveTrace ? ' ' : shell.ReadChar(true)))
                 {
                     case 'c':
-                        shell.Write("continue", LogLevel.Rpl, overrideFg: ConsoleColor.Magenta);
+                        shell.Write("contn", LogLevel.Rpl, overrideFg: ConsoleColor.Magenta);
                         nonInteractiveTrace = true;
                         break;
                     case ' ':
@@ -71,8 +72,7 @@ public abstract class SolveShellCommand : ShellCommand
                 shell.WriteLine();
             };
         }
-
-        var solutions = solver.Solve(query, solver.CreateScope(scope.InterpreterScope), ct: requestCancel.Token); // Solution graph is walked lazily
+        var solutions = solver.Solve(query, solverScope, ct: requestCancel.Token); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);

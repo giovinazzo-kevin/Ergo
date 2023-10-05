@@ -99,7 +99,10 @@ public readonly partial struct Complex : ITerm
             newArgs[i] = Arguments[i].Substitute(s);
         }
 
-        return WithArguments(newArgs.ToImmutableArray());
+        var ret = WithArguments(newArgs.ToImmutableArray());
+        if (AbstractTermCache.Default.IsAbstract(ret, default).TryGetValue(out abs))
+            return abs.CanonicalForm;
+        return ret;
     }
 
     public IEnumerable<Variable> Variables => Arguments.SelectMany(arg => arg.Variables);

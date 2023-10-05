@@ -7,6 +7,7 @@ public static partial class WellKnown
         public static readonly Atom Prologue = new("prologue");
         public static readonly Atom List = new("list");
         public static readonly Atom Dict = new("dict");
+        public static readonly Atom Set = new("set");
         public static readonly Atom Math = new("math");
         public static readonly Atom Lambda = new("lambda");
         public static readonly Atom Meta = new("meta");

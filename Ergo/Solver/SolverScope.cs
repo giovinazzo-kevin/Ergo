@@ -2,44 +2,34 @@
 using System.Diagnostics;
 
 namespace Ergo.Solver;
-
 [DebuggerDisplay("{ Explain() }")]
-public readonly struct SolverScope
+public readonly record struct SolverScope(
+    int Depth,
+    Atom Module,
+    ImmutableArray<Predicate> Callers,
+    Predicate Callee,
+    InterpreterScope InterpreterScope,
+    bool IsCutRequested,
+    InstantiationContext InstantiationContext,
+    Tracer Tracer
+)
 {
-
-    public readonly int Depth;
-    public readonly Atom Module;
-    public readonly ImmutableArray<Predicate> Callers;
-    public readonly Predicate Callee;
-    public readonly InterpreterScope InterpreterScope;
-    public readonly bool IsCutRequested;
-    public readonly InstantiationContext InstantiationContext;
-
-    private SolverScope(InterpreterScope interp, int depth, Atom module, Predicate callee, ImmutableArray<Predicate> callers, bool cut, InstantiationContext ctx)
-    {
-        Depth = depth;
-        Module = module;
-        Callers = callers;
-        Callee = callee;
-        IsCutRequested = cut;
-        InterpreterScope = interp;
-        InstantiationContext = ctx;
-    }
-    public SolverScope(InterpreterScope interp, Atom module, InstantiationContext ctx)
-        : this(interp, 0, module, default, ImmutableArray<Predicate>.Empty, false, ctx)
+    public SolverScope(InterpreterScope interp, Atom module, InstantiationContext ctx, Tracer t)
+        : this(0, module, ImmutableArray.Create<Predicate>(), default, interp, false, ctx, t)
     {
     }
 
-    public SolverScope WithModule(Atom module) => new(InterpreterScope, Depth, module, Callee, Callers, IsCutRequested, InstantiationContext);
-    public SolverScope WithDepth(int depth) => new(InterpreterScope, depth, Module, Callee, Callers, IsCutRequested, InstantiationContext);
-    public SolverScope WithCaller(Predicate caller) => new(InterpreterScope, Depth, Module, Callee, Callers.Add(caller), IsCutRequested, InstantiationContext);
-    public SolverScope WithoutLastCaller() => new(InterpreterScope, Depth, Module, Callee, Callers.RemoveAt(Callers.Length - 1), IsCutRequested, InstantiationContext);
-    public SolverScope WithCallee(Predicate callee) => new(InterpreterScope, Depth, Module, callee, Callers, IsCutRequested, InstantiationContext);
-    public SolverScope WithChoicePoint() => new(InterpreterScope, Depth, Module, Callee, Callers, false, InstantiationContext);
-    public SolverScope WithCut() => new(InterpreterScope, Depth, Module, Callee, Callers, true, InstantiationContext);
-    public SolverScope WithInterpreterScope(InterpreterScope scope) => new(scope, Depth, Module, Callee, Callers, IsCutRequested, InstantiationContext);
+    public SolverScope WithModule(Atom module) => this with { Module = module };
+    public SolverScope WithDepth(int depth) => this with { Depth = depth };
+    public SolverScope WithCaller(Predicate caller) => this with { Callers = Callers.Add(caller) };
+    public SolverScope WithoutLastCaller() => this with { Callers = Callers.RemoveAt(Callers.Length - 1) };
+    public SolverScope WithCallee(Predicate callee) => this with { Callee = callee };
+    public SolverScope WithChoicePoint() => this with { IsCutRequested = false };
+    public SolverScope WithCut() => this with { IsCutRequested = true };
+    public SolverScope WithInterpreterScope(InterpreterScope scope) => this with { InterpreterScope = scope };
 
     public void Throw(SolverError error, params object[] args) => InterpreterScope.ExceptionHandler.Throw(new SolverException(error, this, args));
+    public void Trace(SolverTraceType type, ITerm term) => Tracer.LogTrace(type, term, this);
     public bool ContainsCaller(Predicate caller) => Callers.Reverse().Any(c => c.IsSameDeclarationAs(caller));
 
     public string Explain()
@@ -49,7 +39,6 @@ public readonly struct SolverScope
         var stackTrace = Callers
             .Select((c, i) => $"[{depth - i}] {c.Head.Explain(canonical: true)}");
         stackTrace = stackTrace.Append($"[{depth - numCallers}] {Callee.Head.Explain(canonical: true)}");
-        return "\t" + stackTrace.Join("\r\n\t");
-
+        return "\t" + string.Join("\r\n\t", stackTrace);
     }
 }

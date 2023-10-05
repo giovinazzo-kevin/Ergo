@@ -52,6 +52,9 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
             Add(s);
     }
 
+    /// <summary>
+    /// Removes all substitutions pertaining to variables that are not being explicitly kept.
+    /// </summary>
     public void Prune(IEnumerable<Variable> keep)
     {
         foreach (var (lhs, rhs) in Map)
@@ -60,6 +63,35 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
             if (keep.Intersect(vars).Any() || vars.Any(v => !v.Ignored))
                 continue;
             Map.Remove(lhs);
+        }
+    }
+
+    /// <summary>
+    /// Removes all redundant substitutions by merging them.
+    /// </summary>
+    public void Simplify()
+    {
+        var add = () => { };
+        var fixedPoint = false;
+        while (!fixedPoint)
+        {
+            fixedPoint = true;
+            foreach (var (l, r) in Map)
+            {
+                foreach (var (L, R) in Map)
+                {
+                    if ((l, r) == (L, R))
+                        continue;
+                    var maySimplify = l.Variables.Intersect(R.Variables);
+                    if (!maySimplify.Any())
+                        continue;
+                    fixedPoint = false;
+                    Map.Remove(l);
+                    Map.Remove(L);
+                    add += () => Map.Add(L, R.Substitute(new Substitution(l, r)));
+                }
+            }
+            add();
         }
     }
 

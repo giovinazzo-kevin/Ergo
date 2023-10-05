@@ -111,6 +111,10 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         return @base;
     }
 
+    ITerm StripTemporaryVariables() => Substitute(Variables
+        .Where(v => v.Ignored)
+        .Select(v => new Substitution(v, WellKnown.Literals.Discard)));
+
     /// <summary>
     /// Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
     /// </summary>

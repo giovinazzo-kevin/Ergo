@@ -30,6 +30,13 @@ public readonly partial struct Operator
         Precedence = precedence;
     }
 
+    public Complex MakeComplex(ITerm lhs, Maybe<ITerm> mbRhs)
+    {
+        if (Fixity != Fixity.Infix || !mbRhs.TryGetValue(out var rhs))
+            return new Complex(CanonicalFunctor, lhs).AsOperator(this);
+        return new Complex(CanonicalFunctor, lhs, rhs).AsOperator(this);
+    }
+
     public static (Fixity, OperatorAssociativity) GetAffixAndAssociativity(OperatorType type)
     {
         return type switch

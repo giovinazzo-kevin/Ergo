@@ -63,7 +63,7 @@ public sealed class SolverContext : IDisposable
         {
             goal.GetQualification(out goal);
             var args = goal.GetArguments();
-            Solver.LogTrace(SolverTraceType.BuiltInResolution, goal, scope.Depth);
+            scope.Trace(SolverTraceType.BuiltInResolution, goal);
             if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
             {
                 scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(args.Length).Explain());
@@ -93,6 +93,8 @@ public sealed class SolverContext : IDisposable
             foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
             {
                 yield return s;
+                if (ct.IsCancellationRequested)
+                    yield break;
             }
         }
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
@@ -109,6 +111,8 @@ public sealed class SolverContext : IDisposable
         var tcoVars = new HashSet<Variable>();
         var tcoSubs = new SubstitutionMap();
     TCO:
+        if (ct.IsCancellationRequested)
+            yield break;
         if (query.IsEmpty)
         {
             yield return new(scope, tcoSubs);
@@ -121,13 +125,18 @@ public sealed class SolverContext : IDisposable
         // Get first solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
+            s.Substitutions.Simplify();
+            foreach (var sub in s.Substitutions.Where(s => s.Lhs is Variable { Ignored: false }))
+            {
+                scope.Trace(SolverTraceType.Unification, WellKnown.Operators.Unification.MakeComplex(sub.Lhs, Maybe.Some(sub.Rhs)));
+            }
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
 #if !ERGO_SOLVER_DISABLE_TCO
             if (s.Scope.Callee.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Body))
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
                 if (s.Scope.Callers.Any())
-                    scope = s.Scope.WithoutLastCaller();
+                    scope = s.Scope.WithoutLastCaller().WithDepth(s.Scope.Depth - 1);
                 tcoSubs.AddRange(s.Substitutions);
                 tcoVars.UnionWith(s.Variables);
                 // Remove all substitutions that don't pertain to any variables in the current scope
@@ -203,7 +212,7 @@ public sealed class SolverContext : IDisposable
         {
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
-                Solver.LogTrace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False, scope.Depth);
+                scope.Trace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False);
                 yield break;
             }
 
@@ -245,21 +254,23 @@ public sealed class SolverContext : IDisposable
                     // https://www.mercurylang.org/information/doc-latest/mercury_ref/Determinism.html#Determinism-categories
                     // https://www.metalevel.at/prolog/fun
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    Solver.LogTrace(SolverTraceType.TailCallOptimization, m.Lhs, scope.Depth);
+                    scope.Trace(SolverTraceType.TailCallOptimization, m.Lhs);
                     yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
                     continue;
                 }
 #endif
                 using var innerCtx = CreateChild();
-                Solver.LogTrace(SolverTraceType.Call, m.Lhs, scope.Depth);
+                scope.Trace(SolverTraceType.Call, m.Lhs);
                 foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))
                 {
-                    Solver.LogTrace(SolverTraceType.Exit, m.Rhs.Head.Substitute(s.Substitutions), s.Scope.Depth);
+                    scope.Trace(SolverTraceType.Exit, m.Rhs.Head.Substitute(s.Substitutions));
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }
                 if (innerCtx.ChoicePointCts.IsCancellationRequested)
                     break;
+                // Backtrack
+                scope.Trace(SolverTraceType.Backtrack, m.Lhs);
             }
             if (noMatches)
             {

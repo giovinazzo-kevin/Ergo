@@ -2,7 +2,6 @@
 using Ergo.Facade;
 using Ergo.Interpreter;
 using Ergo.Solver.DataBindings;
-using System.ComponentModel;
 using System.IO;
 
 namespace Ergo.Solver;
@@ -22,8 +21,8 @@ public partial class ErgoSolver : IDisposable
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
     public TextWriter Err { get; private set; }
+    public Tracer Tracer { get; set; }
 
-    public event Action<SolverTraceType, string> Trace;
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
 
@@ -46,6 +45,7 @@ public partial class ErgoSolver : IDisposable
         In = Console.In;
         Out = Console.Out;
         Err = Console.Error;
+        Tracer = new(this);
     }
 
     public void Initialize(InterpreterScope scope)
@@ -55,7 +55,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, interpreterScope.Entry, new("K"));
+        => new(interpreterScope, interpreterScope.Entry, new("K"), Tracer);
     public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
     public void BindDataSource<T>(DataSource<T> data)
@@ -195,14 +195,6 @@ public partial class ErgoSolver : IDisposable
                 yield return s;
             }
         }
-    }
-
-    public void LogTrace(SolverTraceType type, ITerm term, int depth = 0) => LogTrace(type, () => term.Explain(), depth);
-    private void LogTrace(SolverTraceType type, Func<string> s, int depth = 0)
-    {
-        if (Trace is null || Trace.GetInvocationList().Length == 0)
-            return;
-        Trace.Invoke(type, $"{type.GetAttribute<DescriptionAttribute>().Description}: ({depth:00}) {s()}");
     }
 
     public void SetIn(TextReader newIn)

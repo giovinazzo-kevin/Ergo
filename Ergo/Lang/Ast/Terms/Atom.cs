@@ -74,9 +74,6 @@ public readonly struct Atom : ITerm
 
     public ITerm Substitute(Substitution s)
     {
-        //if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-        //    return abs.Substitute(s).CanonicalForm;
-
         if (Equals(s.Lhs)) return s.Rhs;
         return this;
     }

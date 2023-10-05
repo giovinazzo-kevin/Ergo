@@ -1,8 +1,7 @@
 ﻿using Ergo.Interpreter;
-using System.Diagnostics;
 
 namespace Ergo.Solver;
-[DebuggerDisplay("{ Explain() }")]
+//[DebuggerDisplay("{ Explain() }")]
 public readonly record struct SolverScope(
     int Depth,
     Atom Module,

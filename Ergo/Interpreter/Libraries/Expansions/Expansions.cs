@@ -176,14 +176,12 @@ public class Expansions : Library
                     foreach (var argList in cartesian)
                     {
                         var newCplx = cplx
-                            .WithAbstractForm(default)
                             .WithArguments(argList
                             .Select(x => x.Reduce(exp => exp.Binding
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
-
                         if (AbstractTermCache.Default.IsAbstract(cplx, default).TryGetValue(out var abs))
-                            newCplx = newCplx.WithAbstractForm(abs.FromCanonicalTerm(newCplx));
+                            newCplx = (Complex)abs.CanonicalForm;
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                                .Concat(argList.SelectMany(x => x

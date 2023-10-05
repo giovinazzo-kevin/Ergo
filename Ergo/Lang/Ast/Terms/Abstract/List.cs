@@ -52,6 +52,6 @@ public sealed class List : AbstractList
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
     public static Maybe<List> FromCanonical(ITerm term) => Unfold(term, WellKnown.Literals.EmptyList, last => true, WellKnown.Functors.List)
-        .Select(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
+        .Select(some => new List(some.SkipLast(1), some.Any() ? Maybe.Some(some.Last()) : default));
     public override Maybe<IAbstractTerm> FromCanonicalTerm(ITerm canonical) => FromCanonical(canonical).Select(x => (IAbstractTerm)x);
 }

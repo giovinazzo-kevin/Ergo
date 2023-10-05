@@ -100,6 +100,8 @@ public abstract class AbstractList : IAbstractTerm
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;
+        if (args.Length == 1 && args[0].Equals(emptyElement))
+            return args[0];
         if (args.Length == 1)
             return new Complex(op.CanonicalFunctor, args[0]);
         return args
@@ -119,6 +121,8 @@ public abstract class AbstractList : IAbstractTerm
         // NOTE: It seems to make more sense to fold tuples and sets this way, since pattern matching is reserved to lists.
         if (args.Length == 0)
             return emptyElement;
+        if (args.Length == 1 && args[0].Equals(emptyElement))
+            return args[0];
         if (args.Length == 1)
             return args[0].AsParenthesized(true);
         return args
@@ -129,19 +133,27 @@ public abstract class AbstractList : IAbstractTerm
 
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, ITerm emptyElement, Func<ITerm, bool> matchTail, HashSet<Atom> functors)
     {
-        if (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
+        if (term is Complex { Functor: var f } c && functors.Contains(f))
             return Maybe.Some(Inner());
         if (term is Atom && term.Equals(emptyElement))
-            return Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { term });
+            return Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { });
         return default;
 
         IEnumerable<ITerm> Inner()
         {
             var list = new List<ITerm>();
-            while (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
+            while (term is Complex { Functor: var f } c && functors.Contains(f))
             {
-                list.Add(c.Arguments[0]);
-                term = c.Arguments[1];
+                if (c.Arity == 2)
+                {
+                    list.Add(c.Arguments[0]);
+                    term = c.Arguments[1];
+                }
+                else if (c.Arity == 1)
+                {
+                    term = c.Arguments[0];
+                }
+                else break;
             }
 
             if (!matchTail(term))

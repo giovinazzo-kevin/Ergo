@@ -144,7 +144,7 @@ public static class LanguageExtensions
                 {
                     args[j] = Inner(c.Arguments[j], ref i);
                 }
-                term = c.WithAbstractForm(default).WithArguments(args.ToImmutableArray());
+                term = c.WithArguments(args.ToImmutableArray());
             }
             return term;
         }

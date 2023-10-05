@@ -26,8 +26,7 @@ public sealed class Set : AbstractList
     public Set(ImmutableArray<ITerm> head)
         : base(Sort(head))
     {
-        CanonicalForm = FoldNoEmptyTail(Operator, EmptyElement, ImmutableArray.CreateRange(Contents))
-            .Reduce<ITerm>(a => a, v => v, c => c);
+        CanonicalForm = FoldNoEmptyTail(Operator, EmptyElement, ImmutableArray.CreateRange(Contents));
     }
     public Set(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents)) { }

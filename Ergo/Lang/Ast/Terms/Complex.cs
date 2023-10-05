@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Lang.Utils;
+﻿using Ergo.Lang.Utils;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -40,7 +39,6 @@ public readonly partial struct Complex : ITerm
     public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, Arguments);
     public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, Arguments);
     public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, Arguments);
-    public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Operator, IsParenthesized, Functor, Arguments);
     public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, Arguments);
     public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, args);
 

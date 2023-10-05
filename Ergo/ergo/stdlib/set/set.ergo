@@ -1,2 +1,10 @@
 ﻿:- module(set, [
+    intersection/3, difference/3
 ]).
+
+intersection(A, B, Intersection) :-
+    difference(A, B, Diff),
+    difference(A, Diff, Intersection).
+
+difference(A, B, Difference) :-
+    union(Difference, B, A).

@@ -15,7 +15,6 @@ public readonly struct Atom : ITerm
     public readonly object Value;
     private readonly int HashCode;
     public readonly bool IsQuoted;
-    public readonly Maybe<IAbstractTerm> AbstractForm { get; }
 
     public Atom(object value, Maybe<bool> quoted = default, Maybe<IAbstractTerm> abs = default)
     {
@@ -33,7 +32,6 @@ public readonly struct Atom : ITerm
                 || s.Any(c => char.IsWhiteSpace(c)
                     || !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c))
             ));
-        AbstractForm = abs;
     }
 
     public string Explain(bool canonical = false)

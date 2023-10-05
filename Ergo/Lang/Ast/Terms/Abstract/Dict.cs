@@ -24,8 +24,7 @@ public sealed class Dict : IAbstractTerm
                     .AsOperator(op))
             .OrderBy(o => o)
             .ToArray();
-        CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new Set(KeyValuePairs).CanonicalForm })
-            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
+        CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new Set(KeyValuePairs).CanonicalForm });
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
             Signature = Signature.WithTag(functor.Reduce(a => a, v => throw new InvalidOperationException()));

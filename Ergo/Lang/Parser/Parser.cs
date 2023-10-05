@@ -172,7 +172,6 @@ public partial class ErgoParser : IDisposable
             .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
             .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
         .Select(t => new Variable(t))
-        .Select(x => AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var abs) ? x.WithAbstractForm(Maybe.Some(abs)) : x)
         .Or(() => MemoizeFailureAndFail<Variable>(pos))
         .Do(() => Probe.Leave(watch))
         ;
@@ -190,7 +189,6 @@ public partial class ErgoParser : IDisposable
         return Atom()
             .Map(functor => Abstract<NTuple>()
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
-            .Select(x => AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var abs) ? x.WithAbstractForm(Maybe.Some(abs)) : x)
             .Or(() => MemoizeFailureAndFail<Complex>(pos))
             .Do(() => Probe.Leave(watch))
             ;

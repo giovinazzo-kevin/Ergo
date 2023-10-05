@@ -87,10 +87,21 @@ public partial class ErgoParser : IDisposable
         if (!AbstractTermParsers.Remove(typeof(T), out var parser_))
             return false;
         parser = (IAbstractTermParser<T>)parser_;
+        foreach (var functor in parser.FunctorsToIndex)
+        {
+            AbstractTermCache.Default.Unregister(functor, typeof(T));
+        }
         return true;
     }
     public void AddAbstractParser<T>(IAbstractTermParser<T> parser)
-        where T : IAbstractTerm => AbstractTermParsers.Add(typeof(T), parser);
+        where T : IAbstractTerm
+    {
+        foreach (var functor in parser.FunctorsToIndex)
+        {
+            AbstractTermCache.Default.Register(functor, typeof(T));
+        }
+        AbstractTermParsers.Add(typeof(T), parser);
+    }
 
     public Maybe<IEnumerable<Operator>> GetOperatorsFromFunctor(Atom functor)
     {
@@ -139,6 +150,7 @@ public partial class ErgoParser : IDisposable
             .Or(() => Expect<string>(ErgoLexer.TokenType.Term)
                 .Where(x => IsAtomIdentifier(x))
                 .Select(x => new Atom(x)))
+            .Select(x => AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var abs) ? x.WithAbstractForm(Maybe.Some(abs)) : x)
             .Or(() => MemoizeFailureAndFail<Atom>(pos))
             .Do(() => Probe.Leave(watch))
             ;
@@ -161,6 +173,7 @@ public partial class ErgoParser : IDisposable
             .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
             .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
         .Select(t => new Variable(t))
+        .Select(x => AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var abs) ? x.WithAbstractForm(Maybe.Some(abs)) : x)
         .Or(() => MemoizeFailureAndFail<Variable>(pos))
         .Do(() => Probe.Leave(watch))
         ;
@@ -178,6 +191,7 @@ public partial class ErgoParser : IDisposable
         return Atom()
             .Map(functor => Abstract<NTuple>()
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
+            .Select(x => AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var abs) ? x.WithAbstractForm(Maybe.Some(abs)) : x)
             .Or(() => MemoizeFailureAndFail<Complex>(pos))
             .Do(() => Probe.Leave(watch))
             ;

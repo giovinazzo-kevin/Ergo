@@ -1,6 +1,7 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Solver;
 using Ergo.Interpreter.Directives;
+using Ergo.Lang.Utils;
 using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 
@@ -181,7 +182,7 @@ public class Expansions : Library
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
 
-                        if (cplx.AbstractForm.TryGetValue(out var abs))
+                        if (AbstractTermCache.Default.IsAbstract(cplx, default).TryGetValue(out var abs))
                             newCplx = newCplx.WithAbstractForm(abs.FromCanonicalTerm(newCplx));
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())

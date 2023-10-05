@@ -1,17 +1,9 @@
-﻿using Ergo.Lang.Utils;
-
-namespace Ergo.Lang.Parser;
+﻿namespace Ergo.Lang.Parser;
 
 public abstract class AbstractListParser<L> : IAbstractTermParser<L>
     where L : AbstractList
 {
-    public void Register(AbstractTermCache cache)
-    {
-        var empty = Construct(ImmutableArray<ITerm>.Empty);
-        cache.Register((Atom)empty.CanonicalForm, typeof(L));
-        cache.Register(empty.Operator.CanonicalFunctor, typeof(L));
-    }
-
+    public abstract IEnumerable<Atom> FunctorsToIndex { get; }
     protected abstract L Construct(ImmutableArray<ITerm> seq);
 
     public Maybe<L> Parse(ErgoParser parser)

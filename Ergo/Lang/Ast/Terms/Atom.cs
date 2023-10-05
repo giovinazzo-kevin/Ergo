@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Utils;
 using PeterO.Numbers;
 using System.Diagnostics;
 
@@ -37,7 +38,7 @@ public readonly struct Atom : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (AbstractForm.TryGetValue(out var abs))
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Explain(canonical);
         if (Value is null)
         {
@@ -73,6 +74,9 @@ public readonly struct Atom : ITerm
 
     public ITerm Substitute(Substitution s)
     {
+        //if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
+        //    return abs.Substitute(s).CanonicalForm;
+
         if (Equals(s.Lhs)) return s.Rhs;
         return this;
     }

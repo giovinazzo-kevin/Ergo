@@ -1,14 +1,11 @@
-﻿using Ergo.Lang.Utils;
-using static Ergo.Lang.ErgoParser;
+﻿using static Ergo.Lang.ErgoParser;
 
 namespace Ergo.Lang.Parser;
 
 public sealed class DictParser : IAbstractTermParser<Dict>
 {
-    public void Register(AbstractTermCache cache)
-    {
-        cache.Register(new("dict"), typeof(Dict));
-    }
+    public IEnumerable<Atom> FunctorsToIndex { get; }
+        = new[] { new Atom("dict") };
 
     public Maybe<Dict> Parse(ErgoParser parser)
     {

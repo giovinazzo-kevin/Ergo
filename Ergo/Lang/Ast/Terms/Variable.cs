@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Utils;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -34,14 +35,14 @@ public readonly struct Variable : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (AbstractForm.TryGetValue(out var abs))
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Explain(canonical);
         return Name;
     }
 
     public ITerm Substitute(Substitution s)
     {
-        if (AbstractForm.TryGetValue(out var abs))
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Substitute(s).CanonicalForm;
 
         if (Equals(s.Lhs)) return s.Rhs;
@@ -57,7 +58,7 @@ public readonly struct Variable : ITerm
         {
             return inst;
         }
-        if (AbstractForm.TryGetValue(out var abs))
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Instantiate(ctx, vars).CanonicalForm;
 
         return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");

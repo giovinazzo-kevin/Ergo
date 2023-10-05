@@ -2,6 +2,15 @@
 
 public sealed class ListParser : AbstractListParser<List>
 {
+    private Atom[] _functors;
+    public override IEnumerable<Atom> FunctorsToIndex => _functors;
+
+    public ListParser()
+    {
+        var emptyElem = Construct(ImmutableArray<ITerm>.Empty);
+        _functors = emptyElem.Operator.Synonyms.Append((Atom)emptyElem.CanonicalForm).ToArray();
+    }
+
     protected override List Construct(ImmutableArray<ITerm> seq)
     {
         if (seq.Length == 1 && seq[0] is Complex cplx)

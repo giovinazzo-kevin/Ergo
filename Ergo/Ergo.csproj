@@ -6,11 +6,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants)TRACE;_ERGO_PARSER_DIAGNOSTICS;_ERGO_INTERPRETER_DIAGNOSTICS;_ERGO_PARSER_DISABLE_MEMOIZATION;_ERGO_LEXER_DISABLE_MEMOIZATION;_ERGO_SOLVER_DISABLE_TCO</DefineConstants>
+    <DefineConstants>$(DefineConstants);TRACE;_ERGO_PARSER_DIAGNOSTICS;_ERGO_INTERPRETER_DIAGNOSTICS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>$(DefineConstants)TRACE;_ERGO_PARSER_DIAGNOSTICS;_ERGO_INTERPRETER_DIAGNOSTICS;_ERGO_PARSER_DISABLE_MEMOIZATION;_ERGO_LEXER_DISABLE_MEMOIZATION;_ERGO_SOLVER_DISABLE_TCO</DefineConstants>
+    <DefineConstants>$(DefineConstants);TRACE;_ERGO_PARSER_DIAGNOSTICS;_ERGO_INTERPRETER_DIAGNOSTICS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

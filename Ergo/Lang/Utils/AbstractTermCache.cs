@@ -9,7 +9,7 @@ public class AbstractTermCache
 {
     private readonly ConcurrentDictionary<Type, HashSet<int>> Misses = new();
     private readonly ConcurrentDictionary<int, IAbstractTerm> Cache = new();
-    private readonly ConcurrentDictionary<Atom, Type> Index = new();
+    private readonly ConcurrentDictionary<Atom, HashSet<Type>> Index = new();
 
     public static readonly AbstractTermCache Default = new();
 
@@ -25,13 +25,21 @@ public class AbstractTermCache
 
     public void Register(Atom functor, Type type)
     {
-        Index[functor] = type;
+        if (!Index.TryGetValue(functor, out var list))
+            list = Index[functor] = new();
+        list.Add(type);
+    }
+
+    public void Unregister(Atom functor, Type type)
+    {
+        if (Index.TryGetValue(functor, out var list))
+            list.Remove(type);
     }
 
     public void Register<T>(Atom functor)
         where T : IAbstractTerm
     {
-        Index[functor] = typeof(T);
+        Register(functor, typeof(T));
     }
 
     public void Miss(ITerm t, Type type)
@@ -50,26 +58,39 @@ public class AbstractTermCache
     }
     public Maybe<IAbstractTerm> Get(ITerm t, Maybe<Type> type)
     {
-        var indexed = false;
+        var shouldTryParse = false;
+        var possibleTypes = new HashSet<Type>();
         if (!type.TryGetValue(out var checkType))
         {
             if (!t.GetFunctor().TryGetValue(out var functor)
-                || !Index.TryGetValue(functor, out checkType))
+                || !Index.TryGetValue(functor, out var list))
             {
                 return default;
             }
-            indexed = true;
+            shouldTryParse = true;
+            possibleTypes.UnionWith(list);
+        }
+        else
+        {
+            possibleTypes.Add(checkType);
+            shouldTryParse = true;
         }
 
-        if (Cache.TryGetValue(t.GetHashCode(), out var x) && x.GetType().Equals(checkType))
+        foreach (var pType in possibleTypes)
         {
-            return Maybe.Some(x);
-        }
+            if (Cache.TryGetValue(t.GetHashCode(), out var x) && x.GetType().Equals(pType))
+            {
+                return Maybe.Some(x);
+            }
 
-        if (indexed)
-        {
-            return Parse(t, checkType)
-                .Do(some => Set(t, some));
+            if (shouldTryParse)
+            {
+                if (Parse(t, pType).TryGetValue(out var ret))
+                {
+                    return Maybe.Some(ret);
+                }
+
+            }
         }
 
         return default;
@@ -104,10 +125,9 @@ public class AbstractTermCache
         // - When parsing the canonical form of an abstract type;
         // - When unifying an abstract term with a matching non-abstract canonical form.
         return t.AbstractForm
-            .Where(a => a.GetType().Equals(maybeType))
+            .Where(a => maybeType.Reduce(some => a.GetType().Equals(some), () => true))
             .Or(() => Maybe.Some(t)
                 .Where(t => maybeType.Reduce(some => !IsNot(t, some), () => true))
-                .Map(t => Get(t, maybeType)))
-            .Or(() => maybeType.Map(type => Parse(t, type), () => default));
+                .Map(t => Get(t, maybeType)));
     }
 }

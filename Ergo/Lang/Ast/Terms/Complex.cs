@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Utils;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -84,7 +85,7 @@ public readonly partial struct Complex : ITerm
 
     public ITerm Substitute(Substitution s)
     {
-        if (AbstractForm.TryGetValue(out var abs))
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Substitute(s).CanonicalForm;
 
         if (Equals(s.Lhs))
@@ -136,7 +137,7 @@ public readonly partial struct Complex : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        if (AbstractForm.TryGetValue(out var abs))
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Instantiate(ctx, vars).CanonicalForm;
         return new Complex(Operator, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
     }

@@ -98,7 +98,7 @@ public static class LanguageExtensions
                 tag = (Atom)cplx.Arguments[1];
             }
 
-            if (term.AbstractForm.TryGetValue(out var abs))
+            if (AbstractTermCache.Default.IsAbstract(term, default).TryGetValue(out var abs))
             {
                 var sig = abs.Signature
                     .WithModule(qm);

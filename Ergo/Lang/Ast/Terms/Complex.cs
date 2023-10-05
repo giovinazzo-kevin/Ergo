@@ -44,7 +44,7 @@ public readonly partial struct Complex : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
+        if (!canonical && AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Explain(canonical);
         if (!canonical && IsParenthesized)
             return ParenthesizeUnlessRedundant(Inner(this));

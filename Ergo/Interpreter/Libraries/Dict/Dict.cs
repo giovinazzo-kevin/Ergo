@@ -8,6 +8,7 @@ public class Dict : Library
     public override Atom Module => WellKnown.Modules.Dict;
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
         .Append(new DictKeyValue())
+        .Append(new With())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

@@ -30,7 +30,7 @@ public readonly partial struct Operator
         Precedence = precedence;
     }
 
-    public Complex MakeComplex(ITerm lhs, Maybe<ITerm> mbRhs)
+    public Complex ToComplex(ITerm lhs, Maybe<ITerm> mbRhs)
     {
         if (Fixity != Fixity.Infix || !mbRhs.TryGetValue(out var rhs))
             return new Complex(CanonicalFunctor, lhs).AsOperator(this);

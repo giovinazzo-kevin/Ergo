@@ -1,0 +1,78 @@
+﻿
+namespace Ergo.Solver.BuiltIns;
+
+public sealed class With : SolverBuiltIn
+{
+    public With()
+        : base("", new($"with"), Maybe<int>.Some(3), WellKnown.Modules.Dict)
+    {
+    }
+
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    {
+        if (args[0].IsAbstract<Dict>().TryGetValue(out var a))
+        {
+            if (args[1].IsAbstract<Set>().TryGetValue(out var b)
+                && GetPairs(b).TryGetValue(out var kvps))
+            {
+                var merged = Update(a, kvps);
+                if (args[2].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                {
+                    yield return True(subs);
+                    yield break;
+                }
+            }
+            else if (args[2].IsAbstract<Dict>().TryGetValue(out var d))
+            {
+                var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
+                var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
+                    .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
+                if (args[1].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                {
+                    yield return True(subs);
+                    yield break;
+                }
+            }
+        }
+        else if (args[0] is Variable
+            && args[1].IsAbstract<Set>().TryGetValue(out var b)
+            && GetPairs(b).TryGetValue(out var kvps)
+            && args[2].IsAbstract<Dict>().TryGetValue(out var d))
+        {
+            var diff = d.Dictionary.Keys.Except(kvps.Select(k => k.Key)).ToHashSet();
+            var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
+                .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
+            if (args[0].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+            {
+                yield return True(subs);
+                yield break;
+            }
+        }
+
+        yield return False();
+
+        static Dict Update(Dict d, IEnumerable<KeyValuePair<Atom, ITerm>> kvps)
+        {
+            var builder = d.Dictionary.ToBuilder();
+            foreach (var (key, value) in kvps)
+            {
+                builder.Remove(key);
+                builder.Add(key, value);
+            }
+            return new(d.Functor, builder);
+        }
+
+        static Maybe<List<KeyValuePair<Atom, ITerm>>> GetPairs(Set set)
+        {
+            var ret = new List<KeyValuePair<Atom, ITerm>>();
+            foreach (var item in set.Contents)
+            {
+                if (item is Complex { Arity: 2 } c && WellKnown.Operators.NamedArgument.Synonyms.Contains(c.Functor)
+                    && c.Arguments[0] is Atom a)
+                    ret.Add(new(a, c.Arguments[1]));
+                else return default;
+            }
+            return ret;
+        }
+    }
+}

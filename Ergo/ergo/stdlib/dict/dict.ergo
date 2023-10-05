@@ -22,8 +22,8 @@ dict_deref_(D, Key, Val) :-
 Val = D.Key :- dict_deref_(D, Key, Val).
 
 %: Creates a new dictionary and adds or replaces the specified keys
-% Val = Dict with {K:V|Rest} :-
-	
+C = A with B :-
+	with(A, B, C), !.
 
 dict_merge(dict(T1, A1), dict(_, A2), dict(T1, A3)) :-
 	union(A1, A2, A3).

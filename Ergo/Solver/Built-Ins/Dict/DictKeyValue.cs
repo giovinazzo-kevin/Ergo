@@ -1,6 +1,7 @@
 ﻿
 namespace Ergo.Solver.BuiltIns;
 
+
 public sealed class DictKeyValue : SolverBuiltIn
 {
     public DictKeyValue()
@@ -63,4 +64,3 @@ public sealed class DictKeyValue : SolverBuiltIn
         yield return False();
     }
 }
-

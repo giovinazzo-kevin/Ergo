@@ -15,7 +15,7 @@ public interface IAbstractTerm : IExplainable
     string IExplainable.Explain(bool canonical)
     {
         if (canonical)
-            return CanonicalForm.WithAbstractForm(default).Explain(true);
+            return CanonicalForm.Explain(true);
         return Explain();
     }
     IAbstractTerm Substitute(IEnumerable<Substitution> subs)

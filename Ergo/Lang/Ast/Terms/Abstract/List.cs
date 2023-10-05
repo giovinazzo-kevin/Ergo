@@ -9,10 +9,9 @@ public sealed class List : AbstractList
     public List(ImmutableArray<ITerm> contents, Maybe<ITerm> tail = default)
         : base(contents)
     {
-        Tail = tail.GetOr(EmptyElement.WithAbstractForm(Empty ?? this));
+        Tail = tail.GetOr(EmptyElement);
         CanonicalForm = Fold(Operator, Tail, contents)
-            .Reduce<ITerm>(a => a, v => v, c => c)
-            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
+            .Reduce<ITerm>(a => a, v => v, c => c);
     }
     public List(IEnumerable<ITerm> contents, Maybe<ITerm> tail = default)
         : this(ImmutableArray.CreateRange(contents), tail) { }
@@ -35,7 +34,7 @@ public sealed class List : AbstractList
     {
         if (IsEmpty)
         {
-            return Tail.WithAbstractForm(default).Explain();
+            return Tail.Explain();
         }
 
         var joined = Contents.Join(t => t.Explain());
@@ -47,12 +46,12 @@ public sealed class List : AbstractList
                 return $"{Braces.Open}{joined}{Braces.Close}";
             }
 
-            return $"{Braces.Open}{joined}|{Tail.WithAbstractForm(default).Explain()}{Braces.Close}";
+            return $"{Braces.Open}{joined}|{Tail.Explain()}{Braces.Close}";
         }
 
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
-    public static Maybe<List> FromCanonical(ITerm term) => Unfold(term, last => true, WellKnown.Functors.List)
+    public static Maybe<List> FromCanonical(ITerm term) => Unfold(term, WellKnown.Literals.EmptyList, last => true, WellKnown.Functors.List)
         .Select(some => new List(some.SkipLast(1), Maybe.Some(some.Last())));
     public override Maybe<IAbstractTerm> FromCanonicalTerm(ITerm canonical) => FromCanonical(canonical).Select(x => (IAbstractTerm)x);
 }

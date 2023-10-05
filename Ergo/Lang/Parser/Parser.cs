@@ -150,7 +150,6 @@ public partial class ErgoParser : IDisposable
             .Or(() => Expect<string>(ErgoLexer.TokenType.Term)
                 .Where(x => IsAtomIdentifier(x))
                 .Select(x => new Atom(x)))
-            .Select(x => AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var abs) ? x.WithAbstractForm(Maybe.Some(abs)) : x)
             .Or(() => MemoizeFailureAndFail<Atom>(pos))
             .Do(() => Probe.Leave(watch))
             ;

@@ -28,7 +28,7 @@ public abstract class AbstractList : IAbstractTerm
     public virtual string Explain()
     {
         if (IsEmpty)
-            return EmptyElement.WithAbstractForm(default).Explain();
+            return EmptyElement.Explain();
 
         var joined = Contents.Join(t => t.Explain());
         return $"{Braces.Open}{joined}{Braces.Close}";
@@ -39,7 +39,7 @@ public abstract class AbstractList : IAbstractTerm
             return CanonicalForm.Unify(other.CanonicalForm);
         if (list.Braces != Braces)
             return default;
-        var u = CanonicalForm.WithAbstractForm(default).Unify(list.CanonicalForm.WithAbstractForm(default));
+        var u = CanonicalForm.Unify(list.CanonicalForm);
         return u;
     }
 
@@ -74,17 +74,17 @@ public abstract class AbstractList : IAbstractTerm
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
     /// </summary>
-    public static ITerm Fold(Operator op, ITerm emptyElement, ImmutableArray<ITerm> args)
+    public static ITerm Fold(Operator op, ITerm tail, ImmutableArray<ITerm> args)
     {
         if (op.Fixity != Fixity.Infix)
             throw new InvalidOperationException("Cannot fold a non-infix operator.");
         if (args.Length == 0)
-            return emptyElement;
+            return tail;
         if (args.Length == 1)
-            return new Complex(op.CanonicalFunctor, args[0], emptyElement)
+            return new Complex(op.CanonicalFunctor, args[0], tail)
                 .AsOperator(op);
         return args
-            .Append(emptyElement)
+            .Append(tail)
             .Reverse()
             .Aggregate((a, b) => new Complex(op.CanonicalFunctor, b, a)
                 .AsOperator(op));
@@ -128,10 +128,12 @@ public abstract class AbstractList : IAbstractTerm
                 .AsOperator(op));
     }
 
-    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, Func<ITerm, bool> matchTail, HashSet<Atom> functors)
+    public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, ITerm emptyElement, Func<ITerm, bool> matchTail, HashSet<Atom> functors)
     {
         if (term is Complex { Arity: 2, Functor: var f } c && functors.Contains(f))
             return Maybe.Some(Inner());
+        if (term is Atom && term.Equals(emptyElement))
+            return Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { term });
         return default;
 
         IEnumerable<ITerm> Inner()

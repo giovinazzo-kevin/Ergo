@@ -16,7 +16,6 @@ public readonly partial struct Complex : ITerm
     public readonly Atom Functor;
     public readonly ImmutableArray<ITerm> Arguments;
     public readonly int Arity => Arguments.Length;
-    public readonly Maybe<IAbstractTerm> AbstractForm { get; }
 
     private readonly int HashCode;
 
@@ -28,37 +27,35 @@ public readonly partial struct Complex : ITerm
         IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
         Operator = Maybe<Operator>.None;
         IsParenthesized = false;
-        AbstractForm = default;
     }
     public Complex(Atom functor, params ITerm[] args)
         : this(functor, args.ToImmutableArray()) { }
 
-    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, Maybe<IAbstractTerm> isAbstract, ImmutableArray<ITerm> args)
+    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, ImmutableArray<ITerm> args)
         : this(functor, args)
     {
         Operator = op;
         IsParenthesized = parenthesized;
-        AbstractForm = isAbstract;
     }
-    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
-    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, AbstractForm, Arguments);
-    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, AbstractForm, Arguments);
-    public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Operator, IsParenthesized, Functor, abs, Arguments);
-    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, AbstractForm, Arguments);
-    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, AbstractForm, args);
+    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, Arguments);
+    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, Arguments);
+    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, Arguments);
+    public Complex WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Operator, IsParenthesized, Functor, Arguments);
+    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, Arguments);
+    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, args);
 
     public string Explain(bool canonical = false)
     {
+        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
+            return abs.Explain(canonical);
         if (!canonical && IsParenthesized)
-            return ParenthesizeUnlessRedundant(Inner(this, AbstractForm));
-        return Inner(this, AbstractForm);
+            return ParenthesizeUnlessRedundant(Inner(this));
+        return Inner(this);
 
         string ParenthesizeUnlessRedundant(string s) => s.StartsWith('(') && s.EndsWith(')') ? s : $"({s})";
 
-        string Inner(Complex c, Maybe<IAbstractTerm> absForm)
+        string Inner(Complex c)
         {
-            if (absForm.TryGetValue(out var abs))
-                return abs.Explain(canonical);
             var f = c.Functor.AsQuoted(false).Explain(canonical);
             if (c.Operator.TryGetValue(out var op))
             {
@@ -142,7 +139,7 @@ public readonly partial struct Complex : ITerm
         vars ??= new();
         if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Instantiate(ctx, vars).CanonicalForm;
-        return new Complex(Operator, IsParenthesized, Functor, AbstractForm, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
+        return new Complex(Operator, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
     }
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 

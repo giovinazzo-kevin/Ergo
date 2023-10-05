@@ -64,13 +64,13 @@ public readonly struct Substitution
     {
         if (!x.Equals(y))
         {
-            var absUnif = x.AbstractForm.Map(X => y.AbstractForm.Map(Y => X.Unify(Y)));
-            if (absUnif.TryGetValue(out var subs))
-            {
-                foreach (var s in subs)
-                    E.Enqueue(s);
-                return true;
-            }
+            //var absUnif = x.AbstractForm.Map(X => y.AbstractForm.Map(Y => X.Unify(Y)));
+            //if (absUnif.TryGetValue(out var subs))
+            //{
+            //    foreach (var s in subs)
+            //        E.Enqueue(s);
+            //    return true;
+            //}
 
             if (y is Variable)
             {

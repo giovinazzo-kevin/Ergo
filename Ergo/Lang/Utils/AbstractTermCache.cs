@@ -124,10 +124,8 @@ public class AbstractTermCache
         // It's a bit unclear when exactly this happens, but two reasons are:
         // - When parsing the canonical form of an abstract type;
         // - When unifying an abstract term with a matching non-abstract canonical form.
-        return t.AbstractForm
-            .Where(a => maybeType.Reduce(some => a.GetType().Equals(some), () => true))
-            .Or(() => Maybe.Some(t)
+        return Maybe.Some(t)
                 .Where(t => maybeType.Reduce(some => !IsNot(t, some), () => true))
-                .Map(t => Get(t, maybeType)));
+                .Map(t => Get(t, maybeType));
     }
 }

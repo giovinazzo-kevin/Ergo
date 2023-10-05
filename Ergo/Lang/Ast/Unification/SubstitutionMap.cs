@@ -66,35 +66,6 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         }
     }
 
-    /// <summary>
-    /// Removes all redundant substitutions by merging them.
-    /// </summary>
-    public void Simplify()
-    {
-        var add = () => { };
-        var fixedPoint = false;
-        while (!fixedPoint)
-        {
-            fixedPoint = true;
-            foreach (var (l, r) in Map)
-            {
-                foreach (var (L, R) in Map)
-                {
-                    if ((l, r) == (L, R))
-                        continue;
-                    var maySimplify = l.Variables.Intersect(R.Variables);
-                    if (!maySimplify.Any())
-                        continue;
-                    fixedPoint = false;
-                    Map.Remove(l);
-                    Map.Remove(L);
-                    add += () => Map.Add(L, R.Substitute(new Substitution(l, r)));
-                }
-            }
-            add();
-        }
-    }
-
     public void Invert()
     {
         var toAdd = new Queue<Substitution>();

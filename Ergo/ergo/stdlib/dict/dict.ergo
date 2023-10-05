@@ -1,9 +1,10 @@
 ﻿:- module(dict, [
-	'='/2
+	'='/2, with/2
 ]).
 
 :- op(900, yfx, ['.']).
 :- op(890, fy, ['&']).
+:- op(850, xfy, [with]).
 %: Directly dereferences and evaluates a dictionary property
 :- expand([Val] >> (
 	 '&'(D.Key) :- dict_deref_(D, Key, Val)
@@ -19,6 +20,10 @@ dict_deref_(D, Key, Val) :-
 	!.
 %: Dereferences D.Key and unifies the result with Val
 Val = D.Key :- dict_deref_(D, Key, Val).
+
+%: Creates a new dictionary and adds or replaces the specified keys
+% Val = Dict with {K:V|Rest} :-
+	
 
 dict_merge(dict(T1, A1), dict(_, A2), dict(T1, A3)) :-
 	union(A1, A2, A3).

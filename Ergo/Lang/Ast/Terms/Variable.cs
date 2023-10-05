@@ -44,8 +44,12 @@ public readonly struct Variable : ITerm
     {
         if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Substitute(s).CanonicalForm;
-
-        if (Equals(s.Lhs)) return s.Rhs;
+        if (Equals(s.Lhs))
+        {
+            if (AbstractTermCache.Default.IsAbstract(s.Rhs, default).TryGetValue(out abs))
+                return abs.CanonicalForm;
+            return s.Rhs;
+        }
         return this;
     }
 

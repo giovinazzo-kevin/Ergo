@@ -9,9 +9,8 @@ public sealed class NTuple : AbstractList
     public NTuple(ImmutableArray<ITerm> head)
         : base(head)
     {
-        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement.WithAbstractForm(Maybe.Some<IAbstractTerm>(Empty)), head)
-            .Reduce<ITerm>(a => a, v => v, c => c)
-            .WithAbstractForm(Maybe.Some<IAbstractTerm>(this));
+        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement, head)
+            .Reduce<ITerm>(a => a, v => v, c => c);
     }
     public NTuple(IEnumerable<ITerm> contents)
         : this(ImmutableArray.CreateRange(contents)) { }
@@ -28,7 +27,7 @@ public sealed class NTuple : AbstractList
         if (parenthesized.TryGetValue(out var parens) && term is Complex { IsParenthesized: var p } && p != parens)
             return default;
 
-        return Unfold(term, tail => true, WellKnown.Functors.Conjunction)
+        return Unfold(term, WellKnown.Literals.EmptyCommaList, tail => true, WellKnown.Functors.Conjunction)
             .Map(some =>
             {
                 var last = some.Last();
@@ -40,7 +39,7 @@ public sealed class NTuple : AbstractList
     public override string Explain()
     {
         if (IsEmpty)
-            return EmptyElement.WithAbstractForm(default).Explain();
+            return EmptyElement.Explain();
         // Special cases for tuples:
         // 1. 1-item tuples can only be created internally, e.g. when parsing queries.
         //    They don't need to be parenthesized, ever.

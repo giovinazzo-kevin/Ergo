@@ -38,8 +38,8 @@ public readonly struct Atom : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Explain(canonical);
+        if (!canonical && AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
+            return abs.Explain(false);
         if (Value is null)
         {
             return string.Empty;
@@ -80,7 +80,6 @@ public readonly struct Atom : ITerm
 
     public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
     public Atom AsQuoted(bool quoted) => new(Value, quoted);
-    public Atom WithAbstractForm(Maybe<IAbstractTerm> abs) => new(Value, IsQuoted, abs);
 
     public override bool Equals(object obj)
     {

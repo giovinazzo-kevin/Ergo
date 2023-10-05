@@ -125,11 +125,6 @@ public sealed class SolverContext : IDisposable
         // Get first solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
-            s.Substitutions.Simplify();
-            foreach (var sub in s.Substitutions.Where(s => s.Lhs is Variable { Ignored: false }))
-            {
-                scope.Trace(SolverTraceType.Unification, WellKnown.Operators.Unification.MakeComplex(sub.Lhs, Maybe.Some(sub.Rhs)));
-            }
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
 #if !ERGO_SOLVER_DISABLE_TCO
             if (s.Scope.Callee.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Body))

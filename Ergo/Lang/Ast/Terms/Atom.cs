@@ -105,7 +105,7 @@ public readonly struct Atom : ITerm
         if (o is Complex) return -1;
         if (o is not Atom other) throw new InvalidCastException();
 
-        if (Value is double d && other.Value is double e)
+        if (Value is EDecimal d && other.Value is EDecimal e)
         {
             return d.CompareTo(e);
         }

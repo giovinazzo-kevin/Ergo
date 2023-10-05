@@ -28,9 +28,8 @@ public abstract class AbstractList : IAbstractTerm
     public virtual string Explain()
     {
         if (IsEmpty)
-            return EmptyElement.Explain();
-
-        var joined = Contents.Join(t => t.Explain());
+            return EmptyElement.Explain(true);
+        var joined = Contents.Join(t => t.Explain(true));
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
     public virtual Maybe<SubstitutionMap> Unify(IAbstractTerm other)

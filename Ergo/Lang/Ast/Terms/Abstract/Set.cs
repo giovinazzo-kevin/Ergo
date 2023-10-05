@@ -6,10 +6,27 @@ public sealed class Set : AbstractList
 {
     public static readonly Set Empty = new(ImmutableArray<ITerm>.Empty);
 
-    public Set(ImmutableArray<ITerm> head)
-        : base(head.OrderBy(x => x).Distinct())
+    static IEnumerable<ITerm> Sort(IEnumerable<ITerm> terms)
     {
-        CanonicalForm = Fold(Operator, EmptyElement, ImmutableArray.CreateRange(Contents))
+        var sorted = terms
+            .Where(t => t is not Variable)
+            .OrderBy(x => x)
+            .Distinct()
+            .ToList();
+        int i = 0;
+        foreach (var item in terms)
+        {
+            if (item is Variable)
+                sorted.Insert(i, item);
+            i++;
+        }
+        return sorted;
+    }
+
+    public Set(ImmutableArray<ITerm> head)
+        : base(Sort(head))
+    {
+        CanonicalForm = FoldNoEmptyTail(Operator, EmptyElement, ImmutableArray.CreateRange(Contents))
             .Reduce<ITerm>(a => a, v => v, c => c);
     }
     public Set(IEnumerable<ITerm> contents)

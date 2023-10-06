@@ -21,7 +21,6 @@ public partial class ErgoSolver : IDisposable
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
     public TextWriter Err { get; private set; }
-    public Tracer Tracer { get; set; }
 
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
@@ -45,7 +44,6 @@ public partial class ErgoSolver : IDisposable
         In = Console.In;
         Out = Console.Out;
         Err = Console.Error;
-        Tracer = new(this);
     }
 
     public void Initialize(InterpreterScope scope)
@@ -55,7 +53,7 @@ public partial class ErgoSolver : IDisposable
     }
 
     public SolverScope CreateScope(InterpreterScope interpreterScope)
-        => new(interpreterScope, interpreterScope.Entry, new("K"), Tracer);
+        => new(interpreterScope, interpreterScope.Entry, new("K"), new());
     public void PushData(ITerm data) => DataPushed?.Invoke(this, data);
 
     public void BindDataSource<T>(DataSource<T> data)

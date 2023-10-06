@@ -180,7 +180,7 @@ public class Expansions : Library
                             .Select(x => x.Reduce(exp => exp.Binding
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
-                        if (AbstractTermCache.Default.IsAbstract(cplx, default).TryGetValue(out var abs))
+                        if (AbstractTermCache.Default.IsAbstract(newCplx, default).TryGetValue(out var abs))
                             newCplx = (Complex)abs.CanonicalForm;
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())

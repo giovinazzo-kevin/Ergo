@@ -35,10 +35,10 @@ public abstract class AbstractList : IAbstractTerm
     public virtual Maybe<SubstitutionMap> Unify(IAbstractTerm other)
     {
         if (other is not AbstractList list)
-            return CanonicalForm.Unify(other.CanonicalForm);
+            return CanonicalForm.Unify(other.CanonicalForm, ignoreAbstractForms: true);
         if (list.Braces != Braces)
             return default;
-        var u = CanonicalForm.Unify(list.CanonicalForm);
+        var u = CanonicalForm.Unify(list.CanonicalForm, ignoreAbstractForms: true);
         return u;
     }
 

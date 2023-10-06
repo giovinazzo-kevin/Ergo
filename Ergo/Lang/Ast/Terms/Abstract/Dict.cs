@@ -51,7 +51,7 @@ public sealed class Dict : IAbstractTerm
     public Maybe<SubstitutionMap> Unify(IAbstractTerm other)
     {
         if (other is not Dict dict)
-            return CanonicalForm.Unify(other.CanonicalForm);
+            return CanonicalForm.Unify(other.CanonicalForm, ignoreAbstractForms: true);
 
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);

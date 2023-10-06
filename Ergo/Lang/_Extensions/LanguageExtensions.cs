@@ -77,7 +77,7 @@ public static class LanguageExtensions
         }
     }
 
-    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b) => new Substitution(a, b).Unify();
+    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b, bool ignoreAbstractForms = false) => new Substitution(a, b).Unify(ignoreAbstractForms);
 
     public static Maybe<SubstitutionMap> Unify(this Predicate predicate, ITerm head)
     {

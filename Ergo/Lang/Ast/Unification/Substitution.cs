@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Utils;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -31,14 +32,14 @@ public readonly struct Substitution
         rhs = Rhs;
     }
 
-    public Maybe<SubstitutionMap> Unify()
+    public Maybe<SubstitutionMap> Unify(bool ignoreAbstractForms = false)
     {
         var map = new SubstitutionMap();
         E.Clear();
         E.Enqueue(this);
         while (E.TryDequeue(out var sub))
         {
-            if (!Unify(sub.Lhs, sub.Rhs))
+            if (!Unify(sub.Lhs, sub.Rhs, ignoreAbstractForms))
                 return default;
         }
         map.AddRange(S);
@@ -60,7 +61,7 @@ public readonly struct Substitution
         S.Enqueue(s);
     }
 
-    private bool Unify(ITerm x, ITerm y)
+    private bool Unify(ITerm x, ITerm y, bool ignoreAbstractForms = false)
     {
         if (!x.Equals(y))
         {
@@ -71,6 +72,16 @@ public readonly struct Substitution
             //        E.Enqueue(s);
             //    return true;
             //}
+
+            if (!ignoreAbstractForms
+                && AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var xAbs)
+                && AbstractTermCache.Default.IsAbstract(y, default).TryGetValue(out var yAbs)
+                && xAbs.Unify(yAbs).TryGetValue(out var subs))
+            {
+                foreach (var s in subs)
+                    E.Enqueue(s);
+                return true;
+            }
 
             if (y is Variable)
             {

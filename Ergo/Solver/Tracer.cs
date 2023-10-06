@@ -4,8 +4,7 @@ namespace Ergo.Solver;
 
 public class Tracer
 {
-    public readonly ErgoSolver Solver;
-    public Tracer(ErgoSolver solver) { Solver = solver; }
+    public Tracer() { }
     public event Action<Tracer, SolverScope, SolverTraceType, string> Trace;
     protected virtual string FormatTrace(SolverTraceType type, string content, SolverScope scope)
     {

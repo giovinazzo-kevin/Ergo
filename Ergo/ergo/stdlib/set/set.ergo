@@ -2,21 +2,14 @@
     intersection/3, difference/3
 ]).
 
-:- op(500, xfx, ['&']).
-
 intersection(A, B, Intersection) :-
     difference(A, B, Diff),
     difference(A, Diff, Intersection).
 
 difference(A, B, Difference) :-
     union(Difference, B, A).
-    
-{C = A + B} :- \+ground(C), is_set(A), is_set(B), union(A, B, C).
-{C = A + B} :- \+ground(B), is_set(A), is_set(C), union(A, B, C).
-{C = A + B} :- \+ground(A), is_set(B), is_set(C), union(A, B, C).
-{C = A - B} :- \+ground(C), is_set(A), is_set(B), difference(A, B, C).
-{C = A - B} :- \+ground(B), is_set(A), is_set(C), difference(A, B, C).
-{C = A - B} :- \+ground(A), is_set(B), is_set(C), difference(A, B, C).
-{C = A & B} :- \+ground(C), is_set(A), is_set(B), intersection(A, B, C).
-{C = A & B} :- \+ground(B), is_set(A), is_set(C), intersection(A, B, C).
-{C = A & B} :- \+ground(A), is_set(B), is_set(C), intersection(A, B, C).
+
+symmetric_difference(A, B, Difference) :-
+    difference(A, B, D1),
+    difference(B, A, D2),
+    union(D1, D2, Difference).

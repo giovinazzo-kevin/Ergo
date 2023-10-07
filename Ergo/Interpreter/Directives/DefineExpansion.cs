@@ -33,7 +33,7 @@ public class DefineExpansion : InterpreterDirective
             else if (!pred.Body.CanonicalForm.Variables.Any(v => v.Equals(lambdaVariable)))
                 scope.Throw(InterpreterError.ExpansionBodyMustReferenceLambdaVariable, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
             // The predicate body must contain a reference to all variables that were present in the head
-            else if (pred.Head.Variables.Any(v => !pred.Body.CanonicalForm.Variables.Any(w => v.Name.Equals(w.Name))))
+            else if (pred.Head.Variables.Any(v => !v.Ignored && !pred.Body.CanonicalForm.Variables.Any(w => v.Name.Equals(w.Name))))
                 scope.Throw(InterpreterError.ExpansionBodyMustReferenceHeadVariables, WellKnown.Types.Predicate, pred.Explain(false));
             else
             {

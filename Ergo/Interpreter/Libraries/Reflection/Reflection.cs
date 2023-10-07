@@ -13,6 +13,7 @@ public class Reflection : Library
         .Append(new CopyTerm())
         .Append(new Ground())
         .Append(new Nonvar())
+        .Append(new Number())
         .Append(new NumberVars())
         .Append(new SequenceType())
         .Append(new Term())

@@ -77,13 +77,13 @@ range(Min < X <= Max, Step)  :- ground(Step), between('(', Min, Max, ']', Step, 
 range(Min <= X <= Max, Step) :- ground(Step), between('[', Min, Max, ']', Step, X).
 range(R) :- range(R, 1).
 
-plus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A + B.
-plus(A, B, C) :- ground(A), \+ground(B), ground(C), B := C - A.
-plus(A, B, C) :- \+ground(A), ground(B), ground(C), A := C - B. 
+plus(A, B, C) :- ground(A), ground(B), \+ground(C), !, C := A + B.
+plus(A, B, C) :- ground(A), \+ground(B), ground(C), !, B := C - A.
+plus(A, B, C) :- \+ground(A), ground(B), ground(C), !, A := C - B. 
 
-minus(A, B, C) :- ground(A), ground(B), \+ground(C), C := A - B.
-minus(A, B, C) :- ground(A), \+ground(B), ground(C), B := A - C.
-minus(A, B, C) :- \+ground(A), ground(B), ground(C), A := B + C. 
+minus(A, B, C) :- ground(A), ground(B), \+ground(C), !, C := A - B.
+minus(A, B, C) :- ground(A), \+ground(B), ground(C), !, B := A - C.
+minus(A, B, C) :- \+ground(A), ground(B), ground(C), !, A := B + C. 
 
 increment(A, A1) :- A1 := A + 1.
 decrement(A, A1) :- A1 := A - 1.

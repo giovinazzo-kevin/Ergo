@@ -1,4 +1,5 @@
-﻿using Ergo.Events.Solver;
+﻿using Ergo.Debugger;
+using Ergo.Events.Solver;
 using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
 using System.Runtime.ExceptionServices;
@@ -10,8 +11,10 @@ public sealed class SolverContext : IDisposable
 {
     public readonly SolverContext Parent;
 
-    private readonly CancellationTokenSource ChoicePointCts;
-    private readonly CancellationTokenSource ExceptionCts;
+    private DebuggerState _debugState = DebuggerState.Running;
+    private readonly ManualResetEvent _debuggerSignal = new(true);
+    private readonly CancellationTokenSource _choicePointCts;
+    private readonly CancellationTokenSource _exceptionCts;
 
     public readonly InterpreterScope Scope;
     public readonly ErgoSolver Solver;
@@ -21,11 +24,34 @@ public sealed class SolverContext : IDisposable
         Parent = parent;
         Solver = solver;
         (Scope = scope).ForwardEventToLibraries(new SolverContextCreatedEvent(this));
-        ChoicePointCts = choicePointCts;
-        ExceptionCts = exceptionCts;
+        _choicePointCts = choicePointCts;
+        _exceptionCts = exceptionCts;
+        Scope.ExceptionHandler.Throwing += ExceptionHandler_Throwing;
     }
 
-    public SolverContext CreateChild() => new(Solver, Scope, this, new(), ExceptionCts);
+    private void ExceptionHandler_Throwing(ExceptionDispatchInfo obj)
+    {
+        _debuggerSignal.WaitOne();
+    }
+
+    public void PauseExecution()
+    {
+        if (_debugState == DebuggerState.Running)
+        {
+            _debuggerSignal.Reset();
+            _debugState = DebuggerState.Paused;
+        }
+    }
+
+    public void ResumeExecution()
+    {
+        if (_debugState == DebuggerState.Paused)
+        {
+            _debuggerSignal.Set();
+            _debugState = DebuggerState.Running;
+        }
+    }
+    public SolverContext CreateChild() => new(Solver, Scope, this, new(), _exceptionCts);
     public static SolverContext Create(ErgoSolver solver, InterpreterScope scope) => new(solver, scope, null, new(), new());
     public SolverContext GetRoot()
     {
@@ -72,6 +98,7 @@ public sealed class SolverContext : IDisposable
 
             foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
             {
+                _debuggerSignal.WaitOne();
                 goal = eval.Result;
                 sig = goal.GetSignature();
                 yield return eval;
@@ -87,7 +114,7 @@ public sealed class SolverContext : IDisposable
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught += Cancel;
-        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, ExceptionCts.Token).Token;
+        ct = CancellationTokenSource.CreateLinkedTokenSource(ct, _exceptionCts.Token).Token;
         if (!ct.IsCancellationRequested)
         {
             foreach (var s in SolveQuery(goal.Goals, scope, ct: ct))
@@ -99,7 +126,7 @@ public sealed class SolverContext : IDisposable
         }
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught -= Cancel;
-        void Cancel(ExceptionDispatchInfo _) => ExceptionCts.Cancel(false);
+        void Cancel(ExceptionDispatchInfo _) => _exceptionCts.Cancel(false);
     }
 
 
@@ -160,7 +187,7 @@ public sealed class SolverContext : IDisposable
                 yield return s.PrependSubstitutions(tcoSubs);
                 continue;
             }
-            if (ct.IsCancellationRequested || ChoicePointCts.IsCancellationRequested)
+            if (ct.IsCancellationRequested || _choicePointCts.IsCancellationRequested)
                 yield break; // break on cuts and exceptions
             // Solve the rest of the goal
             foreach (var ss in SolveQuery(rest, s.Scope, ct: ct))
@@ -174,6 +201,7 @@ public sealed class SolverContext : IDisposable
 
     private IEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, CancellationToken ct = default)
     {
+        _debuggerSignal.WaitOne();
         try
         {
             RuntimeHelpers.EnsureSufficientExecutionStack();
@@ -197,7 +225,10 @@ public sealed class SolverContext : IDisposable
                 goto begin; // gotos are used to prevent allocating unnecessary stack frames whenever possible
             }
             foreach (var s in SolveQuery(expr, scope, ct: ct))
+            {
+                _debuggerSignal.WaitOne();
                 yield return s;
+            }
             yield break;
         }
 
@@ -205,6 +236,7 @@ public sealed class SolverContext : IDisposable
         // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
         foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
+            _debuggerSignal.WaitOne();
             if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
             {
                 scope.Trace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False);
@@ -215,7 +247,7 @@ public sealed class SolverContext : IDisposable
             {
                 yield return new(scope, resolvedGoal.Substitutions);
                 if (goal.Equals(WellKnown.Literals.Cut))
-                    ChoicePointCts.Cancel(false);
+                    _choicePointCts.Cancel(false);
                 continue;
             }
 
@@ -247,6 +279,7 @@ public sealed class SolverContext : IDisposable
                     // https://www.metalevel.at/prolog/fun
                     // Yield a "fake" solution to the caller, which will then use it to perform TCO
                     scope.Trace(SolverTraceType.TailCallOptimization, m.Lhs);
+                    _debuggerSignal.WaitOne();
                     yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
                     continue;
                 }
@@ -259,10 +292,11 @@ public sealed class SolverContext : IDisposable
                     var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
                     yield return s.PrependSubstitutions(innerSubs);
                 }
-                if (innerCtx.ChoicePointCts.IsCancellationRequested)
+                if (innerCtx._choicePointCts.IsCancellationRequested)
                     break;
                 // Backtrack
                 scope.Trace(SolverTraceType.Backtrack, m.Lhs);
+                _debuggerSignal.WaitOne();
             }
             if (noMatches)
             {
@@ -277,7 +311,7 @@ public sealed class SolverContext : IDisposable
                     continue;
                 if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
                     scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                ChoicePointCts.Cancel(false);
+                _choicePointCts.Cancel(false);
                 yield break;
             }
         }
@@ -285,6 +319,7 @@ public sealed class SolverContext : IDisposable
 
     public void Dispose()
     {
+        Scope.ExceptionHandler.Throwing -= ExceptionHandler_Throwing;
         Scope.ForwardEventToLibraries(new SolverContextDisposedEvent(this));
     }
 }

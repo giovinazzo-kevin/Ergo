@@ -213,11 +213,8 @@ public sealed class SolverContext : IDisposable
 
             if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
             {
-                if (goal.Equals(WellKnown.Literals.Cut))
-                    scope = scope.WithCut();
-
                 yield return new(scope, resolvedGoal.Substitutions);
-                if (scope.IsCutRequested)
+                if (goal.Equals(WellKnown.Literals.Cut))
                     ChoicePointCts.Cancel(false);
                 continue;
             }

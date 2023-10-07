@@ -56,7 +56,7 @@ public sealed class Dict : IAbstractTerm
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
         var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
-        if (!set.Any() && dict.Dictionary.Count != 0 && dict.Dictionary.Count != 0)
+        if (!set.Any() && Dictionary.Count != 0 && dict.Dictionary.Count != 0)
             return default;
         var subs = set
             .Select(key => new Substitution(Dictionary[key], dict.Dictionary[key]))

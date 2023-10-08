@@ -45,19 +45,29 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Classifiers\Classifications.cs" />
     <Compile Include="ErgoContentDefinition.cs" />
     <Compile Include="ErgoLanguageClient.cs" />
+    <Compile Include="Classifiers\NestedParensClassifier.cs" />
+    <Compile Include="Classifiers\NestedParensClassifierProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ErgoVSIXPackage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Grammars\Ergo.tmLanguage" />
-    <None Include="Grammars\Ergo.tmTheme" />
+    <Content Include="Grammars\Ergo.tmLanguage">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Grammars\Ergo.tmTheme">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
     <Content Include=".pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="ErgoLS\**\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -66,6 +76,7 @@
     <!-- Include .dll and .exe files as content -->
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="PresentationCore" />
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>

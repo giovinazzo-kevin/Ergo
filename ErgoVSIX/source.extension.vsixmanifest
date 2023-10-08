@@ -18,6 +18,8 @@
 	</Prerequisites>
 	<Assets>
 		<Asset Type="Microsoft.VisualStudio.Content" Path="ErgoLS/ErgoLS.exe" />
+		<Asset Type="Microsoft.VisualStudio.TextMate.Content" Path="Grammars/Ergo.tmLanguage" />
+		<Asset Type="Microsoft.VisualStudio.TextMate.Content" Path="Grammars/Ergo.tmTheme" />
 		<Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
 		<Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
 	</Assets>

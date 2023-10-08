@@ -1,0 +1,40 @@
+﻿:- module(prologue, [
+	'¬'/1,
+	'∧'/2, '∨'/2, ';'/2,
+	'='/2, '≠'/2,
+	'->'/2, '*'/1
+]).
+
+% OPERATOR DECLARATIONS
+:- op(5, xfy, ['::']).
+:- op(30, xfy, [';', '∨']).
+:- op(30, xfx, ['->']).
+:- op(30, fx, ['¬', '\\+']).
+:- op(50, xfx, ['=']).
+:- op(50, xfx, ['≠', '\\=']).
+:- op(1000, xfy,  [':']).
+:- op(920, fx, ['*']).
+
+% OPERATOR IMPLEMENTATIONS
+
+If -> Then; _Else :- If, !, Then.
+_If -> _Then; Else :- !, Else.
+If -> Then :- If, !, Then.
+
+%: Logical disjunction of A and B.
+';'(A, _B) :- A.
+%: Logical disjunction of A and B.
+';'(_A, B) :- B.
+
+'∨'(A, B) :- A ; B.
+'∧'(A, B) :- A , B.
+
+%: Logical complement of A (negation).
+%: ⊤ iff A cannot be proven.
+'¬'(A) :- not(A), !.
+%: Unification of A and B.
+'='(A, B) :- unify(A, B).
+%: Negation of the unification of A and B.
+'≠'(A, B) :- \+(A = B).
+%: Used for declarative debugging; "comments out" the following statement.
+*_. 

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -14,5 +14,30 @@
   <ItemGroup>
     <ProjectReference Include="..\Ergo\Ergo.csproj" />
   </ItemGroup>
+	<Target Name="CopyFilesAfterBuild" AfterTargets="Build">
+		<ItemGroup>
+			<!-- Define the source files to copy -->
+			<SourceFiles Include="$(OutputPath)\*.*" />
+		</ItemGroup>
+		<!-- Define the destination directory -->
+		<PropertyGroup>
+			<DestDir>$(SolutionDir)ErgoVSIX\ErgoLS\</DestDir>
+		</PropertyGroup>
+		<!-- Copy the files -->
+		<Copy SourceFiles="@(SourceFiles)" DestinationFolder="$(DestDir)" />
+	</Target>
+	<Target Name="CopyFilesAfterBuild" AfterTargets="Build">
+		<ItemGroup>
+			<!-- Define the source files to copy -->
+			<SourceFiles Include="$(SolutionDir)Ergo\ergo\stdlib\*.ergo" />
+			<SourceFiles Include="$(SolutionDir)Ergo\ergo\stdlib\*\*.ergo" />
+		</ItemGroup>
+		<!-- Define the destination directory -->
+		<PropertyGroup>
+			<DestDir>$(SolutionDir)ErgoVSIX\ErgoLS\ergo\stdlib</DestDir>
+		</PropertyGroup>
+		<!-- Copy the files -->
+		<Copy SourceFiles="@(SourceFiles)" DestinationFolder="$(DestDir)" />
+	</Target>
 
 </Project>

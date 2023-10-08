@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>name</key>
+		<string>Ergo</string>
+		<key>scopeName</key>
+		<string>source.ergo</string>
+		<key>fileTypes</key>
+		<array>
+			<string>ergo</string>
+		</array>
+
+		<key>patterns</key>
+		<array>
+			<!-- Regular Comment -->
+			<dict>
+				<key>match</key>
+				<string>%.*</string>
+				<key>name</key>
+				<string>comment.line.percent.yourlanguage</string>
+			</dict>
+			<!-- Documentation Comment -->
+			<dict>
+				<key>match</key>
+				<string>%:.*</string>
+				<key>name</key>
+				<string>comment.documentation.percent-colon.yourlanguage</string>
+			</dict>
+		</array>
+
+		<key>repository</key>
+		<dict>
+			<!-- Reusable patterns go here -->
+		</dict>
+
+	</dict>
+</plist>

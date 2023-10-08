@@ -12,7 +12,7 @@ class CompletionHandler : ICompletionHandler
 
     private readonly ILanguageServerFacade _router;
     private readonly BufferManager _bufferManager;
-    private readonly ErgoAutoCompleteService _nuGetService;
+    private readonly ErgoAutoCompleteService _autocomplete;
 
     private readonly TextDocumentSelector _documentSelector = new TextDocumentSelector(
         new TextDocumentFilter()
@@ -21,13 +21,12 @@ class CompletionHandler : ICompletionHandler
         }
     );
 
-    private CompletionCapability _capability;
 
-    public CompletionHandler(ILanguageServerFacade router, BufferManager bufferManager, ErgoAutoCompleteService nuGetService)
+    public CompletionHandler(ILanguageServerFacade router, BufferManager bufferManager, ErgoAutoCompleteService autocomplete)
     {
         _router = router;
         _bufferManager = bufferManager;
-        _nuGetService = nuGetService;
+        _autocomplete = autocomplete;
     }
 
     public CompletionRegistrationOptions GetRegistrationOptions()
@@ -48,8 +47,11 @@ class CompletionHandler : ICompletionHandler
         {
             return new CompletionList();
         }
-
-        return new CompletionList();
+        return new CompletionList(new CompletionItem()
+        {
+            Label = "test",
+            InsertText = "test"
+        });
     }
 
     private static int GetPosition(string buffer, int line, int col)
@@ -64,7 +66,7 @@ class CompletionHandler : ICompletionHandler
 
     public void SetCapability(CompletionCapability capability)
     {
-        _capability = capability;
+
     }
 
     public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)

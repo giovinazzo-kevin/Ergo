@@ -1,0 +1,21 @@
+﻿:- module(meta, [
+	ignore/1,
+	once/1, repeat/2, forever/1,
+	forall/2,
+    for/3,
+	map/3, filter/3, reduce/3
+]).
+
+ignore(Goal) :- Goal, !.
+ignore(_).
+
+once(Goal) :- (call(Goal) -> true ; false).
+repeat(Times, Goal) :- for(_, 0, Times), once(Goal).
+forever(Goal) :- once(Goal) ; forever(Goal).
+
+forall(Cond, Action) :- \+(Cond, \+Action).
+    
+for(Int, Int, Upper) :- Int <= Upper.
+for(Int, Lower, Upper) :-
+    Lower < Upper,
+    for(Int, :=(Lower + 1), Upper).

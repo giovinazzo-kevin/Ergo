@@ -14,6 +14,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XUnitTests", "XUnitTests\XU
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErgoLS", "ErgoLS\ErgoLS.csproj", "{E0545F99-556F-4F6D-8AC0-9C583948E2B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErgoVSIX", "ErgoVSIX\ErgoVSIX.csproj", "{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,18 @@ Global
 		{E0545F99-556F-4F6D-8AC0-9C583948E2B7}.Release|arm64.Build.0 = Release|Any CPU
 		{E0545F99-556F-4F6D-8AC0-9C583948E2B7}.Release|x86.ActiveCfg = Release|Any CPU
 		{E0545F99-556F-4F6D-8AC0-9C583948E2B7}.Release|x86.Build.0 = Release|Any CPU
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Debug|arm64.ActiveCfg = Debug|arm64
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Debug|arm64.Build.0 = Debug|arm64
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Debug|x86.ActiveCfg = Debug|x86
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Debug|x86.Build.0 = Debug|x86
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Release|arm64.ActiveCfg = Release|arm64
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Release|arm64.Build.0 = Release|arm64
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Release|x86.ActiveCfg = Release|x86
+		{2ADDEDC9-CB6A-4947-A0D4-08E11C35649F}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

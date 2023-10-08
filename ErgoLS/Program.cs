@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Ergo.Facade;
+using Ergo.Interpreter;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Server;
 
@@ -21,9 +23,17 @@ class Program
         await server.WaitForExit;
     }
 
+    static ErgoFacade ConfigureErgoEnvironment()
+    {
+        return ErgoFacade.Standard;
+    }
+
     static void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<BufferManager>();
         services.AddSingleton<ErgoAutoCompleteService>();
+        var ergo = ConfigureErgoEnvironment();
+        var interpreter = ergo.BuildInterpreter(InterpreterFlags.Default);
+        services.AddSingleton(interpreter);
     }
 }

@@ -1,0 +1,56 @@
+﻿:- module(reflection, [
+	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2, '\\=@='/2,
+	'?='/2, '/'/2, '=..'/2,
+	'=='/2, '\\=='/2, 
+
+	functor/3, arg/3,
+	atom_concat/3
+]).
+
+:- op(700, fx, ['@']).
+:- op(51, xfy, ['@>']).
+:- op(51, xfy, ['@≥', '@>=']).
+:- op(49, yfx, ['@<']).
+:- op(49, yfx, ['@≤', '@<=']).
+:- op(50, xfx, ['=@=']).
+:- op(50, xfx, ['\\=@=']).
+:- op(50, xfx, ['?=']).
+:- op(50, xfx, ['=..']).
+:- op(50, xfx, ['==', '≡']).
+:- op(50, xfx, ['\\==', '≢']).
+
+%: Term expansion.
+'=..'(Term, [Functor|Args]) :- term(Functor, Args, Term), !.
+%: Term comparison (gt).
+'@>'(A, B)  :- compare(X, A, B), X  > 0.
+%: Term comparison (lt).
+'@<'(A, B)  :- compare(X, A, B), X  < 0.
+%: Term comparison (gte).
+'@≥'(A, B) :- compare(X, A, B), X >= 0.
+%: Term comparison (lte).
+'@≤'(A, B) :- compare(X, A, B), X <= 0.
+%: Arithmetic comparison (eq).
+'=='(A, B) :- compare(0, A, B).
+%: Arithmetic comparison (neq).
+'\\=='(A, B) :- not(compare(0, A, B)).
+%: Synctactic equality of A and B.
+%: ⊤ iff the result of A == B will not change due to further instantiation of either term.
+'?='(A,B) :- \+unifiable(A,B,[_H|_T]).
+%: Two terms A and B are variants iff there exists a renaming of the variables in A that makes A equivalent (==) to B and vice versa.
+'=@='(A, B) :- variant(A, B).
+'\\=@='(A, B) :- \+(A =@= B).
+%: True when Term is a term with functor Name/Arity.
+functor(Term, Name, Arity) :-
+	Term =.. [Name|Args],
+	length(Args, Arity).
+%: Term should be instantiated to a term, Arg to an integer between 1 and the arity of Term. 
+%: Value is unified with the Arg-th argument of Term. 
+%: Arg may also be unbound. In this case Value will be unified with the successive arguments of the term.
+arg(Arg, Term, Value) :-
+	Term =.. [_|Args],
+	nth1(Arg, Args, Value).
+
+atom_concat(A, B, C) :-
+	term_type(A, atom),
+	term_type(B, atom),
+	str_fmt('{0}{1}', [A, B], C).

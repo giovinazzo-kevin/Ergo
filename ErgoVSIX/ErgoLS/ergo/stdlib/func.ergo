@@ -1,0 +1,39 @@
+﻿:- module(func, [
+	map/3, reduce/3, filter/3
+]).
+
+map(_, [], []) :- !.
+map(Lambda, [H1|T1], [H2|T2]) :-
+	call(Lambda, H1, H2),
+	map(Lambda, T1, T2).
+
+map(_, {}, {}).
+map(Lambda, Set1, Set2) :-
+	list_set(List1, Set1),
+	map(Lambda, List1, List2),
+	list_set(List2, Set2).
+
+reduce(_, [], _) :- !.
+reduce(_, [Result], Result) :- !.
+reduce(Lambda, [A, B|T], Result) :-
+	call(Lambda, A, B, PartialA),
+	reduce(Lambda, [PartialA|T], Result).
+
+reduce(_, {}, _).
+reduce(Lambda, Set1, Result) :-
+	list_set(List1, Set1),
+	reduce(Lambda, List1, Result).
+
+filter(_, [], []) :- !.
+filter(Lambda, [H|T], T2) :-
+	\+call(Lambda, H),
+	filter(Lambda, T, T2), !.
+filter(Lambda, [H|T], [H|T2]) :-
+	filter(Lambda, T, T2).
+
+filter(_, {}, {}).
+filter(Lambda, Set1, Set2) :-
+	list_set(List1, Set1),
+	filter(Lambda, List1, List2),
+	list_set(List2, Set2).
+

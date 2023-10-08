@@ -21,12 +21,10 @@ class TextDocumentSyncHandler : ITextDocumentSyncHandler
         _bufferManager = bufferManager;
     }
 
-    public TextDocumentAttributes GetTextDocumentAttributes(Uri uri)
+    public TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri)
     {
         return new TextDocumentAttributes(uri, EXT);
     }
-
-    public TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => throw new NotImplementedException();
 
     public Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
     {

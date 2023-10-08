@@ -1,0 +1,30 @@
+﻿:- module(list, [
+	member/2, length/2, append/3, remove/3
+]).
+
+:- op(15, xfy, ['|']).
+
+member(_, []) :- false.
+member(X, [Y|T]) :- (X = Y; member(X, T)).
+
+length([], N, N).
+length([_|List], N, N0) :-
+  N1 is N0+1,
+  length(List, N, N1).
+length(L, N) :- length(L, N, 0).
+
+append([], L, L).
+append([H|T], L, [H|R]) :- append(T, L, R).
+
+remove( _, [], []).
+remove( R, [R|T], T2) :- remove( R, T, T2).
+remove( R, [H|T], [H|T2]) :- H \= R, remove( R, T, T2).
+
+interleave([],[],[]).
+interleave([X],[],[X]).
+interleave([],[Y],[Y]).
+interleave([X|List1],[Y|List2],[X,Y|List]) :- interleave(List1,List2,List).
+
+concat([],L,L ).
+concat([H|T],L,[H|M]):-
+    concat(T,L,M).

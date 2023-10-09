@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,7 +14,7 @@ using Task = System.Threading.Tasks.Task;
 namespace ErgoVSIX
 {
     [ContentType("ergo")]
-    [Export(typeof(ILanguageClient))]
+    // [Export(typeof(ILanguageClient))]
     public class ErgoLanguageClient : ILanguageClient
     {
         public string Name => "Ergo Language Extension";

@@ -14,11 +14,19 @@
 		<array>
 			<dict>
 				<key>include</key>
+				<string>#modules</string>
+			</dict>
+			<dict>
+				<key>include</key>
 				<string>#directives</string>
 			</dict>
 			<dict>
 				<key>include</key>
-				<string>#modules</string>
+				<string>#clauses</string>
+			</dict>
+			<dict>
+				<key>include</key>
+				<string>#complex_patterns</string>
 			</dict>
 			<dict>
 				<key>include</key>
@@ -115,10 +123,22 @@
 					</dict>
 				</array>
 			</dict>
+			<key>dict_labels</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>match</key>
+						<string>\b([\p{Ll}]\w*)\b</string>
+						<key>name</key>
+						<string>storage.term.dict.label.ergo</string>
+					</dict>
+				</array>
+			</dict>
 			<key>complexes</key>
 			<dict>
 				<key>begin</key>
-				<string>\b([\p{Ll}]\w*)\b\s*\(</string>
+				<string>\b([^\s\(\):]+)\b\s*\(</string>
 				<key>end</key>
 				<string>\)</string>
 				<key>beginCaptures</key>
@@ -132,16 +152,156 @@
 				<key>patterns</key>
 				<array>
 					<dict>
-						<key>include</key>
-						<string>#complexes</string>
+						<key>match</key>
+						<string>,</string>
+						<key>name</key>
+						<string>keyword.operator.expression.ergo</string>
 					</dict>
 					<dict>
 						<key>include</key>
-						<string>#dicts</string>
+						<string>#complex_patterns</string>
 					</dict>
 					<dict>
 						<key>include</key>
 						<string>#atoms</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#basic_patterns</string>
+					</dict>
+				</array>
+			</dict>
+			<key>directive_heads</key>
+			<dict>
+				<key>begin</key>
+				<string>\b([^\s\(\):]+)\b\s*\(</string>
+				<key>end</key>
+				<string>\)</string>
+				<key>beginCaptures</key>
+				<dict>
+					<key>1</key>
+					<dict>
+						<key>name</key>
+						<string>keyword.directive.ergo</string>
+					</dict>
+				</dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>include</key>
+						<string>#complex_patterns</string>
+					</dict>
+					<dict>
+						<key>match</key>
+						<string>,</string>
+						<key>name</key>
+						<string>keyword.operator.expression.ergo</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#atoms</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#basic_patterns</string>
+					</dict>
+				</array>
+			</dict>
+			<key>directives</key>
+			<dict>
+				<key>begin</key>
+				<string>^\s*(:-)\s*</string>
+				<key>end</key>
+				<string>\s*(\.)\s*$</string>
+				<key>beginCaptures</key>
+				<dict>
+					<key>1</key>
+					<dict>
+						<key>name</key>
+						<string>keyword.operator.other.ergo</string>
+					</dict>
+				</dict>
+				<key>endCaptures</key>
+				<dict>
+					<key>1</key>
+					<dict>
+						<key>name</key>
+						<string>keyword.operator.other.ergo</string>
+					</dict>
+				</dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>include</key>
+						<string>#directive_heads</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#complex_patterns</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#basic_patterns</string>
+					</dict>
+				</array>
+			</dict>
+			<key>clauses</key>
+			<dict>
+				<key>begin</key>
+				<string>^\s*(.+)\s*(:-)\s*</string>
+				<key>end</key>
+				<string>\s*(\.)\s*$</string>
+				<key>beginCaptures</key>
+				<dict>
+					<key>1</key>
+					<dict>
+						<key>patterns</key>
+						<array>
+							<dict>
+								<key>include</key>
+								<string>#complex_patterns</string>
+							</dict>
+							<dict>
+								<key>match</key>
+								<string>,</string>
+								<key>name</key>
+								<string>keyword.operator.expression.ergo</string>
+							</dict>
+							<dict>
+								<key>include</key>
+								<string>#basic_patterns</string>
+							</dict>
+						</array>
+					</dict>
+					<key>2</key>
+					<dict>
+						<key>name</key>
+						<string>keyword.operator.other.ergo</string>
+					</dict>
+				</dict>
+				<key>endCaptures</key>
+				<dict>
+					<key>1</key>
+					<dict>
+						<key>name</key>
+						<string>keyword.operator.other.ergo</string>
+					</dict>
+				</dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>include</key>
+						<string>#modules</string>
+					</dict>
+					<dict>
+						<key>match</key>
+						<string>,</string>
+						<key>name</key>
+						<string>keyword.operator.other.ergo</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#complex_patterns</string>
 					</dict>
 					<dict>
 						<key>include</key>
@@ -161,7 +321,7 @@
 						<array>
 							<dict>
 								<key>include</key>
-								<string>#facts</string>
+								<string>#dict_labels</string>
 							</dict>
 							<dict>
 								<key>include</key>
@@ -176,11 +336,17 @@
 				<array>
 					<dict>
 						<key>include</key>
-						<string>#dicts</string>
+						<string>#complex_patterns</string>
 					</dict>
 					<dict>
 						<key>include</key>
 						<string>#key_value</string>
+					</dict>
+					<dict>
+						<key>match</key>
+						<string>,</string>
+						<key>name</key>
+						<string>keyword.operator.expression.ergo</string>
 					</dict>
 					<dict>
 						<key>include</key>
@@ -210,48 +376,22 @@
 				<array>
 					<dict>
 						<key>match</key>
-						<string>(:-|->|;|!|\.|,|@)</string>
+						<string>(:-|->|;|!|@)</string>
 						<key>name</key>
 						<string>keyword.operator.other.ergo</string>
 					</dict>
 					<dict>
 						<key>match</key>
-						<string>([^\p{L}\d\s@#_]|is)</string>
+						<string>([^\p{L}\d\s])</string>
 						<key>name</key>
 						<string>keyword.operator.expression.ergo</string>
-					</dict>
-				</array>
-			</dict>
-			<key>directives</key>
-			<dict>
-				<key>begin</key>
-				<string>^\s*(:-)\s*</string>
-				<key>end</key>
-				<string>\.\s*$</string>
-				<key>beginCaptures</key>
-				<dict>
-					<key>1</key>
-					<dict>
-						<key>name</key>
-						<string>keyword.operator.other.ergo</string>
-					</dict>
-				</dict>
-				<key>patterns</key>
-				<array>
-					<dict>
-						<key>include</key>
-						<string>#complexes</string>
-					</dict>
-					<dict>
-						<key>include</key>
-						<string>#basic_patterns</string>
 					</dict>
 				</array>
 			</dict>
 			<key>modules</key>
 			<dict>
 				<key>begin</key>
-				<string>([\p{Ll}]\w*)\s*(:)\s*\b</string>
+				<string>\b([\p{Ll}]\w*)\s*(:)\s*\b</string>
 				<key>beginCaptures</key>
 				<dict>
 					<key>1</key>
@@ -271,7 +411,7 @@
 				<key>begin</key>
 				<string>([\p{Ll}]\w*)\s*(:)</string>
 				<key>end</key>
-				<string>(,)</string>
+				<string>(,)?</string>
 				<key>beginCaptures</key>
 				<dict>
 					<key>1</key>
@@ -287,6 +427,10 @@
 				</dict>
 				<key>patterns</key>
 				<array>
+					<dict>
+						<key>include</key>
+						<string>#complex_patterns</string>
+					</dict>
 					<dict>
 						<key>include</key>
 						<string>#basic_patterns</string>
@@ -325,14 +469,23 @@
 					</dict>
 				</array>
 			</dict>
-			<key>basic_patterns</key>
+			<key>atom_operators</key>
 			<dict>
 				<key>patterns</key>
 				<array>
+					<!-- Infix: Term, followed by an atom, followed by a term -->
 					<dict>
-						<key>include</key>
-						<string>#comments</string>
+						<key>match</key>
+						<string>(?&lt;=[-+\w])\s*(?:(["'])(.*)\1|([\p{Ll}]\w*))\s+(?=[-+\w])</string>
+						<key>name</key>
+						<string>keyword.operator.expression.ergo</string>
 					</dict>
+				</array>
+			</dict>
+			<key>complex_patterns</key>
+			<dict>
+				<key>patterns</key>
+				<array>
 					<dict>
 						<key>include</key>
 						<string>#complexes</string>
@@ -340,6 +493,20 @@
 					<dict>
 						<key>include</key>
 						<string>#dicts</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#atom_operators</string>
+					</dict>
+				</array>
+			</dict>
+			<key>basic_patterns</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>include</key>
+						<string>#comments</string>
 					</dict>
 					<dict>
 						<key>include</key>

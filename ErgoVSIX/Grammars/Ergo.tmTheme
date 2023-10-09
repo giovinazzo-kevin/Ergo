@@ -57,7 +57,7 @@
 				<key>settings</key>
 				<dict>
 					<key>vsclassificationtype</key>
-					<string>enum name</string>
+					<string>method name</string>
 				</dict>
 			</dict>
 			<dict>
@@ -75,6 +75,15 @@
 				<key>settings</key>
 				<dict>
 					<key>vsclassificationtype</key>
+					<string>type</string>
+				</dict>
+			</dict>
+			<dict>
+				<key>scope</key>
+				<string>meta.goal.ergo</string>
+				<key>settings</key>
+				<dict>
+					<key>vsclassificationtype</key>
 					<string>method name</string>
 				</dict>
 			</dict>
@@ -84,7 +93,16 @@
 				<key>settings</key>
 				<dict>
 					<key>vsclassificationtype</key>
-					<string>string</string>
+					<string>operator</string>
+				</dict>
+			</dict>
+			<dict>
+				<key>scope</key>
+				<string>storage.term.dict.label.ergo</string>
+				<key>settings</key>
+				<dict>
+					<key>vsclassificationtype</key>
+					<string>type</string>
 				</dict>
 			</dict>
 			<dict>
@@ -120,7 +138,7 @@
 				<key>settings</key>
 				<dict>
 					<key>vsclassificationtype</key>
-					<string>type</string>
+					<string>module name</string>
 				</dict>
 			</dict>
 			<dict>

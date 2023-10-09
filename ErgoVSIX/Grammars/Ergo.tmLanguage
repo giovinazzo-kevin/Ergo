@@ -26,7 +26,7 @@
 			</dict>
 			<dict>
 				<key>include</key>
-				<string>#complex_patterns</string>
+				<string>#goal_patterns</string>
 			</dict>
 			<dict>
 				<key>include</key>
@@ -171,6 +171,42 @@
 					</dict>
 				</array>
 			</dict>
+			<key>goals</key>
+			<dict>
+				<key>begin</key>
+				<string>\b([^\s\(\):]+)\b\s*\(</string>
+				<key>end</key>
+				<string>\)</string>
+				<key>beginCaptures</key>
+				<dict>
+					<key>1</key>
+					<dict>
+						<key>name</key>
+						<string>meta.goal.ergo</string>
+					</dict>
+				</dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>match</key>
+						<string>,</string>
+						<key>name</key>
+						<string>keyword.operator.expression.ergo</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#complex_patterns</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#atoms</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#basic_patterns</string>
+					</dict>
+				</array>
+			</dict>
 			<key>directive_heads</key>
 			<dict>
 				<key>begin</key>
@@ -189,17 +225,13 @@
 				<array>
 					<dict>
 						<key>include</key>
-						<string>#complex_patterns</string>
+						<string>#goal_patterns</string>
 					</dict>
 					<dict>
 						<key>match</key>
 						<string>,</string>
 						<key>name</key>
 						<string>keyword.operator.expression.ergo</string>
-					</dict>
-					<dict>
-						<key>include</key>
-						<string>#atoms</string>
 					</dict>
 					<dict>
 						<key>include</key>
@@ -235,14 +267,6 @@
 						<key>include</key>
 						<string>#directive_heads</string>
 					</dict>
-					<dict>
-						<key>include</key>
-						<string>#complex_patterns</string>
-					</dict>
-					<dict>
-						<key>include</key>
-						<string>#basic_patterns</string>
-					</dict>
 				</array>
 			</dict>
 			<key>clauses</key>
@@ -259,13 +283,17 @@
 						<array>
 							<dict>
 								<key>include</key>
-								<string>#complex_patterns</string>
+								<string>#modules</string>
 							</dict>
 							<dict>
 								<key>match</key>
 								<string>,</string>
 								<key>name</key>
 								<string>keyword.operator.expression.ergo</string>
+							</dict>
+							<dict>
+								<key>include</key>
+								<string>#goal_patterns</string>
 							</dict>
 							<dict>
 								<key>include</key>
@@ -301,7 +329,7 @@
 					</dict>
 					<dict>
 						<key>include</key>
-						<string>#complex_patterns</string>
+						<string>#goal_patterns</string>
 					</dict>
 					<dict>
 						<key>include</key>
@@ -437,26 +465,6 @@
 					</dict>
 				</array>
 			</dict>
-			<key>rules</key>
-			<dict>
-				<key>begin</key>
-				<string>^\s*(.*)\s*(:-))</string>
-				<key>beginCaptures</key>
-				<dict>
-					<key>1</key>
-					<dict>
-						<key>name</key>
-						<string>keyword.rule.head.ergo</string>
-					</dict>
-					<key>2</key>
-					<dict>
-						<key>name</key>
-						<string>keyword.operator.other.ergo</string>
-					</dict>
-				</dict>
-				<key>end</key>
-				<string>\.\s*$</string>
-			</dict>
 			<key>delimiters</key>
 			<dict>
 				<key>patterns</key>
@@ -476,9 +484,27 @@
 					<!-- Infix: Term, followed by an atom, followed by a term -->
 					<dict>
 						<key>match</key>
-						<string>(?&lt;=[-+\w])\s*(?:(["'])(.*)\1|([\p{Ll}]\w*))\s+(?=[-+\w])</string>
+						<string>(?:(?&lt;!:-|->|-->)(?&lt;=[^\s,\.:;=]))\s+(?:(["'])(.*)\1|([\p{Ll}]\w*))\s+(?=[^\s,\.;=])</string>
 						<key>name</key>
 						<string>keyword.operator.expression.ergo</string>
+					</dict>
+				</array>
+			</dict>
+			<key>goal_patterns</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>include</key>
+						<string>#goals</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#dicts</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#atom_operators</string>
 					</dict>
 				</array>
 			</dict>

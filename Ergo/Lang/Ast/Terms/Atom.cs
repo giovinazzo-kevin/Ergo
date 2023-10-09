@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using PeterO.Numbers;
+﻿using PeterO.Numbers;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -15,7 +14,7 @@ public readonly struct Atom : ITerm
     private readonly int HashCode;
     public readonly bool IsQuoted;
 
-    public Atom(object value, Maybe<bool> quoted = default, Maybe<IAbstractTerm> abs = default)
+    public Atom(object value, Maybe<bool> quoted = default)
     {
         Value = value;
         if (Value?.IsNumericType() ?? false)

@@ -113,6 +113,7 @@ public class Expansions : Library
             //   - The head of the predicate is matched against the current term; if they unify:
             //      - The body of the expansion is inserted in the current predicate in a sensible location;
             //      - Previous references to the term are replaced with references to the captured variable.
+            // TODO: Sensible location means that an expansion should be placed right above the line that invokes it.
             foreach (var headExp in ExpandTerm(p.Head, scope))
             {
                 var newHead = headExp.Reduce(e => e.Binding
@@ -131,6 +132,7 @@ public class Expansions : Library
                 foreach (var variant in cartesian)
                 {
                     var newBody = new List<ITerm>();
+                    // We need to add each head clause in a "sensible" place within the body of the predicate
                     newBody.AddRange(headClauses);
                     foreach (var clause in variant)
                     {
@@ -152,6 +154,10 @@ public class Expansions : Library
         {
             if (term is Variable)
                 yield break;
+            if (term.IsAbstract<NTuple>().TryGetValue(out var ntuple))
+            {
+
+            }
             foreach (var exp in GetExpansions(term, scope)
                 .Select(x => Either<ExpansionResult, ITerm>.FromA(x))
                 .DefaultIfEmpty(Either<ExpansionResult, ITerm>.FromB(term)))

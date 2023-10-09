@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Ergo.Solver;
+using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -6,6 +7,8 @@ public abstract class SolveShellCommand : ShellCommand
 {
     public readonly bool Interactive;
     public readonly ConsoleColor DefaultAccentColor;
+
+    private readonly Dictionary<int, ErgoSolver> SolverCache = new();
 
     static string GetColorAlternatives()
     {
@@ -37,7 +40,14 @@ public abstract class SolveShellCommand : ShellCommand
             userQuery += '.';
         }
 
-        using var solver = shell.Facade.BuildSolver(scope.KnowledgeBase);
+        var key = scope.KnowledgeBase.GetHashCode() + scope.KnowledgeBase.Count;
+        if (!SolverCache.TryGetValue(key, out var solver))
+        {
+            foreach (var (k, s) in SolverCache)
+                s.Dispose();
+            SolverCache.Clear();
+            solver = SolverCache[key] = shell.Facade.BuildSolver(scope.KnowledgeBase);
+        }
         var parsed = shell.Facade.Parse<Query>(scope.InterpreterScope, userQuery);
         if (!parsed.TryGetValue(out var query))
         {

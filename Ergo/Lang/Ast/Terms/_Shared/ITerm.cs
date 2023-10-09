@@ -4,6 +4,7 @@ namespace Ergo.Lang.Ast;
 
 public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
+    Maybe<ParserScope> Scope { get; }
     bool IsGround { get; }
     bool IsQualified { get; }
     bool IsParenthesized { get; }
@@ -33,6 +34,14 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         Atom => newFunctor,
         Variable v => v,
         Complex c => c.WithFunctor(newFunctor),
+        var x => x
+    };
+
+    ITerm WithScope(Maybe<ParserScope> newScope) => this switch
+    {
+        Atom a => a.WithScope(newScope),
+        Variable v => v.WithScope(newScope),
+        Complex c => c.WithScope(newScope),
         var x => x
     };
     ITerm AsParenthesized(bool parens) => this switch

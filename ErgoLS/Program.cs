@@ -30,10 +30,10 @@ class Program
 
     static void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<BufferManager>();
-        services.AddSingleton<ErgoAutoCompleteService>();
         var ergo = ConfigureErgoEnvironment();
         var interpreter = ergo.BuildInterpreter(InterpreterFlags.Default);
         services.AddSingleton(interpreter);
+        services.AddSingleton<BufferManager>();
+        services.AddSingleton<ErgoAutoCompleteService>();
     }
 }

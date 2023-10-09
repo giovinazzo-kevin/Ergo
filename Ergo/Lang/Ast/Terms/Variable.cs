@@ -6,6 +6,8 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain() }")]
 public readonly struct Variable : ITerm
 {
+    public Maybe<ParserScope> Scope { get; }
+
     public bool IsGround => false;
     public bool IsQualified => false;
     public bool IsParenthesized => false;
@@ -16,7 +18,7 @@ public readonly struct Variable : ITerm
     private readonly int HashCode;
 
 
-    public Variable(string name)
+    public Variable(string name, Maybe<ParserScope> scope = default)
     {
         if (string.IsNullOrWhiteSpace(name) || name[0] != char.ToUpper(name[0]))
         {
@@ -26,6 +28,7 @@ public readonly struct Variable : ITerm
         Name = name;
         Ignored = name.StartsWith('_');
         HashCode = Name.GetHashCode();
+        Scope = scope;
     }
 
 
@@ -48,6 +51,8 @@ public readonly struct Variable : ITerm
         }
         return this;
     }
+
+    public Variable WithScope(Maybe<ParserScope> scope) => new(Name, scope);
 
     public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>().Append(this);
 

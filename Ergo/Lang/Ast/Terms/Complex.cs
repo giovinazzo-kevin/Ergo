@@ -6,6 +6,7 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain() }")]
 public readonly partial struct Complex : ITerm
 {
+    public Maybe<ParserScope> Scope { get; }
     public bool IsGround => Arguments.All(arg => arg.IsGround);
     public readonly bool IsQualified { get; }
 
@@ -18,10 +19,11 @@ public readonly partial struct Complex : ITerm
 
     private readonly int HashCode;
 
-    public Complex(Atom functor, ImmutableArray<ITerm> args)
+    public Complex(Atom functor, ImmutableArray<ITerm> args, Maybe<ParserScope> scope = default)
     {
         Functor = functor;
         Arguments = args;
+        Scope = scope;
         HashCode = Arguments.Aggregate(Functor.GetHashCode(), (hash, a) => System.HashCode.Combine(hash, a));
         IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
         Operator = Maybe<Operator>.None;
@@ -30,17 +32,18 @@ public readonly partial struct Complex : ITerm
     public Complex(Atom functor, params ITerm[] args)
         : this(functor, args.ToImmutableArray()) { }
 
-    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, ImmutableArray<ITerm> args)
-        : this(functor, args)
+    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, ImmutableArray<ITerm> args, Maybe<ParserScope> scope)
+        : this(functor, args, scope)
     {
         Operator = op;
         IsParenthesized = parenthesized;
     }
-    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, Arguments);
-    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, Arguments);
-    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, Arguments);
-    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, Arguments);
-    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, args);
+    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, Arguments, Scope);
+    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, Arguments, Scope);
+    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, Arguments, Scope);
+    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, Arguments, Scope);
+    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, args, Scope);
+    public Complex WithScope(Maybe<ParserScope> scope) => new(Operator, IsParenthesized, Functor, Arguments, scope);
 
     public string Explain(bool canonical = false)
     {
@@ -137,7 +140,7 @@ public readonly partial struct Complex : ITerm
         vars ??= new();
         if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
             return abs.Instantiate(ctx, vars).CanonicalForm;
-        return new Complex(Operator, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray());
+        return new Complex(Operator, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray(), Scope);
     }
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 

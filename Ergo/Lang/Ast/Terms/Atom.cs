@@ -6,6 +6,8 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain() }")]
 public readonly struct Atom : ITerm
 {
+    public Maybe<ParserScope> Scope { get; }
+
     public bool IsGround => true;
     public bool IsQualified => false;
     public bool IsParenthesized => false;
@@ -14,9 +16,10 @@ public readonly struct Atom : ITerm
     private readonly int HashCode;
     public readonly bool IsQuoted;
 
-    public Atom(object value, Maybe<bool> quoted = default)
+    public Atom(object value, Maybe<bool> quoted = default, Maybe<ParserScope> scope = default)
     {
         Value = value;
+        Scope = scope;
         if (Value?.IsNumericType() ?? false)
             Value = EDecimal.FromDecimal(Convert.ToDecimal(value));
         HashCode = value?.GetHashCode() ?? 0;
@@ -73,7 +76,8 @@ public readonly struct Atom : ITerm
     }
 
     public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
-    public Atom AsQuoted(bool quoted) => new(Value, quoted);
+    public Atom AsQuoted(bool quoted) => new(Value, quoted, scope: Scope);
+    public Atom WithScope(Maybe<ParserScope> scope) => new(Value, IsQuoted, scope: scope);
 
     public override bool Equals(object obj)
     {

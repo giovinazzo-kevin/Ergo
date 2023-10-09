@@ -6,13 +6,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 class CompletionHandler : ICompletionHandler
 {
-    private const string PackageReferenceElement = "PackageReference";
-    private const string IncludeAttribute = "Include";
-    private const string VersionAttribute = "Version";
-
     private readonly ILanguageServerFacade _router;
     private readonly BufferManager _bufferManager;
-    private readonly ErgoAutoCompleteService _autocomplete;
+    private readonly ErgoAutoCompleteService _autoComplete;
 
     private readonly TextDocumentSelector _documentSelector = new TextDocumentSelector(
         new TextDocumentFilter()
@@ -26,16 +22,7 @@ class CompletionHandler : ICompletionHandler
     {
         _router = router;
         _bufferManager = bufferManager;
-        _autocomplete = autocomplete;
-    }
-
-    public CompletionRegistrationOptions GetRegistrationOptions()
-    {
-        return new CompletionRegistrationOptions
-        {
-            DocumentSelector = _documentSelector,
-            ResolveProvider = false
-        };
+        _autoComplete = autocomplete;
     }
 
     public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
@@ -54,24 +41,10 @@ class CompletionHandler : ICompletionHandler
         });
     }
 
-    private static int GetPosition(string buffer, int line, int col)
-    {
-        var position = 0;
-        for (var i = 0; i < line; i++)
-        {
-            position = buffer.IndexOf('\n', position) + 1;
-        }
-        return position + col;
-    }
-
-    public void SetCapability(CompletionCapability capability)
-    {
-
-    }
-
     public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
         => new()
         {
-
+            DocumentSelector = _documentSelector,
+            ResolveProvider = false
         };
 }

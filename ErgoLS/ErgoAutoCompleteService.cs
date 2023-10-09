@@ -3,13 +3,14 @@ using Ergo.Interpreter;
 
 class ErgoAutoCompleteService
 {
-    private readonly ErgoInterpreter Ergo;
-    private readonly InterpreterScope Scope;
+    public readonly ErgoInterpreter Ergo;
+    public readonly InterpreterScope Scope;
 
     public ErgoAutoCompleteService(ErgoInterpreter ergo)
     {
         Ergo = ergo;
-        Scope = Ergo.CreateScope();
+        Scope = Ergo.CreateScope(x => x
+            .WithSearchDirectory(@"ErgoLS\ergo\"));
     }
 
     public async Task<IReadOnlyCollection<string>> GetPackages(string query)

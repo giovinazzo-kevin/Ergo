@@ -73,11 +73,11 @@ public partial class ErgoInterpreter
 
     public Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom module)
     {
-        return LoadDirectives(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
+        return LoadDirectives(ref scope, module, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
     }
-    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, ErgoStream stream)
+    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom name, ErgoStream stream)
     {
-        if (scope.Modules.TryGetValue(scope.Entry, out var m) && m.Program.IsPartial)
+        if (scope.Modules.TryGetValue(name, out var m) && m.Program.IsPartial)
             return m;
         var watch = Probe.Enter();
         var operators = scope.GetOperators();
@@ -104,7 +104,7 @@ public partial class ErgoInterpreter
                 return (Ast: d, Builtin: directive, Defined: true);
             return (Ast: d, Builtin: default, Defined: false);
         });
-        if (_libraries.TryGetValue(scope.Entry, out var linkedLib))
+        if (_libraries.TryGetValue(name, out var linkedLib))
         {
             linkLibrary = linkedLib;
             foreach (var dir in linkedLib.GetExportedDirectives())
@@ -121,16 +121,17 @@ public partial class ErgoInterpreter
             Probe.Leave(watch);
             return default;
         }
-
         foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.Priority))
         {
             var sig = Builtin.Signature.Explain();
             var builtinWatch = Probe.Enter(sig);
             Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments.ToArray());
+            // NOTE: It's only after module/2 has been called that the module actually gets its name!
+            // By now, scope.Entry == name
             Probe.Leave(builtinWatch, sig);
         }
-
         var module = scope.EntryModule
+            .WithImport(scope.BaseImport)
             .WithProgram(program);
 
         Probe.Leave(watch);
@@ -139,11 +140,11 @@ public partial class ErgoInterpreter
 
     public Maybe<Module> Load(ref InterpreterScope scope, Atom module, int loadOrder = 0)
     {
-        return Load(ref scope, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)), loadOrder);
+        return Load(ref scope, module, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)), loadOrder);
     }
-    public virtual Maybe<Module> Load(ref InterpreterScope scope, ErgoStream stream, int loadOrder = 0)
+    public virtual Maybe<Module> Load(ref InterpreterScope scope, Atom moduleName, ErgoStream stream, int loadOrder = 0)
     {
-        if (!LoadDirectives(ref scope, stream).TryGetValue(out var module))
+        if (!LoadDirectives(ref scope, moduleName, stream).TryGetValue(out var module))
             return default;
         // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
         foreach (Atom import in module.Imports.Contents)

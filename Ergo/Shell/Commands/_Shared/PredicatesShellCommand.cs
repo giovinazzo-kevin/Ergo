@@ -17,8 +17,8 @@ public abstract class PredicatesShellCommand : ShellCommand
         var predicates = scope.KnowledgeBase.AsEnumerable();
         if (term?.Success ?? false)
         {
-            var parsed = shell.Interpreter.Facade.Parse<Query>(interpreterScope, $"{term.Value}, true");
-            if (!parsed.TryGetValue(out var tuple))
+            var parsed = shell.Interpreter.Facade.Parse<ITerm>(interpreterScope, $"{term.Value}, true");
+            if (!parsed.TryGetValue(out var t))
             {
                 shell.No();
                 yield return scope;
@@ -27,16 +27,13 @@ public abstract class PredicatesShellCommand : ShellCommand
 
             var yes = interpreterScope.ExceptionHandler.TryGet(() =>
             {
-                var matches = scope.KnowledgeBase.GetMatches(new("S"), tuple.Goals.Contents.First(), desugar: true)
-                    .AsEnumerable().SelectMany(x => x);
-                if (matches.Any())
+                predicates = scope.KnowledgeBase
+                    .Where(x => x.DeclaringModule.Equals(t) || x.Unify(t).TryGetValue(out _));
+                if (predicates.Any())
                 {
-                    predicates = predicates.Where(p =>
-                        matches.Select(m => m.Rhs).Any(m => new Substitution(m.Head, p.Head).Unify().TryGetValue(out _)));
                     shellScope = shellScope.WithInterpreterScope(interpreterScope);
                     return true;
                 }
-
                 return false;
             });
 

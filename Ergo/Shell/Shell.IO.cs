@@ -55,16 +55,22 @@ public partial class ErgoShell
         var sb = new StringBuilder();
         WithColors(() =>
         {
-            while ((char)Console.Read() is var c)
+            try
             {
-                sb.Append(c);
-                if (sb.ToString().EndsWith(until))
+                while ((char)Console.Read() is var c)
                 {
-                    break;
+                    sb.Append(c);
+                    if (sb.ToString().EndsWith(until))
+                    {
+                        break;
+                    }
                 }
             }
+            catch (OperationCanceledException) { }
         }, (ConsoleColor.Black, ConsoleColor.White));
-        return sb.ToString()[..^until.Length];
+        if (sb.Length >= until.Length)
+            return sb.ToString()[..^until.Length];
+        return string.Empty;
     }
 
     public virtual string Prompt(string until = "\r\n") => ReadLine(until);

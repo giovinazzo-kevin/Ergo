@@ -22,7 +22,10 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
     }
     public override Type GetMemberType(string name) => PropertiesByName[name].PropertyType;
     public override object GetMemberValue(string name, object instance) => PropertiesByName[name].GetValue(instance);
-    public override void SetMemberValue(string name, object instance, object value) => PropertiesByName[name].SetValue(instance, value);
+    public override void SetMemberValue(string name, object instance, object value)
+    {
+        PropertiesByName[name].SetValue(instance, value);
+    }
     public override TermAttribute GetMemberAttribute(string name) => PropertiesByName[name].GetCustomAttribute<TermAttribute>();
     public override Type GetParameterType(string name, ConstructorInfo info) => info.GetParameters().Single(p => p.Name.Equals(name)).ParameterType;
     public override ITerm TransformTerm(Atom functor, ITerm[] args) => new Dict(functor, args

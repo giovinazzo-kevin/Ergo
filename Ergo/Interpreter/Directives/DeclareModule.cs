@@ -13,7 +13,7 @@ public class DeclareModule : InterpreterDirective
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
-        if (!scope.IsRuntime && scope.Entry != WellKnown.Modules.User)
+        if (!scope.IsRuntime && scope.Entry == moduleName)
         {
             throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Entry.Explain(), moduleName.Explain());
         }
@@ -36,7 +36,7 @@ public class DeclareModule : InterpreterDirective
         {
             module = new Module(moduleName, runtime: scope.IsRuntime)
                 .WithExports(exports.Contents)
-                .WithImport(WellKnown.Modules.Stdlib);
+                .WithImport(scope.BaseImport);
         }
         module = module.WithLinkedLibrary(interpreter.GetLibrary(module.Name));
         scope = scope

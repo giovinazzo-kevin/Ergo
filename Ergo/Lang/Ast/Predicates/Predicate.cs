@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
-[DebuggerDisplay("{ Explain(true) }")]
+[DebuggerDisplay("{ Explain(false) }")]
 public readonly struct Predicate : IExplainable
 {
     public readonly Atom DeclaringModule;

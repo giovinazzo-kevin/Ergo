@@ -29,6 +29,11 @@ public readonly struct InterpreterScope
     /// </summary>
     public readonly Atom Entry;
     /// <summary>
+    /// The name of the base module that will be automatically imported by all modules being loaded.
+    /// Usually, this is going to be the stdlib but you can create your own base module that imports stdlib and have all new modules depend on that base.
+    /// </summary>
+    public readonly Atom BaseImport;
+    /// <summary>
     /// The entry module.
     /// </summary>
     public Module EntryModule => Modules[Entry];
@@ -58,15 +63,18 @@ public readonly struct InterpreterScope
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
         VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
+        BaseImport = WellKnown.Modules.Stdlib;
     }
 
     private InterpreterScope(
+        Atom @base,
         Atom currentModule,
         ImmutableDictionary<Atom, Module> modules,
         ImmutableArray<string> dirs,
         bool runtime,
         ExceptionHandler handler)
     {
+        BaseImport = @base;
         Modules = modules;
         SearchDirectories = dirs;
         Entry = currentModule;
@@ -97,14 +105,15 @@ public readonly struct InterpreterScope
         return kb;
     }
 
-    public InterpreterScope WithCurrentModule(Atom a) => new(a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithModule(Module m) => new(Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithoutModule(Atom m) => new(Entry, Modules.Remove(m), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithSearchDirectory(string s) => new(Entry, Modules, SearchDirectories.Add(s), IsRuntime, ExceptionHandler);
-    public InterpreterScope WithRuntime(bool runtime) => new(Entry, Modules, SearchDirectories, runtime, ExceptionHandler);
-    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Entry, Modules, SearchDirectories, IsRuntime, newHandler);
-    public InterpreterScope WithoutModules() => new(Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithoutSearchDirectories() => new(Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithBaseModule(Atom a) => new(a, Entry, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithCurrentModule(Atom a) => new(BaseImport, a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithModule(Module m) => new(BaseImport, Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutModule(Atom m) => new(BaseImport, Entry, Modules.Remove(m), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithSearchDirectory(string s) => new(BaseImport, Entry, Modules, SearchDirectories.Add(s), IsRuntime, ExceptionHandler);
+    public InterpreterScope WithRuntime(bool runtime) => new(BaseImport, Entry, Modules, SearchDirectories, runtime, ExceptionHandler);
+    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(BaseImport, Entry, Modules, SearchDirectories, IsRuntime, newHandler);
+    public InterpreterScope WithoutModules() => new(BaseImport, Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutSearchDirectories() => new(BaseImport, Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
 
     public T GetLibrary<T>(Atom module) where T : Library => Modules[module].LinkedLibrary
         .GetOrThrow(new ArgumentException(null, nameof(module)))

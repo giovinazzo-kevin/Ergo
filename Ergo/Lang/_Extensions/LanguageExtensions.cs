@@ -173,6 +173,8 @@ public static class LanguageExtensions
 
     public static string ToErgoCase(this string s)
     {
+        if (s is null)
+            return null;
         // Assume PascalCase
         var wasUpper = true;
         var sb = new StringBuilder();

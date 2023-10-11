@@ -80,6 +80,7 @@ public partial class ErgoInterpreter
         if (scope.Modules.TryGetValue(moduleName, out var module) && module.Program.IsPartial)
             return module;
         var watch = Probe.Enter();
+        Probe.Count(moduleName.Explain(), 1);
         var operators = scope.GetOperators();
         var parser = Facade.BuildParser(stream, operators);
         var pos = parser.Lexer.State;
@@ -155,7 +156,6 @@ public partial class ErgoInterpreter
             if (scope.Modules[import].Program.IsPartial)
             {
                 var importScope = scope
-                    .WithoutModule(import)
                     .WithCurrentModule(moduleName)
                     ;
                 if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
@@ -204,7 +204,7 @@ public partial class ErgoInterpreter
             .WithCurrentModule(WellKnown.Modules.User)
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
                 .WithImport(WellKnown.Modules.Stdlib));
-#if ERGO_INTERPRETER_DIAGNOSTICS
+#if _ERGO_INTERPRETER_DIAGNOSTICS
         Console.WriteLine(Probe.GetDiagnostics());
 #endif
         return scope;

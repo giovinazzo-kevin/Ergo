@@ -15,7 +15,12 @@ public partial class ErgoParser : IDisposable
     private Dictionary<long, object> _memoizationTable = new();
 
 
-    private readonly DiagnosticProbe Probe = new();
+    private readonly DiagnosticProbe Probe = new()
+    {
+#if !ERGO_PARSER_DIAGNOSTICS
+        IsEnabled = false,
+#endif
+    };
     protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
     protected List<IAbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
 

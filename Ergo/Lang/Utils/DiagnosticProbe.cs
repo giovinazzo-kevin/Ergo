@@ -7,19 +7,25 @@ public sealed class DiagnosticProbe : IDisposable
     private record struct Datum(int Hits, int Leaves, int Recursion, TimeSpan TotalTime, TimeSpan AverageTime, ImmutableDictionary<string, int> Counters);
     private Dictionary<string, Datum> _data = new();
 
+    public bool IsEnabled { get; set; } = true;
+
     public string GetCurrentMethodName([CallerMemberName] string callerName = "") => callerName;
     public Stopwatch Enter([CallerMemberName] string callerName = "")
     {
         var sw = new Stopwatch();
-        sw.Start();
-        if (!_data.TryGetValue(callerName, out var datum))
-            _data[callerName] = datum = new(0, 0, 0, default, default, ImmutableDictionary.Create<string, int>());
-        _data[callerName] = datum with { Hits = datum.Hits + 1 };
+        if (IsEnabled)
+        {
+            sw.Start();
+            if (!_data.TryGetValue(callerName, out var datum))
+                _data[callerName] = datum = new(0, 0, 0, default, default, ImmutableDictionary.Create<string, int>());
+            _data[callerName] = datum with { Hits = datum.Hits + 1 };
+        }
         return sw;
     }
 
     public void Leave(Stopwatch sw, [CallerMemberName] string callerName = "")
     {
+        if (!IsEnabled) return;
         if (_data.TryGetValue(callerName, out var datum))
         {
             _data[callerName] = datum with { Leaves = datum.Leaves + 1, TotalTime = sw.Elapsed + datum.TotalTime, AverageTime = datum.TotalTime / datum.Hits };
@@ -30,6 +36,8 @@ public sealed class DiagnosticProbe : IDisposable
 
     public void Count(string counter, int amount = 1, [CallerMemberName] string callerName = "")
     {
+        if (!IsEnabled)
+            return;
         if (_data.TryGetValue(callerName, out var datum))
         {
             if (datum.Counters.TryGetValue(counter, out var oldAmount))
@@ -43,12 +51,16 @@ public sealed class DiagnosticProbe : IDisposable
 
     public void Dispose()
     {
+        if (!IsEnabled)
+            return;
         if (_data.FirstOrDefault(d => d.Value.Hits != d.Value.Leaves || d.Value.Recursion != 0) is { Key: { } } item)
             throw new InternalErgoException($"{item.Key}: {{H={item.Value.Hits}; L={item.Value.Leaves}; R={item.Value.Recursion}; T={item.Value.TotalTime}; A={item.Value.AverageTime}; C={ExplainCounters(item.Value)}}}");
     }
 
     public string GetDiagnostics()
     {
+        if (!IsEnabled)
+            return string.Empty;
         var totalTime = _data.Values.Sum(x => x.TotalTime.TotalMilliseconds);
         return _data
             .Select(kv => (kv.Key, kv.Value, SelfTimePct: (float)(kv.Value.TotalTime.TotalMilliseconds / totalTime) * 100))

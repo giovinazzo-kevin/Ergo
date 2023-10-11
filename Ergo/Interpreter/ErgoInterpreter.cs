@@ -11,7 +11,12 @@ public partial class ErgoInterpreter
     public readonly ErgoFacade Facade;
     public readonly InterpreterFlags Flags;
 
-    protected readonly DiagnosticProbe Probe = new();
+    protected readonly DiagnosticProbe Probe = new()
+    {
+#if !ERGO_INTERPRETER_DIAGNOSTICS
+        IsEnabled = false,
+#endif
+    };
 
     private readonly Dictionary<Atom, Library> _libraries = new();
     public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
@@ -204,7 +209,7 @@ public partial class ErgoInterpreter
             .WithCurrentModule(WellKnown.Modules.User)
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
                 .WithImport(WellKnown.Modules.Stdlib));
-#if _ERGO_INTERPRETER_DIAGNOSTICS
+#if ERGO_INTERPRETER_DIAGNOSTICS
         Console.WriteLine(Probe.GetDiagnostics());
 #endif
         return scope;

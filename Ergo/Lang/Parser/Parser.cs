@@ -7,12 +7,17 @@ namespace Ergo.Lang;
 
 public partial class ErgoParser : IDisposable
 {
+    private static readonly Comparer<IAbstractTermParser> _absComparer =
+        Comparer<IAbstractTermParser>.Create((x, y) => x.ParsePriority.CompareTo(y.ParsePriority));
+
     private InstantiationContext _discardContext;
     private HashSet<long> _memoizationFailures = new();
     private Dictionary<long, object> _memoizationTable = new();
 
+
     private readonly DiagnosticProbe Probe = new();
     protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
+    protected List<IAbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
 
     public readonly ErgoLexer Lexer;
     public readonly ErgoFacade Facade;
@@ -93,6 +98,7 @@ public partial class ErgoParser : IDisposable
         parser = default;
         if (!AbstractTermParsers.Remove(typeof(T), out var parser_))
             return false;
+        SortedAbstractTermParsers.Remove(parser);
         parser = (IAbstractTermParser<T>)parser_;
         foreach (var functor in parser.FunctorsToIndex)
         {
@@ -108,6 +114,8 @@ public partial class ErgoParser : IDisposable
             AbstractTermCache.Default.Register(functor, typeof(T));
         }
         AbstractTermParsers.Add(typeof(T), parser);
+        SortedAbstractTermParsers.Add(parser);
+        SortedAbstractTermParsers.Sort(_absComparer);
     }
 
     public Maybe<IEnumerable<Operator>> GetOperatorsFromFunctor(Atom functor)
@@ -249,13 +257,10 @@ public partial class ErgoParser : IDisposable
                 .Or(() => Atom().Select(x => (ITerm)x))
                 .Or(() => Fail<ITerm>(scope.LexerState))
                 ;
-            if (AbstractTermParsers.Values.Any())
+            if (SortedAbstractTermParsers.Count > 0)
             {
-                var parsers = AbstractTermParsers.Values
-                    .OrderBy(v => v.ParsePriority)
-                    .ToArray();
-                var abstractFold = parsers.Skip(1)
-                    .Aggregate(parsers.First().Parse(this).Or(() => Fail<IAbstractTerm>(scope.LexerState)),
+                var abstractFold = SortedAbstractTermParsers.Skip(1)
+                    .Aggregate(SortedAbstractTermParsers.First().Parse(this).Or(() => Fail<IAbstractTerm>(scope.LexerState)),
                         (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<IAbstractTerm>(scope.LexerState)))
                     .Select(x => x.CanonicalForm);
                 return abstractFold
@@ -738,7 +743,7 @@ public partial class ErgoParser : IDisposable
 
     public void Dispose()
     {
-#if ERGO_PARSER_DIAGNOSTICS
+#if _ERGO_PARSER_DIAGNOSTICS
         Console.WriteLine(Lexer.Stream.FileName);
         Console.WriteLine(Probe.GetDiagnostics());
 #endif

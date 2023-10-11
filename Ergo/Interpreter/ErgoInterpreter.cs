@@ -130,9 +130,9 @@ public partial class ErgoInterpreter
             // By now, scope.Entry == name
             Probe.Leave(builtinWatch, sig);
         }
-        var module = scope.EntryModule
+        var module = scope.Modules[name]
             .WithImport(scope.BaseImport)
-            .WithProgram(program);
+            .WithProgram(program.AsPartial(true));
 
         Probe.Leave(watch);
         return module;
@@ -146,12 +146,17 @@ public partial class ErgoInterpreter
     {
         if (!LoadDirectives(ref scope, moduleName, stream).TryGetValue(out var module))
             return default;
-        // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
+        // By now, some imports may still be only partially loaded or outright unloaded in the case of deep import trees
         foreach (Atom import in module.Imports.Contents)
         {
+            if (!scope.Modules.TryGetValue(import, out _))
+            {
+                ;
+            }
             if (scope.Modules[import].Program.IsPartial)
             {
-                var importScope = scope.WithCurrentModule(import);
+                var importScope = scope
+                    .WithCurrentModule(import);
                 if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
                     return default;
                 scope = scope.WithModule(importModule);
@@ -168,7 +173,7 @@ public partial class ErgoInterpreter
 
         stream.Dispose();
         scope = scope.WithModule(module = module
-            .WithProgram(program)
+            .WithProgram(program.AsPartial(false))
             .WithLoadOrder(loadOrder));
 
         // Invoke ModuleLoaded so that libraries can, e.g., rewrite predicates

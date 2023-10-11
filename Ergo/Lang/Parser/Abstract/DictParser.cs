@@ -4,6 +4,7 @@ namespace Ergo.Lang.Parser;
 
 public sealed class DictParser : IAbstractTermParser<Dict>
 {
+    public int ParsePriority => 0;
     public IEnumerable<Atom> FunctorsToIndex { get; }
         = new[] { new Atom("dict") };
 

@@ -48,6 +48,8 @@ public sealed class TermMarshall
     public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
     {
         ctx ??= new();
+        if (value is IErgoMarshalling<T> marshalling)
+            return marshalling.ToTerm();
         return GetMode(typeof(T), mode) switch
         {
             var m when ctx.TryGetCached(m, value, typeof(T), functor, out var cached) => cached,
@@ -59,6 +61,10 @@ public sealed class TermMarshall
     public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
     {
         ctx ??= new();
+        var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);
+        if (type.GetInterfaces().Contains(interfaceType))
+            return (ITerm)interfaceType.GetMethod(nameof(ToTerm))
+                .Invoke(value, Array.Empty<object>());
         return GetMode(type, mode) switch
         {
             var m when ctx.TryGetCached(m, value, type, functor, out var cached) => cached,
@@ -82,18 +88,30 @@ public sealed class TermMarshall
         }
         return o;
     }
-    public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default) =>
-        GetMode(typeof(T), mode) switch
+    public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default)
+    {
+        var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(typeof(T));
+        if (typeof(T).GetInterfaces().Contains(interfaceType))
+            return (T)interfaceType.GetMethod(nameof(FromTerm))
+                .Invoke(_ ?? Activator.CreateInstance<T>(), new object[] { value });
+        return GetMode(typeof(T), mode) switch
         {
             TermMarshalling.Positional => (T)Transform(Convert.ChangeType(EnsurePositionalResolver(typeof(T)).FromTerm(value), typeof(T))),
             TermMarshalling.Named => (T)Transform(Convert.ChangeType(EnsureNamedResolver(typeof(T)).FromTerm(value), typeof(T))),
             _ => throw new NotImplementedException()
         };
-    public static object FromTerm(ITerm value, Type type, Maybe<TermMarshalling> mode = default) =>
-        GetMode(type, mode) switch
+    }
+    public static object FromTerm(ITerm value, Type type, Maybe<TermMarshalling> mode = default)
+    {
+        var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);
+        if (type.GetInterfaces().Contains(interfaceType))
+            return interfaceType.GetMethod(nameof(FromTerm))
+                .Invoke(Activator.CreateInstance(type), new object[] { value });
+        return GetMode(type, mode) switch
         {
             TermMarshalling.Positional => Transform(EnsurePositionalResolver(type).FromTerm(value)),
             TermMarshalling.Named => Transform(EnsureNamedResolver(type).FromTerm(value)),
             _ => throw new NotImplementedException()
         };
+    }
 }

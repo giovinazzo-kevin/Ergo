@@ -3,6 +3,7 @@
 public abstract class AbstractListParser<L> : IAbstractTermParser<L>
     where L : AbstractList
 {
+    public virtual int ParsePriority => 0;
     public abstract IEnumerable<Atom> FunctorsToIndex { get; }
     protected abstract L Construct(ImmutableArray<ITerm> seq);
 

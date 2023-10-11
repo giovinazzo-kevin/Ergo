@@ -8,8 +8,8 @@ namespace Ergo.Lang;
 public partial class ErgoParser : IDisposable
 {
     private InstantiationContext _discardContext;
-    private HashSet<string> _memoizationFailures = new();
-    private Dictionary<string, object> _memoizationTable = new();
+    private HashSet<long> _memoizationFailures = new();
+    private Dictionary<long, object> _memoizationTable = new();
 
     private readonly DiagnosticProbe Probe = new();
     protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
@@ -18,8 +18,12 @@ public partial class ErgoParser : IDisposable
     public readonly ErgoFacade Facade;
 
     public ParserScope GetScope() => new(Lexer.State);
-
-    private string GetMemoKey(ErgoLexer.StreamState state, string callerName) => $"{state}@{callerName}";
+    private long GetMemoKey(ErgoLexer.StreamState state, string callerName)
+    {
+        long hash = state.GetHashCode();
+        hash = (hash << 5) - hash + callerName.GetHashCode();
+        return hash;
+    }
 
     private bool IsFailureMemoized(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
@@ -247,7 +251,9 @@ public partial class ErgoParser : IDisposable
                 ;
             if (AbstractTermParsers.Values.Any())
             {
-                var parsers = AbstractTermParsers.Values.ToArray();
+                var parsers = AbstractTermParsers.Values
+                    .OrderBy(v => v.ParsePriority)
+                    .ToArray();
                 var abstractFold = parsers.Skip(1)
                     .Aggregate(parsers.First().Parse(this).Or(() => Fail<IAbstractTerm>(scope.LexerState)),
                         (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<IAbstractTerm>(scope.LexerState)))

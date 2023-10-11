@@ -2,8 +2,7 @@
 	ignore/1,
 	once/1, repeat/2, forever/1,
 	forall/2,
-    for/3,
-	map/3, filter/3, reduce/3
+    for/3
 ]).
 
 ignore(Goal) :- Goal, !.

@@ -2,8 +2,7 @@
 	ignore/1,
 	once/1, repeat/2, forever/1,
 	forall/2,
-    for/3,
-	map/3, filter/3, reduce/3
+    for/3
 ]).
 
 ignore(Goal) :- Goal, !.
@@ -17,5 +16,5 @@ forall(Cond, Action) :- \+(Cond, \+Action).
     
 for(Int, Int, Upper) :- Int <= Upper.
 for(Int, Lower, Upper) :-
-    Lower < Upper,
-    for(Int, :=(Lower + 1), Upper).
+    Lower < Upper, LL := Lower + 1,
+    for(Int, LL, Upper).

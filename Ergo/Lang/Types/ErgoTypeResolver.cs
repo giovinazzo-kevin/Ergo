@@ -1,4 +1,5 @@
-﻿using PeterO.Numbers;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using PeterO.Numbers;
 using System.Collections;
 using System.Reflection;
 
@@ -80,6 +81,10 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
     {
         if (o is null)
             return WellKnown.Literals.Discard;
+        if (o.GetType().GetInterface(nameof(ITerm)) is not null)
+            return (ITerm)o;
+        if (o.GetType().GetInterface(nameof(IAbstractTerm)) is not null)
+            return ((IAbstractTerm)o).CanonicalForm;
         if (!o.GetType().IsAssignableTo(Type))
             throw new ArgumentException(null, o.ToString());
         // Check if the [Term] attribute is applied at the type level,

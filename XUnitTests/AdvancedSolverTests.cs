@@ -39,7 +39,7 @@ public class AdvancedSolverTests : ErgoTests
     public void ShouldSolveCuts(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
     [Theory]
-    [InlineData("select([1,2,3],[A,B,C],[X,Y] >> (Y := X * 2))", 1, "A/2;B/4;C/6")]
+    [InlineData("map([X,Y] >> (Y := X * 2),[1,2,3],[A,B,C])", 1, "A/2;B/4;C/6")]
     public void ShouldSolveHigherOrderPredicates(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
     #region Rows

@@ -27,6 +27,7 @@ public abstract class SolveShellCommand : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         var executionAbortedCtrlC = false;
         var requestCancel = new CancellationTokenSource();
         Console.CancelKeyPress += RequestCancel;

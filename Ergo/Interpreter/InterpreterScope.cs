@@ -138,6 +138,7 @@ public readonly struct InterpreterScope
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedDirectives())
                 .GetOr(Enumerable.Empty<InterpreterDirective>()))
+            .Where(d => visibleModules.Contains(d.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 
     private static ImmutableDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
@@ -145,6 +146,7 @@ public readonly struct InterpreterScope
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedBuiltins())
                 .GetOr(Enumerable.Empty<SolverBuiltIn>()))
+            .Where(b => visibleModules.Contains(b.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 
     /// <summary>

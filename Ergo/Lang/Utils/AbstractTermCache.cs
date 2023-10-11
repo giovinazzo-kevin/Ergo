@@ -17,7 +17,7 @@ public class AbstractTermCache
     {
         var key = t.GetHashCode();
         if (Cache.ContainsKey(key))
-            throw new InvalidOperationException();
+            return; // throw new InvalidOperationException();
         Cache[key] = a;
         if (t.GetFunctor().TryGetValue(out var functor))
             Register(functor, a.GetType());

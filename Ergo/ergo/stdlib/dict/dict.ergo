@@ -17,7 +17,9 @@
 %: Creates a new dictionary and removes the specified keys
 :- expand([Val] >> (
 	'without'(A, B) :- 
-		map([X, Y]>>(Y = X:_), B, B_),
+		list_set(BList, B),
+		map([X, Y]>>(Y = X:_), BList, BListMap),
+		list_set(BListMap, B_),
 		with(Val, B_, A)
 )).
 

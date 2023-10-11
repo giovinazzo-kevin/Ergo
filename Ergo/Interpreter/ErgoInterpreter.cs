@@ -2,6 +2,7 @@
 using Ergo.Facade;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Utils;
+using System.Collections.Concurrent;
 using System.IO;
 
 namespace Ergo.Interpreter;
@@ -156,23 +157,33 @@ public partial class ErgoInterpreter
         var modulesToCheck = new Stack<Atom>();
         foreach (Atom m in module.Imports.Contents)
             modulesToCheck.Push(m);
-        while (modulesToCheck.TryPop(out var import))
+        var tasks = new ConcurrentBag<Task<Maybe<Module>>>();
+        var checkedModulesConcurrent = new ConcurrentDictionary<Atom, bool>();
+        while (modulesToCheck.Count > 0)
         {
-            if (scope.Modules[import].Program.IsPartial)
+            if (modulesToCheck.TryPop(out var import))
             {
-                var importScope = scope
-                    .WithCurrentModule(moduleName)
-                    ;
-                if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
-                    return default;
-                scope = scope.WithModule(importModule);
-
-                foreach (Atom m in importModule.Imports.Contents.Where(m => !checkedModules.Contains(import)))
+                if (!scope.Modules[import].Program.IsPartial)
+                    continue;
+                var importScope = scope.WithCurrentModule(moduleName);
+                tasks.Add(Task.Run(() =>
                 {
-                    modulesToCheck.Push(m);
-                }
+                    if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
+                        return Maybe.None<Module>();
+                    importModule.Imports.Contents
+                        .Select(x => (Atom)x)
+                        .Where(m => checkedModulesConcurrent.TryAdd(m, true))
+                        .ToList()
+                        .ForEach(m => modulesToCheck.Push(m));
+                    return importModule;
+                }));
             }
-            checkedModules.Add(import);
+        }
+        var newModules = Task.WhenAll(tasks).GetAwaiter().GetResult();
+        foreach (var newMod in newModules
+            .SelectMany(x => x.AsEnumerable()))
+        {
+            scope = scope.WithModule(newMod);
         }
 
         var parser = Facade.BuildParser(stream, scope.GetOperators());

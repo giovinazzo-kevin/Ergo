@@ -204,7 +204,7 @@ public partial class ErgoInterpreter
             .WithCurrentModule(WellKnown.Modules.User)
             .WithModule(new Module(WellKnown.Modules.User, runtime: true)
                 .WithImport(WellKnown.Modules.Stdlib));
-#if _ERGO_INTERPRETER_DIAGNOSTICS
+#if ERGO_INTERPRETER_DIAGNOSTICS
         Console.WriteLine(Probe.GetDiagnostics());
 #endif
         return scope;

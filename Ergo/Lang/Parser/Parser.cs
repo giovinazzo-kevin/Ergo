@@ -120,14 +120,13 @@ public partial class ErgoParser : IDisposable
 
     public Maybe<IEnumerable<Operator>> GetOperatorsFromFunctor(Atom functor)
     {
-        var match = Lexer.AvailableOperators
-            .Where(op => op.Synonyms.Any(s => functor.Equals(s)));
-        if (!match.Any())
-        {
+        if (functor.Value is not string f)
             return default;
-        }
-
-        return Maybe.Some(match);
+        if (!Lexer.OperatorLookup.TryGetValue(f, out var ops))
+            return default;
+        if (!ops.Any())
+            return default;
+        return Maybe.Some((IEnumerable<Operator>)ops);
     }
 
     public Maybe<T> Abstract<T>()
@@ -262,7 +261,8 @@ public partial class ErgoParser : IDisposable
                 var abstractFold = SortedAbstractTermParsers.Skip(1)
                     .Aggregate(SortedAbstractTermParsers.First().Parse(this).Or(() => Fail<IAbstractTerm>(scope.LexerState)),
                         (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<IAbstractTerm>(scope.LexerState)))
-                    .Select(x => x.CanonicalForm);
+                    .Select(x => x.CanonicalForm)
+                    ;
                 return abstractFold
                     .Or(primary);
             }
@@ -743,7 +743,7 @@ public partial class ErgoParser : IDisposable
 
     public void Dispose()
     {
-#if _ERGO_PARSER_DIAGNOSTICS
+#if ERGO_PARSER_DIAGNOSTICS
         Console.WriteLine(Lexer.Stream.FileName);
         Console.WriteLine(Probe.GetDiagnostics());
 #endif

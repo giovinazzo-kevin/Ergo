@@ -75,10 +75,10 @@ public partial class ErgoInterpreter
     {
         return LoadDirectives(ref scope, module, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
     }
-    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom name, ErgoStream stream)
+    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom moduleName, ErgoStream stream)
     {
-        if (scope.Modules.TryGetValue(name, out var m) && m.Program.IsPartial)
-            return m;
+        if (scope.Modules.TryGetValue(moduleName, out var module) && module.Program.IsPartial)
+            return module;
         var watch = Probe.Enter();
         var operators = scope.GetOperators();
         var parser = Facade.BuildParser(stream, operators);
@@ -104,7 +104,7 @@ public partial class ErgoInterpreter
                 return (Ast: d, Builtin: directive, Defined: true);
             return (Ast: d, Builtin: default, Defined: false);
         });
-        if (_libraries.TryGetValue(name, out var linkedLib))
+        if (_libraries.TryGetValue(moduleName, out var linkedLib))
         {
             linkLibrary = linkedLib;
             foreach (var dir in linkedLib.GetExportedDirectives())
@@ -127,10 +127,9 @@ public partial class ErgoInterpreter
             var builtinWatch = Probe.Enter(sig);
             Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments.ToArray());
             // NOTE: It's only after module/2 has been called that the module actually gets its name!
-            // By now, scope.Entry == name
             Probe.Leave(builtinWatch, sig);
         }
-        var module = scope.Modules[name]
+        module = scope.Modules[moduleName]
             .WithImport(scope.BaseImport)
             .WithProgram(program.AsPartial(true));
 
@@ -147,20 +146,28 @@ public partial class ErgoInterpreter
         if (!LoadDirectives(ref scope, moduleName, stream).TryGetValue(out var module))
             return default;
         // By now, some imports may still be only partially loaded or outright unloaded in the case of deep import trees
-        foreach (Atom import in module.Imports.Contents)
+        var checkedModules = new HashSet<Atom>();
+        var modulesToCheck = new Stack<Atom>();
+        foreach (Atom m in module.Imports.Contents)
+            modulesToCheck.Push(m);
+        while (modulesToCheck.TryPop(out var import))
         {
-            if (!scope.Modules.TryGetValue(import, out _))
-            {
-                ;
-            }
             if (scope.Modules[import].Program.IsPartial)
             {
                 var importScope = scope
-                    .WithCurrentModule(import);
+                    .WithoutModule(import)
+                    .WithCurrentModule(moduleName)
+                    ;
                 if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
                     return default;
                 scope = scope.WithModule(importModule);
+
+                foreach (Atom m in importModule.Imports.Contents.Where(m => !checkedModules.Contains(import)))
+                {
+                    modulesToCheck.Push(m);
+                }
             }
+            checkedModules.Add(import);
         }
 
         var parser = Facade.BuildParser(stream, scope.GetOperators());

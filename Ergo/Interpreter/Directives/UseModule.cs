@@ -31,7 +31,9 @@ public class UseModule : InterpreterDirective
             foreach (var newModule in importScope.Modules)
             {
                 if (newModule.Key != module.Name && !scope.Modules.ContainsKey(newModule.Key))
+                {
                     scope = scope.WithModule(newModule.Value);
+                }
             }
         }
         scope = scope

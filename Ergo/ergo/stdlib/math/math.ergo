@@ -9,7 +9,6 @@
 	max/3, min/3,
 	test/1
 ]).
-:- use_module(meta).
 
 :- op(50, fx, [':=', is]).
 :- op(50, xfx, [':=', is]).

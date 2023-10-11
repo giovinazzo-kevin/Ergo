@@ -13,7 +13,7 @@ public static partial class WellKnown
         public static readonly Operator UnaryHorn = new(WellKnown.Modules.Stdlib, Fixity.Prefix, OperatorAssociativity.Right, 10, Functors.Horn);
         public static readonly Operator BinaryHorn = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.None, 10, Functors.Horn);
         // The arity indicator is a bootstrapping operator that's used while parsing directives; the real definition is the division operator in the math module.
-        public static readonly Operator ArityIndicator = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Left, 500, Functors.Arity);
+        public static readonly Operator ArityIndicator = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Left, 600, Functors.Arity);
         public static readonly Operator Conjunction = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Right, 40, Functors.Conjunction);
         // These operators need to be defined here as the parser needs to reference them directly.
         public static readonly Operator Module = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Right, 5, Functors.Module);

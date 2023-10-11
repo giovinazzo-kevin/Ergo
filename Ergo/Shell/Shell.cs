@@ -31,7 +31,8 @@ public partial class ErgoShell
     public ShellScope CreateScope(Maybe<InterpreterScope> interpreterScope, Func<ShellScope, ShellScope> transformShell = null)
     {
         transformShell ??= s => s;
-        var scope = interpreterScope.GetOr(Interpreter.CreateScope())
+        var scope = interpreterScope.Or(() => Interpreter.CreateScope())
+            .GetOrThrow(new InvalidOperationException())
             .WithExceptionHandler(LoggingExceptionHandler)
             .WithRuntime(true);
         var kb = scope.BuildKnowledgeBase();

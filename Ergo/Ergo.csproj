@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);TRACE;_ERGO_PARSER_DIAGNOSTICS;_ERGO_INTERPRETER_DIAGNOSTICS</DefineConstants>
+    <DefineConstants>$(DefineConstants);TRACE;_ERGO_PARSER_DIAGNOSTICS;ERGO_INTERPRETER_DIAGNOSTICS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

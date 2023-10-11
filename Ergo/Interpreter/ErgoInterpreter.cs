@@ -205,7 +205,6 @@ public partial class ErgoInterpreter
             .Scope;
 
         scope.ExceptionHandler.Try(() => parser.Dispose());
-
         return module;
     }
 

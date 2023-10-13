@@ -82,18 +82,22 @@ public partial class ErgoParser
     public Maybe<UntypedSequence> Sequence(
         Operator op,
         Atom emptyElement,
-        string openingDelim,
-        Operator separator,
-        string closingDelim)
+        Maybe<(string OpeningDelim, string ClosingDelim)> parens,
+        Operator separator)
     {
         var scope = GetScope();
-        return
-            Parenthesized(openingDelim, closingDelim, () =>
-                Unfold(ExpressionOrTerm())
-                .Select(t => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(t), scope))
-                .Or(() => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty, scope)))
-            .Or(() => Fail<UntypedSequence>(scope.LexerState))
-        ;
+        if (parens.TryGetValue(out var delims))
+        {
+            return Parenthesized(delims.OpeningDelim, delims.ClosingDelim, () =>
+                    Unfold(ExpressionOrTerm())
+                    .Select(t => new UntypedSequence(op, emptyElement, delims, ImmutableArray.CreateRange(t), scope))
+                    .Or(() => new UntypedSequence(op, emptyElement, delims, ImmutableArray<ITerm>.Empty, scope)))
+                .Or(() => Fail<UntypedSequence>(scope.LexerState));
+        }
+        return Unfold(Expression().Select<ITerm>(x => x.Complex))
+                .Select(t => new UntypedSequence(op, emptyElement, delims, ImmutableArray.CreateRange(t), scope))
+                .Or(() => new UntypedSequence(op, emptyElement, delims, ImmutableArray<ITerm>.Empty, scope))
+            .Or(() => Fail<UntypedSequence>(scope.LexerState));
 
         Maybe<IEnumerable<ITerm>> Unfold(Maybe<ITerm> term)
         {

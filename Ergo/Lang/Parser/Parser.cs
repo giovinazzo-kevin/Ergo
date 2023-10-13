@@ -200,7 +200,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Atom()
-            .Map(functor => Abstract<NTuple>()
+            .Map(functor => TupleParser.ParseArgList(this)
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
             .Or(() => MemoizeFailureAndFail<Complex>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -217,13 +217,28 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return Expression()
-                .Select<ITerm>(e => e.Complex)
+        return Expression().Select<ITerm>(e => e.Complex)
             .Or(() => Term())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             .Select(x => x.WithScope(scope))
             ;
+    }
+
+    public Maybe<AbstractTerm> Abstract()
+    {
+        var watch = Probe.Enter();
+        var scope = GetScope();
+        if (SortedAbstractTermParsers.Count > 0)
+        {
+            var abstractFold = SortedAbstractTermParsers.Skip(1)
+                .Aggregate(SortedAbstractTermParsers.First().Parse(this).Or(() => Fail<AbstractTerm>(scope.LexerState)),
+                    (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<AbstractTerm>(scope.LexerState)))
+                ;
+            return abstractFold
+                .Do(() => Probe.Leave(watch));
+        }
+        return default;
     }
 
     public Maybe<ITerm> Term()
@@ -251,20 +266,8 @@ public partial class ErgoParser : IDisposable
             var primary = () => Variable().Select(x => (ITerm)x)
                 .Or(() => Complex().Select(x => (ITerm)x))
                 .Or(() => Atom().Select(x => (ITerm)x))
-                .Or(() => Fail<ITerm>(scope.LexerState))
-                ;
-            if (SortedAbstractTermParsers.Count > 0)
-            {
-                var abstractFold = SortedAbstractTermParsers.Skip(1)
-                    .Aggregate(SortedAbstractTermParsers.First().Parse(this).Or(() => Fail<AbstractTerm>(scope.LexerState)),
-                        (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<AbstractTerm>(scope.LexerState)))
-                    .Select(x => (ITerm)x)
-                    ;
-                return abstractFold
-                    .Or(primary);
-            }
-
-            return primary();
+                .Or(() => Fail<ITerm>(scope.LexerState));
+            return Abstract().Select(x => (ITerm)x).Or(() => primary());
         }
     }
 

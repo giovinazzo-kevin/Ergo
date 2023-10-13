@@ -6,7 +6,7 @@ using Ergo.Lang.Exceptions.Handler;
 
 namespace Tests;
 
-public sealed class ErgoTestFixture : IDisposable
+public class ErgoTestFixture : IDisposable
 {
     public readonly ExceptionHandler NullExceptionHandler = default;
     public readonly ExceptionHandler ThrowingExceptionHandler = new(ex => throw ex);

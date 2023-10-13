@@ -36,7 +36,6 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             Assert.NotEqual(value, expected);
         }
     }
-
     // "⊤" : "⊥"
     protected void ShouldSolve(string query, int expectedSolutions, bool checkParse, params string[] expected)
     {

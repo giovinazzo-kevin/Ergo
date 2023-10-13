@@ -5,9 +5,6 @@ namespace Ergo.Lang.Parser;
 public sealed class DictParser : AbstractTermParser<Dict>
 {
     public int ParsePriority => 0;
-    public IEnumerable<Atom> FunctorsToIndex { get; }
-        = new[] { new Atom("dict") };
-
     public Maybe<Dict> Parse(ErgoParser parser)
     {
         var scope = parser.GetScope();

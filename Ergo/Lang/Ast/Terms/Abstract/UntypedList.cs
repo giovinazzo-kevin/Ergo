@@ -13,7 +13,7 @@ public sealed class UntypedSequence : AbstractList
         Operator = op;
         EmptyElement = emptyElem;
         Braces = braces;
-        CanonicalForm = Fold(Operator, EmptyElement, head).Reduce<ITerm>(a => a, v => v, c => c);
+        CanonicalForm = Fold(Operator, EmptyElement, head);
     }
     protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope) => throw new NotImplementedException();
 }

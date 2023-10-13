@@ -332,12 +332,6 @@ public partial class ErgoParser : IDisposable
                     return ret;
                 }
             }
-            // Special case for comma-lists: always parse them as NTuples
-            if (WellKnown.Operators.Conjunction.Equals(op))
-            {
-                var list = new NTuple(new[] { lhs, rhs }, lhs.Scope);
-                return new Expression((Complex)list.GetCanonicalForm());
-            }
             return new Expression(op, lhs, Maybe.Some(rhs), exprParenthesized);
         }
 
@@ -656,7 +650,7 @@ public partial class ErgoParser : IDisposable
         var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals(new Atom("module")))
             .Body.GetArguments();
 
-        if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>().TryGetValue(out var exported))
+        if (moduleArgs.Length < 2 || moduleArgs[1] is not List exported)
         {
             exported = List.Empty;
         }
@@ -697,7 +691,7 @@ public partial class ErgoParser : IDisposable
                         continue;
                     if (!cplx.Arguments[1].Matches<OperatorType>(out var type))
                         continue;
-                    if (!cplx.Arguments[2].IsAbstract<List>().TryGetValue(out var syns))
+                    if (cplx.Arguments[2] is not List syns)
                         continue;
                     ret.Add(new(moduleName, type, precedence, syns.Contents.Cast<Atom>().ToHashSet()));
                 }

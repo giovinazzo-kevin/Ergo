@@ -10,9 +10,9 @@ public sealed class With : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        if (args[0].IsAbstract<Dict>().TryGetValue(out var a))
+        if (args[0] is Dict a)
         {
-            if (args[1].IsAbstract<Set>().TryGetValue(out var b)
+            if (args[1] is Set b
                 && GetPairs(b).TryGetValue(out var kvps))
             {
                 var merged = Update(a, kvps);
@@ -22,7 +22,7 @@ public sealed class With : SolverBuiltIn
                     yield break;
                 }
             }
-            else if (args[2].IsAbstract<Dict>().TryGetValue(out var d))
+            else if (args[2] is Dict d)
             {
                 if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(a.Dictionary[k]).TryGetValue(out _)))
                 {
@@ -40,9 +40,9 @@ public sealed class With : SolverBuiltIn
             }
         }
         else if (args[0] is Variable
-            && args[1].IsAbstract<Set>().TryGetValue(out var b)
+            && args[1] is Set b
             && GetPairs(b).TryGetValue(out var kvps)
-            && args[2].IsAbstract<Dict>().TryGetValue(out var d))
+            && args[2] is Dict d)
         {
             if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(kvps[k]).TryGetValue(out _)))
             {

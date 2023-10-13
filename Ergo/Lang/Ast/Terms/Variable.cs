@@ -36,7 +36,7 @@ public readonly struct Variable : ITerm
         return Name;
     }
 
-    public Maybe<SubstitutionMap> Unify(ITerm other)
+    public Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
     {
         return new SubstitutionMap { new(this, other) };
     }
@@ -63,12 +63,6 @@ public readonly struct Variable : ITerm
         }
         return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
     }
-
-    //public ITerm Qualify(Atom m)
-    //{
-    //    return new Variable($"{m.Explain()}:{Explain()}");
-    //}
-
     public override bool Equals(object obj)
     {
         if (obj is not Variable other)

@@ -26,9 +26,9 @@ public sealed class Call : SolverBuiltIn
             yield break;
         }
 
-        if (!goal.IsAbstract<NTuple>().TryGetValue(out var comma))
+        if (goal is not NTuple comma)
         {
-            comma = new(ImmutableArray<ITerm>.Empty.Add(goal), comma.Scope);
+            comma = new(ImmutableArray<ITerm>.Empty.Add(goal), goal.Scope);
         }
 
         var any = false;

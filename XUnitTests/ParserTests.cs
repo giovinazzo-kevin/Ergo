@@ -59,12 +59,12 @@ public class ParserTests : ErgoTests
     public void ShouldParsePathologicalCases_ParensInArgs1()
         => ShouldParse("f((V,L,R))",
             new Complex(new Atom("f"),
-                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }).CanonicalForm.AsParenthesized(true)));
+                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }, default)));
     [Fact]
     public void ShouldParsePathologicalCases_ParensInArgs2()
         => ShouldParse("f(N, n, (V,L,R))",
             new Complex(new Atom("f"), new Variable("N"), new Atom("n"),
-                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }).CanonicalForm.AsParenthesized(true)));
+                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }, default)));
     [Fact]
     public void ShouldParsePathologicalCases_PeriodAsInfix()
         => ShouldParse("a.b",

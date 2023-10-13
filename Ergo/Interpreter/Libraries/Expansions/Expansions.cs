@@ -153,7 +153,7 @@ public class Expansions : Library
         {
             if (term is Variable)
                 yield break;
-            if (term.IsAbstract<NTuple>().TryGetValue(out var ntuple))
+            if (term is NTuple ntuple)
             {
 
             }

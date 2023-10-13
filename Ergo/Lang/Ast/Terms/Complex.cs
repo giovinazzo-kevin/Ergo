@@ -78,7 +78,7 @@ public readonly partial struct Complex : ITerm
             || c == '=';
     }
 
-    public Maybe<SubstitutionMap> Unify(ITerm other)
+    public Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
     {
         var map = new SubstitutionMap();
         if (other is Complex c && Matches(c))
@@ -87,7 +87,7 @@ public readonly partial struct Complex : ITerm
             {
                 if (!Arguments[i].Unify(c.Arguments[i]).TryGetValue(out var argMap))
                     return default;
-                map = SubstitutionMap.MergeRef(map, argMap);
+                map.AddRange(argMap);
             }
             return map;
         }

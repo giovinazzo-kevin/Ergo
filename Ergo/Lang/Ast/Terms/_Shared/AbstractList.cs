@@ -21,7 +21,6 @@ public abstract class AbstractList : AbstractTerm
     public Signature Signature { get; }
 
     protected abstract ITerm CanonicalForm { get; }
-    public ITerm GetCanonicalForm() => CanonicalForm;
 
     public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope)
         : base(scope)
@@ -39,12 +38,11 @@ public abstract class AbstractList : AbstractTerm
         var joined = Contents.Join(t => t.Explain(canonical));
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
-    public override Maybe<SubstitutionMap> Unify(ITerm other)
+    public override Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
     {
         return CanonicalForm.Unify(other);
     }
-
-
+    public override Signature GetSignature() => CanonicalForm.GetSignature();
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
@@ -73,6 +71,7 @@ public abstract class AbstractList : AbstractTerm
         }
         return Create(builder.ToImmutableArray(), Scope);
     }
+    public override ITerm NumberVars() => CanonicalForm.NumberVars();
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
     /// </summary>

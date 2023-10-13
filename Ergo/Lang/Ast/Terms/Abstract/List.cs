@@ -10,8 +10,7 @@ public sealed class List : AbstractList
         : base(contents, scope)
     {
         Tail = tail.GetOr(EmptyElement);
-        CanonicalForm = Fold(Operator, Tail, contents)
-            .Reduce<ITerm>(a => a, v => v, c => c);
+        CanonicalForm = Fold(Operator, Tail, contents);
     }
     public List(IEnumerable<ITerm> contents, Maybe<ITerm> tail, Maybe<ParserScope> scope)
         : this(ImmutableArray.CreateRange(contents), tail, scope) { }
@@ -49,7 +48,7 @@ public sealed class List : AbstractList
         var joined = Contents.Join(t => t.Explain(false));
         if (!Tail.Equals(EmptyElement))
         {
-            if (Tail.IsAbstract<List>().TryGetValue(out var rest))
+            if (Tail is List rest)
             {
                 joined = Contents.Select(t => t.Explain()).Append(rest.Explain(false)[1..^1]).Join();
                 return $"{Braces.Open}{joined}{Braces.Close}";

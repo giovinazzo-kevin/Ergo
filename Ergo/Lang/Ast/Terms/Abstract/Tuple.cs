@@ -7,8 +7,7 @@ public sealed class NTuple : AbstractList
     public NTuple(ImmutableArray<ITerm> head, Maybe<ParserScope> scope)
         : base(head, scope)
     {
-        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement, head)
-            .Reduce<ITerm>(a => a, v => v, c => c);
+        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement, head);
     }
     public NTuple(IEnumerable<ITerm> contents, Maybe<ParserScope> scope)
         : this(ImmutableArray.CreateRange(contents), scope) { }

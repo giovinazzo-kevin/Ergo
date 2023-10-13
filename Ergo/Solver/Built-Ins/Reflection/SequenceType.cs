@@ -17,7 +17,7 @@ public sealed class SequenceType : SolverBuiltIn
             yield break;
         }
 
-        if (seq.IsAbstract<List>().TryGetValue(out _))
+        if (seq is List)
         {
             if (type.Unify(new Atom("list")).TryGetValue(out var subs))
             {
@@ -26,7 +26,7 @@ public sealed class SequenceType : SolverBuiltIn
             }
         }
 
-        if (seq.IsAbstract<NTuple>().TryGetValue(out _))
+        if (seq is NTuple)
         {
             if (type.Unify(new Atom("comma_list")).TryGetValue(out var subs))
             {
@@ -35,7 +35,7 @@ public sealed class SequenceType : SolverBuiltIn
             }
         }
 
-        if (seq.IsAbstract<Set>().TryGetValue(out _))
+        if (seq is Set)
         {
             if (type.Unify(new Atom("bracy_list")).TryGetValue(out var subs))
             {

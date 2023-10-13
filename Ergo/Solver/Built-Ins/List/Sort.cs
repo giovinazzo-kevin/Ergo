@@ -10,14 +10,14 @@ public sealed class Sort : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        if (args[0].IsAbstract<List>().TryGetValue(out var list))
+        if (args[0] is List list)
         {
             var sorted = new List(list.Contents.OrderBy(x => x), default, list.Scope);
             if (args[1].Unify(sorted).TryGetValue(out var subs))
                 yield return True(subs);
             else goto fail;
         }
-        else if (args[1].IsAbstract<Set>().TryGetValue(out var set))
+        else if (args[1] is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
             if (args[0].Unify(lst).TryGetValue(out var subs))

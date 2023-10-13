@@ -9,7 +9,6 @@
 	max/3, min/3,
 	test/1
 ]).
-:- use_module(meta).
 
 :- op(50, fx, [':=', is]).
 :- op(50, xfx, [':=', is]).
@@ -20,6 +19,9 @@
 :- op(40, xfx, ['<']).
 :- op(40, xfx, ['<=', '≤']).
 
+:- op(290, fx, ['floor']).
+:- op(290, fx, ['round']).
+:- op(290, fx, ['ceil']).
 :- op(300, xfx, ['mod']).
 :- op(700, xfy, ['^']).
 :- op(600, xfx, ['*']).

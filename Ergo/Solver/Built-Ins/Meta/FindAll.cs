@@ -13,7 +13,7 @@ public sealed class FindAll : SolverBuiltIn
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
             .WithCallee(GetStub(args));
-        if (!args[1].IsAbstract<NTuple>().TryGetValue(out var comma))
+        if (args[1] is not NTuple comma)
         {
             comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]), default);
         }

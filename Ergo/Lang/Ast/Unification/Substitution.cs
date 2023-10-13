@@ -69,12 +69,12 @@ public readonly struct Substitution
     {
         if (!x.Equals(y))
         {
-            if (x.Unify(y).TryGetValue(out var xSubY))
+            if (x.UnifyLeftToRight(y).TryGetValue(out var xSubY))
             {
                 ApplySubstitutions(xSubY);
                 return true;
             }
-            else if (y.Unify(x).TryGetValue(out var ySubX))
+            else if (y.UnifyLeftToRight(x).TryGetValue(out var ySubX))
             {
                 ySubX.Invert();
                 ApplySubstitutions(ySubX);

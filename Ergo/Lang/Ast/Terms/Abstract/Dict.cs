@@ -48,16 +48,16 @@ public class Dict : AbstractTerm
         var functor = Functor.Reduce(a => a.Explain(canonical), b => b.Explain(canonical));
         var joinedArgs = Dictionary.Join(kv =>
         {
-            if (kv.Value.IsAbstract<Dict>().TryGetValue(out var inner))
+            if (kv.Value is Dict inner)
                 return $"{kv.Key.Explain(canonical)}: {inner.Explain(canonical)}";
             return $"{kv.Key.Explain(canonical)}: {kv.Value.Explain(canonical)}";
         });
         return $"{functor}{{{joinedArgs}}}";
     }
 
-    public override Maybe<SubstitutionMap> Unify(ITerm other)
+    public override Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
     {
-        if (!other.IsAbstract<Dict>().TryGetValue(out var dict))
+        if (other is not Dict dict)
             return CanonicalForm.Unify(other);
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
@@ -92,4 +92,7 @@ public class Dict : AbstractTerm
             throw new InvalidOperationException();
         return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope);
     }
+
+    public override Signature GetSignature() => CanonicalForm.GetSignature();
+    public override ITerm NumberVars() => CanonicalForm.NumberVars();
 }

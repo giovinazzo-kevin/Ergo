@@ -76,7 +76,8 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         head = cplx.Arguments[1];
         return Maybe.Some(module);
     }
-    Maybe<SubstitutionMap> Unify(ITerm other);
+    [Obsolete("Not obsolete, but you're probably looking for the extension method ITerm.Unify")]
+    Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other);
     ITerm Substitute(Substitution s);
     ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
     ITerm Concat(params ITerm[] next)

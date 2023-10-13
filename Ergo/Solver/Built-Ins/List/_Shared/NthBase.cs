@@ -12,7 +12,7 @@ public abstract class NthBase : SolverBuiltIn
         if (args[0].Matches<int>(out var index))
         {
             index -= Offset;
-            if (args[1].IsAbstract<List>().TryGetValue(out var list) && index >= 0 && index < list.Contents.Length)
+            if (args[1] is List list && index >= 0 && index < list.Contents.Length)
             {
                 var elem = list.Contents[index];
                 if (args[2].Unify(elem).TryGetValue(out var subs))
@@ -32,7 +32,7 @@ public abstract class NthBase : SolverBuiltIn
         }
         else if (!args[0].IsGround)
         {
-            if (args[1].IsAbstract<List>().TryGetValue(out var list))
+            if (args[1] is List list)
             {
                 var any = false;
                 for (var i = 0; i < list.Contents.Length; ++i)

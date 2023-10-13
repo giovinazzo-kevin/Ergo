@@ -9,7 +9,7 @@ public sealed class WriteDict : WriteBuiltIn
 
     protected override string Explain(ITerm arg)
     {
-        if (arg.IsAbstract<Dict>().TryGetValue(out var dict))
+        if (arg is Dict dict)
             return dict.Explain(Canonical);
         return AsQuoted(arg, Quoted).Explain(Canonical);
     }

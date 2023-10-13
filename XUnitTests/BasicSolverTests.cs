@@ -31,6 +31,8 @@ public class BasicSolverTests : ErgoTests
     [InlineData("[1,2,3|Rest]", "'[|]'(1,'[|]'(2,'[|]'(3,Rest)))")]
     [InlineData("[1,2,3|[a,2,_C]]", "'[|]'(1,'[|]'(2,'[|]'(3,'[|]'(a,'[|]'(2,'[|]'(_C,[]))))))")]
     [InlineData("{1,1,2,2,3,4}", "'{|}'(1,'{|}'(2,'{|}'(3, 4)))")]
+    [InlineData("test{x:1, y : cool}", "dict(test, {x:1, y:cool})")]
+    [InlineData("test{x:1, y : cool}", "test{x:1, y:cool}")]
     #endregion
     public void ShouldUnifyCanonicals(string term, string canonical)
         => ShouldSolve($"{term}={canonical}", 1, false, "");

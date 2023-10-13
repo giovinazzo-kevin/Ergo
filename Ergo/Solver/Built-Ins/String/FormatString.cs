@@ -46,7 +46,7 @@ public sealed class FormatString : SolverBuiltIn
             var match = matches[i];
             var argIndex = int.Parse(match.Groups[1].Value);
             var item = items.Contents.ElementAtOrDefault(argIndex);
-            var ret = item?.Reduce<ITerm>(a => a.AsQuoted(false), v => v, c => c)?.Explain(canonical: false) ?? string.Empty;
+            var ret = item?.Reduce<ITerm>(a => a.AsQuoted(false), v => v, c => c, a => a)?.Explain(canonical: false) ?? string.Empty;
             if (item is Variable v && result.IsGround)
             {
                 // User is trying to match this variable from the result string

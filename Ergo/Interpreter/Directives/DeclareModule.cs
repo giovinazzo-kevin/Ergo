@@ -18,7 +18,7 @@ public class DeclareModule : InterpreterDirective
             throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Entry.Explain(), moduleName.Explain());
         }
 
-        if (!args[1].IsAbstract<List>().TryGetValue(out var exports))
+        if (args[1] is not List exports)
         {
             throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[1].Explain());
         }

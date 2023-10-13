@@ -21,19 +21,12 @@ public static class LanguageExtensions
         };
     }
 
-    public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
+    public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex, Func<AbstractTerm, T> ifAbstract)
     {
         if (t is Atom a) return ifAtom(a);
         if (t is Variable v) return ifVariable(v);
         if (t is Complex c) return ifComplex(c);
-        throw new NotSupportedException(t.GetType().Name);
-    }
-
-    public static T Map<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
-    {
-        if (t is Atom a) return ifAtom(a);
-        if (t is Variable v) return ifVariable(v);
-        if (t is Complex c) return ifComplex(c);
+        if (t is AbstractTerm abs) return ifAbstract(abs);
         throw new NotSupportedException(t.GetType().Name);
     }
 
@@ -90,6 +83,8 @@ public static class LanguageExtensions
 
     public static Signature GetSignature(this ITerm term)
     {
+        if (term is AbstractTerm abs)
+            return abs.GetSignature();
         if (term.GetQualification(out term).TryGetValue(out var qm))
         {
             var qs = term.GetSignature();
@@ -101,12 +96,11 @@ public static class LanguageExtensions
             }
             return new Signature(qs.Functor, qs.Arity, qm, tag);
         }
-
         return new Signature(
-            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
-            term.Map(a => 0, v => 0, c => c.Arity),
+            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor, abs => default),
+            term.Reduce(a => 0, v => 0, c => c.Arity, abs => default),
             Maybe<Atom>.None,
-            term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)
+            term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)
         );
     }
 
@@ -139,10 +133,7 @@ public static class LanguageExtensions
                 term = c.WithArguments(args.ToImmutableArray());
             }
             if (term is AbstractTerm abs)
-            {
-                // TODO!!
-                throw new InvalidOperationException();
-            }
+                return abs.NumberVars();
             return term;
         }
     }

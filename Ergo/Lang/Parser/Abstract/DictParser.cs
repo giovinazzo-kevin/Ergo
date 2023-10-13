@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang.Parser;
 
-public sealed class DictParser : IAbstractTermParser<Dict>
+public sealed class DictParser : AbstractTermParser<Dict>
 {
     public int ParsePriority => 0;
     public IEnumerable<Atom> FunctorsToIndex { get; }
@@ -10,6 +10,7 @@ public sealed class DictParser : IAbstractTermParser<Dict>
 
     public Maybe<Dict> Parse(ErgoParser parser)
     {
+        var scope = parser.GetScope();
         var functor = parser
             .Atom().Select(a => (Either<Atom, Variable>)a)
             .Or(() => parser.Variable().Select(v => (Either<Atom, Variable>)v));
@@ -18,7 +19,7 @@ public sealed class DictParser : IAbstractTermParser<Dict>
             .Map(f => new SetParser().Parse(parser)
                 .Where(args => args.Contents.All(a => WellKnown.Functors.NamedArgument.Contains(a.GetFunctor().GetOr(default))))
                 .Select(args => GetPairs(parser, args))
-                .Select(pairs => new Dict(f, pairs)));
+                .Select(pairs => new Dict(f, pairs, scope)));
 
         static IEnumerable<KeyValuePair<Atom, ITerm>> GetPairs(ErgoParser parser, Set args)
         {

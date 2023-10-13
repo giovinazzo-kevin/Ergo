@@ -26,7 +26,7 @@ public abstract class NthBase : SolverBuiltIn
                 var contents = Enumerable.Range(0, index)
                     .Select(x => (ITerm)new Variable("_"))
                     .Append(args[2]);
-                yield return True(new Substitution(args[1], new List(contents).CanonicalForm));
+                yield return True(new Substitution(args[1], new List(contents, default, args[1].Scope)));
                 yield break;
             }
         }

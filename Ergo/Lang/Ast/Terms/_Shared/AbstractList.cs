@@ -4,45 +4,48 @@ using System.Diagnostics;
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain() }")]
-public abstract class AbstractList : IAbstractTerm
+public abstract class AbstractList : AbstractTerm
 {
     public readonly ImmutableArray<ITerm> Contents;
     public readonly bool IsEmpty;
 
+    public override bool IsQualified => CanonicalForm.IsQualified;
+    public override bool IsParenthesized => CanonicalForm.IsParenthesized;
+    public override bool IsGround => CanonicalForm.IsGround;
+    public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
+    public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
+    public override bool Equals(ITerm other) => CanonicalForm.Equals(other);
     public abstract Operator Operator { get; }
     public abstract Atom EmptyElement { get; }
     public abstract (string Open, string Close) Braces { get; }
     public Signature Signature { get; }
 
-    public abstract ITerm CanonicalForm { get; }
+    protected abstract ITerm CanonicalForm { get; }
+    public ITerm GetCanonicalForm() => CanonicalForm;
 
-    public AbstractList(ImmutableArray<ITerm> head)
+    public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope)
+        : base(scope)
     {
         Contents = head;
         IsEmpty = head.Length == 0;
     }
-    public AbstractList(params ITerm[] args) : this(ImmutableArray.CreateRange(args)) { }
-    public AbstractList(IEnumerable<ITerm> args) : this(ImmutableArray.CreateRange(args)) { }
-    protected abstract AbstractList Create(ImmutableArray<ITerm> head);
+    public AbstractList(IEnumerable<ITerm> args, Maybe<ParserScope> scope) : this(ImmutableArray.CreateRange(args), scope) { }
+    protected abstract AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope);
 
-    public virtual string Explain()
+    public override string Explain(bool canonical)
     {
         if (IsEmpty)
-            return EmptyElement.Explain(true);
-        var joined = Contents.Join(t => t.Explain(true));
+            return EmptyElement.Explain(canonical);
+        var joined = Contents.Join(t => t.Explain(canonical));
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
-    public virtual Maybe<SubstitutionMap> Unify(IAbstractTerm other)
+    public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
-        if (other is not AbstractList list)
-            return CanonicalForm.Unify(other.CanonicalForm, ignoreAbstractForms: true);
-        if (list.Braces != Braces)
-            return default;
-        var u = CanonicalForm.Unify(list.CanonicalForm, ignoreAbstractForms: true);
-        return u;
+        return CanonicalForm.Unify(other);
     }
 
-    public virtual IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+
+    public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
         var builder = Contents.ToArray();
@@ -50,25 +53,25 @@ public abstract class AbstractList : IAbstractTerm
         {
             builder[i] = Contents[i].Instantiate(ctx, vars);
         }
-        return Create(builder.ToImmutableArray());
+        return Create(builder.ToImmutableArray(), Scope);
     }
-    public virtual IAbstractTerm Substitute(Substitution s)
+    public override AbstractTerm Substitute(Substitution s)
     {
         var builder = Contents.ToArray();
         for (int i = 0; i < builder.Length; i++)
         {
             builder[i] = Contents[i].Substitute(s);
         }
-        return Create(builder.ToImmutableArray());
+        return Create(builder.ToImmutableArray(), Scope);
     }
-    public virtual IAbstractTerm Substitute(SubstitutionMap s)
+    public virtual AbstractTerm Substitute(SubstitutionMap s)
     {
         var builder = Contents.ToArray();
         for (int i = 0; i < builder.Length; i++)
         {
             builder[i] = Contents[i].Substitute(s);
         }
-        return Create(builder.ToImmutableArray());
+        return Create(builder.ToImmutableArray(), Scope);
     }
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
@@ -165,6 +168,4 @@ public abstract class AbstractList : IAbstractTerm
             return list;
         }
     }
-
-    public abstract Maybe<IAbstractTerm> FromCanonicalTerm(ITerm c);
 }

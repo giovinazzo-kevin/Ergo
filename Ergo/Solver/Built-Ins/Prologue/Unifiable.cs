@@ -13,8 +13,8 @@ public sealed class Unifiable : SolverBuiltIn
         {
             var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Operators.Unification.CanonicalFunctor, s.Lhs, s.Rhs)
                 .AsOperator(WellKnown.Operators.Unification));
-            List list = new(ImmutableArray.CreateRange(equations));
-            if (new Substitution(arguments[2], list.CanonicalForm).Unify().TryGetValue(out subs))
+            List list = new(ImmutableArray.CreateRange(equations), default, default);
+            if (new Substitution(arguments[2], list).Unify().TryGetValue(out subs))
             {
                 yield return new(WellKnown.Literals.True, subs);
                 yield break;

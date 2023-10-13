@@ -2,9 +2,15 @@
 using Ergo.Events.Solver;
 using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
+using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 
 namespace Ergo.Solver;
+
+public class ErgoTask
+{
+    public readonly ITerm Query;
+}
 
 // TODO: Build a stack-based system that supports last call optimization
 public sealed class SolverContext : IDisposable
@@ -15,6 +21,7 @@ public sealed class SolverContext : IDisposable
     private readonly ManualResetEvent _debuggerSignal = new(true);
     private readonly CancellationTokenSource _choicePointCts;
     private readonly CancellationTokenSource _exceptionCts;
+    private readonly ConcurrentBag<ErgoTask> _tasks;
 
     public readonly InterpreterScope Scope;
     public readonly ErgoSolver Solver;
@@ -152,7 +159,7 @@ public sealed class SolverContext : IDisposable
         // Get first solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
-            var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)));
+            var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)), query.Scope);
 #if !ERGO_SOLVER_DISABLE_TCO
             if (s.Scope.Callee.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Body))
             {
@@ -163,7 +170,7 @@ public sealed class SolverContext : IDisposable
                 tcoVars.UnionWith(s.Variables);
                 // Remove all substitutions that don't pertain to any variables in the current scope
                 tcoSubs.Prune(tcoVars);
-                query = new(s.Scope.Callee.Body.Contents.Concat(rest.Contents));
+                query = new(s.Scope.Callee.Body.Contents.Concat(rest.Contents), query.Scope);
                 tcoPred = s.Scope.Callee;
                 goto TCO;
             }
@@ -267,8 +274,8 @@ public sealed class SolverContext : IDisposable
                     .WithCallee(m.Rhs)
                     .WithCaller(scope.Callee)
                     .WithChoicePoint();
-                var callerVars = scope.Callee.Body.CanonicalForm.Variables;
-                var calleeVars = m.Rhs.Body.CanonicalForm.Variables;
+                var callerVars = scope.Callee.Body.Variables;
+                var calleeVars = m.Rhs.Body.Variables;
 #if !ERGO_SOLVER_DISABLE_TCO
                 if (m.Rhs.IsTailRecursive)
                 {

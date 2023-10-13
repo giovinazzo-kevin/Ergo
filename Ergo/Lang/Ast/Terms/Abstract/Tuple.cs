@@ -1,28 +1,24 @@
-﻿using Ergo.Lang.Ast.Terms.Interfaces;
-
-namespace Ergo.Lang.Ast;
+﻿namespace Ergo.Lang.Ast;
 
 public sealed class NTuple : AbstractList
 {
-    public static readonly NTuple Empty = new(ImmutableArray<ITerm>.Empty);
+    public static readonly NTuple Empty = new(ImmutableArray<ITerm>.Empty, default);
 
-    public NTuple(ImmutableArray<ITerm> head)
-        : base(head)
+    public NTuple(ImmutableArray<ITerm> head, Maybe<ParserScope> scope)
+        : base(head, scope)
     {
         CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement, head)
             .Reduce<ITerm>(a => a, v => v, c => c);
     }
-    public NTuple(IEnumerable<ITerm> contents)
-        : this(ImmutableArray.CreateRange(contents)) { }
+    public NTuple(IEnumerable<ITerm> contents, Maybe<ParserScope> scope)
+        : this(ImmutableArray.CreateRange(contents), scope) { }
     public override Operator Operator => WellKnown.Operators.Conjunction;
     public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
     public override (string Open, string Close) Braces => ("(", ")");
-    public override ITerm CanonicalForm { get; }
-    protected override AbstractList Create(ImmutableArray<ITerm> head) => new NTuple(head);
-    public static Maybe<NTuple> FromCanonical(ITerm term) => FromPseudoCanonical(term, default, default);
-    public override Maybe<IAbstractTerm> FromCanonicalTerm(ITerm canonical) => FromCanonical(canonical).Select(x => (IAbstractTerm)x);
+    protected override ITerm CanonicalForm { get; }
+    protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope) => new NTuple(head, scope);
 
-    public static Maybe<NTuple> FromPseudoCanonical(ITerm term, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
+    public static Maybe<NTuple> FromPseudoCanonical(ITerm term, Maybe<ParserScope> scope, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
     {
         if (parenthesized.TryGetValue(out var parens) && term is Complex { IsParenthesized: var p } && p != parens)
             return default;
@@ -33,11 +29,13 @@ public sealed class NTuple : AbstractList
                 var last = some.Last();
                 if (hasEmptyElement.TryGetValue(out var empty) && last.Equals(Empty.CanonicalForm) != empty)
                     return default;
-                return Maybe.Some(new NTuple(some));
+                return Maybe.Some(new NTuple(some, scope));
             }, () => default);
     }
-    public override string Explain()
+    public override string Explain(bool canonical)
     {
+        if (canonical)
+            return CanonicalForm.Explain(true);
         if (IsEmpty)
             return EmptyElement.Explain();
         // Special cases for tuples:

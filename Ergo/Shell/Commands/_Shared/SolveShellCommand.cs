@@ -56,7 +56,7 @@ public abstract class SolveShellCommand : ShellCommand
             yield break;
         }
 
-        shell.WriteLine(query.Goals.Explain(), LogLevel.Dbg);
+        shell.WriteLine(query.Goals.Explain(false), LogLevel.Dbg);
         var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
         var solverScope = solver.CreateScope(scope.InterpreterScope);
         if (scope.TraceEnabled)

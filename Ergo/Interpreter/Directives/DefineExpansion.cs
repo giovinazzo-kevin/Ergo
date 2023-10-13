@@ -30,10 +30,10 @@ public class DefineExpansion : InterpreterDirective
             else if (pred.Head.Variables.Any(v => v.Name.Equals(lambdaVariable.Name)))
                 scope.Throw(InterpreterError.ExpansionHeadCantReferenceLambdaVariable, lambdaVariable.Explain(), pred.Head.Explain());
             // The body of the predicate must reference the lambda variable
-            else if (!pred.Body.CanonicalForm.Variables.Any(v => v.Equals(lambdaVariable)))
+            else if (!pred.Body.Variables.Any(v => v.Equals(lambdaVariable)))
                 scope.Throw(InterpreterError.ExpansionBodyMustReferenceLambdaVariable, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
             // The predicate body must contain a reference to all variables that were present in the head
-            else if (pred.Head.Variables.Any(v => !v.Ignored && !pred.Body.CanonicalForm.Variables.Any(w => v.Name.Equals(w.Name))))
+            else if (pred.Head.Variables.Any(v => !v.Ignored && !pred.Body.Variables.Any(w => v.Name.Equals(w.Name))))
                 scope.Throw(InterpreterError.ExpansionBodyMustReferenceHeadVariables, WellKnown.Types.Predicate, pred.Explain(false));
             else
             {

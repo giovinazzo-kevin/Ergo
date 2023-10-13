@@ -7,9 +7,9 @@ public sealed class SetParser : AbstractListParser<Set>
 
     public SetParser()
     {
-        var emptyElem = Construct(ImmutableArray<ITerm>.Empty);
-        _functors = emptyElem.Operator.Synonyms.Append((Atom)emptyElem.CanonicalForm).ToArray();
+        var emptyElem = Construct(ImmutableArray<ITerm>.Empty, default);
+        _functors = emptyElem.Operator.Synonyms.Append(emptyElem.EmptyElement).ToArray();
     }
 
-    protected override Set Construct(ImmutableArray<ITerm> seq) => new(seq);
+    protected override Set Construct(ImmutableArray<ITerm> seq, Maybe<ParserScope> scope) => new(seq, scope);
 }

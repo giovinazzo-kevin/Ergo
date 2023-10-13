@@ -28,7 +28,7 @@ public sealed class Call : SolverBuiltIn
 
         if (!goal.IsAbstract<NTuple>().TryGetValue(out var comma))
         {
-            comma = new(ImmutableArray<ITerm>.Empty.Add(goal));
+            comma = new(ImmutableArray<ITerm>.Empty.Add(goal), comma.Scope);
         }
 
         var any = false;

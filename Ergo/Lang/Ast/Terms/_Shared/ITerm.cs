@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Utils;
-
-namespace Ergo.Lang.Ast;
+﻿namespace Ergo.Lang.Ast;
 
 public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
@@ -78,7 +76,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         head = cplx.Arguments[1];
         return Maybe.Some(module);
     }
-
+    Maybe<SubstitutionMap> Unify(ITerm other);
     ITerm Substitute(Substitution s);
     ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
     ITerm Concat(params ITerm[] next)
@@ -107,8 +105,6 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
                 break;
             variables = newVariables;
         }
-        if (AbstractTermCache.Default.IsAbstract(@base, default).TryGetValue(out var abs))
-            return abs.CanonicalForm;
         return @base;
     }
 

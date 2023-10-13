@@ -1,5 +1,4 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Lang.Utils;
 using System.Text;
 
 namespace Ergo.Lang.Extensions;
@@ -50,11 +49,13 @@ public static class LanguageExtensions
         return false;
     }
 
+    [Obsolete()]
     public static Maybe<T> IsAbstract<T>(this ITerm t)
-        where T : IAbstractTerm
+        where T : AbstractTerm
     {
-        return AbstractTermCache.Default.IsAbstract(t, typeof(T))
-            .Select(a => (T)a);
+        if (t is T abs)
+            return abs;
+        return default;
     }
 
     public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
@@ -71,13 +72,14 @@ public static class LanguageExtensions
 
             return filter?.Invoke(match) ?? true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
     }
 
-    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b, bool ignoreAbstractForms = false) => new Substitution(a, b).Unify(ignoreAbstractForms);
+    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b)
+        => new Substitution(a, b).Unify();
 
     public static Maybe<SubstitutionMap> Unify(this Predicate predicate, ITerm head)
     {
@@ -97,16 +99,6 @@ public static class LanguageExtensions
                 term = cplx.Arguments[0];
                 tag = (Atom)cplx.Arguments[1];
             }
-
-            if (AbstractTermCache.Default.IsAbstract(term, default).TryGetValue(out var abs))
-            {
-                var sig = abs.Signature
-                    .WithModule(qm);
-                if (tag.TryGetValue(out _))
-                    return sig.WithTag(tag);
-                return sig;
-            }
-
             return new Signature(qs.Functor, qs.Arity, qm, tag);
         }
 
@@ -145,6 +137,11 @@ public static class LanguageExtensions
                     args[j] = Inner(c.Arguments[j], ref i);
                 }
                 term = c.WithArguments(args.ToImmutableArray());
+            }
+            if (term is AbstractTerm abs)
+            {
+                // TODO!!
+                throw new InvalidOperationException();
             }
             return term;
         }

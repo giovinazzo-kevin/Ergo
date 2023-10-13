@@ -17,7 +17,8 @@ public sealed class Term : SolverBuiltIn
             {
                 var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
                 if (!functorArg.Unify(new Atom("dict")).TryGetValue(out var funSubs)
-                || !args.Unify(new List(new[] { tag }.Append(new List(dict.KeyValuePairs).CanonicalForm)).CanonicalForm).TryGetValue(out var listSubs))
+                || !args.Unify(new List(new[] { tag }.Append(new List(dict.KeyValuePairs, default, dict.Scope)), default, dict.Scope))
+                        .TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;
@@ -30,7 +31,7 @@ public sealed class Term : SolverBuiltIn
             if (termArg is Complex complex)
             {
                 if (!functorArg.Unify(complex.Functor).TryGetValue(out var funSubs)
-                || !args.Unify(new List(complex.Arguments).CanonicalForm).TryGetValue(out var listSubs))
+                || !args.Unify(new List(complex.Arguments, default, complex.Scope)).TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;

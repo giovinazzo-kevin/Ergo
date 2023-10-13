@@ -1,7 +1,6 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Solver;
 using Ergo.Interpreter.Directives;
-using Ergo.Lang.Utils;
 using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 
@@ -143,7 +142,7 @@ public class Expansions : Library
                         p.Documentation,
                         p.DeclaringModule,
                         newHead,
-                        new(newBody),
+                        new(newBody, p.Head.Scope),
                         p.IsDynamic,
                         p.IsExported
                     );
@@ -186,18 +185,17 @@ public class Expansions : Library
                             .Select(x => x.Reduce(exp => exp.Binding
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
-                        if (AbstractTermCache.Default.IsAbstract(newCplx, default).TryGetValue(out var abs))
-                            newCplx = (Complex)abs.CanonicalForm;
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                                .Concat(argList.SelectMany(x => x
-                                  .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))));
+                                  .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))),
+                            cplx.Scope);
                         if (isLambda)
                         {
                             // Stuff 'expClauses' inside the lambda instead of returning them to the parent predicate
                             var body = newCplx.Arguments[1];
-                            var closure = new NTuple(expClauses.Contents.Append(body));
-                            newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure.CanonicalForm));
+                            var closure = new NTuple(expClauses.Contents.Append(body), cplx.Scope);
+                            newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure));
                             yield return Either<ExpansionResult, ITerm>.FromB(newCplx);
                         }
                         else

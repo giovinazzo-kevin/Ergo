@@ -21,7 +21,7 @@ public sealed class FormatString : SolverBuiltIn
         }
 
         var items = args.IsAbstract<List>()
-            .GetOr(new List(new[] { args }));
+            .GetOr(new List(new[] { args }, default, args.Scope));
 
         if (result is not Atom resultStr)
         {

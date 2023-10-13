@@ -86,13 +86,13 @@ public partial class ErgoParser
         Operator separator,
         string closingDelim)
     {
-        var pos = Lexer.State;
+        var scope = GetScope();
         return
             Parenthesized(openingDelim, closingDelim, () =>
                 Unfold(ExpressionOrTerm())
-                .Select(t => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(t)))
-                .Or(() => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty)))
-            .Or(() => Fail<UntypedSequence>(pos))
+                .Select(t => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(t), scope))
+                .Or(() => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty, scope)))
+            .Or(() => Fail<UntypedSequence>(scope.LexerState))
         ;
 
         Maybe<IEnumerable<ITerm>> Unfold(Maybe<ITerm> term)

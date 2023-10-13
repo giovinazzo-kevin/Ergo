@@ -19,8 +19,8 @@ public sealed class CommaToList : SolverBuiltIn
                 yield break;
             }
 
-            var comma = new NTuple(list.Contents);
-            if (!commaArg.Unify(comma.CanonicalForm).TryGetValue(out var subs))
+            var comma = new NTuple(list.Contents, default);
+            if (!commaArg.Unify(comma).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;
@@ -38,8 +38,8 @@ public sealed class CommaToList : SolverBuiltIn
                 yield break;
             }
 
-            var list = new List(comma.Contents);
-            if (!listArg.Unify(list.CanonicalForm).TryGetValue(out var subs))
+            var list = new List(comma.Contents, default, default);
+            if (!listArg.Unify(list).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

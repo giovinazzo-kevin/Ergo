@@ -83,8 +83,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             return WellKnown.Literals.Discard;
         if (o.GetType().GetInterface(nameof(ITerm)) is not null)
             return (ITerm)o;
-        if (o.GetType().GetInterface(nameof(IAbstractTerm)) is not null)
-            return ((IAbstractTerm)o).CanonicalForm;
+        if (o.GetType().GetInterface(nameof(AbstractTerm)) is not null)
+            return ((AbstractTerm)o);
         if (!o.GetType().IsAssignableTo(Type))
             throw new ArgumentException(null, o.ToString());
         // Check if the [Term] attribute is applied at the type level,
@@ -140,7 +140,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                             if (x is Complex cplx)
                                 return cplx.WithFunctor(new(attr?.ComputedFunctor ?? cplx.Functor.Value));
                             return x;
-                        })).CanonicalForm;
+                        }), default, default);
                     }
                     return member;
 
@@ -158,7 +158,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             if (args.Length == 0)
                 return new Atom(functor);
             if (WellKnown.Functors.HeadTail.Contains(functor))
-                return new List(args).CanonicalForm;
+                return new List(args, default, default);
             return TransformTerm(functor, args);
         }
 

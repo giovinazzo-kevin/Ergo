@@ -15,7 +15,7 @@ public sealed class FindAll : SolverBuiltIn
             .WithCallee(GetStub(args));
         if (!args[1].IsAbstract<NTuple>().TryGetValue(out var comma))
         {
-            comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]));
+            comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]), default);
         }
 
         var solutions = context.Solver.Solve(new(comma), scope)
@@ -37,14 +37,14 @@ public sealed class FindAll : SolverBuiltIn
         }
         else
         {
-            var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))));
-            if (args[2].IsGround && args[2].Equals(list.CanonicalForm))
+            var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))), default, default);
+            if (args[2].IsGround && args[2].Equals(list))
             {
                 yield return new Evaluation(WellKnown.Literals.True);
             }
             else if (!args[2].IsGround)
             {
-                yield return True(new Substitution(args[2], list.CanonicalForm));
+                yield return True(new Substitution(args[2], list));
             }
             else
             {

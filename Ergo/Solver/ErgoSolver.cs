@@ -103,7 +103,7 @@ public partial class ErgoSolver : IDisposable
             {
                 var anon = sig.Arity
                     .Select(some => sig.Functor.BuildAnonymousTerm(some))
-                    .GetOr(new Dict(sig.Tag.GetEither(WellKnown.Literals.Discard)).CanonicalForm);
+                    .GetOr(new Dict(sig.Tag.GetEither(WellKnown.Literals.Discard), default, default));
                 if (!head.Unify(anon).TryGetValue(out var subs))
                 {
                     continue;

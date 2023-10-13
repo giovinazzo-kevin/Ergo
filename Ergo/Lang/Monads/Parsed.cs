@@ -20,7 +20,7 @@ public readonly struct Parsed<T>
         _ when typeof(T) == typeof(Directive) => p => Cast<Directive, T>(p.Directive()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(ErgoProgram) => p => Cast<ErgoProgram, T>(p.Program()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(ITerm) => p => Cast<ITerm, T>(p.Term()).Or(() => onParseFail(data)),
-        _ when typeof(T).IsAssignableTo(typeof(IAbstractTerm)) => p => Cast<IAbstractTerm, T>(p.Abstract(typeof(T))).Or(() => onParseFail(data)),
+        _ when typeof(T).IsAssignableTo(typeof(AbstractTerm)) => p => Cast<AbstractTerm, T>(p.Abstract(typeof(T))).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Query) =>
             (ErgoParser p) => p.Expression()
                 .Map(x => x.Complex.IsAbstract<NTuple>()

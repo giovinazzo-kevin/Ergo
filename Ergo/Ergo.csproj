@@ -35,6 +35,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\stdlib\async\async.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\stdlib\set\set.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

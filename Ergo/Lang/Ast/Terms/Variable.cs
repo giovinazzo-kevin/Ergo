@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Utils;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -34,19 +33,18 @@ public readonly struct Variable : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Explain(canonical);
         return Name;
+    }
+
+    public Maybe<SubstitutionMap> Unify(ITerm other)
+    {
+        return new SubstitutionMap { new(this, other) };
     }
 
     public ITerm Substitute(Substitution s)
     {
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Substitute(s).CanonicalForm;
         if (Equals(s.Lhs))
         {
-            if (AbstractTermCache.Default.IsAbstract(s.Rhs, default).TryGetValue(out abs))
-                return abs.CanonicalForm;
             return s.Rhs;
         }
         return this;
@@ -63,9 +61,6 @@ public readonly struct Variable : ITerm
         {
             return inst;
         }
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Instantiate(ctx, vars).CanonicalForm;
-
         return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
     }
 

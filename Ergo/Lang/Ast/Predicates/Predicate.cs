@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -59,7 +58,7 @@ public readonly struct Predicate : IExplainable
             return false;
         if (!Head.NumberVars().Equals(other.Head.NumberVars()))
             return false;
-        if (!Body.CanonicalForm.NumberVars().Equals(other.Body.CanonicalForm.NumberVars()))
+        if (!Body.NumberVars().Equals(other.Body.NumberVars()))
             return false;
         return true;
     }
@@ -87,7 +86,7 @@ public readonly struct Predicate : IExplainable
             Documentation
             , DeclaringModule
             , Head.Instantiate(ctx, vars)
-            , new NTuple(Body.Contents.Select(x => x.Instantiate(ctx, vars)))
+            , new NTuple(Body.Contents.Select(x => x.Instantiate(ctx, vars)), Head.Scope)
             , IsDynamic
             , IsExported
             , IsTailRecursive
@@ -95,7 +94,7 @@ public readonly struct Predicate : IExplainable
     }
 
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
-        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)((IAbstractTerm)k.Body)
+        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
             .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive);
 
     public Predicate WithHead(ITerm newHead) => new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
@@ -116,7 +115,7 @@ public readonly struct Predicate : IExplainable
         {
             var head = c.Arguments[0];
             var body = c.Arguments[1].IsAbstract<NTuple>()
-                .GetOr(new NTuple(new[] { c.Arguments[1] }));
+                .GetOr(new NTuple(new[] { c.Arguments[1] }, c.Scope));
 
             var mod = head.GetQualification(out head).GetOr(defaultModule);
             pred = new("(dynamic)", mod, head, body, true, false);
@@ -124,7 +123,7 @@ public readonly struct Predicate : IExplainable
         }
 
         var module = term.GetQualification(out term).GetOr(defaultModule);
-        pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True)), true, false);
+        pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True), term.Scope), true, false);
         return true;
     }
 

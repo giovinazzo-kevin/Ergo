@@ -12,15 +12,15 @@ public sealed class ListSet : SolverBuiltIn
     {
         if (args[0].IsAbstract<List>().TryGetValue(out var list))
         {
-            var set = new Set(list.Contents);
-            if (args[1].Unify(set.CanonicalForm).TryGetValue(out var subs))
+            var set = new Set(list.Contents, list.Scope);
+            if (args[1].Unify(set).TryGetValue(out var subs))
                 yield return True(subs);
             else goto fail;
         }
         else if (args[1].IsAbstract<Set>().TryGetValue(out var set))
         {
-            var lst = new List(set.Contents);
-            if (args[0].Unify(lst.CanonicalForm).TryGetValue(out var subs))
+            var lst = new List(set.Contents, default, set.Scope);
+            if (args[0].Unify(lst).TryGetValue(out var subs))
                 yield return True(subs);
             else goto fail;
         }

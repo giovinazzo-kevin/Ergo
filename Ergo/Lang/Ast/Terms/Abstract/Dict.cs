@@ -4,16 +4,23 @@ using System.Diagnostics;
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain() }")]
-public sealed class Dict : IAbstractTerm
+public class Dict : AbstractTerm
 {
-    public ITerm CanonicalForm { get; }
+    protected ITerm CanonicalForm { get; }
     public Signature Signature { get; }
+    public override bool IsQualified => CanonicalForm.IsQualified;
+    public override bool IsParenthesized => CanonicalForm.IsParenthesized;
+    public override bool IsGround => CanonicalForm.IsGround;
+    public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
+    public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
+    public override bool Equals(ITerm other) => CanonicalForm.Equals(other);
 
     public readonly ITerm[] KeyValuePairs;
     public readonly ImmutableDictionary<Atom, ITerm> Dictionary;
     public readonly Either<Atom, Variable> Functor;
 
-    public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args = default)
+    public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args, Maybe<ParserScope> scope)
+        : base(scope)
     {
         args ??= Enumerable.Empty<KeyValuePair<Atom, ITerm>>();
         Functor = functor;
@@ -24,35 +31,34 @@ public sealed class Dict : IAbstractTerm
                     .AsOperator(op))
             .OrderBy(o => o)
             .ToArray();
-        CanonicalForm = new Complex(WellKnown.Functors.Dict.First(), new[] { Functor.Reduce(a => (ITerm)a, b => b), new Set(KeyValuePairs).CanonicalForm });
+        CanonicalForm = new Complex(
+            WellKnown.Functors.Dict.First(),
+            new[] { Functor.Reduce(a => (ITerm)a, b => b),
+                new Set(KeyValuePairs, scope)
+            });
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
             Signature = Signature.WithTag(functor.Reduce(a => a, v => throw new InvalidOperationException()));
     }
 
-    public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder());
+    public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder(), Scope);
 
-    public string Explain(bool canonical, bool concise)
+    public override string Explain(bool canonical)
     {
         var functor = Functor.Reduce(a => a.Explain(canonical), b => b.Explain(canonical));
-        if (false && concise)
-            return $"{functor}{{{(Dictionary.Any() ? "..." : "")}}}";
         var joinedArgs = Dictionary.Join(kv =>
         {
             if (kv.Value.IsAbstract<Dict>().TryGetValue(out var inner))
-                return $"{kv.Key.Explain(canonical)}: {inner.Explain(canonical, concise)}";
+                return $"{kv.Key.Explain(canonical)}: {inner.Explain(canonical)}";
             return $"{kv.Key.Explain(canonical)}: {kv.Value.Explain(canonical)}";
         });
         return $"{functor}{{{joinedArgs}}}";
     }
 
-    public string Explain() => Explain(false, true);
-
-    public Maybe<SubstitutionMap> Unify(IAbstractTerm other)
+    public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
-        if (other is not Dict dict)
-            return CanonicalForm.Unify(other.CanonicalForm, ignoreAbstractForms: true);
-
+        if (!other.IsAbstract<Dict>().TryGetValue(out var dict))
+            return CanonicalForm.Unify(other);
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
         var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
@@ -64,7 +70,7 @@ public sealed class Dict : IAbstractTerm
         return Maybe.Some(new SubstitutionMap(subs));
     }
 
-    public IAbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
         var newFunctor = Functor.Reduce(
@@ -73,10 +79,10 @@ public sealed class Dict : IAbstractTerm
         var newKvp = Dictionary.Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key, kvp.Value.Instantiate(ctx, vars)));
         if (newFunctor is not Variable and not Atom)
             throw new InvalidOperationException();
-        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp);
+        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope);
     }
 
-    public IAbstractTerm Substitute(Substitution s)
+    public override AbstractTerm Substitute(Substitution s)
     {
         var newFunctor = Functor.Reduce(
             a => ((ITerm)a).Substitute(s),
@@ -84,20 +90,6 @@ public sealed class Dict : IAbstractTerm
         var newKvp = Dictionary.Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key, kvp.Value.Substitute(s)));
         if (newFunctor is not Variable and not Atom)
             throw new InvalidOperationException();
-        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp);
+        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope);
     }
-
-    public static Maybe<Dict> FromCanonical(ITerm canonical)
-    {
-        if (canonical is not Complex c || !WellKnown.Functors.Dict.Contains(c.Functor) || c.Arguments.Length != 2)
-            return default;
-        var functor = c.Arguments[0].Reduce<Either<Atom, Variable>>(a => a, v => v, c => throw new NotSupportedException());
-        if (!c.Arguments[1].IsAbstract<Set>().TryGetValue(out var set))
-            return default;
-        if (!set.Contents.All(x => x is Complex d && WellKnown.Functors.NamedArgument.Contains(d.Functor) && d.Arguments.Length == 2 && d.Arguments[0] is Atom))
-            return default;
-        var args = set.Contents.Cast<Complex>().Select(c => new KeyValuePair<Atom, ITerm>((Atom)c.Arguments[0], c.Arguments[1]));
-        return Maybe.Some<Dict>(new(functor, args));
-    }
-    Maybe<IAbstractTerm> IAbstractTerm.FromCanonicalTerm(ITerm canonical) => FromCanonical(canonical).Select(x => (IAbstractTerm)x);
 }

@@ -16,7 +16,7 @@ public sealed class With : SolverBuiltIn
                 && GetPairs(b).TryGetValue(out var kvps))
             {
                 var merged = Update(a, kvps);
-                if (args[2].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                if (args[2].Unify(merged).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -31,8 +31,8 @@ public sealed class With : SolverBuiltIn
                 }
                 var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
                 var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
-                    .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
-                if (args[1].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                    .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
+                if (args[1].Unify(merged).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -51,8 +51,8 @@ public sealed class With : SolverBuiltIn
             }
             var diff = d.Dictionary.Keys.Except(kvps.Select(k => k.Key)).ToHashSet();
             var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
-                .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
-            if (args[0].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
+            if (args[0].Unify(merged).TryGetValue(out var subs))
             {
                 yield return True(subs);
                 yield break;
@@ -69,7 +69,7 @@ public sealed class With : SolverBuiltIn
                 builder.Remove(key);
                 builder.Add(key, value);
             }
-            return new(d.Functor, builder);
+            return new(d.Functor, builder, d.Scope);
         }
 
         static Maybe<Dictionary<Atom, ITerm>> GetPairs(Set set)

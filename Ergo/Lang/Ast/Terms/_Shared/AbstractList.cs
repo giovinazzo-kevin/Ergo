@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
-[DebuggerDisplay("{ Explain() }")]
+[DebuggerDisplay("{ Explain(false) }")]
 public abstract class AbstractList : AbstractTerm
 {
     public readonly ImmutableArray<ITerm> Contents;
@@ -133,12 +133,30 @@ public abstract class AbstractList : AbstractTerm
                 .AsOperator(op));
     }
 
+    public static explicit operator Complex(AbstractList list)
+    {
+        try
+        {
+            return (Complex)list.CanonicalForm;
+        }
+        catch (Exception e)
+        {
+            ;
+        }
+        return default;
+    }
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, ITerm emptyElement, Func<ITerm, bool> matchTail, HashSet<Atom> functors)
     {
         if (term is Complex { Functor: var f } c && functors.Contains(f))
             return Maybe.Some(Inner());
         if (term is Atom && term.Equals(emptyElement))
-            return Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { });
+            return Maybe.Some<IEnumerable<ITerm>>(Array.Empty<ITerm>());
+        if (term is AbstractList abs && abs.Operator.Synonyms.Intersect(functors).Any())
+        {
+            if (abs.Contents.Length > 0)
+                return Unfold((Complex)abs, emptyElement, matchTail, functors);
+            return Maybe.Some<IEnumerable<ITerm>>(Array.Empty<ITerm>());
+        }
         return default;
 
         IEnumerable<ITerm> Inner()
@@ -148,7 +166,10 @@ public abstract class AbstractList : AbstractTerm
             {
                 if (c.Arity == 2)
                 {
-                    list.Add(c.Arguments[0]);
+                    list.AddRange(Unfold(c.Arguments[0], emptyElement, matchTail, functors)
+                        .Or(() => Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { c.Arguments[0] }))
+                        .AsEnumerable()
+                        .SelectMany(x => x));
                     term = c.Arguments[1];
                 }
                 else if (c.Arity == 1)

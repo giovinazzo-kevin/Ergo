@@ -200,7 +200,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Atom()
-            .Map(functor => TupleParser.ParseArgList(this)
+            .Map(functor => TupleParser.ParseArgList(this) // Regular tuples can't be 1 item long, but arg lists can.
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
             .Or(() => MemoizeFailureAndFail<Complex>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -217,7 +217,7 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return Expression().Select<ITerm>(e => e.Complex)
+        return Expression().Select<ITerm>(e => e.Term)
             .Or(() => Term())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -251,7 +251,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Parenthesized("(", ")", () => Expression())
-                    .Select<ITerm>(x => x.Complex.AsParenthesized(true))
+                    .Select<ITerm>(x => x.Term.AsParenthesized(true))
             .Or(() => Parenthesized("(", ")", () => Inner())
                 .Select(x => x.AsParenthesized(true)))
             .Or(() => Inner())
@@ -295,16 +295,29 @@ public partial class ErgoParser : IDisposable
             if (op.Fixity == Fixity.Infix)
             {
                 var inner = BuildExpression(op, lhsExpr.Left, maybeRhs);
-                var ret = BuildExpression(lhsExpr.Operator, inner.Complex, default, exprParenthesized);
+                var ret = BuildExpression(lhsExpr.Operator, inner.Term, default, exprParenthesized);
                 Probe.Leave(watch);
                 return ret;
             }
         }
         return maybeRhs
             .Select(rhs => Associate(lhs, rhs))
+            .Select(TryConvertCommaExpression)
             .Do(() => Probe.Leave(watch))
             .GetOr(new Expression(op, lhs, Maybe<ITerm>.None, lhs.IsParenthesized || exprParenthesized))
             ;
+
+        // Special case for tuples (comma-expressions). Since they are so ingrained in the language,
+        // parsing can be very ambiguous in the non-parenthesized case. Therefore it's best to parse
+        // them as expressions and unfold them right at the end by overwriting the expression.
+        Expression TryConvertCommaExpression(Expression expr)
+        {
+            if (NTuple.FromPseudoCanonical(expr.Term, expr.Term.Scope).TryGetValue(out var tup))
+            {
+                return expr.WithTerm(tup);
+            }
+            return expr;
+        }
 
         Expression Associate(ITerm lhs, ITerm rhs)
         {
@@ -321,7 +334,7 @@ public partial class ErgoParser : IDisposable
                     // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
                     var lhsRhs = lhsExpr.Right.GetOrThrow(new InvalidOperationException());
                     var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
-                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
+                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Term), exprParenthesized);
                 }
                 if (TryConvertExpression(rhs, out var rhsExpr, exprParenthesized)
                     && lhsExpr.Operator.Fixity == Fixity.Infix
@@ -331,7 +344,7 @@ public partial class ErgoParser : IDisposable
                 {
                     // lhs: K.a.b rhs: c$ op: .
                     var inner = BuildExpression(op, lhsExpr.Left, Maybe.Some(rhsExpr.Left));
-                    var ret = BuildExpression(rhsExpr.Operator, inner.Complex, default, exprParenthesized);
+                    var ret = BuildExpression(rhsExpr.Operator, inner.Term, default, exprParenthesized);
                     return ret;
                 }
             }
@@ -486,14 +499,14 @@ public partial class ErgoParser : IDisposable
                     break;
                 }
 
-                rhs = newRhs.Complex;
+                rhs = newRhs.Term;
                 if (!PeekNextOperator().TryGetValue(out lookahead))
                 {
                     break;
                 }
             }
 
-            lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
+            lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Term;
         }
 
         return Maybe.Some(expr)
@@ -510,8 +523,8 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return Prefix().Select<ITerm>(p => p.Complex)
-            .Or(() => Postfix().Select<ITerm>(p => p.Complex))
+        return Prefix().Select<ITerm>(p => p.Term)
+            .Or(() => Postfix().Select<ITerm>(p => p.Term))
             .Or(() => Term())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -602,7 +615,7 @@ public partial class ErgoParser : IDisposable
         return Expression()
             .Map(op => Maybe.Some(op)
                 .Where(op => WellKnown.Operators.BinaryHorn.Equals(op.Operator))
-                .Or(() => new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some<ITerm>(WellKnown.Literals.True), false)))
+                .Or(() => new Expression(WellKnown.Operators.BinaryHorn, op.Term, Maybe.Some<ITerm>(WellKnown.Literals.True), false)))
             .Map(op => Maybe.Some(op.Right.GetOrThrow(new InvalidOperationException()))
                 .Map(rhs => NTuple.FromPseudoCanonical(rhs, default, hasEmptyElement: false)
                     .Or(() => new NTuple(new[] { rhs }, scope)))

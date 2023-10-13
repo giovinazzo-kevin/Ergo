@@ -51,6 +51,12 @@ public abstract class MathBuiltIn : SolverBuiltIn
                 => -Evaluate(solver, c.Arguments[0]),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)
                 => Evaluate(solver, c.Arguments[0]),
+                var f when c.Arguments.Length == 1 && WellKnown.Functors.Round.Contains(f)
+                => ((EDecimal)Evaluate(solver, c.Arguments[0])).RoundToIntegerNoRoundedFlag(EContext.CliDecimal),
+                var f when c.Arguments.Length == 1 && WellKnown.Functors.Floor.Contains(f)
+                => EDecimal.FromInt64(((EDecimal)Evaluate(solver, c.Arguments[0])).ToInt64Unchecked()),
+                var f when c.Arguments.Length == 1 && WellKnown.Functors.Ceiling.Contains(f)
+                => EDecimal.FromDecimal(Math.Ceiling(((EDecimal)Evaluate(solver, c.Arguments[0])).ToDecimal())),
                 _ => Throw(c)
             };
         }

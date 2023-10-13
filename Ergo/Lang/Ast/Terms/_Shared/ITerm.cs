@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+
+namespace Ergo.Lang.Ast;
 
 public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
@@ -44,16 +46,13 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     };
     ITerm AsParenthesized(bool parens) => this switch
     {
-        Atom a => a,
-        Variable v => v,
         Complex c => c.AsParenthesized(parens),
+        AbstractTerm t => t.AsParenthesized(parens),
         var x => x
     };
     ITerm AsQuoted(bool quote) => this switch
     {
         Atom a => a.AsQuoted(quote),
-        Variable v => v,
-        Complex c => c,
         var x => x
     };
 

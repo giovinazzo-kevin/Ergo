@@ -12,6 +12,7 @@ public abstract class AbstractTerm : ITerm
     {
         Scope = scope;
     }
+    public abstract AbstractTerm AsParenthesized(bool parenthesized);
     public abstract Signature GetSignature();
     public abstract int CompareTo(ITerm other);
     public abstract bool Equals(ITerm other);
@@ -21,4 +22,11 @@ public abstract class AbstractTerm : ITerm
     public abstract ITerm NumberVars();
     public ITerm Substitute(IEnumerable<Substitution> s) => s.Aggregate((ITerm)this, (a, b) => a.Substitute(b));
     public abstract Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other);
+
+    public override bool Equals(object obj)
+    {
+        if (obj is ITerm t)
+            return Equals(t);
+        return base.Equals(obj);
+    }
 }

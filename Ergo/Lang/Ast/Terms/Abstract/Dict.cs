@@ -9,7 +9,7 @@ public class Dict : AbstractTerm
     protected ITerm CanonicalForm { get; }
     public Signature Signature { get; }
     public override bool IsQualified => CanonicalForm.IsQualified;
-    public override bool IsParenthesized => CanonicalForm.IsParenthesized;
+    public override bool IsParenthesized { get; }
     public override bool IsGround => CanonicalForm.IsGround;
     public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
     public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
@@ -19,7 +19,7 @@ public class Dict : AbstractTerm
     public readonly ImmutableDictionary<Atom, ITerm> Dictionary;
     public readonly Either<Atom, Variable> Functor;
 
-    public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args, Maybe<ParserScope> scope)
+    public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args, Maybe<ParserScope> scope = default, bool parenthesized = false)
         : base(scope)
     {
         args ??= Enumerable.Empty<KeyValuePair<Atom, ITerm>>();
@@ -34,14 +34,15 @@ public class Dict : AbstractTerm
         CanonicalForm = new Complex(
             WellKnown.Functors.Dict.First(),
             new[] { Functor.Reduce(a => (ITerm)a, b => b),
-                new Set(KeyValuePairs, scope)
-            });
+                new Set(KeyValuePairs, scope, false)
+            }).AsParenthesized(parenthesized);
+        IsParenthesized = parenthesized;
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
             Signature = Signature.WithTag(functor.Reduce(a => a, v => throw new InvalidOperationException()));
     }
 
-    public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder(), Scope);
+    public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder(), Scope, IsParenthesized);
 
     public override string Explain(bool canonical)
     {
@@ -79,7 +80,7 @@ public class Dict : AbstractTerm
         var newKvp = Dictionary.Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key, kvp.Value.Instantiate(ctx, vars)));
         if (newFunctor is not Variable and not Atom)
             throw new InvalidOperationException();
-        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope);
+        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope, IsParenthesized);
     }
 
     public override AbstractTerm Substitute(Substitution s)
@@ -90,9 +91,10 @@ public class Dict : AbstractTerm
         var newKvp = Dictionary.Select(kvp => new KeyValuePair<Atom, ITerm>(kvp.Key, kvp.Value.Substitute(s)));
         if (newFunctor is not Variable and not Atom)
             throw new InvalidOperationException();
-        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope);
+        return new Dict(newFunctor is Atom a ? a : (Variable)newFunctor, newKvp, Scope, IsParenthesized);
     }
 
     public override Signature GetSignature() => CanonicalForm.GetSignature();
     public override ITerm NumberVars() => CanonicalForm.NumberVars();
+    public override AbstractTerm AsParenthesized(bool parenthesized) => new Dict(Functor, Dictionary, Scope, IsParenthesized);
 }

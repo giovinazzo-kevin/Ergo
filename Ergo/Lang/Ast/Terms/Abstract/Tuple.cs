@@ -2,20 +2,20 @@
 
 public sealed class NTuple : AbstractList
 {
-    public static readonly NTuple Empty = new(ImmutableArray<ITerm>.Empty, default);
+    public static readonly NTuple Empty = new(ImmutableArray<ITerm>.Empty, default, false);
 
-    public NTuple(ImmutableArray<ITerm> head, Maybe<ParserScope> scope)
-        : base(head, scope)
+    public NTuple(ImmutableArray<ITerm> head = default, Maybe<ParserScope> scope = default, bool parenthesized = false)
+        : base(head, scope, parenthesized)
     {
-        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement, head);
+        CanonicalForm = FoldNoEmptyTailParensSingle(Operator, EmptyElement, head).AsParenthesized(parenthesized);
     }
-    public NTuple(IEnumerable<ITerm> contents, Maybe<ParserScope> scope)
-        : this(ImmutableArray.CreateRange(contents), scope) { }
+    public NTuple(IEnumerable<ITerm> contents, Maybe<ParserScope> scope = default, bool parenthesized = false)
+        : this(ImmutableArray.CreateRange(contents), scope, parenthesized) { }
     public override Operator Operator => WellKnown.Operators.Conjunction;
     public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
     public override (string Open, string Close) Braces => ("(", ")");
     protected override ITerm CanonicalForm { get; }
-    protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope) => new NTuple(head, scope);
+    protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized) => new NTuple(head, scope, parenthesized);
 
     public static Maybe<NTuple> FromPseudoCanonical(ITerm term, Maybe<ParserScope> scope, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
     {
@@ -28,7 +28,7 @@ public sealed class NTuple : AbstractList
                 var last = some.Last();
                 if (hasEmptyElement.TryGetValue(out var empty) && last.Equals(Empty.CanonicalForm) != empty)
                     return default;
-                return Maybe.Some(new NTuple(some, scope));
+                return Maybe.Some(new NTuple(some, scope, parens));
             }, () => default);
     }
     public override string Explain(bool canonical)

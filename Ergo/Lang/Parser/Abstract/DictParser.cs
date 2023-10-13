@@ -16,7 +16,7 @@ public sealed class DictParser : AbstractTermParser<Dict>
             .Map(f => new SetParser().Parse(parser)
                 .Where(args => args.Contents.All(a => WellKnown.Functors.NamedArgument.Contains(a.GetFunctor().GetOr(default))))
                 .Select(args => GetPairs(parser, args))
-                .Select(pairs => new Dict(f, pairs, scope)));
+                .Select(pairs => new Dict(f, pairs, scope, false)));
 
         static IEnumerable<KeyValuePair<Atom, ITerm>> GetPairs(ErgoParser parser, Set args)
         {

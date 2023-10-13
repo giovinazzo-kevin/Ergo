@@ -12,5 +12,5 @@ public sealed class TupleParser : AbstractListParser<NTuple>
             ._ParseArgList(parser)
         ;
 
-    protected override NTuple Construct(ImmutableArray<ITerm> seq, Maybe<ParserScope> scope) => new(seq, scope);
+    protected override NTuple Construct(ImmutableArray<ITerm> seq, Maybe<ParserScope> scope) => new(seq, scope, false);
 }

@@ -71,7 +71,7 @@ public class ParserTests : SimpleErgoTests
     public void ShouldParsePathologicalCases_ParensInArgs2()
         => ShouldParse("f(N, n, (V,L,R))",
             new Complex(new Atom("f"), new Variable("N"), new Atom("n"),
-                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }, default)));
+                new NTuple(new ITerm[] { new Variable("V"), new Variable("L"), new Variable("R") }, default, true)));
     [Fact]
     public void ShouldParsePathologicalCases_PeriodAsInfix()
         => ShouldParse("a.b",

@@ -47,9 +47,9 @@ public class AdvancedSolverTests : ErgoTests
     [InlineData("assertz(t:-⊥)", "t", "retractall(t)", 0)]
     [InlineData("assertz(t:-⊤)", "t", "retractall(t)", 1, "")]
     [InlineData("assertz(t:-(⊤; ⊤))", "t", "retractall(t)", 2, "", "")]
-    [InlineData("assertz(t), assertz(t)", "t", "retractall(t)", 2, "", "")]
+    [InlineData("(assertz(t), assertz(t))", "t", "retractall(t)", 2, "", "")]
     [InlineData("assertz(t(_))", "t(_X)", "retractall(t)", 1, "")]
-    [InlineData("assertz(t(X):-(X=⊤))", "t(X), X", "retractall(t)", 1, "X/⊤")]
+    [InlineData("assertz(t(X):-(X=⊤))", "(t(X), X)", "retractall(t)", 1, "X/⊤")]
     #endregion
     public void ShouldSolveSetups(string setup, string goal, string cleanup, int numSolutions, params string[] expected)
         => ShouldSolve($"setup_call_cleanup(({setup}), ({goal}), ({cleanup}))", numSolutions, false, expected);

@@ -12,10 +12,10 @@ public sealed class ListParser : AbstractListParser<List>
                 arguments = NTuple.FromPseudoCanonical(cplx.Arguments[0], scope, false, false)
                     .Select(x => x.Contents)
                     .GetOr(arguments);
-                return new List(arguments, Maybe.Some(cplx.Arguments[1]), scope);
+                return new List(arguments, Maybe.Some(cplx.Arguments[1]), scope, false);
             }
         }
 
-        return new List(seq, default, scope);
+        return new List(seq, default, scope, false);
     }
 }

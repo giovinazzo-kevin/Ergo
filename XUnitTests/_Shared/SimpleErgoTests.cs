@@ -15,7 +15,7 @@ public class SimpleErgoTests
         var parsed = new Parsed<T>(Facade, query, _ => default, Array.Empty<Operator>())
             .Value.GetOrThrow(new InvalidOperationException($"Could not parse: {query}"));
         if (parsed is IExplainable expl && expected is IExplainable expExpl)
-            Assert.Equal(expl.Explain(true), expExpl.Explain(true));
+            Assert.Equal(expExpl.Explain(true), expl.Explain(true));
         else Assert.Equal(parsed, expected);
     }
     // "⊤" : "⊥"

@@ -10,7 +10,7 @@ public abstract class AbstractList : AbstractTerm
     public readonly bool IsEmpty;
 
     public override bool IsQualified => CanonicalForm.IsQualified;
-    public override bool IsParenthesized => CanonicalForm.IsParenthesized;
+    public override bool IsParenthesized { get; }
     public override bool IsGround => CanonicalForm.IsGround;
     public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
     public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
@@ -22,15 +22,17 @@ public abstract class AbstractList : AbstractTerm
 
     protected abstract ITerm CanonicalForm { get; }
 
-    public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope)
+    public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized)
         : base(scope)
     {
         Contents = head;
         IsEmpty = head.Length == 0;
+        IsParenthesized = parenthesized;
     }
-    public AbstractList(IEnumerable<ITerm> args, Maybe<ParserScope> scope) : this(ImmutableArray.CreateRange(args), scope) { }
-    protected abstract AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope);
+    public AbstractList(IEnumerable<ITerm> args, Maybe<ParserScope> scope, bool parenthesized) : this(ImmutableArray.CreateRange(args), scope, parenthesized) { }
+    protected abstract AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized);
 
+    public override AbstractTerm AsParenthesized(bool parenthesized) => Create(Contents, Scope, parenthesized);
     public override string Explain(bool canonical)
     {
         if (IsEmpty)
@@ -51,7 +53,7 @@ public abstract class AbstractList : AbstractTerm
         {
             builder[i] = Contents[i].Instantiate(ctx, vars);
         }
-        return Create(builder.ToImmutableArray(), Scope);
+        return Create(builder.ToImmutableArray(), Scope, IsParenthesized);
     }
     public override AbstractTerm Substitute(Substitution s)
     {
@@ -60,7 +62,7 @@ public abstract class AbstractList : AbstractTerm
         {
             builder[i] = Contents[i].Substitute(s);
         }
-        return Create(builder.ToImmutableArray(), Scope);
+        return Create(builder.ToImmutableArray(), Scope, IsParenthesized);
     }
     public virtual AbstractTerm Substitute(SubstitutionMap s)
     {
@@ -69,7 +71,7 @@ public abstract class AbstractList : AbstractTerm
         {
             builder[i] = Contents[i].Substitute(s);
         }
-        return Create(builder.ToImmutableArray(), Scope);
+        return Create(builder.ToImmutableArray(), Scope, IsParenthesized);
     }
     public override ITerm NumberVars() => CanonicalForm.NumberVars();
     /// <summary>
@@ -135,15 +137,7 @@ public abstract class AbstractList : AbstractTerm
 
     public static explicit operator Complex(AbstractList list)
     {
-        try
-        {
-            return (Complex)list.CanonicalForm;
-        }
-        catch (Exception e)
-        {
-            ;
-        }
-        return default;
+        return (Complex)list.CanonicalForm;
     }
     public static Maybe<IEnumerable<ITerm>> Unfold(ITerm term, ITerm emptyElement, Func<ITerm, bool> matchTail, HashSet<Atom> functors)
     {

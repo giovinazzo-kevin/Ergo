@@ -88,13 +88,13 @@ public partial class ErgoParser
         var scope = GetScope();
         return Parenthesized(delims.OpeningDelim, delims.ClosingDelim, () =>
                 Unfold(ExpressionOrTerm())
-                .Select(t => new UntypedSequence(op, emptyElement, delims, ImmutableArray.CreateRange(t), scope))
-                .Or(() => new UntypedSequence(op, emptyElement, delims, ImmutableArray<ITerm>.Empty, scope)))
+                .Select(t => new UntypedSequence(op, emptyElement, delims, ImmutableArray.CreateRange(t), scope, false))
+                .Or(() => new UntypedSequence(op, emptyElement, delims, ImmutableArray<ITerm>.Empty, scope, false)))
             .Or(() => Fail<UntypedSequence>(scope.LexerState));
         Maybe<IEnumerable<ITerm>> Unfold(Maybe<ITerm> term)
         {
             // Special case for tuples, TODO: see if it should be generalized to all separators
-            if (term.TryGetValue(out var t) && t is NTuple tup && tup.Operator.Equals(separator) && tup.Contents.Length > 1
+            if (term.TryGetValue(out var t) && !t.IsParenthesized && t is NTuple tup && tup.Operator.Equals(separator) && tup.Contents.Length > 1
                 && NTuple.FromPseudoCanonical((Complex)tup, tup.Scope).TryGetValue(out var actualTup))
                 return actualTup.Contents;
             return term

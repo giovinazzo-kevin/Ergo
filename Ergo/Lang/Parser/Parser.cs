@@ -251,9 +251,9 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Parenthesized("(", ")", () => Expression())
-                    .Select<ITerm>(x => x.Term.AsParenthesized(true))
-            .Or(() => Parenthesized("(", ")", () => Inner())
-                .Select(x => x.AsParenthesized(true)))
+                .Select(x => x.Term.AsParenthesized(true))
+            .Or(() => Parenthesized("(", ")", () => Inner()
+                .Select(x => x.AsParenthesized(true))))
             .Or(() => Inner())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))

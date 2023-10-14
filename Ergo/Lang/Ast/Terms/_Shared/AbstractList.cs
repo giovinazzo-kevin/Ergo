@@ -167,10 +167,17 @@ public abstract class AbstractList : AbstractTerm
             {
                 if (c.Arity == 2)
                 {
-                    list.AddRange(Unfold(c.Arguments[0], emptyElement, matchTail, functors)
-                        .Or(() => Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { c.Arguments[0] }))
-                        .AsEnumerable()
-                        .SelectMany(x => x));
+                    if (!c.Arguments[0].IsParenthesized)
+                    {
+                        list.AddRange(Unfold(c.Arguments[0], emptyElement, matchTail, functors)
+                            .Or(() => Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { c.Arguments[0] }))
+                            .AsEnumerable()
+                            .SelectMany(x => x));
+                    }
+                    else
+                    {
+                        list.Add(c.Arguments[0]);
+                    }
                     term = c.Arguments[1];
                 }
                 else if (c.Arity == 1)

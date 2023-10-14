@@ -28,7 +28,7 @@ public sealed class NTuple : AbstractList
                 var last = some.Last();
                 if (hasEmptyElement.TryGetValue(out var empty) && last.Equals(Empty.CanonicalForm) != empty)
                     return default;
-                return Maybe.Some(new NTuple(some, scope, parens));
+                return Maybe.Some(new NTuple(some, scope, term.IsParenthesized));
             }, () => default);
     }
     public override string Explain(bool canonical)

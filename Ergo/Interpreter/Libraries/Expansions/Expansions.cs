@@ -177,7 +177,7 @@ public class Expansions : Library
                     }
                     var cartesian = expansions.CartesianProduct();
                     var isLambda = WellKnown.Functors.Lambda.Contains(cplx.Functor) && cplx.Arity == 2
-                        && cplx.Arguments[0].IsAbstract<Lang.Ast.List>().TryGetValue(out _);
+                        && cplx.Arguments[0] is Lang.Ast.List;
                     foreach (var argList in cartesian)
                     {
                         var newCplx = cplx

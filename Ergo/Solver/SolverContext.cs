@@ -224,14 +224,14 @@ public sealed class SolverContext : IDisposable
             scope = scope.WithChoicePoint();
 
         // Treat comma-expression complex ITerms as proper expressions
-        if (NTuple.FromPseudoCanonical(goal, default, default).TryGetValue(out var expr))
+        if (goal is NTuple goalList)
         {
-            if (expr.Contents.Length == 1)
+            if (goalList.Contents.Length == 1)
             {
-                goal = expr.Contents.Single();
+                goal = goalList.Contents.Single();
                 goto begin; // gotos are used to prevent allocating unnecessary stack frames whenever possible
             }
-            foreach (var s in SolveQuery(expr, scope, ct: ct))
+            foreach (var s in SolveQuery(goalList, scope, ct: ct))
             {
                 _debuggerSignal.WaitOne();
                 yield return s;

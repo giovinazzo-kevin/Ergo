@@ -61,7 +61,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 
                 argVars = argVars.Substitute(subTmpl);
                 argTmpl = argTmpl.Substitute(subTmpl);
-                var argList = argVars.IsAbstract<List>().GetOrThrow(new InvalidOperationException());
+                var argList = (List)argVars;
                 return (argList, argTmpl);
             })
             .ToLookup(sol => sol.argList, sol => sol.argTmpl)

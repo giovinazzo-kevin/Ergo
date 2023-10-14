@@ -67,6 +67,7 @@ public readonly struct Substitution
 
     private bool Unify(ITerm x, ITerm y)
     {
+        Console.WriteLine($"{x.Explain()}/{y.Explain()}");
         if (!x.Equals(y))
         {
             // Check if x unifies with y in one direction

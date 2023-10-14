@@ -50,7 +50,7 @@ public class Expansions : Library
             foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
-                var pred = Predicate.Substitute(match.Rhs, match.Substitutions.Select(x => x.Inverted()));
+                var pred = Predicate.Substitute(match.Rhs, match.Substitutions);
 
                 foreach (var exp in ExpandPredicate(pred, qse.Scope))
                 {

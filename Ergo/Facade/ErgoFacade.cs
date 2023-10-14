@@ -37,7 +37,7 @@ public readonly struct ErgoFacade
 
     private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
     private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
-    private readonly ImmutableDictionary<Type, AbstractTermParser> _parsers = ImmutableDictionary<Type, AbstractTermParser>.Empty;
+    private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
     private readonly ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> _dataSinks = ImmutableDictionary<Type, ImmutableHashSet<IDataSink>>.Empty;
     private readonly ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> _dataSources = ImmutableDictionary<Type, ImmutableHashSet<IDataSource>>.Empty;
     public readonly Maybe<TextReader> Input = default;
@@ -50,7 +50,7 @@ public readonly struct ErgoFacade
     private ErgoFacade(
         ImmutableHashSet<Func<Library>> libs,
         ImmutableHashSet<ShellCommand> commands,
-        ImmutableDictionary<Type, AbstractTermParser> parsers,
+        ImmutableDictionary<Type, IAbstractTermParser> parsers,
         ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> dataSinks,
         ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> dataSources,
         Maybe<TextReader> inStream,
@@ -76,7 +76,7 @@ public readonly struct ErgoFacade
         => new(_libraries, _commands.Add(command), _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade RemoveCommand(ShellCommand command)
         => new(_libraries, _commands.Remove(command), _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
-    public ErgoFacade AddAbstractParser<A>(AbstractTermParser<A> parser) where A : AbstractTerm
+    public ErgoFacade AddAbstractParser<A>(IAbstractTermParser<A> parser) where A : AbstractTerm
         => new(_libraries, _commands, _parsers.SetItem(typeof(A), parser), _dataSinks, _dataSources, Input, Output, Error, InputReader);
     public ErgoFacade RemoveAbstractParser<A>() where A : AbstractTerm
         => new(_libraries, _commands, _parsers.Remove(typeof(A)), _dataSinks, _dataSources, Input, Output, Error, InputReader);
@@ -133,7 +133,7 @@ public readonly struct ErgoFacade
         foreach (var type in lookInAssembly.GetTypes())
         {
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            if (type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(AbstractTermParser<>)) is not { } inter) continue;
+            if (type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAbstractTermParser<>)) is not { } inter) continue;
             var inst = Activator.CreateInstance(type);
             newFacade = (ErgoFacade)This_AddParser.MakeGenericMethod(inter.GetGenericArguments().Single()).Invoke(newFacade, new object[] { inst });
         }

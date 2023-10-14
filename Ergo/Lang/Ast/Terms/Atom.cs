@@ -1,4 +1,5 @@
-﻿using PeterO.Numbers;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using PeterO.Numbers;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -99,6 +100,7 @@ public readonly struct Atom : ITerm
 
     public int CompareTo(ITerm o)
     {
+        if (o is AbstractTerm abs) return -abs.CompareTo(this);
         if (o is Variable) return 1;
         if (o is Complex) return -1;
         if (o is not Atom other) throw new InvalidCastException();

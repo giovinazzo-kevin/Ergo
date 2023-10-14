@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang.Parser;
 
-public interface AbstractTermParser
+public interface IAbstractTermParser
 {
     int ParsePriority { get; }
     Maybe<AbstractTerm> Parse(ErgoParser parser);

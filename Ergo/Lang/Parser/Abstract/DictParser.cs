@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang.Parser;
 
-public sealed class DictParser : AbstractTermParser<Dict>
+public sealed class DictParser : IAbstractTermParser<Dict>
 {
     public int ParsePriority => 0;
     public Maybe<Dict> Parse(ErgoParser parser)

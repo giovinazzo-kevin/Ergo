@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
-[DebuggerDisplay("{ Explain() }")]
+[DebuggerDisplay("{ Explain(false) }")]
 public class Dict : AbstractTerm
 {
     protected ITerm CanonicalForm { get; }

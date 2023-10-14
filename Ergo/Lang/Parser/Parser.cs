@@ -7,8 +7,8 @@ namespace Ergo.Lang;
 
 public partial class ErgoParser : IDisposable
 {
-    private static readonly Comparer<AbstractTermParser> _absComparer =
-        Comparer<AbstractTermParser>.Create((x, y) => x.ParsePriority.CompareTo(y.ParsePriority));
+    private static readonly Comparer<IAbstractTermParser> _absComparer =
+        Comparer<IAbstractTermParser>.Create((x, y) => x.ParsePriority.CompareTo(y.ParsePriority));
 
     private InstantiationContext _discardContext;
     private HashSet<long> _memoizationFailures = new();
@@ -21,8 +21,8 @@ public partial class ErgoParser : IDisposable
         IsEnabled = false,
 #endif
     };
-    protected Dictionary<Type, AbstractTermParser> AbstractTermParsers { get; private set; } = new();
-    protected List<AbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
+    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
+    protected List<IAbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
 
     public readonly ErgoLexer Lexer;
     public readonly ErgoFacade Facade;
@@ -84,7 +84,7 @@ public partial class ErgoParser : IDisposable
         return default;
     }
 
-    private Maybe<T> MemoizeFailureAndFail<T>(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
+    public Maybe<T> MemoizeFailureAndFail<T>(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
         MemoizeFailure(state, callerName);
         return Fail<T>(state);
@@ -97,17 +97,17 @@ public partial class ErgoParser : IDisposable
         _discardContext = new(string.Empty);
     }
 
-    public bool RemoveAbstractParser<T>(out AbstractTermParser<T> parser)
+    public bool RemoveAbstractParser<T>(out IAbstractTermParser<T> parser)
         where T : AbstractTerm
     {
         parser = default;
         if (!AbstractTermParsers.Remove(typeof(T), out var parser_))
             return false;
         SortedAbstractTermParsers.Remove(parser);
-        parser = (AbstractTermParser<T>)parser_;
+        parser = (IAbstractTermParser<T>)parser_;
         return true;
     }
-    public void AddAbstractParser<T>(AbstractTermParser<T> parser)
+    public void AddAbstractParser<T>(IAbstractTermParser<T> parser)
         where T : AbstractTerm
     {
         AbstractTermParsers.Add(typeof(T), parser);

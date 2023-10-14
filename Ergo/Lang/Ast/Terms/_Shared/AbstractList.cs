@@ -195,7 +195,7 @@ public abstract class AbstractList : AbstractTerm
 
             if (!matchTail(term))
             {
-                return Enumerable.Empty<ITerm>();
+                return list;
             }
 
             list.Add(term);

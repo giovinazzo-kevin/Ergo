@@ -27,6 +27,14 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             Assert.Equal(expl.Explain(true), expExpl.Explain(true));
         else Assert.Equal(parsed, expected);
     }
+    protected void ShouldParse<T>(string query, Func<T, bool> expected)
+    {
+        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query)
+            .GetOrThrow(new InvalidOperationException());
+        if (parsed is IExplainable expl && expected is IExplainable expExpl)
+            Assert.Equal(expl.Explain(true), expExpl.Explain(true));
+        else Assert.True(expected(parsed));
+    }
     // "⊤" : "⊥"
     protected void ShouldNotParse<T>(string query, T expected)
     {

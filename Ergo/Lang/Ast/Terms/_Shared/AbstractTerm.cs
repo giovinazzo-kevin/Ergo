@@ -29,4 +29,6 @@ public abstract class AbstractTerm : ITerm
             return Equals(t);
         return base.Equals(obj);
     }
+
+    public override int GetHashCode() => base.GetHashCode();
 }

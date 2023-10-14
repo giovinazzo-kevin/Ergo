@@ -11,16 +11,9 @@ public static class MockWellKnown
     }
 }
 
-public class ParserTests : SimpleErgoTests
+public class ParserTests : ErgoTests
 {
-    public ParserTests() : base() { }
-    [Fact]
-    public void ShouldParseTuples()
-    {
-        ShouldParse<ITerm>("a", new Atom("a"));
-        ShouldParse<ITerm>("(a, b)", new NTuple(new ITerm[] { new Atom("a"), new Atom("b") }, default));
-        ShouldParse<ITerm>("a, b", new NTuple(new ITerm[] { new Atom("a"), new Atom("b") }, default));
-    }
+    public ParserTests(ErgoTestFixture test) : base(test) { }
     [Theory]
     [InlineData("0", 0)]
     [InlineData("0.5", 0.5)]

@@ -75,8 +75,13 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         head = cplx.Arguments[1];
         return Maybe.Some(module);
     }
-    [Obsolete("Not obsolete, but you're probably looking for the extension method ITerm.Unify")]
-    Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other);
+    /// <summary>
+    /// Unifies a term (lhs) with another term (rhs) left-to-right.
+    /// NOTE: You probably want to call the extension method ITerm.Unify(other), which performs the unification both ways.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    internal Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other);
     ITerm Substitute(Substitution s);
     ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
     ITerm Concat(params ITerm[] next)

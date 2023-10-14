@@ -85,7 +85,7 @@ public readonly partial struct Complex : ITerm
         {
             for (var i = 0; i < Arguments.Length; i++)
             {
-                if (!Arguments[i].Unify(c.Arguments[i]).TryGetValue(out var argMap))
+                if (!Arguments[i].UnifyLeftToRight(c.Arguments[i]).TryGetValue(out var argMap))
                     return default;
                 map.AddRange(argMap);
             }

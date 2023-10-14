@@ -69,19 +69,23 @@ public readonly struct Substitution
     {
         if (!x.Equals(y))
         {
+            // Check if x unifies with y in one direction
             if (x.UnifyLeftToRight(y).TryGetValue(out var xSubY))
             {
                 ApplySubstitutions(xSubY);
                 return true;
             }
-            else if (y.UnifyLeftToRight(x).TryGetValue(out var ySubX))
+            // Then in the other direction (and invert the substitutions)
+            if (y.UnifyLeftToRight(x).TryGetValue(out var ySubX))
             {
                 ySubX.Invert();
                 ApplySubstitutions(ySubX);
                 return true;
             }
+            // x doesn't unify with y and y doesn't unify with x
             return false;
         }
+        // x equals y, so they unify by default
         return true;
     }
 

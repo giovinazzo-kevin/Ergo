@@ -14,6 +14,9 @@ public static partial class WellKnown
         public static readonly HashSet<Atom> Multiplication = new(new Atom[] { new("*") });
         public static readonly HashSet<Atom> Division = new(new Atom[] { new("/") });
         public static readonly HashSet<Atom> IntDivision = new(new Atom[] { new("//") });
+        public static readonly HashSet<Atom> Floor = new(new Atom[] { new("floor") });
+        public static readonly HashSet<Atom> Round = new(new Atom[] { new("round") });
+        public static readonly HashSet<Atom> Ceiling = new(new Atom[] { new("ceil") });
         public static readonly HashSet<Atom> Arity = Division;
         public static readonly HashSet<Atom> Module = new(new Atom[] { new(":") });
         public static readonly HashSet<Atom> Dict = new(new Atom[] { new("dict") });

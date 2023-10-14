@@ -13,14 +13,14 @@ public sealed class CommaToList : SolverBuiltIn
         var (commaArg, listArg) = (arguments[0], arguments[1]);
         if (listArg is not Variable)
         {
-            if (!listArg.IsAbstract<List>().TryGetValue(out var list))
+            if (listArg is not List list)
             {
                 yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
                 yield break;
             }
 
-            var comma = new NTuple(list.Contents);
-            if (!commaArg.Unify(comma.CanonicalForm).TryGetValue(out var subs))
+            var comma = new NTuple(list.Contents, default);
+            if (!LanguageExtensions.Unify(commaArg, comma).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;
@@ -32,14 +32,14 @@ public sealed class CommaToList : SolverBuiltIn
 
         if (commaArg is not Variable)
         {
-            if (!commaArg.IsAbstract<NTuple>().TryGetValue(out var comma))
+            if (commaArg is not NTuple comma)
             {
                 yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
                 yield break;
             }
 
-            var list = new List(comma.Contents);
-            if (!listArg.Unify(list.CanonicalForm).TryGetValue(out var subs))
+            var list = new List(comma.Contents, default, default);
+            if (!LanguageExtensions.Unify(listArg, list).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

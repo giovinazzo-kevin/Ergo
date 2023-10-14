@@ -14,7 +14,7 @@ public sealed class Explain : SolverBuiltIn
         {
             yield return new(WellKnown.Literals.True, new Substitution(arguments[1], expl));
         }
-        else if (arguments[1].Unify(expl).TryGetValue(out var subs))
+        else if (LanguageExtensions.Unify(arguments[1], expl).TryGetValue(out var subs))
         {
             yield return new(WellKnown.Literals.True, subs);
         }

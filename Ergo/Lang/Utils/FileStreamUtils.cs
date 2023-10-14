@@ -15,12 +15,13 @@ public static class FileStreamUtils
             : (string.Empty, module);
         var nameNoExt = Path.GetFileNameWithoutExtension(name);
         var fileName = searchDirectories
+            .Select(d => Path.Combine(d, prefix))
+            .Where(Directory.Exists)
             .SelectMany(d =>
             {
                 try
                 {
-                    var path = Path.Combine(d, prefix);
-                    return Directory.EnumerateFiles(path, "*.ergo", SearchOption.AllDirectories);
+                    return Directory.EnumerateFiles(d, "*.ergo", SearchOption.AllDirectories);
                 }
                 catch
                 {

@@ -1,5 +1,5 @@
 ﻿:- module(func, [
-	map/3, reduce/3, filter/3
+	map/3, reduce/3, filter/3, sum/2
 ]).
 
 map(_, [], []) :- !.
@@ -19,3 +19,5 @@ filter(Lambda, [H|T], T2) :-
 	filter(Lambda, T, T2), !.
 filter(Lambda, [H|T], [H|T2]) :-
 	filter(Lambda, T, T2).
+	
+sum(List, Sum) :- reduce([A, B, C]>>(C:=A+B), List, Sum).

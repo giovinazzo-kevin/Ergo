@@ -1,4 +1,4 @@
-﻿using Ergo.Lang.Utils;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -32,14 +32,14 @@ public readonly struct Substitution
         rhs = Rhs;
     }
 
-    public Maybe<SubstitutionMap> Unify(bool ignoreAbstractForms = false)
+    public Maybe<SubstitutionMap> Unify()
     {
         var map = new SubstitutionMap();
         E.Clear();
         E.Enqueue(this);
         while (E.TryDequeue(out var sub))
         {
-            if (!Unify(sub.Lhs, sub.Rhs, ignoreAbstractForms))
+            if (!Unify(sub.Lhs, sub.Rhs))
                 return default;
         }
         map.AddRange(S);
@@ -60,29 +60,16 @@ public readonly struct Substitution
         }
         S.Enqueue(s);
     }
+    private void ApplySubstitutions(SubstitutionMap map)
+    {
+        foreach (var s in map)
+            ApplySubstitution(s);
+    }
 
-    private bool Unify(ITerm x, ITerm y, bool ignoreAbstractForms = false)
+    private bool Unify(ITerm x, ITerm y)
     {
         if (!x.Equals(y))
         {
-            //var absUnif = x.AbstractForm.Map(X => y.AbstractForm.Map(Y => X.Unify(Y)));
-            //if (absUnif.TryGetValue(out var subs))
-            //{
-            //    foreach (var s in subs)
-            //        E.Enqueue(s);
-            //    return true;
-            //}
-
-            if (!ignoreAbstractForms
-                && AbstractTermCache.Default.IsAbstract(x, default).TryGetValue(out var xAbs)
-                && AbstractTermCache.Default.IsAbstract(y, default).TryGetValue(out var yAbs)
-                && xAbs.Unify(yAbs).TryGetValue(out var subs))
-            {
-                foreach (var s in subs)
-                    E.Enqueue(s);
-                return true;
-            }
-
             if (y is Variable)
             {
                 ApplySubstitution(new Substitution(y, x));
@@ -90,6 +77,18 @@ public readonly struct Substitution
             else if (x is Variable)
             {
                 ApplySubstitution(new Substitution(x, y));
+            }
+            else if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
+            {
+                foreach (var s in ayWithX)
+                    E.Enqueue(s);
+                return true;
+            }
+            else if (x is AbstractTerm ax && ax.Unify(y).TryGetValue(out var axWithY))
+            {
+                foreach (var s in axWithY)
+                    E.Enqueue(s);
+                return true;
             }
             else if (x is Complex cx && y is Complex cy)
             {
@@ -110,7 +109,7 @@ public readonly struct Substitution
                 return false;
             }
         }
-
+        // x equals y, so they unify by default
         return true;
     }
 

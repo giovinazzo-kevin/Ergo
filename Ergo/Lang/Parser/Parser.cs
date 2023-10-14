@@ -7,19 +7,33 @@ namespace Ergo.Lang;
 
 public partial class ErgoParser : IDisposable
 {
-    private InstantiationContext _discardContext;
-    private HashSet<string> _memoizationFailures = new();
-    private Dictionary<string, object> _memoizationTable = new();
+    private static readonly Comparer<AbstractTermParser> _absComparer =
+        Comparer<AbstractTermParser>.Create((x, y) => x.ParsePriority.CompareTo(y.ParsePriority));
 
-    private readonly DiagnosticProbe Probe = new();
-    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
+    private InstantiationContext _discardContext;
+    private HashSet<long> _memoizationFailures = new();
+    private Dictionary<long, object> _memoizationTable = new();
+
+
+    private readonly DiagnosticProbe Probe = new()
+    {
+#if !ERGO_PARSER_DIAGNOSTICS
+        IsEnabled = false,
+#endif
+    };
+    protected Dictionary<Type, AbstractTermParser> AbstractTermParsers { get; private set; } = new();
+    protected List<AbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
 
     public readonly ErgoLexer Lexer;
     public readonly ErgoFacade Facade;
 
     public ParserScope GetScope() => new(Lexer.State);
-
-    private string GetMemoKey(ErgoLexer.StreamState state, string callerName) => $"{state}@{callerName}";
+    private long GetMemoKey(ErgoLexer.StreamState state, string callerName)
+    {
+        long hash = state.GetHashCode();
+        hash = (hash << 5) - hash + callerName.GetHashCode();
+        return hash;
+    }
 
     private bool IsFailureMemoized(ErgoLexer.StreamState state, [CallerMemberName] string callerName = "")
     {
@@ -83,45 +97,39 @@ public partial class ErgoParser : IDisposable
         _discardContext = new(string.Empty);
     }
 
-    public bool RemoveAbstractParser<T>(out IAbstractTermParser<T> parser)
-        where T : IAbstractTerm
+    public bool RemoveAbstractParser<T>(out AbstractTermParser<T> parser)
+        where T : AbstractTerm
     {
         parser = default;
         if (!AbstractTermParsers.Remove(typeof(T), out var parser_))
             return false;
-        parser = (IAbstractTermParser<T>)parser_;
-        foreach (var functor in parser.FunctorsToIndex)
-        {
-            AbstractTermCache.Default.Unregister(functor, typeof(T));
-        }
+        SortedAbstractTermParsers.Remove(parser);
+        parser = (AbstractTermParser<T>)parser_;
         return true;
     }
-    public void AddAbstractParser<T>(IAbstractTermParser<T> parser)
-        where T : IAbstractTerm
+    public void AddAbstractParser<T>(AbstractTermParser<T> parser)
+        where T : AbstractTerm
     {
-        foreach (var functor in parser.FunctorsToIndex)
-        {
-            AbstractTermCache.Default.Register(functor, typeof(T));
-        }
         AbstractTermParsers.Add(typeof(T), parser);
+        SortedAbstractTermParsers.Add(parser);
+        SortedAbstractTermParsers.Sort(_absComparer);
     }
 
     public Maybe<IEnumerable<Operator>> GetOperatorsFromFunctor(Atom functor)
     {
-        var match = Lexer.AvailableOperators
-            .Where(op => op.Synonyms.Any(s => functor.Equals(s)));
-        if (!match.Any())
-        {
+        if (functor.Value is not string f)
             return default;
-        }
-
-        return Maybe.Some(match);
+        if (!Lexer.OperatorLookup.TryGetValue(f, out var ops))
+            return default;
+        if (!ops.Any())
+            return default;
+        return Maybe.Some((IEnumerable<Operator>)ops);
     }
 
     public Maybe<T> Abstract<T>()
-        where T : IAbstractTerm => Abstract(typeof(T)).Select(x => (T)x);
+        where T : AbstractTerm => Abstract(typeof(T)).Select(x => (T)x);
 
-    public Maybe<IAbstractTerm> Abstract(Type type)
+    public Maybe<AbstractTerm> Abstract(Type type)
     {
         var watch = Probe.Enter();
         if (!AbstractTermParsers.TryGetValue(type, out var parser))
@@ -192,7 +200,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Atom()
-            .Map(functor => Abstract<NTuple>()
+            .Map(functor => TupleParser.ParseArgList(this) // Regular tuples can't be 1 item long, but arg lists can.
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
             .Or(() => MemoizeFailureAndFail<Complex>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -209,13 +217,28 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return Expression()
-                .Select<ITerm>(e => e.Complex)
+        return Expression().Select<ITerm>(e => e.Term)
             .Or(() => Term())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             .Select(x => x.WithScope(scope))
             ;
+    }
+
+    public Maybe<AbstractTerm> Abstract()
+    {
+        var watch = Probe.Enter();
+        var scope = GetScope();
+        if (SortedAbstractTermParsers.Count > 0)
+        {
+            var abstractFold = SortedAbstractTermParsers.Skip(1)
+                .Aggregate(SortedAbstractTermParsers.First().Parse(this).Or(() => Fail<AbstractTerm>(scope.LexerState)),
+                    (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<AbstractTerm>(scope.LexerState)))
+                ;
+            return abstractFold
+                .Do(() => Probe.Leave(watch));
+        }
+        return default;
     }
 
     public Maybe<ITerm> Term()
@@ -228,9 +251,9 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Parenthesized("(", ")", () => Expression())
-                    .Select<ITerm>(x => x.Complex.AsParenthesized(true))
-            .Or(() => Parenthesized("(", ")", () => Inner())
-                .Select(x => x.AsParenthesized(true)))
+                .Select(x => x.Term.AsParenthesized(true))
+            .Or(() => Parenthesized("(", ")", () => Inner()
+                .Select(x => x.AsParenthesized(true))))
             .Or(() => Inner())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -243,20 +266,8 @@ public partial class ErgoParser : IDisposable
             var primary = () => Variable().Select(x => (ITerm)x)
                 .Or(() => Complex().Select(x => (ITerm)x))
                 .Or(() => Atom().Select(x => (ITerm)x))
-                .Or(() => Fail<ITerm>(scope.LexerState))
-                ;
-            if (AbstractTermParsers.Values.Any())
-            {
-                var parsers = AbstractTermParsers.Values.ToArray();
-                var abstractFold = parsers.Skip(1)
-                    .Aggregate(parsers.First().Parse(this).Or(() => Fail<IAbstractTerm>(scope.LexerState)),
-                        (a, b) => a.Or(() => b.Parse(this)).Or(() => Fail<IAbstractTerm>(scope.LexerState)))
-                    .Select(x => x.CanonicalForm);
-                return abstractFold
-                    .Or(primary);
-            }
-
-            return primary();
+                .Or(() => Fail<ITerm>(scope.LexerState));
+            return Abstract().Select(x => (ITerm)x).Or(() => primary());
         }
     }
 
@@ -284,16 +295,29 @@ public partial class ErgoParser : IDisposable
             if (op.Fixity == Fixity.Infix)
             {
                 var inner = BuildExpression(op, lhsExpr.Left, maybeRhs);
-                var ret = BuildExpression(lhsExpr.Operator, inner.Complex, default, exprParenthesized);
+                var ret = BuildExpression(lhsExpr.Operator, inner.Term, default, exprParenthesized);
                 Probe.Leave(watch);
                 return ret;
             }
         }
         return maybeRhs
             .Select(rhs => Associate(lhs, rhs))
+            .Select(TryConvertCommaExpression)
             .Do(() => Probe.Leave(watch))
             .GetOr(new Expression(op, lhs, Maybe<ITerm>.None, lhs.IsParenthesized || exprParenthesized))
             ;
+
+        // Special case for tuples (comma-expressions). Since they are so ingrained in the language,
+        // parsing can be very ambiguous in the non-parenthesized case. Therefore it's best to parse
+        // them as expressions and unfold them right at the end by overwriting the expression.
+        Expression TryConvertCommaExpression(Expression expr)
+        {
+            if (NTuple.FromPseudoCanonical(expr.Term, expr.Term.Scope).TryGetValue(out var tup))
+            {
+                return expr.WithTerm(tup);
+            }
+            return expr;
+        }
 
         Expression Associate(ITerm lhs, ITerm rhs)
         {
@@ -310,7 +334,7 @@ public partial class ErgoParser : IDisposable
                     // a, b, c -> ','(','(','(a, b), c)) -> ','(a, ','(b, ','(c))
                     var lhsRhs = lhsExpr.Right.GetOrThrow(new InvalidOperationException());
                     var newRhs = BuildExpression(lhsExpr.Operator, lhsRhs, Maybe.Some(rhs), exprParenthesized);
-                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Complex), exprParenthesized);
+                    return BuildExpression(op, lhsExpr.Left, Maybe.Some<ITerm>(newRhs.Term), exprParenthesized);
                 }
                 if (TryConvertExpression(rhs, out var rhsExpr, exprParenthesized)
                     && lhsExpr.Operator.Fixity == Fixity.Infix
@@ -320,15 +344,9 @@ public partial class ErgoParser : IDisposable
                 {
                     // lhs: K.a.b rhs: c$ op: .
                     var inner = BuildExpression(op, lhsExpr.Left, Maybe.Some(rhsExpr.Left));
-                    var ret = BuildExpression(rhsExpr.Operator, inner.Complex, default, exprParenthesized);
+                    var ret = BuildExpression(rhsExpr.Operator, inner.Term, default, exprParenthesized);
                     return ret;
                 }
-            }
-            // Special case for comma-lists: always parse them as NTuples
-            if (WellKnown.Operators.Conjunction.Equals(op))
-            {
-                var list = (Complex)new NTuple(new[] { lhs, rhs }).CanonicalForm;
-                return new Expression(list);
             }
             return new Expression(op, lhs, Maybe.Some(rhs), exprParenthesized);
         }
@@ -481,14 +499,14 @@ public partial class ErgoParser : IDisposable
                     break;
                 }
 
-                rhs = newRhs.Complex;
+                rhs = newRhs.Term;
                 if (!PeekNextOperator().TryGetValue(out lookahead))
                 {
                     break;
                 }
             }
 
-            lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Complex;
+            lhs = (expr = BuildExpression(op, lhs, Maybe.Some(rhs))).Term;
         }
 
         return Maybe.Some(expr)
@@ -505,8 +523,8 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return Prefix().Select<ITerm>(p => p.Complex)
-            .Or(() => Postfix().Select<ITerm>(p => p.Complex))
+        return Prefix().Select<ITerm>(p => p.Term)
+            .Or(() => Postfix().Select<ITerm>(p => p.Term))
             .Or(() => Term())
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
@@ -597,13 +615,13 @@ public partial class ErgoParser : IDisposable
         return Expression()
             .Map(op => Maybe.Some(op)
                 .Where(op => WellKnown.Operators.BinaryHorn.Equals(op.Operator))
-                .Or(() => new Expression(WellKnown.Operators.BinaryHorn, op.Complex, Maybe.Some<ITerm>(WellKnown.Literals.True), false)))
+                .Or(() => new Expression(WellKnown.Operators.BinaryHorn, op.Term, Maybe.Some<ITerm>(WellKnown.Literals.True), false)))
             .Map(op => Maybe.Some(op.Right.GetOrThrow(new InvalidOperationException()))
-                .Map(rhs => NTuple.FromPseudoCanonical(rhs, default, hasEmptyElement: false)
-                    .Or(() => new NTuple(new[] { rhs })))
+                .Map(rhs => NTuple.FromPseudoCanonical(rhs, default, rhs.IsParenthesized, hasEmptyElement: false)
+                    .Or(() => new NTuple(new[] { rhs }, scope, rhs.IsParenthesized)))
                 .Select(body => (head: op.Left, body)))
             .Or(() => Term()
-                .Select(head => (head, body: new NTuple(new ITerm[] { WellKnown.Literals.True }))))
+                .Select(head => (head, body: new NTuple(new ITerm[] { WellKnown.Literals.True }, scope, false))))
             .Do(none: () => Throw(scope.LexerState, ErrorType.ExpectedClauseList))
             .Map(x => MakePredicate(scope.LexerState, desc, x.head, x.body))
             .Map(p => ExpectDelimiter(p => p.Equals("."))
@@ -648,7 +666,7 @@ public partial class ErgoParser : IDisposable
         var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals(new Atom("module")))
             .Body.GetArguments();
 
-        if (moduleArgs.Length < 2 || !moduleArgs[1].IsAbstract<List>().TryGetValue(out var exported))
+        if (moduleArgs.Length < 2 || moduleArgs[1] is not List exported)
         {
             exported = List.Empty;
         }
@@ -689,7 +707,7 @@ public partial class ErgoParser : IDisposable
                         continue;
                     if (!cplx.Arguments[1].Matches<OperatorType>(out var type))
                         continue;
-                    if (!cplx.Arguments[2].IsAbstract<List>().TryGetValue(out var syns))
+                    if (cplx.Arguments[2] is not List syns)
                         continue;
                     ret.Add(new(moduleName, type, precedence, syns.Contents.Cast<Atom>().ToHashSet()));
                 }

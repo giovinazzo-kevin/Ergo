@@ -12,8 +12,8 @@ public sealed class BagOf : SolutionAggregationBuiltIn
         var any = false;
         foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context.Solver, scope, args))
         {
-            if (!ListVars.Unify(ArgVars).TryGetValue(out var listSubs)
-            || !args[2].Unify(ListTemplate.CanonicalForm).TryGetValue(out var instSubs))
+            if (!LanguageExtensions.Unify(ListVars, ArgVars).TryGetValue(out var listSubs)
+            || !LanguageExtensions.Unify(args[2], ListTemplate).TryGetValue(out var instSubs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

@@ -12,10 +12,10 @@ public abstract class NthBase : SolverBuiltIn
         if (args[0].Matches<int>(out var index))
         {
             index -= Offset;
-            if (args[1].IsAbstract<List>().TryGetValue(out var list) && index >= 0 && index < list.Contents.Length)
+            if (args[1] is List list && index >= 0 && index < list.Contents.Length)
             {
                 var elem = list.Contents[index];
-                if (args[2].Unify(elem).TryGetValue(out var subs))
+                if (LanguageExtensions.Unify(args[2], elem).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -26,19 +26,19 @@ public abstract class NthBase : SolverBuiltIn
                 var contents = Enumerable.Range(0, index)
                     .Select(x => (ITerm)new Variable("_"))
                     .Append(args[2]);
-                yield return True(new Substitution(args[1], new List(contents).CanonicalForm));
+                yield return True(new Substitution(args[1], new List(contents, default, args[1].Scope)));
                 yield break;
             }
         }
         else if (!args[0].IsGround)
         {
-            if (args[1].IsAbstract<List>().TryGetValue(out var list))
+            if (args[1] is List list)
             {
                 var any = false;
                 for (var i = 0; i < list.Contents.Length; ++i)
                 {
                     var elem = list.Contents[i];
-                    if (args[2].Unify(elem).TryGetValue(out var subs))
+                    if (LanguageExtensions.Unify(args[2], elem).TryGetValue(out var subs))
                     {
                         any = true;
                         subs.Add(new(args[0], new Atom(i + Offset)));

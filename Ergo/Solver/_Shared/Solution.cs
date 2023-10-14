@@ -24,10 +24,10 @@ public readonly struct Solution
         var retry = new Queue<Substitution>();
         var output = new HashSet<Substitution>();
         foreach (var s in subs
-            .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false)))
+            .Where(s => s.Lhs is Variable { Ignored: false }))
             answers.Enqueue(s);
         var steps = subs
-            .Where(s => s.Lhs.Reduce(_ => false, v => v.Ignored, _ => false))
+            .Where(s => s.Lhs is Variable { Ignored: true })
             .ToDictionary(s => s.Lhs);
         while (answers.TryDequeue(out var ans))
         {
@@ -68,7 +68,7 @@ public readonly struct Solution
     public Solution Simplify()
     {
         return new(Scope, new(Simplify(Substitutions)
-            .Where(s => s.Lhs.Reduce(_ => false, v => !v.Ignored, _ => false))))
+            .Where(s => s.Lhs is Variable { Ignored: false })))
             ;
     }
 }

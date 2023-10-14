@@ -9,7 +9,7 @@ public sealed class Unify : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
-        if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
+        if (LanguageExtensions.Unify(arguments[0], arguments[1]).TryGetValue(out var subs))
         {
             yield return new(WellKnown.Literals.True, subs);
         }

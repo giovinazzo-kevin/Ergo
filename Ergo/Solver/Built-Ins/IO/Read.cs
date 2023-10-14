@@ -35,7 +35,7 @@ public sealed class Read : SolverBuiltIn
         while ((ch = context.Solver.In.Peek()) != -1 && ch != '\n')
             context.Solver.In.Read();
 
-        if (arguments[0].Unify(term).TryGetValue(out var subs))
+        if (LanguageExtensions.Unify(arguments[0], term).TryGetValue(out var subs))
         {
             yield return True(subs);
             yield break;

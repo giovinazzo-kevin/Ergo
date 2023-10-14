@@ -52,7 +52,7 @@ public sealed class Tabled : SolverBuiltIn
             var any = false;
             foreach (var sol in memoContext.GetSolutions(pioneer))
             {
-                variant.Unify(pioneer.Substitute(sol.Substitutions)).TryGetValue(out var subs);
+                LanguageExtensions.Unify(variant, pioneer.Substitute(sol.Substitutions)).TryGetValue(out var subs);
                 yield return True(subs);
                 any = true;
             }

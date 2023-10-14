@@ -7,8 +7,8 @@ public class Math : Library
 {
     public override Atom Module => WellKnown.Modules.Math;
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
-        .Append(new Eval())
         .Append(new Is())
+        .Append(new Eval())
         .Append(new NumberString())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()

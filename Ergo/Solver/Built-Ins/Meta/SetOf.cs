@@ -12,12 +12,12 @@ public sealed class SetOf : SolutionAggregationBuiltIn
         var any = false;
         foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context.Solver, scope, args))
         {
-            var argSet = new Set(ArgVars.Contents);
-            var setVars = new Set(ListVars.Contents);
-            var setTemplate = new Set(ListTemplate.Contents);
+            var argSet = new Set(ArgVars.Contents, ArgVars.Scope);
+            var setVars = new Set(ListVars.Contents, ArgVars.Scope);
+            var setTemplate = new Set(ListTemplate.Contents, ArgVars.Scope);
 
-            if (!setVars.Unify(argSet).TryGetValue(out var listSubs)
-            || !args[2].Unify(setTemplate.CanonicalForm).TryGetValue(out var instSubs))
+            if (!LanguageExtensions.Unify(setVars, argSet).TryGetValue(out var listSubs)
+            || !LanguageExtensions.Unify(args[2], setTemplate).TryGetValue(out var instSubs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

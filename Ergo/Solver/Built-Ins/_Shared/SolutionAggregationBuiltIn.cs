@@ -33,24 +33,24 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
         var variable = new Variable("TMP_BAGOF__"); // TODO: something akin to thread.next_free_variable() from TauProlog
         var freeVars = goal.Variables.Where(v => !templateVars.Contains(v))
             .ToHashSet();
-        var listVars = new List(freeVars.Cast<ITerm>());
+        var listVars = new List(freeVars.Cast<ITerm>(), default, default);
 
         var goalClauses = new NTuple(new ITerm[] {
             goal,
             new Complex(WellKnown.Operators.Unification.CanonicalFunctor,
                 variable,
-                new NTuple(new[]{ listVars.CanonicalForm, template }).CanonicalForm)
+                new NTuple(new[]{ listVars, template }, default))
             .AsOperator(WellKnown.Operators.Unification)
-        });
+        }, default);
         var solutions = solver.Solve(new(goalClauses), scope)
             .Select(s => s.Simplify());
         foreach (var sol in solutions
             .Select(sol =>
             {
-                var arg = (Complex)(sol.Substitutions[variable]);
+                var arg = (NTuple)(sol.Substitutions[variable]);
 
-                var argVars = arg.Arguments[0];
-                var argTmpl = arg.Arguments[1];
+                var argVars = arg.Contents[0];
+                var argTmpl = arg.Contents[1];
                 var varTmpl = argTmpl.Variables
                     .ToHashSet();
 
@@ -61,7 +61,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 
                 argVars = argVars.Substitute(subTmpl);
                 argTmpl = argTmpl.Substitute(subTmpl);
-                var argList = argVars.IsAbstract<List>().GetOrThrow(new InvalidOperationException());
+                var argList = (List)argVars;
                 return (argList, argTmpl);
             })
             .ToLookup(sol => sol.argList, sol => sol.argTmpl)

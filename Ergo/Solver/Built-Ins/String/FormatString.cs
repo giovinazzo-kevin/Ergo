@@ -21,7 +21,7 @@ public sealed class FormatString : SolverBuiltIn
         }
 
         var items = args.IsAbstract<List>()
-            .GetOr(new List(new[] { args }));
+            .GetOr(new List(new[] { args }, default, args.Scope));
 
         if (result is not Atom resultStr)
         {
@@ -46,7 +46,7 @@ public sealed class FormatString : SolverBuiltIn
             var match = matches[i];
             var argIndex = int.Parse(match.Groups[1].Value);
             var item = items.Contents.ElementAtOrDefault(argIndex);
-            var ret = item?.Reduce<ITerm>(a => a.AsQuoted(false), v => v, c => c)?.Explain(canonical: false) ?? string.Empty;
+            var ret = item?.Reduce<ITerm>(a => a.AsQuoted(false), v => v, c => c, a => a)?.Explain(canonical: false) ?? string.Empty;
             if (item is Variable v && result.IsGround)
             {
                 // User is trying to match this variable from the result string
@@ -59,7 +59,7 @@ public sealed class FormatString : SolverBuiltIn
                 if (Regex.Match(resultStrRaw, capturePattern) is { Success: true } capture)
                 {
                     var atom = new Atom(capture.Groups[1].Value);
-                    v.Unify(atom).TryGetValue(out var subs);
+                    LanguageExtensions.Unify(v, atom).TryGetValue(out var subs);
                     varSubs.AddRange(subs);
                     ret = atom.AsQuoted(false).Explain(canonical: false);
                 }

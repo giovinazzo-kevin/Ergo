@@ -11,7 +11,7 @@ public sealed class GetSingleChar : SolverBuiltIn
         int value = context.Solver.In.Read();
         ITerm charTerm = value != -1 ? new Atom((char)value) : new Atom("end_of_file");
 
-        if (arguments[0].Unify(charTerm).TryGetValue(out var subs))
+        if (LanguageExtensions.Unify(arguments[0], charTerm).TryGetValue(out var subs))
         {
             yield return True(subs);
             yield break;

@@ -15,6 +15,7 @@ public partial class ErgoLexer : IDisposable
     protected string Context { get; private set; }
 
     public readonly Operator[] AvailableOperators;
+    public readonly Dictionary<string, Operator[]> OperatorLookup;
     public readonly ErgoFacade Facade;
 
     protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = new();
@@ -72,6 +73,11 @@ public partial class ErgoLexer : IDisposable
             .SelectMany(op => op.Synonyms
                 .Select(s => (string)s.Value))
             .ToArray();
+        OperatorLookup = AvailableOperators
+            .SelectMany(o => o.Synonyms
+                .Select(s => (s, o)))
+            .GroupBy(x => x.s)
+            .ToDictionary(x => (string)x.Key.Value, x => x.Select(x => x.o).ToArray());
     }
 
     public Maybe<Token> PeekNext()

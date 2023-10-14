@@ -1,7 +1,6 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Solver;
 using Ergo.Interpreter.Directives;
-using Ergo.Lang.Utils;
 using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 
@@ -51,7 +50,7 @@ public class Expansions : Library
             foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
-                var pred = Predicate.Substitute(match.Rhs, match.Substitutions.Select(x => x.Inverted()));
+                var pred = Predicate.Substitute(match.Rhs, match.Substitutions);
 
                 foreach (var exp in ExpandPredicate(pred, qse.Scope))
                 {
@@ -143,7 +142,7 @@ public class Expansions : Library
                         p.Documentation,
                         p.DeclaringModule,
                         newHead,
-                        new(newBody),
+                        new(newBody, p.Head.Scope),
                         p.IsDynamic,
                         p.IsExported
                     );
@@ -154,7 +153,7 @@ public class Expansions : Library
         {
             if (term is Variable)
                 yield break;
-            if (term.IsAbstract<NTuple>().TryGetValue(out var ntuple))
+            if (term is NTuple ntuple)
             {
 
             }
@@ -178,7 +177,7 @@ public class Expansions : Library
                     }
                     var cartesian = expansions.CartesianProduct();
                     var isLambda = WellKnown.Functors.Lambda.Contains(cplx.Functor) && cplx.Arity == 2
-                        && cplx.Arguments[0].IsAbstract<Lang.Ast.List>().TryGetValue(out _);
+                        && cplx.Arguments[0] is Lang.Ast.List;
                     foreach (var argList in cartesian)
                     {
                         var newCplx = cplx
@@ -186,18 +185,17 @@ public class Expansions : Library
                             .Select(x => x.Reduce(exp => exp.Binding
                                .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                                .ToImmutableArray());
-                        if (AbstractTermCache.Default.IsAbstract(newCplx, default).TryGetValue(out var abs))
-                            newCplx = (Complex)abs.CanonicalForm;
                         var expClauses = new NTuple(
                             exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                                .Concat(argList.SelectMany(x => x
-                                  .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))));
+                                  .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))),
+                            cplx.Scope);
                         if (isLambda)
                         {
                             // Stuff 'expClauses' inside the lambda instead of returning them to the parent predicate
                             var body = newCplx.Arguments[1];
-                            var closure = new NTuple(expClauses.Contents.Append(body));
-                            newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure.CanonicalForm));
+                            var closure = new NTuple(expClauses.Contents.Append(body), cplx.Scope);
+                            newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure));
                             yield return Either<ExpansionResult, ITerm>.FromB(newCplx);
                         }
                         else
@@ -235,7 +233,7 @@ public class Expansions : Library
                     // [__K1] >> (head(test) :- body(test, __K1)).
                     var expVars = new Dictionary<string, Variable>();
                     var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
-                    if (!term.Unify(expInst.Head).TryGetValue(out var subs))
+                    if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
                         continue;
                     var pred = Predicate.Substitute(expInst, subs);
                     yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);

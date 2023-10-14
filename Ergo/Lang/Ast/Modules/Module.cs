@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
-[DebuggerDisplay("{ Explain() }")]
+[DebuggerDisplay("{ Explain(false) }")]
 public readonly struct Module
 {
     public readonly Atom Name;
@@ -54,14 +54,14 @@ public readonly struct Module
         LoadOrder = loadOrder;
     }
 
-    public string Explain()
+    public string Explain(bool canonical)
     {
-        var expl = $"← module({Name.Explain()}, {Exports.Explain()}).";
+        var expl = $"← module({Name.Explain(canonical)}, {Exports.Explain(canonical)}).";
         return expl;
     }
 
-    public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Contains(import) ? Imports.Contents : Imports.Contents.Add(import)), Exports, Operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
-    public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports), Operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
+    public Module WithImport(Atom import) => new(Name, new(Imports.Contents.Contains(import) ? Imports.Contents : Imports.Contents.Add(import), default, Imports.Scope), Exports, Operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
+    public Module WithExports(ImmutableArray<ITerm> exports) => new(Name, Imports, new(exports, default, Exports.Scope), Operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
     public Module WithOperators(ImmutableArray<Operator> operators) => new(Name, Imports, Exports, operators, DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
     public Module WithoutOperator(Fixity affix, Atom[] synonyms) => new(Name, Imports, Exports, Operators.RemoveAll(op => op.Fixity == affix && op.Synonyms.SequenceEqual(synonyms)), DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
     public Module WithOperator(Operator op) => new(Name, Imports, Exports, Operators.Add(op), DynamicPredicates, Program, LinkedLibrary, IsRuntime, LoadOrder);

@@ -78,7 +78,7 @@ public class Tabling : Library
                     "(auto-generated auxilliary predicate for tabling)",
                     moduleName,
                     anon,
-                    new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }),
+                    new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }, moduleName.Scope),
                     true,
                     true
                 );

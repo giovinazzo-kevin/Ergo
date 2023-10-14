@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Utils;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -47,8 +46,6 @@ public readonly partial struct Complex : ITerm
 
     public string Explain(bool canonical = false)
     {
-        if (!canonical && AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Explain(canonical);
         if (!canonical && IsParenthesized)
             return ParenthesizeUnlessRedundant(Inner(this));
         return Inner(this);
@@ -83,9 +80,6 @@ public readonly partial struct Complex : ITerm
 
     public ITerm Substitute(Substitution s)
     {
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Substitute(s).CanonicalForm;
-
         if (Equals(s.Lhs))
         {
             return s.Rhs;
@@ -98,8 +92,6 @@ public readonly partial struct Complex : ITerm
         }
 
         var ret = WithArguments(newArgs.ToImmutableArray());
-        if (AbstractTermCache.Default.IsAbstract(ret, default).TryGetValue(out abs))
-            return abs.CanonicalForm;
         return ret;
     }
 
@@ -138,10 +130,9 @@ public readonly partial struct Complex : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        if (AbstractTermCache.Default.IsAbstract(this, default).TryGetValue(out var abs))
-            return abs.Instantiate(ctx, vars).CanonicalForm;
         return new Complex(Operator, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray(), Scope);
     }
+
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 
     public static bool operator !=(Complex left, Complex right) => !(left == right);

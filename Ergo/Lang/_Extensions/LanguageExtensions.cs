@@ -1,5 +1,4 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Lang.Utils;
 using System.Text;
 
 namespace Ergo.Lang.Extensions;
@@ -22,19 +21,12 @@ public static class LanguageExtensions
         };
     }
 
-    public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
+    public static T Reduce<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex, Func<AbstractTerm, T> ifAbstract)
     {
         if (t is Atom a) return ifAtom(a);
         if (t is Variable v) return ifVariable(v);
         if (t is Complex c) return ifComplex(c);
-        throw new NotSupportedException(t.GetType().Name);
-    }
-
-    public static T Map<T>(this ITerm t, Func<Atom, T> ifAtom, Func<Variable, T> ifVariable, Func<Complex, T> ifComplex)
-    {
-        if (t is Atom a) return ifAtom(a);
-        if (t is Variable v) return ifVariable(v);
-        if (t is Complex c) return ifComplex(c);
+        if (t is AbstractTerm abs) return ifAbstract(abs);
         throw new NotSupportedException(t.GetType().Name);
     }
 
@@ -50,11 +42,13 @@ public static class LanguageExtensions
         return false;
     }
 
+    [Obsolete()]
     public static Maybe<T> IsAbstract<T>(this ITerm t)
-        where T : IAbstractTerm
+        where T : AbstractTerm
     {
-        return AbstractTermCache.Default.IsAbstract(t, typeof(T))
-            .Select(a => (T)a);
+        if (t is T abs)
+            return abs;
+        return default;
     }
 
     public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
@@ -71,23 +65,26 @@ public static class LanguageExtensions
 
             return filter?.Invoke(match) ?? true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
     }
 
-    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b, bool ignoreAbstractForms = false) => new Substitution(a, b).Unify(ignoreAbstractForms);
+    public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b)
+        => new Substitution(a, b).Unify();
 
     public static Maybe<SubstitutionMap> Unify(this Predicate predicate, ITerm head)
     {
         predicate.Head.GetQualification(out var qv);
         head.GetQualification(out var hv);
-        return qv.Unify(hv);
+        return Unify(qv, hv);
     }
 
     public static Signature GetSignature(this ITerm term)
     {
+        if (term is AbstractTerm abs)
+            return abs.GetSignature();
         if (term.GetQualification(out term).TryGetValue(out var qm))
         {
             var qs = term.GetSignature();
@@ -97,24 +94,13 @@ public static class LanguageExtensions
                 term = cplx.Arguments[0];
                 tag = (Atom)cplx.Arguments[1];
             }
-
-            if (AbstractTermCache.Default.IsAbstract(term, default).TryGetValue(out var abs))
-            {
-                var sig = abs.Signature
-                    .WithModule(qm);
-                if (tag.TryGetValue(out _))
-                    return sig.WithTag(tag);
-                return sig;
-            }
-
             return new Signature(qs.Functor, qs.Arity, qm, tag);
         }
-
         return new Signature(
-            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor),
-            term.Map(a => 0, v => 0, c => c.Arity),
+            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor, abs => default),
+            term.Reduce(a => 0, v => 0, c => c.Arity, abs => default),
             Maybe<Atom>.None,
-            term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)
+            term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)
         );
     }
 
@@ -146,6 +132,8 @@ public static class LanguageExtensions
                 }
                 term = c.WithArguments(args.ToImmutableArray());
             }
+            if (term is AbstractTerm abs)
+                return abs.NumberVars();
             return term;
         }
     }

@@ -8,5 +8,5 @@ public readonly struct Query
     public readonly NTuple Goals;
 
     public Query(NTuple goals) => Goals = goals;
-    public Query(params ITerm[] goals) => Goals = new(goals);
+    public Query(params ITerm[] goals) => Goals = new(goals, default);
 }

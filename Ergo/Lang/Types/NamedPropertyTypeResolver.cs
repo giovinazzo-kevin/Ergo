@@ -14,7 +14,7 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
             .AsOperator(WellKnown.Operators.NamedArgument);
     public override ITerm GetArgument(string name, ITerm value)
     {
-        if (!value.IsAbstract<Dict>().TryGetValue(out var dict))
+        if (value is not Dict dict)
             throw new NotSupportedException();
         if (!dict.Dictionary.TryGetValue(new Atom(name.ToErgoCase()), out var arg))
             return WellKnown.Literals.Discard;
@@ -29,11 +29,9 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
     public override TermAttribute GetMemberAttribute(string name) => PropertiesByName[name].GetCustomAttribute<TermAttribute>();
     public override Type GetParameterType(string name, ConstructorInfo info) => info.GetParameters().Single(p => p.Name.Equals(name)).ParameterType;
     public override ITerm TransformTerm(Atom functor, ITerm[] args) => new Dict(functor, args
-        .Select((a) => new KeyValuePair<Atom, ITerm>((Atom)((Complex)a).Arguments[0], ((Complex)a).Arguments[1])))
-        .CanonicalForm;
+        .Select((a) => new KeyValuePair<Atom, ITerm>((Atom)((Complex)a).Arguments[0], ((Complex)a).Arguments[1])), functor.Scope);
     public override ITerm CycleDetectedLiteral(Atom functor)
         => new Dict(functor, new KeyValuePair<Atom, ITerm>[] {
-            new(new Atom("_error").AsQuoted(false), new Atom("<cycle detected>")) })
-        .CanonicalForm;
+            new(new Atom("_error").AsQuoted(false), new Atom("<cycle detected>")) }, functor.Scope);
     public NamedPropertyTypeResolver() : base() { }
 }

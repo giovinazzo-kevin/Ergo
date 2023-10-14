@@ -24,12 +24,18 @@ public class UseModule : InterpreterDirective
         if (!scope.Modules.TryGetValue(moduleName, out var module))
         {
             var importScope = scope
-                .WithModule(new Module(moduleName, scope.IsRuntime)
-                    /*.WithImport(scope.Entry)*/);
+                .WithModule(new Module(moduleName, scope.IsRuntime));
             if (!interpreter.LoadDirectives(ref importScope, moduleName).TryGetValue(out module))
                 return false;
+            // Pull all new modules that were imported by the module currently being imported
+            foreach (var newModule in importScope.Modules)
+            {
+                if (newModule.Key != module.Name && !scope.Modules.ContainsKey(newModule.Key))
+                {
+                    scope = scope.WithModule(newModule.Value);
+                }
+            }
         }
-
         scope = scope
             .WithModule(module)
             .WithModule(scope.Modules[scope.Entry]

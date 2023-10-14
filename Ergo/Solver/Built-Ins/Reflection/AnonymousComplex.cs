@@ -21,7 +21,7 @@ public sealed class AnonymousComplex : SolverBuiltIn
             {
                 var cplx = functor_.BuildAnonymousTerm(arity)
                     .Qualified(qm);
-                if (cplx.Unify(args[2]).TryGetValue(out var subs))
+                if (LanguageExtensions.Unify(cplx, args[2]).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -35,7 +35,7 @@ public sealed class AnonymousComplex : SolverBuiltIn
         }
         var anon = functor.BuildAnonymousTerm(arity)
             .Qualified(scope.InterpreterScope.Entry);
-        if (anon.Unify(args[2]).TryGetValue(out var subs_))
+        if (LanguageExtensions.Unify(anon, args[2]).TryGetValue(out var subs_))
         {
             yield return True(subs_);
             yield break;

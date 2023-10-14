@@ -24,7 +24,7 @@ public sealed class Lambda : SolverBuiltIn
         }
 
         // parameters is a plain list of variables; We don't need to capture free variables, unlike SWIPL which is compiled.
-        if (!parameters.IsAbstract<List>().TryGetValue(out var list) || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
+        if (parameters is not List list || list.Contents.Length > rest.Length || list.Contents.Any(x => x is not Variable))
         {
             yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.LambdaParameters, parameters.Explain());
             yield break;
@@ -41,7 +41,7 @@ public sealed class Lambda : SolverBuiltIn
                 yield break;
             }
 
-            var newSubs = rest[i].Unify(list.Contents[i]).GetOr(new SubstitutionMap());
+            var newSubs = LanguageExtensions.Unify(rest[i], list.Contents[i]).GetOr(new SubstitutionMap());
             lambda = lambda.Substitute(newSubs);
         }
 

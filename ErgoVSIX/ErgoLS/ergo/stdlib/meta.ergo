@@ -1,5 +1,5 @@
 ﻿:- module(meta, [
-	ignore/1,
+	ignore/1, ignore_all/1,
 	once/1, repeat/2, forever/1,
 	forall/2,
     for/3
@@ -7,6 +7,7 @@
 
 ignore(Goal) :- Goal, !.
 ignore(_).
+ignore_all(Goal) :- findall(_, Goal, _), !.
 
 once(Goal) :- (call(Goal) -> true ; false).
 repeat(Times, Goal) :- for(_, 0, Times), once(Goal).

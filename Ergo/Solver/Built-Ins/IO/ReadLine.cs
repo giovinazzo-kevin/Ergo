@@ -21,7 +21,7 @@ public sealed class ReadLine : SolverBuiltIn
 
         ITerm lineTerm = value != -1 ? new Atom(builder.ToString()) : new Atom("end_of_file");
 
-        if (arguments[0].Unify(lineTerm).TryGetValue(out var subs))
+        if (LanguageExtensions.Unify(arguments[0], lineTerm).TryGetValue(out var subs))
         {
             yield return True(subs);
             yield break;

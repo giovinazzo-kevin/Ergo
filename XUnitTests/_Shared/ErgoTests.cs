@@ -23,7 +23,17 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     {
         var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
-        Assert.Equal(parsed, expected);
+        if (parsed is IExplainable expl && expected is IExplainable expExpl)
+            Assert.Equal(expl.Explain(true), expExpl.Explain(true));
+        else Assert.Equal(parsed, expected);
+    }
+    protected void ShouldParse<T>(string query, Func<T, bool> expected)
+    {
+        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query)
+            .GetOrThrow(new InvalidOperationException());
+        if (parsed is IExplainable expl && expected is IExplainable expExpl)
+            Assert.Equal(expl.Explain(true), expExpl.Explain(true));
+        else Assert.True(expected(parsed));
     }
     // "⊤" : "⊥"
     protected void ShouldNotParse<T>(string query, T expected)
@@ -34,7 +44,6 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             Assert.NotEqual(value, expected);
         }
     }
-
     // "⊤" : "⊥"
     protected void ShouldSolve(string query, int expectedSolutions, bool checkParse, params string[] expected)
     {
@@ -44,7 +53,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         var parsed = Interpreter.Facade.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
-            Assert.Equal(query, parsed.Goals.Explain());
+            Assert.Equal(query, parsed.Goals.Explain(false));
         var numSolutions = 0;
         var timeoutToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10000)).Token;
         foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope), timeoutToken))

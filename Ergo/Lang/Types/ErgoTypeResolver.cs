@@ -83,8 +83,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             return WellKnown.Literals.Discard;
         if (o.GetType().GetInterface(nameof(ITerm)) is not null)
             return (ITerm)o;
-        if (o.GetType().GetInterface(nameof(IAbstractTerm)) is not null)
-            return ((IAbstractTerm)o).CanonicalForm;
+        if (o.GetType().GetInterface(nameof(AbstractTerm)) is not null)
+            return ((AbstractTerm)o);
         if (!o.GetType().IsAssignableTo(Type))
             throw new ArgumentException(null, o.ToString());
         // Check if the [Term] attribute is applied at the type level,
@@ -92,9 +92,9 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         var attr = Type.GetCustomAttribute<TermAttribute>();
         var functor = overrideFunctor.Map(
             some => !IsCollectionType(Type) ? Maybe.Some(some) : default,
-            () => !IsCollectionType(Type) && attr?.Functor is { } f ? Maybe.Some(new Atom(f)) : default
+            () => !IsCollectionType(Type) && attr?.ComputedFunctor is { } f ? Maybe.Some(new Atom(f)) : default
         );
-        var marshalling = overrideMarshalling.GetOr(Marshalling);
+        var marshalling = overrideMarshalling.GetOr(attr?.Marshalling ?? Marshalling);
 
         if (TermMarshallingContext.MayCauseCycles(o.GetType()))
         {
@@ -127,20 +127,20 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 m =>
                 {
                     var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
-                    var overrideMemberFunctor = attr?.Functor is null ? Maybe<Atom>.None : new Atom(attr.Functor);
-                    var overrideMemberMarshalling = attr is null ? marshalling : attr.Marshalling;
-                    var ovrrideMemberKey = attr is null ? Maybe<string>.None : attr.Key ?? m;
+                    var overrideMemberFunctor = attr?.ComputedFunctor is null ? Maybe<Atom>.None : new Atom(attr.ComputedFunctor);
+                    var overrideMemberMarshalling = attr?.Marshalling is null ? marshalling : attr.Marshalling;
+                    var ovrrideMemberKey = attr is null ? Maybe<string>.None : attr.ComputedKey ?? m;
                     var memberValue = o == null ? null : GetMemberValue(m, o);
                     var term = TermMarshall.ToTerm(memberValue, GetMemberType(m), overrideMemberFunctor, overrideMemberMarshalling, ctx);
                     var member = TransformMember(m, ovrrideMemberKey, term);
-                    if (member.IsAbstract<List>().TryGetValue(out var list))
+                    if (member is List list)
                     {
                         member = new List(list.Contents.Select(x =>
                         {
                             if (x is Complex cplx)
-                                return cplx.WithFunctor(new(attr?.Functor ?? cplx.Functor.Value));
+                                return cplx.WithFunctor(new(attr?.ComputedFunctor ?? cplx.Functor.Value));
                             return x;
-                        })).CanonicalForm;
+                        }), default, default);
                     }
                     return member;
 
@@ -158,7 +158,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             if (args.Length == 0)
                 return new Atom(functor);
             if (WellKnown.Functors.HeadTail.Contains(functor))
-                return new List(args).CanonicalForm;
+                return new List(args, default, default);
             return TransformTerm(functor, args);
         }
 
@@ -211,7 +211,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            if (Type.IsArray && t.IsAbstract<List>().TryGetValue(out var list))
+            if (Type.IsArray && t is List list)
             {
                 var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
                 for (var i = 0; i < list.Contents.Length; i++)

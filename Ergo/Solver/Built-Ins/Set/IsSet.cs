@@ -10,7 +10,7 @@ public sealed class IsSet : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] args)
     {
-        if (args[0].IsAbstract<Set>().TryGetValue(out _))
+        if (args[0] is Set)
             yield return True();
         else yield return False();
     }

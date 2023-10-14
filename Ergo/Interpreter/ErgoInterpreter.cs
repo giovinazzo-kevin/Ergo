@@ -2,6 +2,7 @@
 using Ergo.Facade;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Utils;
+using System.Collections.Concurrent;
 using System.IO;
 
 namespace Ergo.Interpreter;
@@ -11,7 +12,12 @@ public partial class ErgoInterpreter
     public readonly ErgoFacade Facade;
     public readonly InterpreterFlags Flags;
 
-    protected readonly DiagnosticProbe Probe = new();
+    protected readonly DiagnosticProbe Probe = new()
+    {
+#if !ERGO_INTERPRETER_DIAGNOSTICS
+        IsEnabled = false,
+#endif
+    };
 
     private readonly Dictionary<Atom, Library> _libraries = new();
     public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
@@ -75,11 +81,12 @@ public partial class ErgoInterpreter
     {
         return LoadDirectives(ref scope, module, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)));
     }
-    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom name, ErgoStream stream)
+    public virtual Maybe<Module> LoadDirectives(ref InterpreterScope scope, Atom moduleName, ErgoStream stream)
     {
-        if (scope.Modules.TryGetValue(name, out var m) && m.Program.IsPartial)
-            return m;
+        if (scope.Modules.TryGetValue(moduleName, out var module) && module.Program.IsPartial)
+            return module;
         var watch = Probe.Enter();
+        Probe.Count(moduleName.Explain(), 1);
         var operators = scope.GetOperators();
         var parser = Facade.BuildParser(stream, operators);
         var pos = parser.Lexer.State;
@@ -104,7 +111,7 @@ public partial class ErgoInterpreter
                 return (Ast: d, Builtin: directive, Defined: true);
             return (Ast: d, Builtin: default, Defined: false);
         });
-        if (_libraries.TryGetValue(name, out var linkedLib))
+        if (_libraries.TryGetValue(moduleName, out var linkedLib))
         {
             linkLibrary = linkedLib;
             foreach (var dir in linkedLib.GetExportedDirectives())
@@ -127,12 +134,11 @@ public partial class ErgoInterpreter
             var builtinWatch = Probe.Enter(sig);
             Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments.ToArray());
             // NOTE: It's only after module/2 has been called that the module actually gets its name!
-            // By now, scope.Entry == name
             Probe.Leave(builtinWatch, sig);
         }
-        var module = scope.EntryModule
+        module = scope.Modules[moduleName]
             .WithImport(scope.BaseImport)
-            .WithProgram(program);
+            .WithProgram(program.AsPartial(true));
 
         Probe.Leave(watch);
         return module;
@@ -146,16 +152,38 @@ public partial class ErgoInterpreter
     {
         if (!LoadDirectives(ref scope, moduleName, stream).TryGetValue(out var module))
             return default;
-        // By now, all imports have been loaded but some may still be partially loaded (only the directives exist)
-        foreach (Atom import in module.Imports.Contents)
+        // By now, some imports may still be only partially loaded or outright unloaded in the case of deep import trees
+        var checkedModules = new HashSet<Atom>();
+        var modulesToCheck = new Stack<Atom>();
+        foreach (Atom m in module.Imports.Contents)
+            modulesToCheck.Push(m);
+        var tasks = new ConcurrentBag<Task<Maybe<Module>>>();
+        var checkedModulesConcurrent = new ConcurrentDictionary<Atom, bool>();
+        while (modulesToCheck.Count > 0)
         {
-            if (scope.Modules[import].Program.IsPartial)
+            if (modulesToCheck.TryPop(out var import))
             {
-                var importScope = scope.WithCurrentModule(import);
-                if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
-                    return default;
-                scope = scope.WithModule(importModule);
+                if (!scope.Modules[import].Program.IsPartial)
+                    continue;
+                var importScope = scope.WithCurrentModule(moduleName);
+                tasks.Add(Task.Run(() =>
+                {
+                    if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
+                        return Maybe.None<Module>();
+                    importModule.Imports.Contents
+                        .Select(x => (Atom)x)
+                        .Where(m => checkedModulesConcurrent.TryAdd(m, true))
+                        .ToList()
+                        .ForEach(m => modulesToCheck.Push(m));
+                    return importModule;
+                }));
             }
+        }
+        var newModules = Task.WhenAll(tasks).GetAwaiter().GetResult();
+        foreach (var newMod in newModules
+            .SelectMany(x => x.AsEnumerable()))
+        {
+            scope = scope.WithModule(newMod);
         }
 
         var parser = Facade.BuildParser(stream, scope.GetOperators());
@@ -168,7 +196,7 @@ public partial class ErgoInterpreter
 
         stream.Dispose();
         scope = scope.WithModule(module = module
-            .WithProgram(program)
+            .WithProgram(program.AsPartial(false))
             .WithLoadOrder(loadOrder));
 
         // Invoke ModuleLoaded so that libraries can, e.g., rewrite predicates
@@ -177,7 +205,6 @@ public partial class ErgoInterpreter
             .Scope;
 
         scope.ExceptionHandler.Try(() => parser.Dispose());
-
         return module;
     }
 

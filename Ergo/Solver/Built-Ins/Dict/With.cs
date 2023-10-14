@@ -10,29 +10,29 @@ public sealed class With : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        if (args[0].IsAbstract<Dict>().TryGetValue(out var a))
+        if (args[0] is Dict a)
         {
-            if (args[1].IsAbstract<Set>().TryGetValue(out var b)
+            if (args[1] is Set b
                 && GetPairs(b).TryGetValue(out var kvps))
             {
                 var merged = Update(a, kvps);
-                if (args[2].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                if (LanguageExtensions.Unify(args[2], merged).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
                 }
             }
-            else if (args[2].IsAbstract<Dict>().TryGetValue(out var d))
+            else if (args[2] is Dict d)
             {
-                if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(a.Dictionary[k]).TryGetValue(out _)))
+                if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], a.Dictionary[k]).TryGetValue(out _)))
                 {
                     yield return False();
                     yield break;
                 }
                 var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
                 var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
-                    .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
-                if (args[1].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                    .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
+                if (LanguageExtensions.Unify(args[1], merged).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -40,19 +40,19 @@ public sealed class With : SolverBuiltIn
             }
         }
         else if (args[0] is Variable
-            && args[1].IsAbstract<Set>().TryGetValue(out var b)
+            && args[1] is Set b
             && GetPairs(b).TryGetValue(out var kvps)
-            && args[2].IsAbstract<Dict>().TryGetValue(out var d))
+            && args[2] is Dict d)
         {
-            if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(kvps[k]).TryGetValue(out _)))
+            if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], kvps[k]).TryGetValue(out _)))
             {
                 yield return False();
                 yield break;
             }
             var diff = d.Dictionary.Keys.Except(kvps.Select(k => k.Key)).ToHashSet();
             var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
-                .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))));
-            if (args[0].Unify(merged.CanonicalForm).TryGetValue(out var subs))
+                .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
+            if (LanguageExtensions.Unify(args[0], merged).TryGetValue(out var subs))
             {
                 yield return True(subs);
                 yield break;
@@ -69,7 +69,7 @@ public sealed class With : SolverBuiltIn
                 builder.Remove(key);
                 builder.Add(key, value);
             }
-            return new(d.Functor, builder);
+            return new(d.Functor, builder, d.Scope);
         }
 
         static Maybe<Dictionary<Atom, ITerm>> GetPairs(Set set)

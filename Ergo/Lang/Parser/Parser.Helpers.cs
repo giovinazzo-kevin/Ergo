@@ -82,27 +82,28 @@ public partial class ErgoParser
     public Maybe<UntypedSequence> Sequence(
         Operator op,
         Atom emptyElement,
-        string openingDelim,
-        Operator separator,
-        string closingDelim)
+        (string OpeningDelim, string ClosingDelim) delims,
+        Operator separator)
     {
-        var pos = Lexer.State;
-        return
-            Parenthesized(openingDelim, closingDelim, () =>
+        var scope = GetScope();
+        return Parenthesized(delims.OpeningDelim, delims.ClosingDelim, () =>
                 Unfold(ExpressionOrTerm())
-                .Select(t => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray.CreateRange(t)))
-                .Or(() => new UntypedSequence(op, emptyElement, (openingDelim, closingDelim), ImmutableArray<ITerm>.Empty)))
-            .Or(() => Fail<UntypedSequence>(pos))
-        ;
-
+                .Select(t => new UntypedSequence(op, emptyElement, delims, ImmutableArray.CreateRange(t), scope, false))
+                .Or(() => new UntypedSequence(op, emptyElement, delims, ImmutableArray<ITerm>.Empty, scope, false)))
+            .Or(() => Fail<UntypedSequence>(scope.LexerState));
         Maybe<IEnumerable<ITerm>> Unfold(Maybe<ITerm> term)
         {
+            // Special case for tuples, TODO: see if it should be generalized to all separators
+            if (term.TryGetValue(out var t) && !t.IsParenthesized && t is NTuple tup && tup.Operator.Equals(separator) && tup.Contents.Length > 1
+                && NTuple.FromPseudoCanonical((Complex)tup, tup.Scope).TryGetValue(out var actualTup))
+                return actualTup.Contents;
             return term
                 .Where(t => t is Complex { IsParenthesized: false })
                 .Select(t => (Complex)t)
                 .Where(c => separator.Synonyms.Contains(c.Functor) && c.Arguments.Length == 2)
                 .Map(c => Unfold(Maybe.Some(c.Arguments[1])).Select(u => u.Prepend(c.Arguments[0])))
-                .Or(() => term.Select(t => new[] { t }.AsEnumerable()));
+                .Or(() => term.Select(t => new[] { t }.AsEnumerable()))
+                ;
         }
     }
 }

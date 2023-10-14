@@ -17,6 +17,7 @@ public static partial class WellKnown
         public static readonly Atom CSharp = new("csharp");
         public static readonly Atom Tabling = new("tabling");
         public static readonly Atom Expansions = new("expansions");
+        public static readonly Atom Async = new("async");
 
         public static readonly Atom Stdlib = new("stdlib");
         public static readonly Atom User = new("user");

@@ -56,11 +56,13 @@ public readonly partial struct Operator
     {
         return (affix, associativity) switch
         {
-            (Fixity.Prefix, OperatorAssociativity.Right) => OperatorType.fx,
-            (Fixity.Postfix, OperatorAssociativity.Left) => OperatorType.xf,
+            (Fixity.Prefix, OperatorAssociativity.None) => OperatorType.fx,
+            (Fixity.Postfix, OperatorAssociativity.None) => OperatorType.xf,
             (Fixity.Infix, OperatorAssociativity.None) => OperatorType.xfx,
             (Fixity.Infix, OperatorAssociativity.Right) => OperatorType.xfy,
             (Fixity.Infix, OperatorAssociativity.Left) => OperatorType.yfx,
+            (Fixity.Prefix, OperatorAssociativity.Right) => OperatorType.fy,
+            (Fixity.Postfix, OperatorAssociativity.Left) => OperatorType.yf,
             _ => throw new NotSupportedException()
         };
     }

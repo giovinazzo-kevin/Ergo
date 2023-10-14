@@ -42,7 +42,14 @@ public abstract class AbstractList : AbstractTerm
     }
     public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
-        return LanguageExtensions.Unify(CanonicalForm, other);
+        if (other is Variable v)
+        {
+            var ret2 = new SubstitutionMap() { new Substitution(v, this) };
+            return ret2;
+        }
+        // Canonical unification works, but then the result is no longer an abstract term.
+        var ret = LanguageExtensions.Unify(CanonicalForm, other);
+        return ret;
     }
     public override Signature GetSignature() => CanonicalForm.GetSignature();
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

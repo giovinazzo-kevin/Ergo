@@ -13,6 +13,7 @@ public class Dict : AbstractTerm
     public override bool IsGround => CanonicalForm.IsGround;
     public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
     public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
+    public override int GetHashCode() => CanonicalForm.GetHashCode();
     public override bool Equals(ITerm other)
     {
         if (other is Dict dict)

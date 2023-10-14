@@ -202,4 +202,6 @@ public abstract class AbstractList : AbstractTerm
             return list;
         }
     }
+
+    public override int GetHashCode() => CanonicalForm.GetHashCode();
 }

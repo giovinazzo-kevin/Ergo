@@ -65,7 +65,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
                 return (argList, argTmpl);
             })
             .ToLookup(sol => sol.argList, sol => sol.argTmpl)
-            .Select(kv => (kv.Key, new List(kv, default, default), listVars)))
+            .Select(kv => (kv.Key, new List(kv), listVars)))
         {
             yield return sol;
         }

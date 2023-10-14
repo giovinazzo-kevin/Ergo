@@ -13,7 +13,13 @@ public class Dict : AbstractTerm
     public override bool IsGround => CanonicalForm.IsGround;
     public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
     public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
-    public override bool Equals(ITerm other) => CanonicalForm.Equals(other);
+    public override bool Equals(ITerm other)
+    {
+        if (other is Dict dict)
+            return dict.Functor.Equals(Functor)
+                && Dictionary.SequenceEqual(dict.Dictionary);
+        return CanonicalForm.Equals(other);
+    }
 
     public readonly ITerm[] KeyValuePairs;
     public readonly ImmutableDictionary<Atom, ITerm> Dictionary;
@@ -58,6 +64,11 @@ public class Dict : AbstractTerm
 
     public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
+        if (other is Variable v)
+        {
+            var ret2 = new SubstitutionMap() { new Substitution(v, this) };
+            return ret2;
+        }
         if (other is not Dict dict)
             return LanguageExtensions.Unify(CanonicalForm, other);
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);

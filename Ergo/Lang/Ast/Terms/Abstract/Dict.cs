@@ -7,7 +7,7 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain(false) }")]
 public class Dict : AbstractTerm
 {
-    protected ITerm CanonicalForm { get; set; }
+    protected override ITerm CanonicalForm { get; set; }
     public Signature Signature { get; }
     public override bool IsQualified => CanonicalForm.IsQualified;
     public override bool IsParenthesized { get; }
@@ -118,12 +118,19 @@ public class Dict : AbstractTerm
         }
         else
         {
+            // Proper dictionaries unify if the intersection their properties unifies.
             var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
             if (!set.Any() && Dictionary.Count != 0 && dict.Dictionary.Count != 0)
                 return default;
-            map.AddRange(set
-                .Select(key => new Substitution(Dictionary[key], dict.Dictionary[key]))
-                .Prepend(new Substitution(dxFunctor, dyFunctor)));
+            if (!dxFunctor.Unify(dyFunctor).TryGetValue(out var subs))
+                return default;
+            map.AddRange(subs);
+            foreach (var key in set)
+            {
+                if (!Dictionary[key].Unify(dict.Dictionary[key]).TryGetValue(out subs))
+                    return default;
+                map.AddRange(subs);
+            }
         }
         return Maybe.Some(map);
     }

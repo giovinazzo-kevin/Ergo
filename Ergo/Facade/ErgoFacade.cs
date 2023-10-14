@@ -203,8 +203,8 @@ public readonly struct ErgoFacade
             scope.Throw(InterpreterError.CouldNotParseTerm, typeof(T), data);
             return Maybe<T>.None;
         });
-        var userDefinedOps = scope.GetOperators();
+        var userDefinedOps = scope.VisibleOperators;
         var self = this;
-        return scope.ExceptionHandler.TryGet(() => new Parsed<T>(self, data, onParseFail, userDefinedOps.ToArray()).Value).Map(x => x);
+        return scope.ExceptionHandler.TryGet(() => new Parsed<T>(self, data, userDefinedOps.ToArray(), onParseFail).Value).Map(x => x);
     }
 }

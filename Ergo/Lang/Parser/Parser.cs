@@ -179,7 +179,7 @@ public partial class ErgoParser : IDisposable
         return Expect<string>(ErgoLexer.TokenType.Term)
         .Where(term => IsVariableIdentifier(term))
         .Map(term => Maybe.Some(term)
-            .Where(term => !term.StartsWith("__K"))
+            //.Where(term => !term.StartsWith("__K"))
             .Do(none: () => Throw(scope.LexerState, ErrorType.TermHasIllegalName, term))
             .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
             .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
@@ -358,11 +358,16 @@ public partial class ErgoParser : IDisposable
                 return false;
             if (!GetOperatorsFromFunctor(cplx.Functor).TryGetValue(out var ops))
                 return false;
-            var op = ops.Where(op => cplx.Arity switch
+            var ops_ = ops.Where(op => cplx.Arity switch
             {
                 1 => op.Fixity != Fixity.Infix,
                 _ => op.Fixity == Fixity.Infix
-            }).MinBy(x => x.Precedence);
+            })
+            .OrderBy(x => x.Precedence)
+            .ToArray();
+            if (ops_.Length == 0)
+                return false;
+            var op = ops_[0];
             if (cplx.Arguments.Length == 1)
             {
                 expr = BuildExpression(op, cplx.Arguments[0], exprParenthesized: exprParenthesized);

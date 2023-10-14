@@ -1,9 +1,12 @@
-﻿
+﻿using Ergo.Interpreter.Libraries.Expansions;
+using Ergo.Solver;
+
 namespace Ergo.Lang.Ast.Terms.Interfaces;
 
 public abstract class AbstractTerm : ITerm
 {
     public Maybe<ParserScope> Scope { get; }
+    protected abstract ITerm CanonicalForm { get; set; }
     public abstract bool IsGround { get; }
     public abstract bool IsQualified { get; }
     public abstract bool IsParenthesized { get; }
@@ -12,6 +15,33 @@ public abstract class AbstractTerm : ITerm
     {
         Scope = scope;
     }
+
+    public virtual IEnumerable<Either<ExpansionResult, ITerm>> Expand(Expansions lib, SolverScope scope)
+    {
+        foreach (var termOrExp in lib.ExpandTerm(CanonicalForm, scope))
+        {
+            var result = termOrExp.Reduce(exp => exp.Binding.Select(v => (ITerm)v).GetOr(exp.Match),
+                                      x => x);
+            if (result.Equals(CanonicalForm))
+            {
+                yield return this;
+                continue;
+            }
+            var canon = result.Explain(canonical: true);
+            var parsed = Parsed.Abstract(scope.InterpreterScope.Facade, canon, scope.InterpreterScope.VisibleOperators, GetType());
+            if (parsed.TryGetValue(out var abs))
+            {
+                if (termOrExp.TryGetA(out var exp))
+                {
+                    var expClauses = new NTuple(exp.Expansion.Contents);
+                    yield return new ExpansionResult(abs, expClauses, exp.Binding);
+                }
+                else yield return abs;
+            }
+            else yield return termOrExp;
+        }
+    }
+
     public abstract AbstractTerm AsParenthesized(bool parenthesized);
     public abstract Signature GetSignature();
     public abstract int CompareTo(ITerm other);

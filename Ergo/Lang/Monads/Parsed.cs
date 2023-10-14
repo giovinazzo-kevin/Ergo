@@ -4,6 +4,16 @@ using Ergo.Lang.Utils;
 
 namespace Ergo.Lang;
 
+public static class Parsed
+{
+    public static Maybe<AbstractTerm> Abstract(ErgoFacade facade, string data, IEnumerable<Operator> userOperators, Type type, Func<string, Maybe<AbstractTerm>> onParseFail = null)
+    {
+        onParseFail ??= _ => default;
+        var parser = facade.BuildParser(FileStreamUtils.MemoryStream(data), userOperators);
+        return parser.Abstract(type);
+    }
+}
+
 /// <summary>
 /// Typed wrapper for common parser operations.
 /// </summary>
@@ -39,8 +49,9 @@ public readonly struct Parsed<T>
     /// </summary>
     public readonly Maybe<T> ValueUnsafe => _valueUnsafe.Value;
 
-    public Parsed(ErgoFacade facade, string data, Func<string, Maybe<T>> onParseFail, Operator[] userOperators)
+    public Parsed(ErgoFacade facade, string data, IEnumerable<Operator> userOperators, Func<string, Maybe<T>> onParseFail = null)
     {
+        onParseFail ??= _ => default;
         var parser = facade.BuildParser(FileStreamUtils.MemoryStream(data), userOperators);
         _value = new Lazy<Maybe<T>>(() =>
         {

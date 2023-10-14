@@ -22,7 +22,7 @@ public readonly partial struct Expression
         var ops = WellKnown.Operators.DeclaredOperators.AsEnumerable();
         if (maybeScope.TryGetValue(out var scope))
         {
-            ops = ops.Concat(scope.GetOperators())
+            ops = ops.Concat(scope.VisibleOperators)
                 .Distinct();
         }
         Operator = ops.Single(op => op.Synonyms.Contains(fromComplex.Functor) &&

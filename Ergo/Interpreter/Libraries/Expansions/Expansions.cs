@@ -1,6 +1,7 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Solver;
 using Ergo.Interpreter.Directives;
+using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 
@@ -149,95 +150,103 @@ public class Expansions : Library
                 }
             }
         }
-        IEnumerable<Either<ExpansionResult, ITerm>> ExpandTerm(ITerm term, SolverScope scope)
-        {
-            if (term is Variable)
-                yield break;
-            if (term is NTuple ntuple)
-            {
+    }
 
-            }
-            foreach (var exp in GetExpansions(term, scope)
-                .Select(x => Either<ExpansionResult, ITerm>.FromA(x))
-                .DefaultIfEmpty(Either<ExpansionResult, ITerm>.FromB(term)))
+    public IEnumerable<Either<ExpansionResult, ITerm>> ExpandTerm(ITerm term, SolverScope scope)
+    {
+        if (term is Variable)
+            yield break;
+        // If this is an abstract term we expand it through its canonical form, then we parse the result again
+        // through its owner parser.
+        if (term is AbstractTerm abs)
+        {
+            foreach (var exp in abs.Expand(this, scope))
             {
-                // If this is a complex term, expand all of its arguments recursively and produce a combination of all solutions
-                if (exp.Reduce(e => e.Match, a => a) is Complex cplx)
+                yield return exp;
+            }
+            yield break;
+        }
+        foreach (var exp in GetExpansions(term, scope)
+            .Select(x => Either<ExpansionResult, ITerm>.FromA(x))
+            .DefaultIfEmpty(Either<ExpansionResult, ITerm>.FromB(term)))
+        {
+            var t = exp.Reduce(e => e.Match, a => a);
+            // If this is a complex term, expand all of its arguments recursively and produce a combination of all solutions
+            if (t is Complex cplx)
+            {
+                var expansions = new List<Either<ExpansionResult, ITerm>>[cplx.Arity];
+                for (var i = 0; i < cplx.Arity; i++)
                 {
-                    var expansions = new List<Either<ExpansionResult, ITerm>>[cplx.Arity];
-                    for (var i = 0; i < cplx.Arity; i++)
+                    expansions[i] = new();
+                    foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope).Distinct())
                     {
-                        expansions[i] = new();
-                        foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope).Distinct())
-                        {
-                            expansions[i].Add(argExp);
-                        }
-                        if (expansions[i].Count == 0)
-                            expansions[i].Add(Either<ExpansionResult, ITerm>.FromB(cplx.Arguments[i]));
+                        expansions[i].Add(argExp);
                     }
-                    var cartesian = expansions.CartesianProduct();
-                    var isLambda = WellKnown.Functors.Lambda.Contains(cplx.Functor) && cplx.Arity == 2
-                        && cplx.Arguments[0] is Lang.Ast.List;
-                    foreach (var argList in cartesian)
+                    if (expansions[i].Count == 0)
+                        expansions[i].Add(Either<ExpansionResult, ITerm>.FromB(cplx.Arguments[i]));
+                }
+                var cartesian = expansions.CartesianProduct();
+                var isLambda = WellKnown.Functors.Lambda.Contains(cplx.Functor) && cplx.Arity == 2
+                    && cplx.Arguments[0] is Lang.Ast.List;
+                foreach (var argList in cartesian)
+                {
+                    var newCplx = cplx
+                        .WithArguments(argList
+                        .Select(x => x.Reduce(exp => exp.Binding
+                           .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
+                           .ToImmutableArray());
+                    var expClauses = new NTuple(
+                        exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
+                           .Concat(argList.SelectMany(x => x
+                              .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))),
+                        cplx.Scope);
+                    if (isLambda)
                     {
-                        var newCplx = cplx
-                            .WithArguments(argList
-                            .Select(x => x.Reduce(exp => exp.Binding
-                               .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
-                               .ToImmutableArray());
-                        var expClauses = new NTuple(
-                            exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
-                               .Concat(argList.SelectMany(x => x
-                                  .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))),
-                            cplx.Scope);
-                        if (isLambda)
-                        {
-                            // Stuff 'expClauses' inside the lambda instead of returning them to the parent predicate
-                            var body = newCplx.Arguments[1];
-                            var closure = new NTuple(expClauses.Contents.Append(body), cplx.Scope);
-                            newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure));
-                            yield return Either<ExpansionResult, ITerm>.FromB(newCplx);
-                        }
-                        else
-                        {
-                            yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
-                        }
+                        // Stuff 'expClauses' inside the lambda instead of returning them to the parent predicate
+                        var body = newCplx.Arguments[1];
+                        var closure = new NTuple(expClauses.Contents.Append(body), cplx.Scope);
+                        newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure));
+                        yield return Either<ExpansionResult, ITerm>.FromB(newCplx);
+                    }
+                    else
+                    {
+                        yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
                     }
                 }
-                else
-                {
-                    yield return exp;
-                }
+            }
+            else
+            {
+                yield return exp;
             }
         }
+    }
 
-        IEnumerable<ExpansionResult> GetExpansions(ITerm term, SolverScope scope)
+    public IEnumerable<ExpansionResult> GetExpansions(ITerm term, SolverScope scope)
+    {
+        var sig = term.GetSignature();
+        // Try all modules in import order
+        var modules = scope.InterpreterScope.VisibleModules;
+        foreach (var mod in modules.Reverse())
         {
-            var sig = term.GetSignature();
-            // Try all modules in import order
-            var modules = scope.InterpreterScope.VisibleModules;
-            foreach (var mod in modules.Reverse())
+            scope = scope.WithModule(mod);
+            foreach (var exp in GetDefinedExpansions(mod, sig))
             {
-                scope = scope.WithModule(mod);
-                foreach (var exp in GetDefinedExpansions(mod, sig))
-                {
-                    // Example expansion:
-                    // [Output] >> (head(A) :- body(A, Output)).
-                    // 1. Instantiate expansion, keep track of Output:
-                    // [__K1] >> (head(__K2) :- body(__K2, __K1)).
-                    // Output = __K1
-                    // 2. Unify term with expansion head:
-                    // head(__K2) / head(test)
-                    // __K2 = test
-                    // 3. Substitute expansion:
-                    // [__K1] >> (head(test) :- body(test, __K1)).
-                    var expVars = new Dictionary<string, Variable>();
-                    var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
-                    if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
-                        continue;
-                    var pred = Predicate.Substitute(expInst, subs);
-                    yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);
-                }
+                // Example expansion:
+                // [Output] >> (head(A) :- body(A, Output)).
+                // 1. Instantiate expansion, keep track of Output:
+                // [__K1] >> (head(__K2) :- body(__K2, __K1)).
+                // Output = __K1
+                // 2. Unify term with expansion head:
+                // head(__K2) / head(test)
+                // __K2 = test
+                // 3. Substitute expansion:
+                // [__K1] >> (head(test) :- body(test, __K1)).
+                var expVars = new Dictionary<string, Variable>();
+                var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
+                if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
+                    continue;
+                var pred = Predicate.Substitute(expInst, subs);
+                yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);
             }
         }
     }

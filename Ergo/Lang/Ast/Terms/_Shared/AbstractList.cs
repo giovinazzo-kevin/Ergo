@@ -26,7 +26,7 @@ public abstract class AbstractList : AbstractTerm
     public abstract (string Open, string Close) Braces { get; }
     public Signature Signature { get; }
 
-    protected abstract ITerm CanonicalForm { get; }
+    protected override ITerm CanonicalForm { get; set; }
 
     public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized)
         : base(scope)
@@ -43,6 +43,8 @@ public abstract class AbstractList : AbstractTerm
     {
         if (IsEmpty)
             return EmptyElement.Explain(canonical);
+        if (canonical)
+            return CanonicalForm.Explain(true);
         var joined = Contents.Join(t => t.Explain(canonical));
         return $"{Braces.Open}{joined}{Braces.Close}";
     }

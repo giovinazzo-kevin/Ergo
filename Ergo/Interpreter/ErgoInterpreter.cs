@@ -87,7 +87,7 @@ public partial class ErgoInterpreter
             return module;
         var watch = Probe.Enter();
         Probe.Count(moduleName.Explain(), 1);
-        var operators = scope.GetOperators();
+        var operators = scope.VisibleOperators;
         var parser = Facade.BuildParser(stream, operators);
         var pos = parser.Lexer.State;
         // Bootstrap a new parser by first loading the operator symbols defined in this module
@@ -186,7 +186,7 @@ public partial class ErgoInterpreter
             scope = scope.WithModule(newMod);
         }
 
-        var parser = Facade.BuildParser(stream, scope.GetOperators());
+        var parser = Facade.BuildParser(stream, scope.VisibleOperators);
         if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
@@ -211,7 +211,7 @@ public partial class ErgoInterpreter
     public InterpreterScope CreateScope(Func<InterpreterScope, InterpreterScope> configureStdlibScope = null)
     {
         configureStdlibScope ??= s => s;
-        var stdlibScope = new InterpreterScope(new Module(WellKnown.Modules.Stdlib, runtime: true));
+        var stdlibScope = new InterpreterScope(Facade, new Module(WellKnown.Modules.Stdlib, runtime: true));
         stdlibScope = configureStdlibScope(stdlibScope);
         Load(ref stdlibScope, WellKnown.Modules.Stdlib);
         var scope = stdlibScope

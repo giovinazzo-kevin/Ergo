@@ -18,7 +18,7 @@ public sealed class List : AbstractList
     public override Operator Operator => WellKnown.Operators.List;
     public override Atom EmptyElement => WellKnown.Literals.EmptyList;
     public override (string Open, string Close) Braces => ("[", "]");
-    protected override ITerm CanonicalForm { get; }
+    protected override ITerm CanonicalForm { get; set; }
     protected override AbstractList Create(ImmutableArray<ITerm> contents, Maybe<ParserScope> scope, bool parenthesized) => new List(contents, default, scope, parenthesized);
 
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

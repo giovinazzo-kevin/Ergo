@@ -1,4 +1,5 @@
 ﻿using Ergo.Events;
+using Ergo.Facade;
 using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Exceptions.Handler;
@@ -8,6 +9,7 @@ namespace Ergo.Interpreter;
 
 public readonly struct InterpreterScope
 {
+    public readonly ErgoFacade Facade;
     /// <summary>
     /// Indicates whether this scope pertains to a top level session. If false, this scope pertains to a file that is being loaded.
     /// </summary>
@@ -38,6 +40,7 @@ public readonly struct InterpreterScope
     /// </summary>
     public Module EntryModule => Modules[Entry];
 
+    public readonly ImmutableArray<Operator> VisibleOperators;
     public readonly ImmutableArray<Atom> VisibleModules;
     public readonly ImmutableHashSet<Library> VisibleLibraries;
     public readonly ImmutableDictionary<Signature, SolverBuiltIn> VisibleBuiltIns;
@@ -47,8 +50,9 @@ public readonly struct InterpreterScope
     public readonly IReadOnlyList<Signature> VisibleBuiltInsKeys;
     public readonly ImmutableDictionary<Signature, InterpreterDirective> VisibleDirectives;
 
-    public InterpreterScope(Module userModule)
+    public InterpreterScope(ErgoFacade facade, Module userModule)
     {
+        Facade = facade;
         Entry = userModule.Name;
         Modules = ImmutableDictionary.Create<Atom, Module>()
             .Add(userModule.Name, userModule);
@@ -64,9 +68,11 @@ public readonly struct InterpreterScope
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
         VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
         BaseImport = WellKnown.Modules.Stdlib;
+        VisibleOperators = GetOperators().ToImmutableArray();
     }
 
     private InterpreterScope(
+        ErgoFacade facade,
         Atom @base,
         Atom currentModule,
         ImmutableDictionary<Atom, Module> modules,
@@ -74,6 +80,7 @@ public readonly struct InterpreterScope
         bool runtime,
         ExceptionHandler handler)
     {
+        Facade = facade;
         BaseImport = @base;
         Modules = modules;
         SearchDirectories = dirs;
@@ -85,6 +92,7 @@ public readonly struct InterpreterScope
         VisibleDirectives = GetVisibleDirectives(VisibleModules, Modules);
         VisibleBuiltIns = GetVisibleBuiltIns(VisibleModules, Modules);
         VisibleBuiltInsKeys = VisibleBuiltIns.Keys.ToList();
+        VisibleOperators = GetOperators().ToImmutableArray();
     }
 
     public KnowledgeBase BuildKnowledgeBase()
@@ -105,15 +113,15 @@ public readonly struct InterpreterScope
         return kb;
     }
 
-    public InterpreterScope WithBaseModule(Atom a) => new(a, Entry, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithCurrentModule(Atom a) => new(BaseImport, a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithModule(Module m) => new(BaseImport, Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithoutModule(Atom m) => new(BaseImport, Entry, Modules.Remove(m), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithSearchDirectory(string s) => new(BaseImport, Entry, Modules, SearchDirectories.Add(s), IsRuntime, ExceptionHandler);
-    public InterpreterScope WithRuntime(bool runtime) => new(BaseImport, Entry, Modules, SearchDirectories, runtime, ExceptionHandler);
-    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(BaseImport, Entry, Modules, SearchDirectories, IsRuntime, newHandler);
-    public InterpreterScope WithoutModules() => new(BaseImport, Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithoutSearchDirectories() => new(BaseImport, Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithBaseModule(Atom a) => new(Facade, a, Entry, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithCurrentModule(Atom a) => new(Facade, BaseImport, a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithModule(Module m) => new(Facade, BaseImport, Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutModule(Atom m) => new(Facade, BaseImport, Entry, Modules.Remove(m), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithSearchDirectory(string s) => new(Facade, BaseImport, Entry, Modules, SearchDirectories.Add(s), IsRuntime, ExceptionHandler);
+    public InterpreterScope WithRuntime(bool runtime) => new(Facade, BaseImport, Entry, Modules, SearchDirectories, runtime, ExceptionHandler);
+    public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Facade, BaseImport, Entry, Modules, SearchDirectories, IsRuntime, newHandler);
+    public InterpreterScope WithoutModules() => new(Facade, BaseImport, Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutSearchDirectories() => new(Facade, BaseImport, Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
 
     public T GetLibrary<T>(Atom module) where T : Library => Modules[module].LinkedLibrary
         .GetOrThrow(new ArgumentException(null, nameof(module)))
@@ -152,7 +160,7 @@ public readonly struct InterpreterScope
     /// <summary>
     /// Returns all operators that are visible from the entry module.
     /// </summary>
-    public IEnumerable<Operator> GetOperators()
+    private IEnumerable<Operator> GetOperators()
     {
         var operators = GetOperatorsInner(Entry, Modules)
             .ToList();

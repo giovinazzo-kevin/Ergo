@@ -27,12 +27,13 @@ public readonly struct Atom : ITerm
         IsQuoted = quoted.GetOr(value is string s
             && s != (string)WellKnown.Literals.EmptyList.Value
             && s != (string)WellKnown.Literals.EmptyCommaList.Value
+            && s != (string)WellKnown.Literals.EmptySet.Value
             && (
                 // And if this is not a string that can be confused with a variable name
                 char.IsUpper(s.FirstOrDefault())
                 // Or if this is a string that contains spaces or weird punctuation
                 || s.Any(c => char.IsWhiteSpace(c)
-                    || !WellKnown.Lexemes.IdentifierPunctuation.Contains(c) && WellKnown.Lexemes.QuotablePunctuation.Contains(c))
+                    || WellKnown.Lexemes.QuotablePunctuation.Contains(c))
             ));
     }
 

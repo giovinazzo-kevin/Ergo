@@ -6,16 +6,16 @@ public sealed class Set : AbstractList
     public Set(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized)
         : base(Sort(head), scope, parenthesized)
     {
-        CanonicalForm = FoldNoEmptyTail(Operator, EmptyElement, ImmutableArray.CreateRange(Contents));
+        CanonicalForm = Fold(Operator, EmptyElement, ImmutableArray.CreateRange(Contents));
     }
     public Set(IEnumerable<ITerm> contents, Maybe<ParserScope> scope = default, bool parenthesized = false)
         : this(ImmutableArray.CreateRange(contents), scope, parenthesized) { }
     protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope = default, bool parenthesized = false)
         => new Set(head, scope, parenthesized);
     public override Operator Operator => WellKnown.Operators.Set;
-    public override Atom EmptyElement => WellKnown.Literals.EmptyBracyList;
+    public override Atom EmptyElement => WellKnown.Literals.EmptySet;
     public override (string Open, string Close) Braces => ("{", "}");
-    protected override ITerm CanonicalForm { get; }
+    protected override ITerm CanonicalForm { get; set; }
     static IEnumerable<ITerm> Sort(IEnumerable<ITerm> terms)
     {
         var sorted = terms

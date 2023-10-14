@@ -229,7 +229,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 foreach (var name in args)
                 {
                     var type = GetMemberType(name);
-                    var arg = GetArgument(name, (Ast.Complex)t);
+                    var arg = GetArgument(name, t);
                     var value = TermMarshall.FromTerm(arg, type);
                     if (value is null)
                         continue;

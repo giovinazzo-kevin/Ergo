@@ -7,7 +7,7 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain(false) }")]
 public class Dict : AbstractTerm
 {
-    protected ITerm CanonicalForm { get; }
+    protected ITerm CanonicalForm { get; set; }
     public Signature Signature { get; }
     public override bool IsQualified => CanonicalForm.IsQualified;
     public override bool IsParenthesized { get; }
@@ -23,10 +23,29 @@ public class Dict : AbstractTerm
         return CanonicalForm.Equals(other);
     }
 
-    public readonly ITerm[] KeyValuePairs;
-    public readonly ImmutableDictionary<Atom, ITerm> Dictionary;
-    public readonly Either<Atom, Variable> Functor;
-    public readonly Either<Variable, Set> Argument;
+    public ITerm[] KeyValuePairs { get; protected set; }
+    public ImmutableDictionary<Atom, ITerm> Dictionary { get; protected set; }
+    public Either<Atom, Variable> Functor { get; protected set; }
+    public Either<Variable, Set> Argument { get; protected set; }
+
+    protected ITerm[] BuildKVPs()
+    {
+        var op = WellKnown.Operators.NamedArgument;
+        return Dictionary
+            .Select(kv => (ITerm)new Complex(op.CanonicalFunctor, kv.Key, kv.Value)
+                    .AsOperator(op))
+            .OrderBy(o => o)
+            .ToArray();
+    }
+
+    protected ITerm BuildCanonical()
+    {
+        return new Complex(
+            WellKnown.Functors.Dict.First(),
+            new[] { Functor.Reduce(a => (ITerm)a, b => b),
+                Argument.Reduce<ITerm>(x => x, x => x)
+            }).AsParenthesized(IsParenthesized);
+    }
 
     public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args = null, Maybe<ParserScope> scope = default, bool parenthesized = false)
         : base(scope)
@@ -34,23 +53,13 @@ public class Dict : AbstractTerm
         args ??= Enumerable.Empty<KeyValuePair<Atom, ITerm>>();
         Functor = functor;
         Dictionary = ImmutableDictionary.CreateRange(args);
-        var op = WellKnown.Operators.NamedArgument;
-        KeyValuePairs = Dictionary
-            .Select(kv => (ITerm)new Complex(op.CanonicalFunctor, kv.Key, kv.Value)
-                    .AsOperator(op))
-            .OrderBy(o => o)
-            .ToArray();
-        var set = new Set(KeyValuePairs, scope, false);
-        CanonicalForm = new Complex(
-            WellKnown.Functors.Dict.First(),
-            new[] { Functor.Reduce(a => (ITerm)a, b => b),
-                set
-            }).AsParenthesized(parenthesized);
+        KeyValuePairs = BuildKVPs();
+        Argument = new Set(KeyValuePairs, scope, false);
         IsParenthesized = parenthesized;
+        CanonicalForm = BuildCanonical();
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
             Signature = Signature.WithTag(functor.Reduce(a => a, v => throw new InvalidOperationException()));
-        Argument = set;
     }
     public Dict(Either<Atom, Variable> functor, Variable unboundArgs, Maybe<ParserScope> scope = default, bool parenthesized = false)
         : base(scope)
@@ -59,16 +68,12 @@ public class Dict : AbstractTerm
         Dictionary = ImmutableDictionary.Create<Atom, ITerm>();
         var op = WellKnown.Operators.NamedArgument;
         KeyValuePairs = Array.Empty<ITerm>();
-        CanonicalForm = new Complex(
-            WellKnown.Functors.Dict.First(),
-            new[] { Functor.Reduce(a => (ITerm)a, b => b),
-                unboundArgs
-            }).AsParenthesized(parenthesized);
+        Argument = unboundArgs;
         IsParenthesized = parenthesized;
+        CanonicalForm = BuildCanonical();
         Signature = CanonicalForm.GetSignature();
         if (functor.IsA)
             Signature = Signature.WithTag(functor.Reduce(a => a, v => throw new InvalidOperationException()));
-        Argument = unboundArgs;
     }
 
     public Dict WithFunctor(Either<Atom, Variable> newFunctor) => new(newFunctor, Dictionary.ToBuilder(), Scope, IsParenthesized);

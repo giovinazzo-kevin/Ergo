@@ -47,10 +47,10 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
         foreach (var sol in solutions
             .Select(sol =>
             {
-                var arg = (Complex)(sol.Substitutions[variable]);
+                var arg = (NTuple)(sol.Substitutions[variable]);
 
-                var argVars = arg.Arguments[0];
-                var argTmpl = arg.Arguments[1];
+                var argVars = arg.Contents[0];
+                var argTmpl = arg.Contents[1];
                 var varTmpl = argTmpl.Variables
                     .ToHashSet();
 

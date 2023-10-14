@@ -15,7 +15,7 @@ public abstract class NthBase : SolverBuiltIn
             if (args[1] is List list && index >= 0 && index < list.Contents.Length)
             {
                 var elem = list.Contents[index];
-                if (args[2].Unify(elem).TryGetValue(out var subs))
+                if (LanguageExtensions.Unify(args[2], elem).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -38,7 +38,7 @@ public abstract class NthBase : SolverBuiltIn
                 for (var i = 0; i < list.Contents.Length; ++i)
                 {
                     var elem = list.Contents[i];
-                    if (args[2].Unify(elem).TryGetValue(out var subs))
+                    if (LanguageExtensions.Unify(args[2], elem).TryGetValue(out var subs))
                     {
                         any = true;
                         subs.Add(new(args[0], new Atom(i + Offset)));

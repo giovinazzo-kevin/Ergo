@@ -78,22 +78,6 @@ public readonly partial struct Complex : ITerm
             || c == '=';
     }
 
-    public Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
-    {
-        var map = new SubstitutionMap();
-        if (other is Complex c && Matches(c))
-        {
-            for (var i = 0; i < Arguments.Length; i++)
-            {
-                if (!Arguments[i].UnifyLeftToRight(c.Arguments[i]).TryGetValue(out var argMap))
-                    return default;
-                map.AddRange(argMap);
-            }
-            return map;
-        }
-        return default;
-    }
-
     public ITerm Substitute(Substitution s)
     {
         if (Equals(s.Lhs))

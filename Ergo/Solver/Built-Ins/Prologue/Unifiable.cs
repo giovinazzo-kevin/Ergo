@@ -9,7 +9,7 @@ public sealed class Unifiable : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
-        if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
+        if (LanguageExtensions.Unify(arguments[0], arguments[1]).TryGetValue(out var subs))
         {
             var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Operators.Unification.CanonicalFunctor, s.Lhs, s.Rhs)
                 .AsOperator(WellKnown.Operators.Unification));

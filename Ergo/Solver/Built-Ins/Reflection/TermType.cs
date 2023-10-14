@@ -21,7 +21,7 @@ public sealed class TermType : SolverBuiltIn
         {
             yield return new(WellKnown.Literals.True, new Substitution(arguments[1], type));
         }
-        else if (arguments[1].Unify(type).TryGetValue(out var subs))
+        else if (LanguageExtensions.Unify(arguments[1], type).TryGetValue(out var subs))
         {
             yield return new(WellKnown.Literals.True, subs);
         }

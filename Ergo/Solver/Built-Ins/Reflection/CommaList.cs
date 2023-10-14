@@ -20,7 +20,7 @@ public sealed class CommaToList : SolverBuiltIn
             }
 
             var comma = new NTuple(list.Contents, default);
-            if (!commaArg.Unify(comma).TryGetValue(out var subs))
+            if (!LanguageExtensions.Unify(commaArg, comma).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;
@@ -39,7 +39,7 @@ public sealed class CommaToList : SolverBuiltIn
             }
 
             var list = new List(comma.Contents, default, default);
-            if (!listArg.Unify(list).TryGetValue(out var subs))
+            if (!LanguageExtensions.Unify(listArg, list).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

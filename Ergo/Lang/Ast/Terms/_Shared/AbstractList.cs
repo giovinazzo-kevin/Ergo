@@ -40,9 +40,9 @@ public abstract class AbstractList : AbstractTerm
         var joined = Contents.Join(t => t.Explain(canonical));
         return $"{Braces.Open}{joined}{Braces.Close}";
     }
-    public override Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
+    public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
-        return CanonicalForm.Unify(other);
+        return LanguageExtensions.Unify(CanonicalForm, other);
     }
     public override Signature GetSignature() => CanonicalForm.GetSignature();
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

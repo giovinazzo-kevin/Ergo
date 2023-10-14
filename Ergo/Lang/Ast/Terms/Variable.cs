@@ -36,11 +36,6 @@ public readonly struct Variable : ITerm
         return Name;
     }
 
-    public Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
-    {
-        return new SubstitutionMap { new(this, other) };
-    }
-
     public ITerm Substitute(Substitution s)
     {
         if (Equals(s.Lhs))

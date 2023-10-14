@@ -29,11 +29,11 @@ public sealed class DictKeyValue : SolverBuiltIn
             var anyValue = false;
             foreach (var key in dict.Dictionary.Keys)
             {
-                var s1 = args[1].Unify(key).TryGetValue(out var subs);
+                var s1 = LanguageExtensions.Unify(args[1], key).TryGetValue(out var subs);
                 if (s1)
                 {
                     anyKey = true;
-                    var s2 = args[2].Unify(dict.Dictionary[key]).TryGetValue(out var vSubs);
+                    var s2 = LanguageExtensions.Unify(args[2], dict.Dictionary[key]).TryGetValue(out var vSubs);
                     if (s2)
                     {
                         anyValue = true;

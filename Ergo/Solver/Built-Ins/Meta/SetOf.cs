@@ -16,8 +16,8 @@ public sealed class SetOf : SolutionAggregationBuiltIn
             var setVars = new Set(ListVars.Contents, ArgVars.Scope);
             var setTemplate = new Set(ListTemplate.Contents, ArgVars.Scope);
 
-            if (!setVars.Unify(argSet).TryGetValue(out var listSubs)
-            || !args[2].Unify(setTemplate).TryGetValue(out var instSubs))
+            if (!LanguageExtensions.Unify(setVars, argSet).TryGetValue(out var listSubs)
+            || !LanguageExtensions.Unify(args[2], setTemplate).TryGetValue(out var instSubs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

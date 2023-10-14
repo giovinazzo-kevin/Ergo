@@ -24,7 +24,7 @@ public sealed class NumberString : SolverBuiltIn
                 yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
                 yield break;
             }
-            if (num.Unify(new Atom(d.ToString())).TryGetValue(out var subs))
+            if (LanguageExtensions.Unify(num, new Atom(d.ToString())).TryGetValue(out var subs))
             {
                 yield return True(subs);
                 yield break;
@@ -48,7 +48,7 @@ public sealed class NumberString : SolverBuiltIn
                 yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
                 yield break;
             }
-            if (num.Unify(new Atom(n)).TryGetValue(out var subs))
+            if (LanguageExtensions.Unify(num, new Atom(n)).TryGetValue(out var subs))
             {
                 yield return True(subs);
                 yield break;

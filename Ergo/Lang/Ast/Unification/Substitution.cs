@@ -70,21 +70,32 @@ public readonly struct Substitution
         Console.WriteLine($"{x.Explain()}/{y.Explain()}");
         if (!x.Equals(y))
         {
-            // Check if x unifies with y in one direction
-            if (x.UnifyLeftToRight(y).TryGetValue(out var xSubY))
+            if (y is Variable)
             {
-                ApplySubstitutions(xSubY);
+                ApplySubstitution(new Substitution(y, x));
+            }
+            else if (x is Variable)
+            {
+                ApplySubstitution(new Substitution(x, y));
+            }
+            else if (x is Complex cx && y is Complex cy)
+            {
+                if (!cx.Matches(cy))
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < cx.Arguments.Length; i++)
+                {
+                    E.Enqueue(new Substitution(cx.Arguments[i], cy.Arguments[i]));
+                }
+
                 return true;
             }
-            // Then in the other direction (and invert the substitutions)
-            if (y.UnifyLeftToRight(x).TryGetValue(out var ySubX))
+            else
             {
-                ySubX.Invert();
-                ApplySubstitutions(ySubX);
-                return true;
+                return false;
             }
-            // x doesn't unify with y and y doesn't unify with x
-            return false;
         }
         // x equals y, so they unify by default
         return true;

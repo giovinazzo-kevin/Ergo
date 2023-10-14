@@ -16,7 +16,7 @@ public sealed class With : SolverBuiltIn
                 && GetPairs(b).TryGetValue(out var kvps))
             {
                 var merged = Update(a, kvps);
-                if (args[2].Unify(merged).TryGetValue(out var subs))
+                if (LanguageExtensions.Unify(args[2], merged).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -24,7 +24,7 @@ public sealed class With : SolverBuiltIn
             }
             else if (args[2] is Dict d)
             {
-                if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(a.Dictionary[k]).TryGetValue(out _)))
+                if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], a.Dictionary[k]).TryGetValue(out _)))
                 {
                     yield return False();
                     yield break;
@@ -32,7 +32,7 @@ public sealed class With : SolverBuiltIn
                 var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
                 var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                     .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
-                if (args[1].Unify(merged).TryGetValue(out var subs))
+                if (LanguageExtensions.Unify(args[1], merged).TryGetValue(out var subs))
                 {
                     yield return True(subs);
                     yield break;
@@ -44,7 +44,7 @@ public sealed class With : SolverBuiltIn
             && GetPairs(b).TryGetValue(out var kvps)
             && args[2] is Dict d)
         {
-            if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !d.Dictionary[k].Unify(kvps[k]).TryGetValue(out _)))
+            if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], kvps[k]).TryGetValue(out _)))
             {
                 yield return False();
                 yield break;
@@ -52,7 +52,7 @@ public sealed class With : SolverBuiltIn
             var diff = d.Dictionary.Keys.Except(kvps.Select(k => k.Key)).ToHashSet();
             var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                 .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
-            if (args[0].Unify(merged).TryGetValue(out var subs))
+            if (LanguageExtensions.Unify(args[0], merged).TryGetValue(out var subs))
             {
                 yield return True(subs);
                 yield break;

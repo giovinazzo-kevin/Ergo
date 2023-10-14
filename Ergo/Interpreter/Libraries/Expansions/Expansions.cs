@@ -233,7 +233,7 @@ public class Expansions : Library
                     // [__K1] >> (head(test) :- body(test, __K1)).
                     var expVars = new Dictionary<string, Variable>();
                     var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
-                    if (!term.Unify(expInst.Head).TryGetValue(out var subs))
+                    if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
                         continue;
                     var pred = Predicate.Substitute(expInst, subs);
                     yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);

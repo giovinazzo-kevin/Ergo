@@ -69,13 +69,6 @@ public readonly struct Atom : ITerm
             .Replace("\t", "\\t");
     }
 
-    public Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
-    {
-        if (other is Atom a && Equals(a))
-            return new SubstitutionMap() { };
-        return default;
-    }
-
     public ITerm Substitute(Substitution s)
     {
         if (Equals(s.Lhs)) return s.Rhs;

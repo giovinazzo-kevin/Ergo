@@ -59,7 +59,7 @@ public sealed class FormatString : SolverBuiltIn
                 if (Regex.Match(resultStrRaw, capturePattern) is { Success: true } capture)
                 {
                     var atom = new Atom(capture.Groups[1].Value);
-                    v.Unify(atom).TryGetValue(out var subs);
+                    LanguageExtensions.Unify(v, atom).TryGetValue(out var subs);
                     varSubs.AddRange(subs);
                     ret = atom.AsQuoted(false).Explain(canonical: false);
                 }

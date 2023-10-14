@@ -13,7 +13,7 @@ public sealed class NumberVars : SolverBuiltIn
     {
         var allSubs = new SubstitutionMap();
         var (start, end) = (0, 0);
-        if (args[1].Unify(new Atom(start)).TryGetValue(out var subs1))
+        if (LanguageExtensions.Unify(args[1], new Atom(start)).TryGetValue(out var subs1))
         {
             if (!args[1].IsGround)
             {
@@ -38,14 +38,14 @@ public sealed class NumberVars : SolverBuiltIn
             ++end;
         }
 
-        if (!args[0].Instantiate(scope.InstantiationContext, newVars).Unify(args[0]).TryGetValue(out var subs0))
+        if (!LanguageExtensions.Unify(args[0].Instantiate(scope.InstantiationContext, newVars), args[0]).TryGetValue(out var subs0))
         {
             yield return False();
             yield break;
         }
         allSubs.AddRange(subs0);
 
-        if (args[2].Unify(new Atom(end)).TryGetValue(out var subs2))
+        if (LanguageExtensions.Unify(args[2], new Atom(end)).TryGetValue(out var subs2))
         {
             if (!args[2].IsGround)
             {

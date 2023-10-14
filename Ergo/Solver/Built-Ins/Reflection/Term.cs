@@ -16,8 +16,8 @@ public sealed class Term : SolverBuiltIn
             if (termArg is Dict dict)
             {
                 var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
-                if (!functorArg.Unify(new Atom("dict")).TryGetValue(out var funSubs)
-                || !args.Unify(new List(new[] { tag }.Append(new List(dict.KeyValuePairs, default, dict.Scope)), default, dict.Scope))
+                if (!LanguageExtensions.Unify(functorArg, new Atom("dict")).TryGetValue(out var funSubs)
+                || !LanguageExtensions.Unify(args, new List((new[] { tag }).Append(new List(dict.KeyValuePairs, default, dict.Scope)), default, dict.Scope))
                         .TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
@@ -30,8 +30,8 @@ public sealed class Term : SolverBuiltIn
 
             if (termArg is Complex complex)
             {
-                if (!functorArg.Unify(complex.Functor).TryGetValue(out var funSubs)
-                || !args.Unify(new List(complex.Arguments, default, complex.Scope)).TryGetValue(out var listSubs))
+                if (!LanguageExtensions.Unify(functorArg, complex.Functor).TryGetValue(out var funSubs)
+                || !LanguageExtensions.Unify(args, new List(complex.Arguments, default, complex.Scope)).TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;
@@ -43,8 +43,8 @@ public sealed class Term : SolverBuiltIn
 
             if (termArg is Atom atom)
             {
-                if (!functorArg.Unify(atom).TryGetValue(out var funSubs)
-                || !args.Unify(WellKnown.Literals.EmptyList).TryGetValue(out var listSubs))
+                if (!LanguageExtensions.Unify(functorArg, atom).TryGetValue(out var funSubs)
+                || !LanguageExtensions.Unify(args, WellKnown.Literals.EmptyList).TryGetValue(out var listSubs))
                 {
                     yield return new(WellKnown.Literals.False);
                     yield break;
@@ -75,8 +75,8 @@ public sealed class Term : SolverBuiltIn
                 yield break;
             }
 
-            if (!termArg.Unify(functor).TryGetValue(out var subs)
-            || !args.Unify(WellKnown.Literals.EmptyList).TryGetValue(out var argsSubs))
+            if (!LanguageExtensions.Unify(termArg, functor).TryGetValue(out var subs)
+            || !LanguageExtensions.Unify(args, WellKnown.Literals.EmptyList).TryGetValue(out var argsSubs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;
@@ -86,7 +86,7 @@ public sealed class Term : SolverBuiltIn
         }
         else
         {
-            if (!termArg.Unify(new Complex(functor, argsList.Contents.ToArray())).TryGetValue(out var subs))
+            if (!LanguageExtensions.Unify(termArg, new Complex(functor, argsList.Contents.ToArray())).TryGetValue(out var subs))
             {
                 yield return new(WellKnown.Literals.False);
                 yield break;

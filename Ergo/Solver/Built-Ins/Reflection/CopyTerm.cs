@@ -10,7 +10,7 @@ public sealed class CopyTerm : SolverBuiltIn
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
         var copy = args[0].Instantiate(scope.InstantiationContext);
-        if (!args[1].Unify(copy).TryGetValue(out var subs))
+        if (!LanguageExtensions.Unify(args[1], copy).TryGetValue(out var subs))
         {
             yield return False();
             yield break;

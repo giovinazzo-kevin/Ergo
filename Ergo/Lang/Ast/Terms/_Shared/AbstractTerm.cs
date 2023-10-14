@@ -21,7 +21,7 @@ public abstract class AbstractTerm : ITerm
     public abstract ITerm Substitute(Substitution s);
     public abstract ITerm NumberVars();
     public ITerm Substitute(IEnumerable<Substitution> s) => s.Aggregate((ITerm)this, (a, b) => a.Substitute(b));
-    public abstract Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other);
+    public abstract Maybe<SubstitutionMap> Unify(ITerm other);
 
     public override bool Equals(object obj)
     {

@@ -56,10 +56,10 @@ public class Dict : AbstractTerm
         return $"{functor}{{{joinedArgs}}}";
     }
 
-    public override Maybe<SubstitutionMap> UnifyLeftToRight(ITerm other)
+    public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
         if (other is not Dict dict)
-            return CanonicalForm.Unify(other);
+            return LanguageExtensions.Unify(CanonicalForm, other);
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
         var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);

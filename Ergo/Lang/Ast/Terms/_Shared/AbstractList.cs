@@ -14,7 +14,13 @@ public abstract class AbstractList : AbstractTerm
     public override bool IsGround => CanonicalForm.IsGround;
     public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
     public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
-    public override bool Equals(ITerm other) => CanonicalForm.Equals(other);
+    public override bool Equals(ITerm other)
+    {
+        if (other is AbstractList abs)
+            return abs.GetType() == GetType()
+                && Contents.SequenceEqual(abs.Contents);
+        return CanonicalForm.Equals(other); ;
+    }
     public abstract Operator Operator { get; }
     public abstract Atom EmptyElement { get; }
     public abstract (string Open, string Close) Braces { get; }

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -70,7 +71,20 @@ public readonly struct Substitution
         Console.WriteLine($"{x.Explain()}/{y.Explain()}");
         if (!x.Equals(y))
         {
-            if (y is Variable)
+            if (x is AbstractTerm ax && ax.Unify(y).TryGetValue(out var axWithY))
+            {
+                foreach (var s in axWithY)
+                    E.Enqueue(s);
+                return true;
+            }
+            else if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
+            {
+                ayWithX.Invert();
+                foreach (var s in ayWithX)
+                    E.Enqueue(s);
+                return true;
+            }
+            else if (y is Variable)
             {
                 ApplySubstitution(new Substitution(y, x));
             }

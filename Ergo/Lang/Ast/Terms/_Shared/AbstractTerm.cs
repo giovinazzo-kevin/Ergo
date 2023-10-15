@@ -16,8 +16,18 @@ public abstract class AbstractTerm : ITerm
         Scope = scope;
     }
 
+    /// <summary>
+    /// Expands an abstract term by expanding its canonical form, then parsing the result.
+    /// </summary>
     public virtual IEnumerable<Either<ExpansionResult, ITerm>> Expand(Expansions lib, SolverScope scope)
     {
+        /*
+            Since expansions work by recursively expanding complex terms, and abstract terms are not complex terms,
+            we first expand the canonical form of this term, which is going to be a normal Atom|Variable|Complex.
+            The expansion is going to be in canonical form, so we need a way to turn it back into its abstract form.
+            A convenient way to do this is by representing the canonical form as a string, then parsing that string
+            with the same parser that produced this term. The result is going to have the same type as this term.
+         */
         foreach (var termOrExp in lib.ExpandTerm(CanonicalForm, scope))
         {
             var result = termOrExp.Reduce(exp => exp.Binding.Select(v => (ITerm)v).GetOr(exp.Match),

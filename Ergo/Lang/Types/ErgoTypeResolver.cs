@@ -68,6 +68,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
     public abstract Type GetMemberType(string name);
     public abstract TermAttribute GetMemberAttribute(string name);
+    public abstract bool IsMemberWriteable(string name);
     public abstract object GetMemberValue(string name, object instance);
     public abstract void SetMemberValue(string name, object instance, object value);
     public abstract IEnumerable<string> GetMembers();
@@ -228,6 +229,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 var args = GetMembers();
                 foreach (var name in args)
                 {
+                    if (!IsMemberWriteable(name))
+                        continue;
                     var type = GetMemberType(name);
                     var arg = GetArgument(name, t);
                     var value = TermMarshall.FromTerm(arg, type);

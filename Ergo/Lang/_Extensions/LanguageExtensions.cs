@@ -42,7 +42,6 @@ public static class LanguageExtensions
         return false;
     }
 
-    [Obsolete()]
     public static Maybe<T> IsAbstract<T>(this ITerm t)
         where T : AbstractTerm
     {

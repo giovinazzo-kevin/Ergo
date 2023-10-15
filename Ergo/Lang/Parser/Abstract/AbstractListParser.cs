@@ -29,7 +29,6 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
         }
         else if (c.Arguments[1] is L abs)
         {
-            // this is eliding list tails
             return Merge(abs, c.Arguments[0], c.Scope);
         }
         return ParseTail(c);

@@ -108,7 +108,6 @@ public readonly struct Predicate : IExplainable
         return new(Documentation, DeclaringModule, Head.Qualified(DeclaringModule), Body, IsDynamic, IsExported, IsTailRecursive);
     }
 
-    // TODO: Conform to abstract term method FromCanonical
     public static bool FromCanonical(ITerm term, Atom defaultModule, out Predicate pred)
     {
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))

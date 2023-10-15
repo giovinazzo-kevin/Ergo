@@ -21,6 +21,7 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
         return arg;
     }
     public override Type GetMemberType(string name) => PropertiesByName[name].PropertyType;
+    public override bool IsMemberWriteable(string name) => PropertiesByName[name].CanWrite;
     public override object GetMemberValue(string name, object instance) => PropertiesByName[name].GetValue(instance);
     public override void SetMemberValue(string name, object instance, object value)
     {

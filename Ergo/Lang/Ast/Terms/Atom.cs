@@ -84,11 +84,15 @@ public readonly struct Atom : ITerm
     public override bool Equals(object obj)
     {
         if (obj is not Atom other)
+        {
             return false;
-        if (HashCode != other.HashCode)
-            return false;
+        }
+
         if (other.Value is double n && Value is double m)
+        {
             return m - n == 0d;
+        }
+
         return Equals(Value, other.Value);
     }
     public bool Equals(ITerm obj) => Equals((object)obj);

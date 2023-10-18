@@ -68,19 +68,15 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return default;
         IEnumerable<KBMatch> Inner(List<Predicate> list)
         {
-            return list
-                .Select(k =>
+            foreach (var k in list.ToArray())
+            {
+                var predicate = k.Instantiate(ctx);
+                if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                 {
-                    var predicate = k.Instantiate(ctx);
-                    if (predicate.Unify(goal).TryGetValue(out var matchSubs))
-                    {
-                        predicate = Predicate.Substitute(predicate, matchSubs);
-                        return Maybe.Some(new KBMatch(goal, predicate, matchSubs));
-                    }
-                    return default;
-                })
-                .Where(x => x.TryGetValue(out _))
-                .Select(x => x.GetOrThrow(new InvalidOperationException()));
+                    predicate = Predicate.Substitute(predicate, matchSubs);
+                    yield return new KBMatch(goal, predicate, matchSubs);
+                }
+            }
         }
     }
 

@@ -18,25 +18,8 @@ public class Dict : AbstractTerm
     public override bool Equals(ITerm other)
     {
         if (other is Dict dict)
-        {
-            if (dict.Dictionary.Count != Dictionary.Count)
-                return false;
-            if (!dict.Functor.Equals(Functor))
-                return false;
-            // Defer value comparisons, because they are potentially much more expensive than comparing atomic keys.
-            var valueComparisons = new Queue<(ITerm, ITerm)>();
-            foreach (var (keyA, valueA) in Dictionary)
-            {
-                if (!dict.Dictionary.TryGetValue(keyA, out var valueB))
-                    return false;
-                valueComparisons.Enqueue((valueA, valueB));
-            }
-            while (valueComparisons.TryDequeue(out var pair))
-            {
-                if (!pair.Item1.Equals(pair.Item2))
-                    return false;
-            }
-        }
+            return dict.Functor.Equals(Functor)
+                && Dictionary.SequenceEqual(dict.Dictionary);
         return CanonicalForm.Equals(other);
     }
 
@@ -135,8 +118,7 @@ public class Dict : AbstractTerm
         }
         else
         {
-            // Proper dictionaries unify if the intersection of their properties unifies.
-            // This is different from equality, which is more strict and checks if all elements are equal.
+            // Proper dictionaries unify if the intersection their properties unifies.
             var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
             if (!set.Any() && Dictionary.Count != 0 && dict.Dictionary.Count != 0)
                 return default;

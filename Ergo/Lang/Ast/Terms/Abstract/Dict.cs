@@ -36,6 +36,7 @@ public class Dict : AbstractTerm
                 if (!pair.Item1.Equals(pair.Item2))
                     return false;
             }
+            return true;
         }
         return CanonicalForm.Equals(other);
     }

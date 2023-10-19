@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -80,11 +81,10 @@ public readonly partial struct Complex : ITerm
 
     public ITerm Substitute(Substitution s)
     {
+        if (IsGround)
+            return this;
         if (Equals(s.Lhs))
-        {
             return s.Rhs;
-        }
-
         var newArgs = new ITerm[Arguments.Length];
         for (var i = 0; i < newArgs.Length; i++)
         {
@@ -97,7 +97,7 @@ public readonly partial struct Complex : ITerm
 
     public IEnumerable<Variable> Variables => Arguments.SelectMany(arg => arg.Variables);
 
-    public bool Matches(Complex other) => Equals(Functor, other.Functor) && Arity == other.Arity;
+    public bool Matches(Complex other) => Arity == other.Arity && Equals(Functor, other.Functor);
 
     public override bool Equals(object obj)
     {
@@ -114,9 +114,12 @@ public readonly partial struct Complex : ITerm
 
     public int CompareTo(ITerm o)
     {
+        if (o is AbstractTerm abs)
+            return -abs.CompareTo(this);
         if (o is Atom) return 1;
         if (o is Variable) return 1;
-        if (o is not Complex other) throw new InvalidCastException();
+        if (o is not Complex other)
+            throw new InvalidCastException();
 
         if (Arity.CompareTo(other.Arity) is var cmpArity && cmpArity != 0)
             return cmpArity;
@@ -130,7 +133,12 @@ public readonly partial struct Complex : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        return new Complex(Operator, IsParenthesized, Functor, Arguments.Select(arg => arg.Instantiate(ctx, vars)).ToImmutableArray(), Scope);
+        var builder = Arguments.ToBuilder();
+        for (int i = 0; i < Arity; i++)
+        {
+            builder[i] = Arguments[i].Instantiate(ctx, vars);
+        }
+        return new Complex(Operator, IsParenthesized, Functor, builder.ToImmutableArray(), Scope);
     }
 
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);

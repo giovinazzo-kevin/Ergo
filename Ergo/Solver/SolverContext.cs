@@ -156,7 +156,7 @@ public sealed class SolverContext : IDisposable
         var subGoal = goals.First();
         goals = goals.RemoveAt(0);
 
-        // Get first solution for the current subgoal
+        // Get each solution for the current subgoal
         foreach (var s in SolveTerm(subGoal, scope, ct: ct))
         {
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)), query.Scope);

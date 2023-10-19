@@ -98,7 +98,8 @@ public readonly struct Atom : ITerm
         if (o is AbstractTerm abs) return -abs.CompareTo(this);
         if (o is Variable) return 1;
         if (o is Complex) return -1;
-        if (o is not Atom other) throw new InvalidCastException();
+        if (o is not Atom other)
+            throw new InvalidCastException();
 
         if (Value is EDecimal d && other.Value is EDecimal e)
         {

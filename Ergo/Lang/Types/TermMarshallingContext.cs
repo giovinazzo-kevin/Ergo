@@ -20,7 +20,7 @@ public sealed class TermMarshallingContext
             var hashCode = HashCode.Combine(key, type);
             if (cache.TryGetValue(hashCode, out var cached_))
             {
-                cached = functor.Map(some => some, () => cached_.GetFunctor())
+                cached = functor.Map(some => some, cached_.GetFunctor)
                     .Reduce(cached_.WithFunctor, () => cached_);
                 return true;
             }

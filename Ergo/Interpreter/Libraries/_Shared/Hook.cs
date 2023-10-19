@@ -23,8 +23,7 @@ public readonly record struct Hook(Signature Signature)
         if (anon is Complex cplx)
             anon = cplx.WithArguments(args);
         var module = Signature.Module.GetOr(WellKnown.Modules.User);
-        anon = anon
-            .Qualified(module);
+        anon = anon.Qualified(module);
         var callee = new Predicate($"<hook:{Signature.Explain()}>", module, anon, NTuple.Empty, dynamic: true, exported: false);
         foreach (var s in ctx.Solve(new(anon), scope.WithCallee(callee), ct: ct))
             yield return s;

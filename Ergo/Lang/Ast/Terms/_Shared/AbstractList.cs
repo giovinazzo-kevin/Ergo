@@ -62,9 +62,11 @@ public abstract class AbstractList : AbstractTerm
     public override Signature GetSignature() => CanonicalForm.GetSignature();
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround)
+            return this;
         vars ??= new();
-        var builder = Contents.ToArray();
-        for (int i = 0; i < builder.Length; i++)
+        var builder = Contents.ToBuilder();
+        for (int i = 0; i < Contents.Length; i++)
         {
             builder[i] = Contents[i].Instantiate(ctx, vars);
         }
@@ -72,17 +74,10 @@ public abstract class AbstractList : AbstractTerm
     }
     public override AbstractTerm Substitute(Substitution s)
     {
-        var builder = Contents.ToArray();
-        for (int i = 0; i < builder.Length; i++)
-        {
-            builder[i] = Contents[i].Substitute(s);
-        }
-        return Create(builder.ToImmutableArray(), Scope, IsParenthesized);
-    }
-    public virtual AbstractTerm Substitute(SubstitutionMap s)
-    {
-        var builder = Contents.ToArray();
-        for (int i = 0; i < builder.Length; i++)
+        if (IsGround)
+            return this;
+        var builder = Contents.ToBuilder();
+        for (int i = 0; i < Contents.Length; i++)
         {
             builder[i] = Contents[i].Substitute(s);
         }

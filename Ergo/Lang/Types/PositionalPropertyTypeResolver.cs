@@ -14,7 +14,7 @@ internal class PositionalPropertyTypeResolver<T> : ErgoPropertyResolver<T>
     public override Type GetMemberType(string name) => Properties[int.Parse(name)].PropertyType;
     public override object GetMemberValue(string name, object instance) => Properties[int.Parse(name)].GetValue(instance);
     public override void SetMemberValue(string name, object instance, object value) => Properties[int.Parse(name)].SetValue(instance, value);
-    public override TermAttribute GetMemberAttribute(string name) => Properties[int.Parse(name)].GetCustomAttribute<TermAttribute>();
+    public override TermAttribute GetMemberAttribute(string name) => Attributes[int.Parse(name)];
     public override Type GetParameterType(string name, ConstructorInfo info) => info.GetParameters()[int.Parse(name)].ParameterType;
     public override ITerm CycleDetectedLiteral(Atom functor)
         => new Dict(functor, new KeyValuePair<Atom, ITerm>[] {

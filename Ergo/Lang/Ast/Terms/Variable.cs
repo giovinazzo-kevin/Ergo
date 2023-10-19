@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -72,9 +73,12 @@ public readonly struct Variable : ITerm
 
     public int CompareTo(ITerm o)
     {
+        if (o is AbstractTerm abs)
+            return -abs.CompareTo(this);
         if (o is Atom) return -1;
         if (o is Complex) return -1;
-        if (o is not Variable other) throw new InvalidCastException();
+        if (o is not Variable other)
+            throw new InvalidCastException();
 
         return Name.CompareTo(other.Name);
     }

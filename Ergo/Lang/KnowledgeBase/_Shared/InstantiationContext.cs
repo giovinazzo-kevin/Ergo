@@ -1,5 +1,4 @@
 ﻿namespace Ergo.Lang;
-
 public sealed class InstantiationContext
 {
     public readonly string VarPrefix;

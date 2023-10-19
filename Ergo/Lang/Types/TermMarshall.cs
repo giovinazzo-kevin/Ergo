@@ -6,6 +6,7 @@ namespace Ergo.Lang;
 public sealed class TermMarshall
 {
 
+    internal static readonly ConcurrentDictionary<Type, TermAttribute> AttributeCache = new();
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
     internal static readonly ConcurrentDictionary<Type, List<Func<object, object>>> Transforms = new();
@@ -41,8 +42,14 @@ public sealed class TermMarshall
         return resolver;
     }
 
+    private static TermAttribute GetAttribute(Type type)
+    {
+        if (AttributeCache.TryGetValue(type, out var attribute)) return attribute;
+        return AttributeCache[type] = type.GetCustomAttribute<TermAttribute>();
+    }
+
     private static TermMarshalling GetMode(Type type, Maybe<TermMarshalling> mode = default) => mode
-        .GetOr(type.GetCustomAttribute<TermAttribute>()?.Marshalling ?? TermMarshalling.Positional);
+        .GetOr(GetAttribute(type)?.Marshalling ?? TermMarshalling.Positional);
 
 
     public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)

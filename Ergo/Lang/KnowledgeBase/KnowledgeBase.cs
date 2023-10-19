@@ -59,16 +59,19 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             }
         }
         // Return predicate matches
+
         if (Get(goal.GetSignature()).TryGetValue(out var list))
             return Maybe.Some(Inner(list));
-
-        if (goal.IsQualified && goal.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
-            return Maybe.Some(Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module)));
+        // TODO: make sure that the code below is no longer necessary
+        //if (goal.IsQualified && goal.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
+        //    return Maybe.Some(Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module)));
 
         return default;
         IEnumerable<KBMatch> Inner(List<Predicate> list)
         {
-            return list
+            var buf = new Predicate[list.Count];
+            list.CopyTo(buf);
+            return buf
                 .Select(k =>
                 {
                     var predicate = k.Instantiate(ctx);

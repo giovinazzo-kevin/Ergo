@@ -8,6 +8,7 @@ namespace Ergo.Lang;
 public abstract class ErgoTypeResolver<T> : ITypeResolver
 {
     public Type Type => typeof(T);
+    public readonly TermAttribute Attribute;
     public abstract TermMarshalling Marshalling { get; }
 
     protected readonly Func<object, Atom> GetFunctor;
@@ -16,6 +17,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
     public ErgoTypeResolver()
     {
+        Attribute = Type.GetCustomAttribute<TermAttribute>();
         if (Type == typeof(char) || Type == typeof(string))
         {
             IsAtomic = new(() => true);
@@ -90,7 +92,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             throw new ArgumentException(null, o.ToString());
         // Check if the [Term] attribute is applied at the type level,
         // If so, assume that's what we want unless overrideFunctor is not None.
-        var attr = Type.GetCustomAttribute<TermAttribute>();
+        var attr = Attribute;
         var functor = overrideFunctor.Map(
             some => !IsCollectionType(Type) ? Maybe.Some(some) : default,
             () => !IsCollectionType(Type) && attr?.ComputedFunctor is { } f ? Maybe.Some(new Atom(f)) : default
@@ -127,7 +129,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
             args = GetMembers().Select(
                 m =>
                 {
-                    var attr = GetMemberAttribute(m) ?? GetMemberType(m).GetCustomAttribute<TermAttribute>();
+                    var attr = GetMemberAttribute(m);
                     var overrideMemberFunctor = attr?.ComputedFunctor is null ? Maybe<Atom>.None : new Atom(attr.ComputedFunctor);
                     var overrideMemberMarshalling = attr?.Marshalling is null ? marshalling : attr.Marshalling;
                     var ovrrideMemberKey = attr is null ? Maybe<string>.None : attr.ComputedKey ?? m;

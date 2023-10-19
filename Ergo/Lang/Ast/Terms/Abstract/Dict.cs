@@ -156,6 +156,8 @@ public class Dict : AbstractTerm
 
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround)
+            return this;
         vars ??= new();
         var newFunctor = Functor.Reduce(
             a => a.Instantiate(ctx, vars),
@@ -174,6 +176,8 @@ public class Dict : AbstractTerm
 
     public override AbstractTerm Substitute(Substitution s)
     {
+        if (IsGround)
+            return this;
         var newFunctor = Functor.Reduce(
             a => ((ITerm)a).Substitute(s),
             v => ((ITerm)v).Substitute(s));

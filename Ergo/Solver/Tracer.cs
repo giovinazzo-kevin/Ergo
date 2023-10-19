@@ -6,6 +6,7 @@ namespace Ergo.Solver;
 public class Tracer
 {
     private static readonly Dictionary<SolverTraceType, string> DescMap = new();
+    private readonly Stopwatch _sw = new();
 
     static Tracer()
     {
@@ -16,13 +17,12 @@ public class Tracer
     }
 
 
-    private readonly Stopwatch _sw = new();
 
     public Tracer() { }
     public event Action<Tracer, SolverScope, SolverTraceType, string> Trace;
     protected virtual string FormatTrace(SolverTraceType type, string content, SolverScope scope)
     {
-        return $"{DescMap[type]}: ({scope.Depth:00}) {content}";
+        return $"{DescMap[type]}@{_sw.Elapsed.TotalMilliseconds:000.00}ms: ({scope.Depth:00}) {content}";
     }
     public void LogTrace(SolverTraceType type, ITerm term, SolverScope scope)
     {

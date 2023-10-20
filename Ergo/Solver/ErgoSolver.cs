@@ -161,6 +161,7 @@ public partial class ErgoSolver : IDisposable
             yield return goal.Qualified(scope.Callee.DeclaringModule);
             if (scope.Callers.Any() && scope.Callers.Last().Head.GetQualification(out _).TryGetValue(out var qualif))
                 yield return goal.Qualified(qualif);
+            yield return goal.Qualified(scope.InterpreterScope.Entry);
             //foreach (var m in scope.InterpreterScope.VisibleModules)
             //{
             //    yield return goal.Qualified(m);

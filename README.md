@@ -1,17 +1,22 @@
 ## Design Goals
-Ergo brings logic programming to the .NET world through a lightweight and extensible Prolog implementation written entirely in C#. It is a very young project, so it's neither ISO-compliant nor production-ready. 
+Ergo brings first-order logic to the .NET world through a lightweight and extensible Prolog implementation written entirely in C#. It is a relatively young project, so it's neither ISO-compliant nor stable, but it's been consistently improving over the past few years. 
 
-Its main design goal is extending the C# language by providing an inference engine that's easy to work with, while being efficient enough to be used in high-demand applications such as games. This focus on inter-operability means that Ergo is extremely easy to extend and tailor to each use case, at the cost of having a smaller standard library.
+Its main design goals are to be flexible and customizable, to handle interop with C# seamlessly, and to be efficient enough to be worthwhile as a scripting language in high-demand applications such as games.
+Thanks to its versatile syntax and extensible architecture, Ergo can be adapted to any use case and lends itself well to the creation of domain-specific languages. 
+Unification allows for very complex pattern-matching, and users can even implement their own parsers for their own *abstract types* that override standard unification.
 
 Ergo already supports several advanced features, including:
 
 - Libraries (C# entry points for various Ergo extensions; linked to Ergo modules)
 - Tail Call Optimization (for the execution of tail recursive predicates)
 - Tabling (memoization)
-- Abstract Terms & Abstract Term Parsers (for custom types implemented on top of canonical complex terms)
-    - Dictionaries (akin to SWI-Prolog) 
-- Predicate Expansions (macros/term rewriting, but slightly more powerful)
-- Marshalling of CLR objects to/from Ergo terms (both tuple-style and dictionary-style)
+- Abstract Terms & Abstract Term Parsers (for custom types implemented on top of canonical terms)
+    - Dictionaries (akin to SWI-Prolog)
+    - Ordered Sets
+    - Lists
+    - Tuples (comma-lists)
+- Predicate Expansions (macros/term rewriting)
+- Marshalling of CLR objects to/from Ergo terms (both complex-style and dictionary-style)
 - Unbounded Numeric Types (i.e. BigDecimal as the underlying numeric type)
     - In the future, optimizations for integer and float arithmetic could be added, but performance-critical codepaths can be delegated to C#
 - Lambdas & Higher-Kinded Predicates 

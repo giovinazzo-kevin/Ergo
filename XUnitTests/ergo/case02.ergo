@@ -1,5 +1,5 @@
 ﻿:- module(case02, [
-	case02/3
+	case02/2
 ]).
 
 list_element_rest([L|Ls], L, Ls).

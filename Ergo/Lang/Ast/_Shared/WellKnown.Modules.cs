@@ -20,6 +20,7 @@ public static partial class WellKnown
         public static readonly Atom Async = new("async");
 
         public static readonly Atom Stdlib = new("stdlib");
+        public static readonly Atom Compiler = new("compiler");
         public static readonly Atom User = new("user");
     }
 }

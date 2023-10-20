@@ -18,4 +18,6 @@ public enum InterpreterError
     , ModuleRedefinition
     , UndefinedDirective
     , TransformationFailed
+    , CantInlineCyclicalGoal
+    , CantInlineForeignGoal
 }

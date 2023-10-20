@@ -9,6 +9,8 @@ namespace Ergo.Interpreter.Libraries.Expansions;
 
 public class Expansions : Library
 {
+    public override int LoadOrder => 1;
+
     public override Atom Module => WellKnown.Modules.Expansions;
 
     protected readonly Dictionary<Signature, HashSet<Expansion>> Table = new();

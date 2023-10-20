@@ -9,6 +9,7 @@ namespace Ergo.Interpreter.Libraries.Tabling;
 
 public class Tabling : Library
 {
+    public override int LoadOrder => 10;
     public override Atom Module => WellKnown.Modules.Tabling;
 
     protected readonly Dictionary<SolverContext, MemoizationContext> MemoizationContextTable = new();

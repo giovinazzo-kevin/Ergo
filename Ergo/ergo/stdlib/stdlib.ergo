@@ -1,4 +1,5 @@
 ﻿:- module(stdlib, []).
+:- use_module(compiler).
 :- use_module(prologue).
 :- use_module(expansions).
 :- use_module(tabling).
@@ -14,4 +15,3 @@
 :- use_module(string).
 :- use_module(meta).
 :- use_module(reflection).
-%: test

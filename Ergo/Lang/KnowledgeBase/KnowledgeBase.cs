@@ -33,13 +33,22 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return (List<Predicate>)Predicates[key];
     }
 
-    public Maybe<List<Predicate>> Get(Signature key)
+    private Maybe<List<Predicate>> GetImpl(Signature key)
     {
         if (Predicates.Contains(key))
         {
             return Maybe.Some((List<Predicate>)Predicates[key]);
         }
 
+        return default;
+    }
+
+    public Maybe<IList<Predicate>> Get(Signature sig)
+    {
+        if (GetImpl(sig).TryGetValue(out var list))
+            return Maybe.Some<IList<Predicate>>(list);
+        if (sig.Module.TryGetValue(out var module) && Get(sig.WithModule(default)).TryGetValue(out var list_))
+            return Maybe.Some<IList<Predicate>>(list_.Where(p => p.IsExported && p.DeclaringModule.Equals(module)).ToArray());
         return default;
     }
 
@@ -59,18 +68,11 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             }
         }
         // Return predicate matches
-
-        if (Get(goal.GetSignature()).TryGetValue(out var list))
-            return Maybe.Some(Inner(list));
-        // TODO: make sure that the code below is no longer necessary
-        //if (goal.IsQualified && goal.GetQualification(out var h).TryGetValue(out var module) && Get(h.GetSignature()).TryGetValue(out list))
-        //    return Maybe.Some(Inner(list).Where(p => p.Rhs.IsExported && p.Rhs.DeclaringModule.Equals(module)));
-
-        return default;
-        IEnumerable<KBMatch> Inner(List<Predicate> list)
+        var sig = goal.GetSignature();
+        return Get(sig).Select(Inner);
+        IEnumerable<KBMatch> Inner(IList<Predicate> list)
         {
-            var buf = new Predicate[list.Count];
-            list.CopyTo(buf);
+            var buf = list.ToArray();
             return buf
                 .Select(k =>
                 {

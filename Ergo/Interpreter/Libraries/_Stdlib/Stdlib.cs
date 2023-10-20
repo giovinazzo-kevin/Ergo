@@ -5,10 +5,13 @@ namespace Ergo.Interpreter.Libraries._Stdlib;
 
 public class Stdlib : Library
 {
+    public override int LoadOrder => 0;
+
     public override Atom Module => WellKnown.Modules.Stdlib;
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
+        .Append(new DeclareInlinedPredicate())
         .Append(new DeclareDynamicPredicate())
         .Append(new DeclareModule())
         .Append(new DeclareOperator())

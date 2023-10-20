@@ -39,6 +39,8 @@
 %: Expansion for inline arithmetic evaluation.
 :- expand([O] >> (':='(A) :- O is A)).
 
+:- inline(['>'/2, '<'/2, '>='/2, '<=/2']).
+
 % OPERATORS
 
 %: Assignment of A to the arithmetic evaluation of B.

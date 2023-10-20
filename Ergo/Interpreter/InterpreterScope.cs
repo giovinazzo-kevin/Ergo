@@ -113,6 +113,31 @@ public readonly struct InterpreterScope
         return kb;
     }
 
+    public int GetImportDepth(Atom a, Maybe<Atom> entry = default)
+    {
+        return GetImportDepthInner(a, entry.GetOr(Entry), 0).GetOr(-1);
+    }
+    private Maybe<int> GetImportDepthInner(Atom a, Atom entry, int d, HashSet<Atom> visited = null)
+    {
+        visited ??= new();
+        visited.Add(a);
+        if (!Modules.ContainsKey(a))
+            return default;
+        if (a.Equals(entry))
+            return d;
+        var imports = Modules[a].Imports.Contents;
+        if (!imports.Any())
+            return default;
+        foreach (var import in imports)
+        {
+            if (visited.Contains(a))
+                continue;
+            if (GetImportDepthInner(a, (Atom)import, d + 1).TryGetValue(out var D))
+                return D;
+        }
+        return default;
+    }
+
     public InterpreterScope WithBaseModule(Atom a) => new(Facade, a, Entry, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithCurrentModule(Atom a) => new(Facade, BaseImport, a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithModule(Module m) => new(Facade, BaseImport, Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);
@@ -130,7 +155,7 @@ public readonly struct InterpreterScope
     public T ForwardEventToLibraries<T>(T e)
         where T : ErgoEvent
     {
-        foreach (var lib in VisibleLibraries)
+        foreach (var lib in VisibleLibraries.OrderBy(x => x.LoadOrder))
             lib.OnErgoEvent(e);
         return e;
     }

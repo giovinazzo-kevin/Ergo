@@ -5,6 +5,7 @@
 	'->'/2, '*'/1
 ]).
 
+
 % OPERATOR DECLARATIONS
 :- op(5, xfy, ['::']).
 :- op(30, xfy, [';', '∨']).
@@ -14,6 +15,8 @@
 :- op(50, xfx, ['≠', '\\=']).
 :- op(1000, xfy,  [':']).
 :- op(920, fx, ['*']).
+
+% :- inline('='/2).
 
 % OPERATOR IMPLEMENTATIONS
 

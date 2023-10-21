@@ -53,7 +53,7 @@ public class Compiler : Library
             {
                 ProcessNode(root);
             }
-            foreach (var inlined in InlineInContext(graph))
+            foreach (var inlined in InlineInContext(sie.Scope, graph))
             {
                 foreach (var (pred, clause) in inlined.Clauses.Zip(inlined.InlinedClauses))
                 {
@@ -87,17 +87,17 @@ public class Compiler : Library
         }
     }
 
-    public IEnumerable<CompilerNode> InlineInContext(DependencyGraph<CompilerNode> graph)
+    public IEnumerable<CompilerNode> InlineInContext(InterpreterScope scope, DependencyGraph<CompilerNode> graph)
     {
         var ctx = new InstantiationContext("__I");
         foreach (var node in graph.GetRootNodes()
-            .SelectMany(r => InlineNodeWithContext(ctx, r)))
+            .SelectMany(r => InlineNodeWithContext(scope, ctx, r)))
         {
             yield return node;
         }
     }
 
-    IEnumerable<CompilerNode> InlineNodeWithContext(InstantiationContext ctx, CompilerNode node, HashSet<Signature> processed = null)
+    IEnumerable<CompilerNode> InlineNodeWithContext(InterpreterScope scope, InstantiationContext ctx, CompilerNode node, HashSet<Signature> processed = null)
     {
         processed ??= new HashSet<Signature>();
         processed.Add(node.Signature);
@@ -105,35 +105,62 @@ public class Compiler : Library
         {
             if (node.IsInlined)
             {
-                if (node.InlinedClauses.Count == 1)
+                // At this point we should take a step back and see if other nodes that 'dependent' depends on may be confused for this one.
+                // In that case they should either be merged, being mindful of which ones should be inlined and which ones shouldn't, or they should not be inlined at all.
+                // An example comes when overloading an operator, such as =/2 or :=/2. In particular =/2 is overloaded by the dict module.
+                // The result is that when the dict module's definition matches, the default implementation is ignored, cut away.
+                // These semantics should be preserved when inlining =/2 and similar predicates. A naive approach might elide other definitions.
+                // A smart approach will inline them individually and merge them as a disjunction. A pragmatic approach will just avoid this head scratcher.
+                var lookup = dependent.Dependencies
+                    .Except(new[] { node })
+                    .ToLookup(x => x.Signature.WithModule(default));
+                var sig = node.Signature.WithModule(default);
+                if (lookup.Contains(sig))
                 {
-                    var inlined = node.InlinedClauses.Single().Instantiate(ctx);
-                    foreach (var ret in Inline(inlined, dependent))
-                        yield return ret;
+                    var clashes = lookup[sig];
+                    // If we're inlining prologue:=/2, then clashes will contain dict:=/2.
+                    // If we can unambiguously tell which definition is being called by dependent, we can inline that definition only.
+                    // Otherwise we'll take the pragmatic path since inlining disjunctions is as efficient as regular matching.
+                    continue;
                 }
                 else
                 {
-                    // Inlining predicates with multiple clauses is a bit hairier.
-                    // The bulk of the work is done by Predicate.InlineHead, which turns all arguments into variables
-                    // and moves their unification to a precondition in the body. This normalizes all variants to the same form.
-                    var normalized = node.InlinedClauses.Select(x => Predicate.InlineHead(new("_TMP"), x)).ToList();
-                    var newBody = normalized
-                        .Select(g => (ITerm)g.Body)
-                         .Aggregate((a, b) => WellKnown.Operators.Disjunction.ToComplex(a, Maybe.Some(b)));
-                    // We can pick any one normalized head to act as the "most general"
-                    var inlined = normalized[0].WithBody(new NTuple(new[] { newBody }));
-                    foreach (var ret in Inline(inlined, dependent))
+                    foreach (var ret in Inline(node, dependent))
                         yield return ret;
                 }
             }
             if (!processed.Contains(dependent.Signature))
             {
-                foreach (var inner in InlineNodeWithContext(ctx, dependent, processed))
+                foreach (var inner in InlineNodeWithContext(scope, ctx, dependent, processed))
                     yield return inner;
             }
         }
 
-        IEnumerable<CompilerNode> Inline(Predicate inlined, CompilerNode dependent)
+        IEnumerable<CompilerNode> Inline(CompilerNode node, CompilerNode dependent)
+        {
+            if (node.InlinedClauses.Count == 1)
+            {
+                var inlined = node.InlinedClauses.Single().Instantiate(ctx);
+                foreach (var ret in InlineInner(inlined, dependent))
+                    yield return ret;
+            }
+            else
+            {
+                // Inlining predicates with multiple clauses is a bit hairier.
+                // The bulk of the work is done by Predicate.InlineHead, which turns all arguments into variables
+                // and moves their unification to a precondition in the body. This normalizes all variants to the same form.
+                var normalized = node.InlinedClauses.Select(x => Predicate.InlineHead(new("_TMP"), x)).ToList();
+                var newBody = normalized
+                    .Select(g => (ITerm)g.Body)
+                     .Aggregate((a, b) => WellKnown.Operators.Disjunction.ToComplex(a, Maybe.Some(b)));
+                // We can pick any one normalized head to act as the "most general"
+                var inlined = normalized[0].WithBody(new NTuple(new[] { newBody }));
+                foreach (var ret in InlineInner(inlined, dependent))
+                    yield return ret;
+            }
+        }
+
+        IEnumerable<CompilerNode> InlineInner(Predicate inlined, CompilerNode dependent)
         {
             var newClauses = new List<Predicate>();
             foreach (var clause in dependent.InlinedClauses)
@@ -154,32 +181,5 @@ public class Compiler : Library
             dependent.InlinedClauses.AddRange(newClauses);
             yield return dependent;
         }
-    }
-    public static List<List<Predicate>> GroupByVariantHeads(List<Predicate> clauses)
-    {
-        var hashTable = new Dictionary<ITerm, List<Predicate>>();
-
-        foreach (var clause in clauses)
-        {
-            bool foundGroup = false;
-
-            var inst = clause.Instantiate(new("_TMP"));
-            foreach (var key in hashTable.Keys)
-            {
-                if (clause.Head.IsVariantOf(key))
-                {
-                    hashTable[key].Add(inst);
-                    foundGroup = true;
-                    break;
-                }
-            }
-
-            if (!foundGroup)
-            {
-                var newGroup = new List<Predicate> { inst };
-                hashTable[clause.Head] = newGroup;
-            }
-        }
-        return hashTable.Values.ToList();
     }
 }

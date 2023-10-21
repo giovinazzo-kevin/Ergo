@@ -6,6 +6,9 @@
 :- op(890, fy, ['&']).
 :- op(850, xfy, [with]).
 :- op(850, xfy, [without]).
+
+:- inline(['='/2]).
+
 %: Directly dereferences and evaluates a dictionary property
 :- expand([Val] >> (
 	% dict_deref_ needs to be qualified since it isn't exported. The macro will run in the context of another module!

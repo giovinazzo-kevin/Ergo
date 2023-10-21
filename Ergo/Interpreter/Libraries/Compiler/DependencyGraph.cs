@@ -2,8 +2,7 @@
 
 public class DependencyGraphNode
 {
-    public Predicate Predicate { get; set; }
-    public Predicate QualifiedPredicate { get; set; }
+    public List<Predicate> Clauses { get; } = new();
     public Signature Signature { get; set; }
     public List<DependencyGraphNode> Dependencies { get; } = new List<DependencyGraphNode>();
     public List<DependencyGraphNode> Dependents { get; } = new List<DependencyGraphNode>();
@@ -20,19 +19,20 @@ public class DependencyGraph<T>
         // Step 2: Populate the Nodes
         foreach (var pred in knowledgeBase)
         {
-            var node = new T
+            var sig = pred.Qualified().Head.GetSignature();
+            if (!_nodes.TryGetValue(sig, out var node))
             {
-                QualifiedPredicate = pred.Qualified(),
-                Predicate = pred
-            };
-            node.Signature = node.QualifiedPredicate.Head.GetSignature();
-            _nodes[node.Signature] = node;
+                node = new T { Signature = sig };
+                _nodes[sig] = node;
+            }
+            node.Clauses.Add(pred);
         }
 
         // Step 3: Populate the Edges
         foreach (var pred in knowledgeBase)
         {
-            var node = _nodes[pred.Qualified().Head.GetSignature()];
+            var sig = pred.Qualified().Head.GetSignature();
+            var node = _nodes[sig];
             foreach (var calledSignature in ExtractCalledPredicates(scope.WithCurrentModule(pred.DeclaringModule), knowledgeBase, pred))
             {
                 if (_nodes.TryGetValue(calledSignature, out var calledNode))
@@ -47,21 +47,15 @@ public class DependencyGraph<T>
     }
     private IEnumerable<Signature> ExtractCalledPredicates(InterpreterScope scope, KnowledgeBase kb, Predicate pred)
     {
-        return ExtractCalledSignaturesFromContents(scope, kb, pred.Body.Contents);
+        return ExtractCalledSignaturesFromContents(scope, kb, pred.Body);
     }
 
-    private IEnumerable<Signature> ExtractCalledSignaturesFromContents(InterpreterScope scope, KnowledgeBase kb, IEnumerable<ITerm> contents)
+    private IEnumerable<Signature> ExtractCalledSignaturesFromContents(InterpreterScope scope, KnowledgeBase kb, NTuple goals)
     {
-        foreach (var item in contents)
+        var allGoals = new List<ITerm>();
+        _ = Predicate.ExpandGoals(goals, t => { allGoals.Add(t); return t; });
+        foreach (var item in allGoals)
         {
-            if (item is NTuple innerList)
-            {
-                foreach (var innerSig in ExtractCalledSignaturesFromContents(scope, kb, innerList.Contents))
-                {
-                    yield return innerSig;
-                }
-                continue;
-            }
             var signature = item.GetSignature();
             if (signature.Module.TryGetValue(out _))
                 yield return signature;

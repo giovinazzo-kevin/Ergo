@@ -38,5 +38,7 @@ public static partial class WellKnown
         public static readonly HashSet<Atom> Lte = new(new Atom[] { new("≤"), new("<=") });
         public static readonly HashSet<Atom> Horn = new(new Atom[] { new("←"), new(":-") });
         public static readonly HashSet<Atom> ExistentialQualifier = new(new Atom[] { new("^") });
+        public static readonly HashSet<Atom> If = new(new Atom[] { new("->") });
+        public static readonly HashSet<Atom> Not = new(new Atom[] { new("¬"), new("\\+") });
     }
 }

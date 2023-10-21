@@ -1,0 +1,27 @@
+﻿:- module(inlining, [
+	inline_a/0, inline_b/0, inline_c/0, inline_d/0, inline_e/1, inline_f/1, inline_g/0, inline_h/1, inline_j/1,
+	noinline_a/0, noinline_b/0
+]).
+
+:- inline([inline_a/0, inline_b/0, inline_c/0, inline_d/0, inline_e/1, inline_f/1, inline_h/1, inline_j/1]).
+
+noinline_a.
+noinline_b.
+
+inline_a.
+% Expected: inline_b becomes a fact.
+inline_b :- inline_a.
+% Expected: inline_c becomes a fact.
+inline_c :- inline_b.
+% Expected: inline_d becomes a fact.
+inline_d :- inline_a, inline_b, inline_c.
+
+inline_e(A) :- noinline_a, A = 1.
+inline_e(B) :- noinline_b, B = 2.
+inline_f(X) :- inline_e(X).
+inline_g :- inline_a ; inline_b.
+
+inline_h(A) :- A = 1.
+inline_h(2).
+
+inline_j(X) :- inline_h(X).

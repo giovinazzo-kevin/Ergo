@@ -26,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ergo\inlining.ergo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ergo\case03.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

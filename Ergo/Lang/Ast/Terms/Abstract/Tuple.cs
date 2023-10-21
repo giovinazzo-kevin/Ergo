@@ -17,6 +17,8 @@ public sealed class NTuple : AbstractList
     protected override ITerm CanonicalForm { get; set; }
     protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized) => new NTuple(head, scope, parenthesized);
 
+    public ITerm SingleOrSelf() => Contents.Length == 1 ? Contents.Single() : this;
+
     public static Maybe<NTuple> FromPseudoCanonical(ITerm term, Maybe<ParserScope> scope, Maybe<bool> parenthesized = default, Maybe<bool> hasEmptyElement = default)
     {
         if (parenthesized.TryGetValue(out var parens) && term is Complex { IsParenthesized: var p } && p != parens)
@@ -39,8 +41,7 @@ public sealed class NTuple : AbstractList
             return EmptyElement.Explain();
         // Special cases for tuples:
         // 1. 1-item tuples can only be created internally, e.g. when parsing queries.
-        //    They don't need to be parenthesized, ever.
-        if (Contents.Length == 1)
+        if (Contents.Length == 1 && !IsParenthesized)
             return Contents.Single().Explain();
         // 2. They don't need to be parenthesized implicitly
         var joined = Contents.Join(t => t.Explain(), ", ");

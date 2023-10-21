@@ -57,7 +57,7 @@ public readonly struct Variable : ITerm
         {
             return inst;
         }
-        return vars[Name] = new Variable($"__{ctx.VarPrefix}{ctx.GetFreeVariableId()}");
+        return vars[Name] = ctx.GetFreeVariable();
     }
     public override bool Equals(object obj)
     {

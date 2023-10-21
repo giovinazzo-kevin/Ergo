@@ -94,7 +94,7 @@ public partial class ErgoParser : IDisposable
     {
         Facade = facade;
         Lexer = lexer;
-        _discardContext = new(string.Empty);
+        _discardContext = new("_");
     }
 
     public bool RemoveAbstractParser<T>(out IAbstractTermParser<T> parser)
@@ -182,7 +182,7 @@ public partial class ErgoParser : IDisposable
             //.Where(term => !term.StartsWith("__K"))
             .Do(none: () => Throw(scope.LexerState, ErrorType.TermHasIllegalName, term))
             .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
-            .Or(() => $"_{_discardContext.VarPrefix}{_discardContext.GetFreeVariableId()}"))
+            .Or(() => _discardContext.GetFreeVariable().Name))
         .Select(t => new Variable(t))
         .Or(() => MemoizeFailureAndFail<Variable>(scope.LexerState))
         .Do(() => Probe.Leave(watch))

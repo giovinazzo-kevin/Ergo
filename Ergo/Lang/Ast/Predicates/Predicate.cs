@@ -12,9 +12,11 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsDynamic;
     public readonly bool IsExported;
     public readonly bool IsTailRecursive;
+    public readonly bool IsFactual;
     //public readonly bool IsDeterminate;
 
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
+
 
     private static bool GetIsTailRecursive(ITerm head, NTuple body)
     {
@@ -63,39 +65,97 @@ public readonly struct Predicate : IExplainable
         return true;
     }
 
-    public IEnumerable<ITerm> GetGoals()
-    {
-        return Inner(Body);
-        IEnumerable<ITerm> Inner(NTuple body)
-        {
-            foreach (var goal in body.Contents)
-            {
-                if (goal is NTuple inner)
-                {
-                    foreach (var ret in Inner(inner))
-                    {
-                        yield return ret;
-                    }
-                    continue;
-                }
-                yield return goal;
-            }
-        }
-    }
-
     public static NTuple ExpandGoals(NTuple goals, Func<ITerm, ITerm> expandGoal)
     {
-        return new(Inner(goals));
+        // These operators are treated in the same way as commas, i.e. as pure control flow operators.
+        // Both their lhs and their rhs are goals that can be expanded.
+        var binaryControlOps = new[] { WellKnown.Operators.Disjunction, WellKnown.Operators.If };
+        // Same for these unary operators
+        var unaryControlOps = new[] { WellKnown.Operators.Not };
+        // TODO: also consider callables like lambdas (>>/2).
+        // TODO: also consider not/1
+        return new NTuple(Inner(goals));
         IEnumerable<ITerm> Inner(NTuple body)
         {
             foreach (var goal in body.Contents)
             {
+                // Special case: unwrap tuples
+                ITerm ret;
                 if (goal is NTuple inner)
                 {
-                    yield return new NTuple(Inner(inner));
+                    var tup = new NTuple(Inner(inner));
+                    if (tup.Contents.Length > 0)
+                        yield return tup;
                     continue;
                 }
-                yield return expandGoal(goal);
+                else if (goal is Complex { Functor: var functor, Arguments: { Length: var len } args, Operator: var originalOp })
+                {
+                    if (len == 1)
+                    {
+                        var expandable = unaryControlOps.Where(o => o.Synonyms.Contains(functor))
+                            .Select(x => Maybe.Some(x))
+                            .SingleOrDefault();
+                        if (expandable.TryGetValue(out var op))
+                        {
+                            var arg = ExpandGoals(new NTuple(new ITerm[] { args[0] }), expandGoal).SingleOrSelf();
+                            var argEmpty = arg.Equals(WellKnown.Literals.EmptyCommaList);
+                            if (argEmpty)
+                            {
+                                yield return WellKnown.Literals.True;
+                                continue;
+                            }
+                            ret = expandGoal(op.ToComplex(arg, default).AsOperator(originalOp));
+                        }
+                        else
+                        {
+                            ret = expandGoal(goal);
+                        }
+                    }
+                    else if (len == 2)
+                    {
+                        var expandable = binaryControlOps.Where(o => o.Synonyms.Contains(functor))
+                            .Select(x => Maybe.Some(x))
+                            .SingleOrDefault();
+                        if (expandable.TryGetValue(out var op))
+                        {
+                            var left = ExpandGoals(new NTuple(new ITerm[] { args[0] }), expandGoal).SingleOrSelf();
+                            var right = ExpandGoals(new NTuple(new ITerm[] { args[1] }), expandGoal).SingleOrSelf();
+                            var leftEmpty = left.Equals(WellKnown.Literals.EmptyCommaList);
+                            var rightEmpty = right.Equals(WellKnown.Literals.EmptyCommaList);
+                            if (leftEmpty && rightEmpty)
+                            {
+                                yield return WellKnown.Literals.True;
+                                continue;
+                            }
+                            else if (!leftEmpty && rightEmpty)
+                            {
+                                yield return left;
+                                continue;
+                            }
+                            else if (!rightEmpty && leftEmpty)
+                            {
+                                yield return right;
+                                continue;
+                            }
+                            ret = expandGoal(op.ToComplex(left, Maybe.Some(right)));
+                        }
+                        else
+                        {
+                            ret = expandGoal(goal);
+                        }
+                    }
+                    else
+                    {
+                        ret = expandGoal(goal);
+                    }
+                }
+                else
+                {
+                    ret = expandGoal(goal);
+                }
+                if (ret.Equals(WellKnown.Literals.True))
+                    continue;
+                yield return ret;
             }
         }
     }
@@ -109,6 +169,7 @@ public readonly struct Predicate : IExplainable
         IsDynamic = dynamic;
         IsExported = exported;
         IsTailRecursive = tailRecursive;
+        IsFactual = Body.Contents.Length == 0 || Body.Contents.Length == 1 && Body.Contents.Single().Equals(WellKnown.Literals.True);
     }
 
     public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
@@ -128,6 +189,40 @@ public readonly struct Predicate : IExplainable
             , IsExported
             , IsTailRecursive
         );
+    }
+
+    /// <summary>
+    /// Moves all non-variable terms in pred's head to the beginning of its body, unifying them with free variables.
+    /// </summary>
+    public static Predicate InlineHead(InstantiationContext ctx, Predicate pred)
+    {
+        var inst = pred.Instantiate(ctx);
+        if (inst.Head is not Complex cplx)
+            return inst;
+        var unify = new Atom("unify");
+        var varArgs = cplx.Arguments
+            .Select(x => x is Variable ? x : ctx.GetFreeVariable())
+            .ToImmutableArray();
+        var any = false;
+        var preconditions = new List<ITerm>();
+        for (int i = 0; i < cplx.Arity; i++)
+        {
+            if (cplx.Arguments[i] is Variable)
+                continue;
+            any = true;
+            var unif = new Complex(unify, varArgs[i], cplx.Arguments[i]);
+            preconditions.Add(unif);
+        }
+        if (!any)
+            return inst;
+        var newHead = cplx.WithArguments(varArgs);
+        if (pred.IsFactual)
+        {
+            return inst.WithHead(newHead).WithBody(new NTuple(preconditions));
+        }
+        var newBodyStart = new NTuple(preconditions);
+        var ifThenConstruct = WellKnown.Operators.If.ToComplex(newBodyStart, pred.Body);
+        return inst.WithHead(newHead).WithBody(new NTuple(new ITerm[] { ifThenConstruct }));
     }
 
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)

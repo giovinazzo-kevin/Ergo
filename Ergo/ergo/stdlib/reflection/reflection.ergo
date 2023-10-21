@@ -19,6 +19,8 @@
 :- op(50, xfx, ['==', '≡']).
 :- op(50, xfx, ['\\==', '≢']).
 
+:- inline(['@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2, '\\=@='/2, '?='/2, '/'/2, '=..'/2, '=='/2, '\\=='/2]).
+
 %: Term expansion.
 '=..'(Term, [Functor|Args]) :- term(Functor, Args, Term), !.
 %: Term comparison (gt).

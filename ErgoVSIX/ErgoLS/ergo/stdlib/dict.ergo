@@ -8,7 +8,8 @@
 :- op(850, xfy, [without]).
 %: Directly dereferences and evaluates a dictionary property
 :- expand([Val] >> (
-	'&'(D.Key) :- dict_deref_(D, Key, Val)
+	% dict_deref_ needs to be qualified since it isn't exported. The macro will run in the context of another module!
+	'&'(D.Key) :- dict:dict_deref_(D, Key, Val)
 )).
 %: Creates a new dictionary and adds or replaces the specified keys
 :- expand([Val] >> (

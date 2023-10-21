@@ -9,8 +9,8 @@ namespace Tests;
 public class ErgoTests : IClassFixture<ErgoTestFixture>
 {
     public readonly ErgoInterpreter Interpreter;
-    public readonly InterpreterScope InterpreterScope;
-    public readonly KnowledgeBase KnowledgeBase;
+    public InterpreterScope InterpreterScope;
+    public KnowledgeBase KnowledgeBase;
 
     public ErgoTests(ErgoTestFixture fixture)
     {

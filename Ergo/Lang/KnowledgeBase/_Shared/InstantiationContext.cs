@@ -2,10 +2,10 @@
 public sealed class InstantiationContext
 {
     public readonly string VarPrefix;
-    private volatile int _GlobalVarCounter;
+    private long _GlobalVarCounter;
     public InstantiationContext(string prefix) => VarPrefix = prefix;
-    public int GetFreeVariableId() => Interlocked.Increment(ref _GlobalVarCounter);
-    public Variable GetFreeVariable() => new Variable($"__{VarPrefix}{GetFreeVariableId()}");
+    public long GetFreeVariableId() => Interlocked.Increment(ref _GlobalVarCounter);
+    public Variable GetFreeVariable() => new Variable($"_{VarPrefix}{GetFreeVariableId():X}");
     public InstantiationContext Clone() => new(VarPrefix) { _GlobalVarCounter = _GlobalVarCounter };
 }
 

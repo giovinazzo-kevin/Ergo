@@ -10,7 +10,7 @@ Ergo already supports several advanced features, including:
 - Libraries (C# entry points for various Ergo extensions; linked to Ergo modules)
 - Tail Call Optimization (for the execution of tail recursive predicates)
 - Inlining (a pre-processing step that expands occurrences of a predicate's head into a disjunction of its clauses)
-  - While not as important for compiled prolog, this step saves some precious time in the interpreted realm. 
+  - While not as important for compiled prolog, this step achieves measurable performance gains in the interpreted realm
 - Predicate Expansions (macros/term rewriting)
 - Tabling (memoization)
 - Abstract Terms & Abstract Term Parsers (for custom types implemented on top of canonical terms)

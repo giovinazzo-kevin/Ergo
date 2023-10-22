@@ -1,39 +1,50 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Solver.BuiltIns;
 
 public class DependencyGraphNode
 {
     public List<Predicate> Clauses { get; } = new();
     public Signature Signature { get; set; }
+    public Maybe<SolverBuiltIn> BuiltIn { get; set; }
     public List<DependencyGraphNode> Dependencies { get; } = new List<DependencyGraphNode>();
     public List<DependencyGraphNode> Dependents { get; } = new List<DependencyGraphNode>();
+    public bool IsInlined { get; set; }
+    public bool IsCyclical { get; set; }
+    public List<Predicate> InlinedClauses { get; set; } = null;
 }
 
-public class DependencyGraph<T>
-    where T : DependencyGraphNode, new()
+public class DependencyGraph
 {
-    private readonly Dictionary<Signature, T> _nodes = new Dictionary<Signature, T>();
+    private readonly Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
+    public readonly KnowledgeBase KnowledgeBase;
+    public readonly InterpreterScope Scope;
 
-    // Populate nodes and dependencies from the solver's knowledge base
-    public void BuildGraph(InterpreterScope scope, KnowledgeBase knowledgeBase)
+    public DependencyGraph(InterpreterScope scope, KnowledgeBase knowledgeBase)
     {
-        // Step 2: Populate the Nodes
-        foreach (var pred in knowledgeBase)
+        KnowledgeBase = knowledgeBase;
+        Scope = scope;
+        BuildGraph();
+    }
+
+    // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
+    void BuildGraph()
+    {
+        foreach (var pred in KnowledgeBase)
         {
             var sig = pred.Qualified().Head.GetSignature();
             if (!_nodes.TryGetValue(sig, out var node))
             {
-                node = new T { Signature = sig };
+                node = new DependencyGraphNode { Signature = sig };
                 _nodes[sig] = node;
             }
             node.Clauses.Add(pred);
         }
 
-        // Step 3: Populate the Edges
-        foreach (var pred in knowledgeBase)
+        foreach (var pred in KnowledgeBase)
         {
             var sig = pred.Qualified().Head.GetSignature();
             var node = _nodes[sig];
-            foreach (var calledSignature in ExtractCalledPredicates(scope.WithCurrentModule(pred.DeclaringModule), knowledgeBase, pred))
+            foreach (var calledSignature in ExtractCalledPredicates(Scope.WithCurrentModule(pred.DeclaringModule), KnowledgeBase, pred))
             {
                 if (_nodes.TryGetValue(calledSignature, out var calledNode))
                 {
@@ -76,18 +87,18 @@ public class DependencyGraph<T>
         }
     }
 
-    public Maybe<T> GetNode(Signature s) => _nodes.TryGetValue(s, out var node) ? node : default;
+    public Maybe<DependencyGraphNode> GetNode(Signature s) => _nodes.TryGetValue(s, out var node) ? node : default;
 
-    public IEnumerable<T> GetRootNodes()
+    public IEnumerable<DependencyGraphNode> GetRootNodes()
     {
         // Step 5: Identify Roots for Analysis
         return _nodes.Values.Where(node => !node.Dependencies.Any());
     }
-    public IEnumerable<T> GetLeafNodes()
+    public IEnumerable<DependencyGraphNode> GetLeafNodes()
     {
         return _nodes.Values.Where(node => !node.Dependents.Any());
     }
-    public IEnumerable<T> GetAllNodes()
+    public IEnumerable<DependencyGraphNode> GetAllNodes()
     {
         return _nodes.Values;
     }

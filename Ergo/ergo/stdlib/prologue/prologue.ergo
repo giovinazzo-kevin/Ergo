@@ -16,7 +16,7 @@
 :- op(1000, xfy,  [':']).
 :- op(920, fx, ['*']).
 
-:- inline(['≠'/2, '¬'/1, '∨'/2, '∧'/2, '*'/1]).
+:- inline(['≠'/2, '¬'/1, '*'/1]).
 
 % OPERATOR IMPLEMENTATIONS
 
@@ -28,9 +28,6 @@ If -> Then :- If, !, Then.
 ';'(A, _B) :- A.
 %: Logical disjunction of A and B.
 ';'(_A, B) :- B.
-
-'∨'(A, B) :- A ; B.
-'∧'(A, B) :- A , B.
 
 %: Logical complement of A (negation).
 %: ⊤ iff A cannot be proven.

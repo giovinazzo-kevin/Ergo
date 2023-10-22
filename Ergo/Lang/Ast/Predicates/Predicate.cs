@@ -65,6 +65,13 @@ public readonly struct Predicate : IExplainable
         return true;
     }
 
+    public static IEnumerable<ITerm> GetGoals(Predicate p)
+    {
+        var goals = new List<ITerm>();
+        ExpandGoals(p.Body, t => { goals.Add(t); return t; });
+        return goals;
+    }
+
     public static NTuple ExpandGoals(NTuple goals, Func<ITerm, ITerm> expandGoal)
     {
         // These operators are treated in the same way as commas, i.e. as pure control flow operators.
@@ -73,7 +80,6 @@ public readonly struct Predicate : IExplainable
         // Same for these unary operators
         var unaryControlOps = new[] { WellKnown.Operators.Not };
         // TODO: also consider callables like lambdas (>>/2).
-        // TODO: also consider not/1
         return new NTuple(Inner(goals));
         IEnumerable<ITerm> Inner(NTuple body)
         {
@@ -81,9 +87,9 @@ public readonly struct Predicate : IExplainable
             {
                 // Special case: unwrap tuples
                 ITerm ret;
-                if (goal is NTuple inner)
+                if (goal is NTuple { IsParenthesized: var parens } inner)
                 {
-                    var tup = new NTuple(Inner(inner));
+                    var tup = new NTuple(Inner(inner), parenthesized: parens);
                     if (tup.Contents.Length > 0)
                         yield return tup;
                     continue;

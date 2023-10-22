@@ -1,18 +1,15 @@
-﻿using System.Collections;
+﻿using Ergo.Solver.BuiltIns;
+using System.Collections;
 using System.Collections.Specialized;
 
 namespace Ergo.Lang;
 
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
-    protected readonly OrderedDictionary Predicates;
+    protected readonly Dictionary<Signature, SolverBuiltIn> BuiltIns = new();
+    protected readonly OrderedDictionary Predicates = new();
 
     public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
-
-    public KnowledgeBase()
-    {
-        Predicates = new OrderedDictionary();
-    }
 
     public void Clear() => Predicates.Clear();
 

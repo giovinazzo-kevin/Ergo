@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Ergo.Solver.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -13,10 +14,11 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsExported;
     public readonly bool IsTailRecursive;
     public readonly bool IsFactual;
+    public readonly bool IsBuiltIn;
+    public readonly bool IsVariadic;
+    public readonly Maybe<SolverBuiltIn> BuiltIn;
     //public readonly bool IsDeterminate;
-
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
-
 
     private static bool GetIsTailRecursive(ITerm head, NTuple body)
     {
@@ -176,6 +178,9 @@ public readonly struct Predicate : IExplainable
         IsExported = exported;
         IsTailRecursive = tailRecursive;
         IsFactual = Body.Contents.Length == 0 || Body.Contents.Length == 1 && Body.Contents.Single().Equals(WellKnown.Literals.True);
+        IsBuiltIn = false;
+        BuiltIn = default;
+        IsVariadic = false;
     }
 
     public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
@@ -183,8 +188,29 @@ public readonly struct Predicate : IExplainable
     {
     }
 
+    public Predicate(SolverBuiltIn builtIn)
+    {
+        Documentation = builtIn.Documentation;
+        DeclaringModule = builtIn.Signature.Module.GetOr(WellKnown.Modules.Stdlib);
+        if (!builtIn.Signature.Arity.TryGetValue(out var arity))
+        {
+            IsVariadic = true;
+            arity = 0;
+        }
+        Head = builtIn.Signature.Functor.BuildAnonymousTerm(arity);
+        Body = NTuple.Empty;
+        IsDynamic = false;
+        IsExported = true;
+        IsTailRecursive = false;
+        IsFactual = arity == 0 && !IsVariadic;
+        IsBuiltIn = true;
+        BuiltIn = builtIn;
+    }
+
     public Predicate Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsBuiltIn)
+            return this;
         vars ??= new Dictionary<string, Variable>();
         return new Predicate(
             Documentation
@@ -202,6 +228,8 @@ public readonly struct Predicate : IExplainable
     /// </summary>
     public static Predicate InlineHead(InstantiationContext ctx, Predicate pred)
     {
+        if (pred.IsBuiltIn)
+            return pred;
         var inst = pred.Instantiate(ctx);
         if (inst.Head is not Complex cplx)
             return inst;
@@ -232,22 +260,53 @@ public readonly struct Predicate : IExplainable
     }
 
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
-        => new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
+    {
+        if (k.IsBuiltIn)
+            return k;
+        return new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
             .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive);
+    }
 
-    public Predicate WithHead(ITerm newHead) => new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
-    public Predicate WithBody(NTuple newBody) => new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive);
-    public Predicate WithModuleName(Atom module) => new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive);
-    public Predicate Dynamic() => new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive);
-    public Predicate Exported() => new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive);
+    public Predicate WithHead(ITerm newHead)
+    {
+        if (IsBuiltIn)
+            throw new NotSupportedException();
+        return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
+    }
+    public Predicate WithBody(NTuple newBody)
+    {
+        if (IsBuiltIn)
+            throw new NotSupportedException();
+        return new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive);
+    }
+    public Predicate WithModuleName(Atom module)
+    {
+        if (IsBuiltIn)
+            throw new NotSupportedException();
+        return new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive);
+    }
+    public Predicate Dynamic()
+    {
+        if (IsBuiltIn)
+            throw new NotSupportedException();
+        return new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive);
+    }
+    public Predicate Exported()
+    {
+        if (IsBuiltIn)
+            return this;
+        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive);
+    }
     public Predicate Qualified()
     {
-        if (Head.IsQualified)
+        if (IsBuiltIn || Head.IsQualified)
             return this;
         return new(Documentation, DeclaringModule, Head.Qualified(DeclaringModule), Body, IsDynamic, IsExported, IsTailRecursive);
     }
     public Predicate Unqualified()
     {
+        if (IsBuiltIn)
+            throw new NotSupportedException();
         if (!Head.GetQualification(out var head).TryGetValue(out var _))
             return this;
         return new(Documentation, DeclaringModule, head, Body, IsDynamic, IsExported, IsTailRecursive);

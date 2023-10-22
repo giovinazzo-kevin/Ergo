@@ -87,13 +87,13 @@ public class Tabling : Library
                 foreach (var match in kb.GetMatches(ctx, anon, desugar: false)
                     .AsEnumerable().SelectMany(x => x))
                 {
-                    match.Rhs.Head.GetQualification(out var head);
+                    match.Predicate.Head.GetQualification(out var head);
                     var auxPred = new Predicate(
-                        match.Rhs.Documentation,
-                        match.Rhs.DeclaringModule,
+                        match.Predicate.Documentation,
+                        match.Predicate.DeclaringModule,
                         head.WithFunctor(auxFunctor),
-                        match.Rhs.Body,
-                        match.Rhs.IsDynamic,
+                        match.Predicate.Body,
+                        match.Predicate.IsDynamic,
                         false
                     );
                     if (!kb.Retract(head))

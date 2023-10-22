@@ -32,7 +32,7 @@ public abstract class WriteBuiltIn : SolverBuiltIn
 
     protected virtual string Explain(ITerm arg) => AsQuoted(arg, Quoted).Explain(Canonical);
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         foreach (var arg in args)
         {

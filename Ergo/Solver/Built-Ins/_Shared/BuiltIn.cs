@@ -5,7 +5,7 @@ public abstract class SolverBuiltIn
     public readonly Signature Signature;
     public readonly string Documentation;
 
-    public Predicate GetStub(ITerm[] arguments)
+    public Predicate GetStub(ImmutableArray<ITerm> arguments)
     {
         var module = Signature.Module.GetOr(WellKnown.Modules.Stdlib);
         var head = ((ITerm)new Complex(Signature.Functor, arguments)).Qualified(module);
@@ -23,7 +23,7 @@ public abstract class SolverBuiltIn
     protected Evaluation True(SubstitutionMap subs) => new(true, subs);
     protected Evaluation True(Substitution sub) => new(true, sub);
 
-    public abstract IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] arguments);
+    public abstract IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> arguments);
 
     public SolverBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
     {

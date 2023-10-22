@@ -49,6 +49,8 @@ public readonly struct Predicate : IExplainable
 
     public bool IsSameDeclarationAs(Predicate other)
     {
+        if (BuiltIn.TryGetValue(out var b1) && other.BuiltIn.TryGetValue(out var b2))
+            return b1 == b2;
         if (other.DeclaringModule != DeclaringModule)
             return false;
         if (!other.Head.GetSignature().Equals(Head.GetSignature()))
@@ -188,16 +190,16 @@ public readonly struct Predicate : IExplainable
     {
     }
 
-    public Predicate(SolverBuiltIn builtIn)
+    public Predicate(SolverBuiltIn builtIn, Maybe<ITerm> head = default)
     {
-        Documentation = builtIn.Documentation;
+        Documentation = $"<builtin> {builtIn.Documentation}";
         DeclaringModule = builtIn.Signature.Module.GetOr(WellKnown.Modules.Stdlib);
         if (!builtIn.Signature.Arity.TryGetValue(out var arity))
         {
             IsVariadic = true;
             arity = 0;
         }
-        Head = builtIn.Signature.Functor.BuildAnonymousTerm(arity);
+        Head = head.GetOr(builtIn.Signature.Functor.BuildAnonymousTerm(arity));
         Body = NTuple.Empty;
         IsDynamic = false;
         IsExported = true;
@@ -262,15 +264,15 @@ public readonly struct Predicate : IExplainable
     public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
     {
         if (k.IsBuiltIn)
-            return k;
+            return k.WithHead(k.Head.Substitute(s));
         return new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
             .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive);
     }
 
     public Predicate WithHead(ITerm newHead)
     {
-        if (IsBuiltIn)
-            throw new NotSupportedException();
+        if (BuiltIn.TryGetValue(out var builtIn))
+            return new(builtIn, Maybe.Some(newHead));
         return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
     }
     public Predicate WithBody(NTuple newBody)

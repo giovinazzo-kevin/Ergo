@@ -1,12 +1,10 @@
-﻿using Ergo.Solver.BuiltIns;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Specialized;
 
 namespace Ergo.Lang;
 
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
-    protected readonly Dictionary<Signature, SolverBuiltIn> BuiltIns = new();
     protected readonly OrderedDictionary Predicates = new();
 
     public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
@@ -74,6 +72,10 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 .Select(k =>
                 {
                     var predicate = k.Instantiate(ctx);
+                    if (predicate.IsVariadic && predicate.Head.GetFunctor().TryGetValue(out var fun))
+                    {
+                        predicate = predicate.WithHead(fun.BuildAnonymousTerm(goal.GetArguments().Length));
+                    }
                     if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                     {
                         predicate = Predicate.Substitute(predicate, matchSubs);
@@ -97,6 +99,8 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
+                if (predicate.IsBuiltIn)
+                    continue;
                 if (predicate.Unify(head).TryGetValue(out _))
                 {
                     matches.RemoveAt(i);
@@ -107,6 +111,9 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
         return false;
     }
+    /// <summary>
+    /// NOTE: Unlike other flavors of retract, this one allows you to retract built-ins.
+    /// </summary>
     public bool Retract(Predicate pred)
     {
         if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
@@ -133,6 +140,8 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             for (var i = matches.Count - 1; i >= 0; i--)
             {
                 var predicate = matches[i];
+                if (predicate.IsBuiltIn)
+                    continue;
                 if (predicate.Unify(head).TryGetValue(out _))
                 {
                     retracted++;

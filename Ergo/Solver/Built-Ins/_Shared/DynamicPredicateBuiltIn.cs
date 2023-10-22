@@ -47,19 +47,19 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
         foreach (var match in solver.KnowledgeBase.GetMatches(new("R"), term, desugar: true)
             .AsEnumerable().SelectMany(x => x))
         {
-            if (!match.Rhs.IsDynamic)
+            if (!match.Predicate.IsDynamic)
             {
                 scope.Throw(SolverError.CannotRetractStaticPredicate, scope, sig.Explain());
                 return false;
             }
 
-            if (scope.InterpreterScope.Entry != match.Rhs.DeclaringModule)
+            if (scope.InterpreterScope.Entry != match.Predicate.DeclaringModule)
             {
-                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Entry.Explain(), match.Rhs.DeclaringModule.Explain());
+                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
                 return false;
             }
 
-            toRemove.Add(match.Rhs.Head);
+            toRemove.Add(match.Predicate.Head);
 
             if (!all)
                 break;

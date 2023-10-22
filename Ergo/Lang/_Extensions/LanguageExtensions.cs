@@ -75,7 +75,8 @@ public static class LanguageExtensions
 
     public static Maybe<SubstitutionMap> Unify(this Predicate predicate, ITerm head)
     {
-        predicate.Head.GetQualification(out var qv);
+        var h = predicate.Head;
+        h.GetQualification(out var qv);
         head.GetQualification(out var hv);
         return Unify(qv, hv);
     }

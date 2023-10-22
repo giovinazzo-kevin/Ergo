@@ -11,7 +11,7 @@ public sealed class FormatString : SolverBuiltIn
         : base("", new("str_fmt"), Maybe<int>.Some(3), WellKnown.Modules.String)
     {
     }
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
         if (!format.Matches<string>(out var formatStr))

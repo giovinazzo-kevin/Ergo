@@ -7,7 +7,7 @@ public abstract class NthBase : SolverBuiltIn
     public NthBase(int offset)
         : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         if (args[0].Matches<int>(out var index))
         {

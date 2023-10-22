@@ -8,7 +8,7 @@ public sealed class Term : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
         if (termArg is not Variable)

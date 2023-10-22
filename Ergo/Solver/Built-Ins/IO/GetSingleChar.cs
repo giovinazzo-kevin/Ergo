@@ -6,7 +6,7 @@ public sealed class GetSingleChar : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         int value = context.Solver.In.Read();
         ITerm charTerm = value != -1 ? new Atom((char)value) : new Atom("end_of_file");

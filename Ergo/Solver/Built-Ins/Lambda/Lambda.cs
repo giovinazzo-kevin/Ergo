@@ -8,7 +8,7 @@ public sealed class Lambda : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         if (args.Length < 2)
         {
@@ -45,9 +45,8 @@ public sealed class Lambda : SolverBuiltIn
             lambda = lambda.Substitute(newSubs);
         }
 
-        var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : Array.Empty<ITerm>();
-
-        foreach (var eval in new Call().Apply(context, scope, new[] { lambda }.Concat(extraArgs).ToArray()))
+        var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : ImmutableArray<ITerm>.Empty;
+        foreach (var eval in new Call().Apply(context, scope, new[] { lambda }.Concat(extraArgs).ToImmutableArray()))
         {
             yield return eval;
         }

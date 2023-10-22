@@ -9,7 +9,7 @@ public sealed class Compare : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var cmp = arguments[1].CompareTo(arguments[2]);
         if (arguments[0].IsGround)

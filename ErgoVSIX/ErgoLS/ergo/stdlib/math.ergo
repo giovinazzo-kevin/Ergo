@@ -46,17 +46,17 @@
 %: Assignment of A to the arithmetic evaluation of B.
 ':='(A, B) :- eval_is(A, B).
 %: Equivalence of the arithmetic evaluations of A and B.
-'=:='(A, B) :- eval(A) == eval(B).
+'=:='(A, B) :- eval(A, Ae), eval(B, Be), Ae == Be.
 %: Inequivalence of the arithmetic evaluations of A and B.
-'=\\='(A, B) :- eval(A) \== eval(B).
+'=\\='(A, B) :-eval(A, Ae), eval(B, Be), Ae \== Be.
 %: Arithmetic comparison (gt).
-'>'(A, B)  :- eval(A > B).
+'>'(A, B)  :- eval(A > B, true).
 %: Arithmetic comparison (lt).
-'<'(A, B)  :- eval(A < B).
+'<'(A, B)  :- eval(A < B, true).
 %: Arithmetic comparison (gte).
-'>='(A, B) :- eval(A >= B).
+'>='(A, B) :- eval(A >= B, true).
 %: Arithmetic comparison (lte).
-'<='(A, B) :- eval(A <= B).
+'<='(A, B) :- eval(A <= B, true).
 
 % HELPERS
 

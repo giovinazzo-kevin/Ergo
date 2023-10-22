@@ -7,9 +7,9 @@ public sealed class SetupCallCleanup : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
-        var once = new Call().Apply(context, scope, new[] { args[0] }).Select(x => Maybe.Some(x)).FirstOrDefault();
+        var once = new Call().Apply(context, scope, ImmutableArray.Create(args[0])).Select(x => Maybe.Some(x)).FirstOrDefault();
         if (!once.TryGetValue(out var sol) || !sol.Result)
         {
             yield return False();
@@ -17,7 +17,7 @@ public sealed class SetupCallCleanup : SolverBuiltIn
         }
 
         var any = false;
-        foreach (var sol1 in new Call().Apply(context, scope, new[] { args[1] }))
+        foreach (var sol1 in new Call().Apply(context, scope, ImmutableArray.Create(args[1])))
         {
             if (!sol1.Result)
             {
@@ -29,7 +29,7 @@ public sealed class SetupCallCleanup : SolverBuiltIn
             any = true;
         }
 
-        _ = new Call().Apply(context, scope, new[] { args[2] }).FirstOrDefault();
+        _ = new Call().Apply(context, scope, ImmutableArray.Create(args[2])).FirstOrDefault();
         if (!any)
         {
             yield return False();

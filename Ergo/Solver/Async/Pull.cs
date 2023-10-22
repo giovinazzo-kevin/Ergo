@@ -7,7 +7,7 @@ public sealed class RunTask : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         var any = false;
         foreach (var sol in context.Solver.Solve(new Query(args[0]), scope))

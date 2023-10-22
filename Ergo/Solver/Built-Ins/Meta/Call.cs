@@ -8,7 +8,7 @@ public sealed class Call : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)

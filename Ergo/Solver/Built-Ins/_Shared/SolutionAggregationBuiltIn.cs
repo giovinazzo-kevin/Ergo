@@ -7,7 +7,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
     {
     }
 
-    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ITerm[] args)
+    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ImmutableArray<ITerm> args)
     {
         var (template, goal, instances) = (args[0], args[1], args[2]);
         scope = scope.WithDepth(scope.Depth + 1)

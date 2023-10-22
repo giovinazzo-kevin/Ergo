@@ -7,7 +7,7 @@ public sealed class Unifiable : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         if (LanguageExtensions.Unify(arguments[0], arguments[1]).TryGetValue(out var subs))
         {

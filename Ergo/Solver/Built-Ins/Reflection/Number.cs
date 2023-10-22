@@ -9,7 +9,7 @@ public sealed class Number : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         yield return Bool(arguments[0] is Atom { Value: EDecimal _ });
     }

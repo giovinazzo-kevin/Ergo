@@ -7,7 +7,7 @@ public sealed class Explain : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var expl = new Atom(arguments[0].AsQuoted(false).Explain(), false);
         if (!arguments[1].IsGround)

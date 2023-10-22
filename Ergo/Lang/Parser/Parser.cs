@@ -649,7 +649,7 @@ public partial class ErgoParser : IDisposable
                 Throw(scope.LexerState, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), singletons.Join());
             }
 
-            return new Predicate(desc, WellKnown.Modules.User, head, body, false, false);
+            return new Predicate(desc, WellKnown.Modules.User, head, body, false, false, default);
         }
     }
 

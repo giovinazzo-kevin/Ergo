@@ -1,13 +1,11 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Solver.BuiltIns;
 
 public class DependencyGraphNode
 {
     public List<Predicate> Clauses { get; } = new();
     public Signature Signature { get; set; }
-    public Maybe<SolverBuiltIn> BuiltIn { get; set; }
-    public List<DependencyGraphNode> Dependencies { get; } = new List<DependencyGraphNode>();
-    public List<DependencyGraphNode> Dependents { get; } = new List<DependencyGraphNode>();
+    public HashSet<DependencyGraphNode> Dependencies { get; } = new();
+    public HashSet<DependencyGraphNode> Dependents { get; } = new();
     public bool IsInlined { get; set; }
     public bool IsCyclical { get; set; }
     public List<Predicate> InlinedClauses { get; set; } = null;
@@ -27,67 +25,93 @@ public class DependencyGraph
     }
 
     // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
+
+    public Signature GetKey(Predicate pred)
+    {
+        var sig = pred.Qualified().Head.GetSignature();
+        if (pred.IsVariadic)
+            sig = sig.WithArity(default);
+        return sig;
+    }
+
     void BuildGraph()
     {
         foreach (var pred in KnowledgeBase)
         {
-            var sig = pred.Qualified().Head.GetSignature();
-            if (!_nodes.TryGetValue(sig, out var node))
-            {
-                node = new DependencyGraphNode { Signature = sig };
-                _nodes[sig] = node;
-            }
-            node.Clauses.Add(pred);
+            AddNode(pred);
         }
 
         foreach (var pred in KnowledgeBase)
         {
-            var sig = pred.Qualified().Head.GetSignature();
-            var node = _nodes[sig];
-            foreach (var calledSignature in ExtractCalledPredicates(Scope.WithCurrentModule(pred.DeclaringModule), KnowledgeBase, pred))
-            {
-                if (_nodes.TryGetValue(calledSignature, out var calledNode))
-                {
-                    if (!node.Dependents.Contains(calledNode))
-                        node.Dependencies.Add(calledNode);
-                    if (!calledNode.Dependents.Contains(node))
-                        calledNode.Dependents.Add(node);
-                }
-            }
+            CalculateDependencies(pred);
         }
     }
-    private IEnumerable<Signature> ExtractCalledPredicates(InterpreterScope scope, KnowledgeBase kb, Predicate pred)
-    {
-        return ExtractCalledSignaturesFromContents(scope, kb, pred.Body);
-    }
 
-    private IEnumerable<Signature> ExtractCalledSignaturesFromContents(InterpreterScope scope, KnowledgeBase kb, NTuple goals)
+    public void CalculateDependencies(Predicate pred)
     {
-        var allGoals = new List<ITerm>();
-        _ = Predicate.ExpandGoals(goals, t => { allGoals.Add(t); return t; });
-        foreach (var item in allGoals)
+        var sig = GetKey(pred);
+        var node = _nodes[sig];
+        foreach (var calledSignature in ExtractCalledSignatures(pred, Scope, KnowledgeBase))
         {
-            var signature = item.GetSignature();
-            if (signature.Module.TryGetValue(out _))
-                yield return signature;
-            else
+            if (_nodes.TryGetValue(calledSignature, out var calledNode))
             {
-                // Unqualified signature. What does it resolve to?
-                // A conjunction of clauses, possibly from different modules. Which ones?
-                // Let's just try resolving them.
-                foreach (var m in scope.VisibleModules)
+                if (!node.Dependents.Contains(calledNode))
+                    node.Dependencies.Add(calledNode);
+                if (!calledNode.Dependents.Contains(node))
+                    calledNode.Dependents.Add(node);
+            }
+        }
+    }
+
+    public DependencyGraphNode AddNode(Predicate pred)
+    {
+        var sig = GetKey(pred);
+        if (!_nodes.TryGetValue(sig, out var node))
+        {
+            node = new DependencyGraphNode { Signature = sig };
+            _nodes[sig] = node;
+        }
+        node.Clauses.Add(pred);
+        return node;
+    }
+
+    public DependencyGraphNode SetNode(Predicate pred)
+    {
+        var sig = GetKey(pred);
+        var node = _nodes[sig] = new DependencyGraphNode() { Signature = sig };
+        node.Clauses.Add(pred);
+        return node;
+    }
+
+    public static IEnumerable<Signature> ExtractCalledSignatures(Predicate pred, InterpreterScope scope, KnowledgeBase kb)
+    {
+        scope = scope.WithCurrentModule(pred.DeclaringModule);
+        return Predicate.GetGoals(pred)
+            .SelectMany(c => ExtractCalledSignatures(c, scope, kb));
+    }
+
+    public static IEnumerable<Signature> ExtractCalledSignatures(ITerm item, InterpreterScope scope, KnowledgeBase kb)
+    {
+        var signature = item.GetSignature();
+        if (signature.Module.TryGetValue(out _))
+            yield return signature;
+        else
+        {
+            // Unqualified signature. What does it resolve to?
+            // A conjunction of clauses, possibly from different modules. Which ones?
+            // Let's just try resolving them.
+            foreach (var m in scope.VisibleModules)
+            {
+                var qualified = signature.WithModule(m);
+                if (kb.Get(qualified).TryGetValue(out _))
                 {
-                    var qualified = signature.WithModule(m);
-                    if (kb.Get(qualified).TryGetValue(out _))
-                    {
-                        yield return qualified;
-                    }
+                    yield return qualified;
                 }
             }
         }
     }
 
-    public Maybe<DependencyGraphNode> GetNode(Signature s) => _nodes.TryGetValue(s, out var node) ? node : default;
+    public Maybe<DependencyGraphNode> GetNode(Signature s) => _nodes.TryGetValue(s, out var node) ? node : Maybe<DependencyGraphNode>.None;
 
     public IEnumerable<DependencyGraphNode> GetRootNodes()
     {

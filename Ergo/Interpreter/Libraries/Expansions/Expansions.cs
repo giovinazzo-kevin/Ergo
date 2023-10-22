@@ -110,6 +110,11 @@ public class Expansions : Library
         }
         IEnumerable<Predicate> ExpandPredicateOnce(Predicate p, SolverScope scope)
         {
+            if (p.IsBuiltIn)
+            {
+                yield return p;
+                yield break;
+            }
             // Predicates are expanded only once, when they're loaded. The same applies to queries.
             // Expansions are defined as lambdas that define a predicate and capture one variable:
             //   - The head of the predicate is matched against the current term; if they unify:
@@ -147,7 +152,8 @@ public class Expansions : Library
                         newHead,
                         new(newBody, p.Head.Scope),
                         p.IsDynamic,
-                        p.IsExported
+                        p.IsExported,
+                        p.ExecutionGraph
                     );
                 }
             }

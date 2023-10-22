@@ -17,6 +17,7 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsBuiltIn;
     public readonly bool IsVariadic;
     public readonly Maybe<SolverBuiltIn> BuiltIn;
+    public readonly Maybe<ExecutionGraph> ExecutionGraph;
     //public readonly bool IsDeterminate;
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
 
@@ -170,7 +171,7 @@ public readonly struct Predicate : IExplainable
         }
     }
 
-    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive)
+    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<ExecutionGraph> graph)
     {
         Documentation = desc;
         DeclaringModule = module;
@@ -183,10 +184,11 @@ public readonly struct Predicate : IExplainable
         IsBuiltIn = false;
         BuiltIn = default;
         IsVariadic = false;
+        ExecutionGraph = graph;
     }
 
-    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
-        : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body))
+    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, Maybe<ExecutionGraph> graph)
+        : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body), graph)
     {
     }
 
@@ -222,6 +224,7 @@ public readonly struct Predicate : IExplainable
             , IsDynamic
             , IsExported
             , IsTailRecursive
+            , ExecutionGraph
         );
     }
 
@@ -266,42 +269,47 @@ public readonly struct Predicate : IExplainable
         if (k.IsBuiltIn)
             return k.WithHead(k.Head.Substitute(s));
         return new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
-            .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive);
+            .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive, k.ExecutionGraph);
     }
-
+    public Predicate WithExecutionGraph(Maybe<ExecutionGraph> newGraph)
+    {
+        if (IsBuiltIn)
+            throw new NotSupportedException();
+        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, IsExported, IsTailRecursive, newGraph);
+    }
     public Predicate WithHead(ITerm newHead)
     {
         if (BuiltIn.TryGetValue(out var builtIn))
             return new(builtIn, Maybe.Some(newHead));
-        return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
+        return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
     }
     public Predicate WithBody(NTuple newBody)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
-        return new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive);
+        return new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
     }
     public Predicate WithModuleName(Atom module)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
-        return new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive);
+        return new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
     }
     public Predicate Dynamic()
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
-        return new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive);
+        return new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive, ExecutionGraph);
     }
     public Predicate Exported()
     {
         if (IsBuiltIn)
             return this;
-        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive);
+        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive, ExecutionGraph);
     }
     public Predicate Qualified()
     {
-        if (IsBuiltIn || Head.IsQualified)
+        if (Head.IsQualified)
             return this;
         return WithHead(Head.Qualified(DeclaringModule));
     }
@@ -321,12 +329,12 @@ public readonly struct Predicate : IExplainable
                 .GetOr(new NTuple(new[] { c.Arguments[1] }, c.Scope));
 
             var mod = head.GetQualification(out head).GetOr(defaultModule);
-            pred = new("(dynamic)", mod, head, body, true, false);
+            pred = new("(dynamic)", mod, head, body, true, false, default);
             return true;
         }
 
         var module = term.GetQualification(out term).GetOr(defaultModule);
-        pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True), term.Scope), true, false);
+        pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True), term.Scope), true, false, default);
         return true;
     }
 

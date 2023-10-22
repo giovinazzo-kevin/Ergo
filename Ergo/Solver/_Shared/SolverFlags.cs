@@ -3,9 +3,10 @@
 [Flags]
 public enum SolverFlags
 {
-    Default = ThrowOnPredicateNotFound | InitializeAutomatically | EnableInlining
+    Default = ThrowOnPredicateNotFound | InitializeAutomatically | EnableInliner | EnableCompiler
     , None = 0
     , ThrowOnPredicateNotFound = 1
     , InitializeAutomatically
-    , EnableInlining
+    , EnableInliner
+    , EnableCompiler
 }

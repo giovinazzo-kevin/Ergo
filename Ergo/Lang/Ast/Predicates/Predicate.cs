@@ -303,15 +303,13 @@ public readonly struct Predicate : IExplainable
     {
         if (IsBuiltIn || Head.IsQualified)
             return this;
-        return new(Documentation, DeclaringModule, Head.Qualified(DeclaringModule), Body, IsDynamic, IsExported, IsTailRecursive);
+        return WithHead(Head.Qualified(DeclaringModule));
     }
     public Predicate Unqualified()
     {
-        if (IsBuiltIn)
-            throw new NotSupportedException();
         if (!Head.GetQualification(out var head).TryGetValue(out var _))
             return this;
-        return new(Documentation, DeclaringModule, head, Body, IsDynamic, IsExported, IsTailRecursive);
+        return WithHead(head);
     }
 
     public static bool FromCanonical(ITerm term, Atom defaultModule, out Predicate pred)

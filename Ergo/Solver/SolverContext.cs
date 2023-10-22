@@ -184,7 +184,7 @@ public sealed class SolverContext : IDisposable
             yield break;
         }
 
-        if (goal is Atom { Value: false })
+        if (goal is Variable || goal is Atom { Value: false })
         {
             yield break;
         }

@@ -34,14 +34,18 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         {
             return Maybe.Some((List<Predicate>)Predicates[key]);
         }
-
         return default;
     }
 
     public Maybe<IList<Predicate>> Get(Signature sig)
     {
+        // Direct match
         if (GetImpl(sig).TryGetValue(out var list))
             return Maybe.Some<IList<Predicate>>(list);
+        // Variadic match (write/*, call/*)
+        if (GetImpl(sig.WithArity(default)).TryGetValue(out list))
+            return Maybe.Some<IList<Predicate>>(list);
+        // Matching exported predicates with qualification
         if (sig.Module.TryGetValue(out var module) && Get(sig.WithModule(default)).TryGetValue(out var list_))
             return Maybe.Some<IList<Predicate>>(list_.Where(p => p.IsExported && p.DeclaringModule.Equals(module)).ToArray());
         return default;
@@ -75,6 +79,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                     if (predicate.IsVariadic && predicate.Head.GetFunctor().TryGetValue(out var fun))
                     {
                         predicate = predicate.WithHead(fun.BuildAnonymousTerm(goal.GetArguments().Length));
+                        return Maybe.Some(new KBMatch(goal, predicate, new()));
                     }
                     if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                     {
@@ -88,10 +93,20 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         }
     }
 
-    public void AssertA(Predicate k) => GetOrCreate(k.Head.GetSignature(), append: false).Insert(0, k);
-
-    public void AssertZ(Predicate k) => GetOrCreate(k.Head.GetSignature(), append: true).Add(k);
-
+    public void AssertA(Predicate k)
+    {
+        var sig = k.Head.GetSignature();
+        if (k.IsVariadic)
+            sig = sig.WithArity(default);
+        GetOrCreate(sig, append: false).Insert(0, k);
+    }
+    public void AssertZ(Predicate k)
+    {
+        var sig = k.Head.GetSignature();
+        if (k.IsVariadic)
+            sig = sig.WithArity(default);
+        GetOrCreate(sig, append: true).Add(k);
+    }
     public bool Retract(ITerm head)
     {
         if (Get(head.GetSignature()).TryGetValue(out var matches))

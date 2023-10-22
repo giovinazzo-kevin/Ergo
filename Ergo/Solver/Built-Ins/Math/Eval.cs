@@ -9,18 +9,12 @@ public sealed class Eval : MathBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
-        var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Atom(Evaluate(context.Solver, scope, arguments[0])));
-        if (!eval.TryGetValue(out var atom))
-        {
-            yield return False();
-            yield break;
-        }
-        if (arguments[1].Unify(atom).TryGetValue(out var subs))
+        var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Atom(Evaluate(context.Solver, scope, arguments[1])));
+        if (eval.TryGetValue(out var result) && LanguageExtensions.Unify(arguments[0], result).TryGetValue(out var subs))
         {
             yield return True(subs);
             yield break;
         }
         yield return False();
-        yield break;
     }
 }

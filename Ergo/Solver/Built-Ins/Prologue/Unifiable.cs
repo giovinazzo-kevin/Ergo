@@ -16,11 +16,11 @@ public sealed class Unifiable : SolverBuiltIn
             List list = new(ImmutableArray.CreateRange(equations), default, default);
             if (new Substitution(arguments[2], list).Unify().TryGetValue(out subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
 
-        yield return new(WellKnown.Literals.False);
+        yield return False();
     }
 }

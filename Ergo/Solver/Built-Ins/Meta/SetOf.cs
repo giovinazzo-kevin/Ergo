@@ -19,17 +19,17 @@ public sealed class SetOf : SolutionAggregationBuiltIn
             if (!LanguageExtensions.Unify(setVars, argSet).TryGetValue(out var listSubs)
             || !LanguageExtensions.Unify(args[2], setTemplate).TryGetValue(out var instSubs))
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(listSubs, instSubs));
+            yield return True(SubstitutionMap.MergeRef(listSubs, instSubs));
             any = true;
         }
 
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

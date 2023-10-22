@@ -9,7 +9,7 @@ public sealed class RetractAll : DynamicPredicateBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
     {
-        if (Retract(context.Solver, scope, arguments[0], all: true)) yield return new(WellKnown.Literals.True);
-        else yield return new(WellKnown.Literals.False);
+        if (Retract(context.Solver, scope, arguments[0], all: true)) yield return True();
+        else yield return False();
     }
 }

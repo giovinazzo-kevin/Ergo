@@ -9,30 +9,30 @@ public sealed class SetupCallCleanup : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
     {
-        var once = new Call().Apply(context, scope, new[] { args[0] }).FirstOrDefault();
-        if (once.Equals(default(Evaluation)) || once.Result.Equals(WellKnown.Literals.False))
+        var once = new Call().Apply(context, scope, new[] { args[0] }).Select(x => Maybe.Some(x)).FirstOrDefault();
+        if (!once.TryGetValue(out var sol) || !sol.Result)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
             yield break;
         }
 
         var any = false;
-        foreach (var sol in new Call().Apply(context, scope, new[] { args[1] }))
+        foreach (var sol1 in new Call().Apply(context, scope, new[] { args[1] }))
         {
-            if (sol.Result.Equals(WellKnown.Literals.False))
+            if (!sol1.Result)
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, sol.Substitutions);
+            yield return True(sol1.Substitutions);
             any = true;
         }
 
-        new Call().Apply(context, scope, new[] { args[2] }).FirstOrDefault();
+        _ = new Call().Apply(context, scope, new[] { args[2] }).FirstOrDefault();
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
             yield break;
         }
     }

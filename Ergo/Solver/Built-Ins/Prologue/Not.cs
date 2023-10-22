@@ -13,11 +13,11 @@ public sealed class Not : SolverBuiltIn
         var solutions = context.Solver.Solve(new Query(arguments.Single()), scope);
         if (solutions.Any())
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
         else
         {
-            yield return new(WellKnown.Literals.True);
+            yield return True();
         }
     }
 }

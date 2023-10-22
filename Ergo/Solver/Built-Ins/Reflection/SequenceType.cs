@@ -21,7 +21,7 @@ public sealed class SequenceType : SolverBuiltIn
         {
             if (LanguageExtensions.Unify(type, new Atom("list")).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
@@ -30,7 +30,7 @@ public sealed class SequenceType : SolverBuiltIn
         {
             if (LanguageExtensions.Unify(type, new Atom("comma_list")).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
@@ -39,11 +39,11 @@ public sealed class SequenceType : SolverBuiltIn
         {
             if (LanguageExtensions.Unify(type, new Atom("bracy_list")).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
 
-        yield return new(WellKnown.Literals.False);
+        yield return False();
     }
 }

@@ -15,13 +15,13 @@ public sealed class Pull : SolverBuiltIn
             if (item.Rhs.Unify(args[0]).TryGetValue(out var subs))
             {
                 any = true;
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
             }
         }
 
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

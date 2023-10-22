@@ -12,13 +12,13 @@ public sealed class Retract : DynamicPredicateBuiltIn
         var any = false;
         while (Retract(context.Solver, scope, arguments[0], all: false))
         {
-            yield return new(WellKnown.Literals.True);
+            yield return True();
             any = true;
         }
 
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

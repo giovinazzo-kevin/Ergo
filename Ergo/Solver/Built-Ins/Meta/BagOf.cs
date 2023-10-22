@@ -15,17 +15,17 @@ public sealed class BagOf : SolutionAggregationBuiltIn
             if (!LanguageExtensions.Unify(ListVars, ArgVars).TryGetValue(out var listSubs)
             || !LanguageExtensions.Unify(args[2], ListTemplate).TryGetValue(out var instSubs))
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(instSubs, listSubs));
+            yield return True(SubstitutionMap.MergeRef(instSubs, listSubs));
             any = true;
         }
 
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

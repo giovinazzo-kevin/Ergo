@@ -71,15 +71,15 @@ public sealed class FormatString : SolverBuiltIn
 
         if (result.IsGround && formatStr.Equals(resultStrRaw))
         {
-            yield return new(WellKnown.Literals.True, varSubs);
+            yield return True(varSubs);
         }
         else if (!result.IsGround)
         {
-            yield return new(WellKnown.Literals.True, new Substitution(result, new Atom(formatStr)));
+            yield return True(new Substitution(result, new Atom(formatStr)));
         }
         else
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

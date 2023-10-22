@@ -106,15 +106,13 @@ public sealed class SolverContext : IDisposable
             foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
             {
                 _debuggerSignal.WaitOne();
-                goal = eval.Result;
-                sig = goal.GetSignature();
                 yield return eval;
                 any = true;
             }
         }
 
         if (!any)
-            yield return new(goal);
+            yield return new(true);
     }
 
     public IEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
@@ -244,7 +242,7 @@ public sealed class SolverContext : IDisposable
         foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
         {
             _debuggerSignal.WaitOne();
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
+            if (!resolvedGoal.Result)
             {
                 scope.Trace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False);
                 yield break;
@@ -260,7 +258,7 @@ public sealed class SolverContext : IDisposable
 
             // Attempts qualifying a goal with a module, then finds matches in the knowledge base
             var noMatches = true;
-            var matches = ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope)
+            var matches = ErgoSolver.GetImplicitGoalQualifications(goal, scope)
                 .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x, desugar: false))
                 .Where(x => x.TryGetValue(out _) && !(noMatches = false))
                 .Take(1)
@@ -307,7 +305,7 @@ public sealed class SolverContext : IDisposable
             }
             if (noMatches)
             {
-                var signature = resolvedGoal.Result.GetSignature();
+                var signature = goal.GetSignature();
                 if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
                     continue;
                 var dyn = scope.InterpreterScope.Modules.Values

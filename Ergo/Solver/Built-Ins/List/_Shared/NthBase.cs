@@ -53,7 +53,7 @@ public abstract class NthBase : SolverBuiltIn
             }
             else if (!args[1].IsGround)
             {
-                yield return new Evaluation(WellKnown.Literals.True);
+                yield return True();
                 yield break;
             }
         }

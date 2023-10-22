@@ -54,6 +54,6 @@ public abstract class WriteBuiltIn : SolverBuiltIn
             context.Solver.Out.Flush();
         }
     ret:
-        yield return new(WellKnown.Literals.True);
+        yield return True();
     }
 }

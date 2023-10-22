@@ -22,11 +22,11 @@ public sealed class CommaToList : SolverBuiltIn
             var comma = new NTuple(list.Contents, default);
             if (!LanguageExtensions.Unify(commaArg, comma).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs);
+            yield return True(subs);
             yield break;
         }
 
@@ -41,11 +41,11 @@ public sealed class CommaToList : SolverBuiltIn
             var list = new List(comma.Contents, default, default);
             if (!LanguageExtensions.Unify(listArg, list).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs);
+            yield return True(subs);
             yield break;
         }
 

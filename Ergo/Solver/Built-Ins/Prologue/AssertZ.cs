@@ -11,11 +11,11 @@ public sealed class AssertZ : DynamicPredicateBuiltIn
     {
         if (Assert(context.Solver, scope, arguments[0], z: true))
         {
-            yield return new(WellKnown.Literals.True);
+            yield return True();
         }
         else
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

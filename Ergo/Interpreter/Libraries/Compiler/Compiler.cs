@@ -57,14 +57,21 @@ public class Compiler : Library
             if (sie.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
             {
                 // Now that everything has been inlined, we can build the execution graph for each predicate.
-                foreach (var pred in DependencyGraph.GetAllNodes().SelectMany(n => n.Clauses))
+                foreach (var node in DependencyGraph.GetAllNodes())
                 {
-                    if (!pred.IsBuiltIn)
+                    for (int i = node.Clauses.Count - 1; i >= 0; --i)
                     {
-                        if (!sie.Scope.ExceptionHandler.TryGet(() => pred.ToExecutionGraph(DependencyGraph)).TryGetValue(out var execGraph))
-                            continue;
-                        sie.Solver.KnowledgeBase.Retract(pred);
-                        sie.Solver.KnowledgeBase.AssertZ(pred.WithExecutionGraph(execGraph));
+                        var pred = node.Clauses[i];
+                        if (!pred.IsBuiltIn)
+                        {
+                            if (!sie.Scope.ExceptionHandler.TryGet(() => pred.ToExecutionGraph(DependencyGraph)).TryGetValue(out var execGraph))
+                                continue;
+                            sie.Solver.KnowledgeBase.Retract(pred);
+                            pred = pred.WithExecutionGraph(execGraph);
+                            sie.Solver.KnowledgeBase.AssertZ(pred);
+                            node.Clauses.RemoveAt(i);
+                            node.Clauses.Insert(i, pred);
+                        }
                     }
                 }
             }

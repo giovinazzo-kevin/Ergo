@@ -1,7 +1,17 @@
 ﻿using Ergo.Lang.Compiler;
 using Ergo.Solver;
 
-public class ExecutionNode { }
+public class ExecutionNode
+{
+    public virtual ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return this;
+    }
+    public virtual ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return this;
+    }
+}
 
 /// <summary>
 /// Represents a cut, which prevents further backtracking.
@@ -22,6 +32,14 @@ public class GoalNode : ExecutionNode
 
     public ITerm Goal { get; }
     public DependencyGraphNode Node { get; }
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new GoalNode(Node, Goal.Instantiate(ctx, vars));
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return new GoalNode(Node, Goal.Substitute(s));
+    }
 }
 public class VariadicGoalNode : GoalNode
 {
@@ -38,6 +56,14 @@ public class DynamicNode : ExecutionNode
     }
 
     public ITerm Goal { get; }
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new DynamicNode(Goal.Instantiate(ctx, vars));
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return new DynamicNode(Goal.Substitute(s));
+    }
 }
 
 public class IfThenNode : ExecutionNode
@@ -50,6 +76,14 @@ public class IfThenNode : ExecutionNode
 
     public ExecutionNode Condition { get; }
     public ExecutionNode TrueBranch { get; }
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new IfThenNode(Condition.Instantiate(ctx, vars), TrueBranch.Instantiate(ctx, vars));
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return new IfThenNode(Condition.Substitute(s), TrueBranch.Substitute(s));
+    }
 }
 /// <summary>
 /// Represents an if-then-else statement.
@@ -66,6 +100,14 @@ public class IfThenElseNode : ExecutionNode
     public ExecutionNode Condition { get; }
     public ExecutionNode TrueBranch { get; }
     public ExecutionNode FalseBranch { get; }
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new IfThenElseNode(Condition.Instantiate(ctx, vars), TrueBranch.Instantiate(ctx, vars), FalseBranch.Instantiate(ctx, vars));
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return new IfThenElseNode(Condition.Substitute(s), TrueBranch.Substitute(s), FalseBranch.Substitute(s));
+    }
 }
 
 /// <summary>
@@ -83,6 +125,14 @@ public class BranchNode : ExecutionNode
     public ExecutionNode Right { get; }
     public bool LeftTried { get; set; } = false;
     public bool RightTried { get; set; } = false;
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new BranchNode(Left.Instantiate(ctx, vars), Right.Instantiate(ctx, vars));
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return new BranchNode(Left.Substitute(s), Right.Substitute(s));
+    }
 }
 
 /// <summary>
@@ -93,31 +143,59 @@ public class SequenceNode : ExecutionNode
     public SequenceNode(List<ExecutionNode> nodes) => Nodes = nodes;
 
     public List<ExecutionNode> Nodes { get; }
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new SequenceNode(Nodes.Select(n => n.Instantiate(ctx, vars)).ToList());
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        return new SequenceNode(Nodes.Select(n => n.Substitute(s)).ToList());
+    }
 }
 
 public class TrueNode : ExecutionNode { }
 public class FalseNode : ExecutionNode { }
 public class VariableNode : ExecutionNode
 {
-    public readonly Variable Binding;
+    public Variable Binding { get; private set; }
 
     public VariableNode(Variable v)
     {
         Binding = v;
     }
+    public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new VariableNode((Variable)Binding.Instantiate(ctx, vars));
+    }
+    public override ExecutionNode Substitute(IEnumerable<Substitution> s)
+    {
+        var term = ((ITerm)Binding).Substitute(s);
+        if (term is not Variable)
+            return new DynamicNode(term);
+        return new VariableNode((Variable)term);
+    }
 }
 
-public sealed class ExecutionGraph
+public readonly struct ExecutionGraph
 {
-    public SequenceNode Root;
+    public readonly ExecutionNode Root;
 
-    public ExecutionGraph(SequenceNode root) => Root = root;
+    public ExecutionGraph(ExecutionNode root) => Root = root;
 
-    public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
+    public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    {
+        return new(Root.Instantiate(ctx, vars));
+    }
+    public ExecutionGraph Substitute(IEnumerable<Substitution> s)
+    {
+        return new(Root.Substitute(s));
+    }
+
+    public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope, SubstitutionMap currentSubstitutions = null)
     {
         var stack = new Stack<(ExecutionNode, SubstitutionMap)>();
         ExecutionNode current = Root;
-        SubstitutionMap currentSubstitutions = new();
+        currentSubstitutions ??= new();
 
         while (current != null)
         {
@@ -128,6 +206,7 @@ public sealed class ExecutionGraph
                     break;
 
                 case FalseNode _:
+                when_false:
                     if (stack.Count == 0) yield break;
                     (current, currentSubstitutions) = stack.Pop();
                     continue;
@@ -162,9 +241,30 @@ public sealed class ExecutionGraph
                         (current, currentSubstitutions) = stack.Pop();
                     }
                     continue;
-
                 case GoalNode goal:
-
+                    var term = goal.Goal.Substitute(currentSubstitutions);
+                    foreach (var clause in goal.Node.Clauses)
+                    {
+                        if (term.Unify(clause.Head).TryGetValue(out var subs))
+                        {
+                            SubstitutionMap.MergeRef(currentSubstitutions, subs);
+                        }
+                        if (clause.BuiltIn.TryGetValue(out var builtIn))
+                        {
+                            foreach (var eval in builtIn.Apply(ctx, scope, term.GetArguments()))
+                            {
+                                if (!eval.Result)
+                                    goto when_false;
+                                else
+                                    yield return new(scope, eval.Substitutions);
+                            }
+                            continue;
+                        }
+                        if (clause.ExecutionGraph.TryGetValue(out var graph))
+                        {
+                            stack.Push((graph.Root, new SubstitutionMap(currentSubstitutions)));  // Deep copy
+                        }
+                    }
                     break;
 
                 default:
@@ -181,14 +281,13 @@ public static class ExecutionGraphExtensions
 {
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph)
     {
+        //var ctx = new InstantiationContext("_C");
         var scope = graph.Scope.WithCurrentModule(clause.DeclaringModule);
-        var seq = new SequenceNode(new());
-        foreach (var goal in clause.Body.Contents)
-            seq.Nodes.Add(ToExecutionNode(goal));
-        return new(seq);
+        return new(ToExecutionNode(clause.Body));
 
         ExecutionNode ToExecutionNode(ITerm goal)
         {
+            //goal = goal.Instantiate(ctx);
             if (goal is NTuple tup)
             {
                 var list = tup.Contents.Select(x => ToExecutionNode(x)).ToList();

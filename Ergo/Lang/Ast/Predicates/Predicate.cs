@@ -224,7 +224,7 @@ public readonly struct Predicate : IExplainable
             , IsDynamic
             , IsExported
             , IsTailRecursive
-            , ExecutionGraph
+            , ExecutionGraph.Select(g => g.Instantiate(ctx, vars))
         );
     }
 
@@ -269,7 +269,7 @@ public readonly struct Predicate : IExplainable
         if (k.IsBuiltIn)
             return k.WithHead(k.Head.Substitute(s));
         return new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
-            .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive, k.ExecutionGraph);
+            .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive, k.ExecutionGraph.Select(g => g.Substitute(s)));
     }
     public Predicate WithExecutionGraph(Maybe<ExecutionGraph> newGraph)
     {

@@ -192,10 +192,12 @@ public partial class ErgoSolver : IDisposable
         foreach (var exp in queryExpansions)
         {
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
-            var newPred = Predicate.Substitute(exp.Predicate, exp.Substitutions.Select(x => x.Inverted()));
+            var subs = exp.Substitutions;
+            subs.Invert();
+            var newPred = Predicate.Substitute(exp.Predicate, subs);
             if (newPred.ExecutionGraph.TryGetValue(out var compiled))
             {
-                foreach (var s in compiled.Execute(ctx, scope.WithCallee(newPred)))
+                foreach (var s in compiled.Execute(ctx, scope.WithCallee(newPred), subs))
                     yield return s;
                 continue;
             }

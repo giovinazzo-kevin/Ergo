@@ -232,6 +232,12 @@ public sealed class SolverContext : IDisposable
                 }
                 continue;
             }
+            //if (m.Predicate.ExecutionGraph.TryGetValue(out var graph))
+            //{
+            //    foreach (var s in graph.Execute(this, scope))
+            //        yield return s;
+            //    continue;
+            //}
 #if !ERGO_SOLVER_DISABLE_TCO
             if (m.Predicate.IsTailRecursive)
             {

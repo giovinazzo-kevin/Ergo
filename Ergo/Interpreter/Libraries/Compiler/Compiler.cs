@@ -5,6 +5,7 @@ using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Compiler;
 
+using Ergo.Lang.Compiler;
 using Ergo.Solver;
 using System.Collections.Generic;
 
@@ -54,27 +55,27 @@ public class Compiler : Library
                     inlined.Clauses.AddRange(inlined.InlinedClauses);
                 }
             }
-            if (sie.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
-            {
-                // Now that everything has been inlined, we can build the execution graph for each predicate.
-                foreach (var node in DependencyGraph.GetAllNodes())
-                {
-                    for (int i = node.Clauses.Count - 1; i >= 0; --i)
-                    {
-                        var pred = node.Clauses[i];
-                        if (!pred.IsBuiltIn)
-                        {
-                            if (!sie.Scope.ExceptionHandler.TryGet(() => pred.ToExecutionGraph(DependencyGraph)).TryGetValue(out var execGraph))
-                                continue;
-                            sie.Solver.KnowledgeBase.Retract(pred);
-                            pred = pred.WithExecutionGraph(execGraph);
-                            sie.Solver.KnowledgeBase.AssertZ(pred);
-                            node.Clauses.RemoveAt(i);
-                            node.Clauses.Insert(i, pred);
-                        }
-                    }
-                }
-            }
+            //if (sie.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
+            //{
+            //    // Now that everything has been inlined, we can build the execution graph for each predicate.
+            //    foreach (var node in DependencyGraph.GetAllNodes())
+            //    {
+            //        for (int i = node.Clauses.Count - 1; i >= 0; --i)
+            //        {
+            //            var pred = node.Clauses[i];
+            //            if (!pred.IsBuiltIn)
+            //            {
+            //                if (!sie.Scope.ExceptionHandler.TryGet(() => pred.ToExecutionGraph(DependencyGraph)).TryGetValue(out var execGraph))
+            //                    continue;
+            //                sie.Solver.KnowledgeBase.Retract(pred);
+            //                pred = pred.WithExecutionGraph(execGraph);
+            //                sie.Solver.KnowledgeBase.AssertZ(pred);
+            //                node.Clauses.RemoveAt(i);
+            //                node.Clauses.Insert(i, pred);
+            //            }
+            //        }
+            //    }
+            //}
         }
         else if (evt is QuerySubmittedEvent qse)
         {
@@ -83,10 +84,6 @@ public class Compiler : Library
                 .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
-                if (qse.Solver.Flags.HasFlag(SolverFlags.EnableInliner))
-                {
-                    // not supported for now
-                }
                 if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
                 {
                     qse.Solver.KnowledgeBase.Retract(topLevel);

@@ -195,13 +195,14 @@ public partial class ErgoSolver : IDisposable
             var subs = exp.Substitutions;
             subs.Invert();
             var newPred = Predicate.Substitute(exp.Predicate, subs);
+            scope = scope.WithCallee(newPred);
             if (newPred.ExecutionGraph.TryGetValue(out var compiled))
             {
-                foreach (var s in compiled.Execute(ctx, scope.WithCallee(newPred), subs))
+                foreach (var s in compiled.Execute(ctx, scope))
                     yield return s;
                 continue;
             }
-            foreach (var s in ctx.Solve(new(newPred.Body), scope.WithCallee(newPred), ct: ct))
+            foreach (var s in ctx.Solve(new(newPred.Body), scope, ct: ct))
                 yield return s;
         }
     }

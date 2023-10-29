@@ -25,7 +25,8 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     }
     public static SubstitutionMap MergeRef(SubstitutionMap A, SubstitutionMap B)
     {
-        A.AddRange(B);
+        if (B != null)
+            A.AddRange(B);
         return A;
     }
 

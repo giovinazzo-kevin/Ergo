@@ -19,16 +19,14 @@ public class BranchNode : ExecutionNode
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
-        execScope = execScope.ChoicePoint();
         var cut = false;
-        foreach (var res in Left.Execute(ctx, solverScope, execScope))
+        foreach (var res in Left.Execute(ctx, solverScope, execScope.ChoicePoint()))
         {
             yield return res;
             cut |= res.IsCut;
         }
-        if (cut)
-            yield break;
-        foreach (var res in Right.Execute(ctx, solverScope, execScope))
+        if (cut) yield break;
+        foreach (var res in Right.Execute(ctx, solverScope, execScope.ChoicePoint()))
         {
             yield return res;
         }

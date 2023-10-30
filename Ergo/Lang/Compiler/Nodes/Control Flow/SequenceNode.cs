@@ -10,19 +10,36 @@ public class SequenceNode : ExecutionNode
     public SequenceNode(List<ExecutionNode> nodes) => Nodes = nodes;
 
     public List<ExecutionNode> Nodes { get; }
-
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
-        foreach (var node in Nodes)
+        return ExecuteSequence(ctx, solverScope, execScope, 0);
+    }
+    private IEnumerable<ExecutionScope> ExecuteSequence(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope, int index)
+    {
+        if (index >= Nodes.Count)
         {
-            var (any, cut) = (false, false);
-            foreach (var res in node.Execute(ctx, solverScope, execScope))
+            yield return execScope;
+            yield break;
+        }
+
+        var currentNode = Nodes[index];
+        foreach (var newScope in currentNode.Execute(ctx, solverScope, execScope))
+        {
+            // Run the remaining nodes in the sequence on the current scope
+            foreach (var resultScope in ExecuteSequence(ctx, solverScope, newScope, index + 1))
             {
-                any |= true; cut |= res.IsCut;
-                yield return res;
+                yield return resultScope;
+
+                if (resultScope.IsCut) // Stop the loop if a cut has been encountered
+                {
+                    yield break;
+                }
             }
-            if (!any)
-                break;
+            if (newScope.IsCut)
+            {
+                yield return newScope;
+                yield break;
+            }
         }
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

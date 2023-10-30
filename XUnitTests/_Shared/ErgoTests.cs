@@ -77,7 +77,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
                 Assert.InRange(++numSolutions, 1, expectedSolutions);
                 if (expected.Length != 0)
                 {
-                    var check = sol.Simplify().Substitutions.Join(s => s.Explain(), ";");
+                    var check = sol.Simplify().Substitutions.OrderBy(x => x.Lhs).Join(s => s.Explain(), ";");
                     Assert.Equal(expected[numSolutions - 1], check);
                 }
             }

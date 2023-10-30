@@ -9,4 +9,5 @@ public class CutNode : StaticNode
         // Clear the stack to prevent further backtracking
         yield return execScope.Cut();
     }
+    public override string Explain(bool canonical = false) => $"!";
 }

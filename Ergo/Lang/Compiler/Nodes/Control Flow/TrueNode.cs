@@ -8,4 +8,5 @@ public class TrueNode : StaticNode
     {
         yield return execScope.AsSolution();
     }
+    public override string Explain(bool canonical = false) => $"⊤";
 }

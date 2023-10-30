@@ -26,4 +26,5 @@ public class VariableNode : ExecutionNode
             return new DynamicNode(term);
         return new VariableNode((Variable)term);
     }
+    public override string Explain(bool canonical = false) => Binding.Name;
 }

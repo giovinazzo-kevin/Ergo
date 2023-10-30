@@ -21,22 +21,17 @@ public class IfThenElseNode : ExecutionNode
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
-        var conditionSubs = new SubstitutionMap();
         var satisfied = false;
-        foreach (var res in Condition.Execute(ctx, solverScope, execScope))
+        foreach (var condScope in Condition.Execute(ctx, solverScope, execScope))
         {
             satisfied = true;
-            conditionSubs.AddRange(res.CurrentSubstitutions);
-        }
-        if (satisfied)
-        {
-            execScope = execScope.ApplySubstitutions(conditionSubs);
-            foreach (var res in TrueBranch.Execute(ctx, solverScope, execScope))
+            foreach (var res in TrueBranch.Execute(ctx, solverScope, condScope))
             {
                 yield return res;
             }
+            break;
         }
-        else
+        if (!satisfied)
         {
             foreach (var res in FalseBranch.Execute(ctx, solverScope, execScope))
             {
@@ -53,4 +48,5 @@ public class IfThenElseNode : ExecutionNode
     {
         return new IfThenElseNode(Condition.Substitute(s), TrueBranch.Substitute(s), FalseBranch.Substitute(s));
     }
+    public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n\t->({TrueBranch.Explain(canonical)})\r\n\t; ({FalseBranch.Explain(canonical)})\r\n";
 }

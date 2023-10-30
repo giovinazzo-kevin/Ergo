@@ -63,7 +63,7 @@ public static class ExecutionGraphExtensions
                 {
                     if (args[0] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 } && arity1 == 2 && WellKnown.Operators.If.Synonyms.Contains(functor1))
                     {
-                        return new IfThenElseNode(ToExecutionNode(args1[0]), ToExecutionNode(args1[0]), ToExecutionNode(args1[1]));
+                        return new IfThenElseNode(ToExecutionNode(args1[0]), ToExecutionNode(args1[1]), ToExecutionNode(args[1]));
                     }
                     return new BranchNode(ToExecutionNode(args[0]), ToExecutionNode(args[1]));
                 }
@@ -100,17 +100,18 @@ public static class ExecutionGraphExtensions
             }
             if (matches.Count == 1)
                 return matches[0];
-            return new SequenceNode(matches);
+            return matches.Aggregate((a, b) => new BranchNode(a, b));
 
             void Node(ITerm goal)
             {
+                goal.GetQualification(out var head);
                 if (!node.IsCyclical)
                 {
                     foreach (var clause in node.Clauses)
                     {
                         if (clause.BuiltIn.TryGetValue(out var builtIn))
                         {
-                            matches.Add(new BuiltInNode(node, goal, builtIn));
+                            matches.Add(new BuiltInNode(node, head, builtIn));
                             continue;
                         }
                         if (clause.IsTailRecursive)
@@ -118,7 +119,7 @@ public static class ExecutionGraphExtensions
 
                         }
                         var substitutedClause = clause;
-                        if (goal.Unify(clause.Head).TryGetValue(out var subs))
+                        if (head.Unify(clause.Head).TryGetValue(out var subs))
                         {
                             substitutedClause = Predicate.Substitute(substitutedClause, subs);
                         }

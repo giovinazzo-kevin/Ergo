@@ -50,4 +50,5 @@ public class SequenceNode : ExecutionNode
     {
         return new SequenceNode(Nodes.Select(n => n.Substitute(s)).ToList());
     }
+    public override string Explain(bool canonical = false) => Nodes.Select(n => n.Explain(canonical)).Join(", ");
 }

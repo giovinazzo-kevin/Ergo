@@ -8,4 +8,6 @@ public class FalseNode : StaticNode
     {
         yield break;
     }
+
+    public override string Explain(bool canonical = false) => "⊥";
 }

@@ -9,8 +9,12 @@ public abstract class MathBuiltIn : SolverBuiltIn
         : base(documentation, functor, arity, WellKnown.Modules.Math)
     {
     }
+
     public dynamic Evaluate(ErgoSolver solver, SolverScope scope, ITerm t)
     {
+        var context = solver.Flags.HasFlag(SolverFlags.UseUnboundedDecimals)
+            ? EContext.Unlimited : EContext.CliDecimal;
+
         return Evaluate(solver, t);
         dynamic Evaluate(ErgoSolver solver, ITerm t)
         {
@@ -67,7 +71,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Divide(B, EContext.CliDecimal);
+                return A.Divide(B, context);
             }
             return a / b;
         }
@@ -78,7 +82,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Remainder(B, EContext.CliDecimal);
+                return A.Remainder(B, context);
             }
             return a % b;
         }
@@ -89,7 +93,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Add(B, EContext.CliDecimal);
+                return A.Add(B, context);
             }
             return a + b;
         }
@@ -100,7 +104,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Subtract(B, EContext.CliDecimal);
+                return A.Subtract(B, context);
             }
             return a - b;
         }
@@ -111,7 +115,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
             var b = Evaluate(solver, c.Arguments[1]);
             if (a is EDecimal A && b is EDecimal B)
             {
-                return A.Multiply(B, EContext.CliDecimal);
+                return A.Multiply(B, context);
             }
             return a * b;
         }

@@ -17,7 +17,7 @@ public class BasicSolverTests : ErgoTests
     [InlineData("⊥; ⊤", 1, "")]
     [InlineData("(⊥; ⊤), ⊥", 0)]
     [InlineData("(⊥; ⊤); ⊥", 1, "")]
-    [InlineData("(⊤; ⊤), ⊤", 1, "")]
+    [InlineData("(⊤; ⊤), ⊤", 2, "", "")]
     [InlineData("(⊤, ⊤); ⊤", 2, "", "")]
     [InlineData("(⊤; ⊤); ⊤", 3, "", "", "")]
     [InlineData("(⊤, ⊤); (⊤, ⊤)", 2, "", "")]

@@ -1,114 +1,160 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.Interpreter;
+using Ergo.Solver;
+using Ergo.Solver.BuiltIns;
 
-public class ExecutionNode { }
+namespace Ergo.Lang.Compiler;
 
-/// <summary>
-/// Represents a cut, which prevents further backtracking.
-/// </summary>
-public class CutNode : ExecutionNode { }
-
-/// <summary>
-/// Represents a built-in node, similar to a goal node but more primitive and closely integrated with C#.
-/// </summary>
-public class BuiltInNode : ExecutionNode
+public readonly struct ExecutionGraph
 {
-    public SolverBuiltIn BuiltIn { get; }
-}
+    public readonly ExecutionNode Root;
 
-/// <summary>
-/// Represents an individual qualified goal. It might still be made up of multiple clauses, but only from one module's definition.
-/// Ambiguous goals are represented as BranchNodes containing all possible qualifications of each goal.
-/// </summary>
-public class GoalNode : ExecutionNode
-{
-    public GoalNode(DependencyGraphNode goal) => Goal = goal;
+    public ExecutionGraph(ExecutionNode root) => Root = root;
 
-    public DependencyGraphNode Goal { get; }
-}
-
-public class IfThenNode : ExecutionNode
-{
-    public IfThenNode(ExecutionNode condition, ExecutionNode trueBranch)
+    public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
-        Condition = condition;
-        TrueBranch = trueBranch;
+        return new(Root.Instantiate(ctx, vars));
+    }
+    public ExecutionGraph Substitute(IEnumerable<Substitution> s)
+    {
+        return new(Root.Substitute(s));
     }
 
-    public ExecutionNode Condition { get; }
-    public ExecutionNode TrueBranch { get; }
-}
-/// <summary>
-/// Represents an if-then-else statement.
-/// </summary>
-public class IfThenElseNode : ExecutionNode
-{
-    public IfThenElseNode(ExecutionNode condition, ExecutionNode trueBranch, ExecutionNode falseBranch)
+    public ExecutionGraph Optimized() => new(Root.Optimize());
+
+    public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
     {
-        Condition = condition;
-        TrueBranch = trueBranch;
-        FalseBranch = falseBranch;
+        var execScope = ExecutionScope.Empty;
+        var expl = Root.Explain();
+        Console.WriteLine(expl);
+        foreach (var step in Root.Execute(ctx, scope, execScope))
+        {
+            if (!step.IsSolution)
+                continue;
+            yield return new(scope, step.CurrentSubstitutions);
+        }
     }
-
-    public ExecutionNode Condition { get; }
-    public ExecutionNode TrueBranch { get; }
-    public ExecutionNode FalseBranch { get; }
-}
-
-/// <summary>
-/// Represents a logical disjunction.
-/// </summary>
-public class BranchNode : ExecutionNode
-{
-    public BranchNode(ExecutionNode left, ExecutionNode right)
-    {
-        Left = left;
-        Right = right;
-    }
-
-    public ExecutionNode Left { get; }
-    public ExecutionNode Right { get; }
-    public bool LeftTried { get; set; } = false;
-    public bool RightTried { get; set; } = false;
-}
-
-/// <summary>
-/// Represents a logical conjunction.
-/// </summary>
-public class SequenceNode : ExecutionNode
-{
-    public SequenceNode(List<ExecutionNode> nodes) => Nodes = nodes;
-
-    public List<ExecutionNode> Nodes { get; }
 }
 
 public static class ExecutionGraphExtensions
 {
-    public static IEnumerable<ExecutionNode> ToExecutionGraph(this Predicate clause, DependencyGraph graph)
+    public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph)
     {
-        foreach (var goal in clause.Body.Contents)
+        var scope = graph.Scope.WithCurrentModule(clause.DeclaringModule);
+        var root = ToExecutionNode(clause.Body, graph, scope);
+        if (root is SequenceNode seq)
+            root = seq.AsRoot(); // Enables some optimizations
+        return new(root);
+    }
+
+    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null)
+    {
+        ctx ??= new InstantiationContext("__E");
+        var scope = mbScope.GetOr(graph.Scope);
+        if (goal is NTuple tup)
         {
+            var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, ctx)).ToList();
+            if (list.Count == 0)
+                return TrueNode.Instance;
+            if (list.Count == 1)
+                return list[0];
+            return new SequenceNode(list);
         }
-        return null;
-        static ExecutionNode ToExecutionNode(ITerm goal)
+        if (goal is Variable v)
+            return new VariableNode(v);
+        if (goal is Atom { Value: true })
+            return TrueNode.Instance;
+        if (goal is Atom { Value: false })
+            return FalseNode.Instance;
+        if (goal.Equals(WellKnown.Literals.Cut))
+            return new CutNode();
+        if (goal is Complex { Functor: var functor, Arity: var arity, Arguments: var args })
         {
-            if (goal is NTuple tup)
-                return new SequenceNode(tup.Contents.Select(x => ToExecutionNode(x)).ToList());
-            if (goal is Complex { Functor: var functor, Arity: var arity, Arguments: var args })
+            if (arity == 2 && WellKnown.Operators.If.Synonyms.Contains(functor))
             {
-                if (arity == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor))
-                    return new BranchNode(ToExecutionNode(args[0]), ToExecutionNode(args[1]));
-                if (arity == 2 && WellKnown.Operators.If.Synonyms.Contains(functor))
+                return new IfThenNode(ToExecutionNode(args[0], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
+            }
+            if (arity == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor))
+            {
+                if (args[0] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 } && arity1 == 2 && WellKnown.Operators.If.Synonyms.Contains(functor1))
                 {
-                    if (args[1] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 }
-                        && arity1 == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor1))
+                    return new IfThenElseNode(ToExecutionNode(args1[0], graph, scope, ctx), ToExecutionNode(args1[1], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
+                }
+                return new BranchNode(ToExecutionNode(args[0], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
+            }
+        }
+        // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
+        var matches = new List<ExecutionNode>();
+        var sig = goal.GetSignature();
+        // Qualified match
+        if (graph.GetNode(sig).TryGetValue(out var node))
+            Node(goal);
+        // Qualified variadic match
+        if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
+            matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
+        // Resolve all possible callees
+        if (!sig.Module.TryGetValue(out var module))
+        {
+            foreach (var possibleQualif in scope.VisibleModules)
+            {
+                sig = sig.WithModule(possibleQualif);
+                // Match
+                if (graph.GetNode(sig).TryGetValue(out node))
+                    Node(goal.Qualified(possibleQualif));
+                // Variadic match
+                if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
+                    matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
+                // Dynamic match
+                if (scope.Modules[possibleQualif].DynamicPredicates.Contains(sig))
+                    matches.Add(new DynamicNode(goal.Qualified(possibleQualif)));
+            }
+        }
+        else
+        {
+            // Qualified dynamic match
+            if (scope.Modules[module].DynamicPredicates.Contains(sig))
+                matches.Add(new DynamicNode(goal));
+        }
+        if (matches.Count == 0)
+            throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
+        if (matches.Count == 1)
+            return matches[0];
+        return matches.Aggregate((a, b) => new BranchNode(a, b));
+
+        void Node(ITerm goal)
+        {
+            var facts = new List<Predicate>();
+            goal.GetQualification(out var head);
+            if (!node.IsCyclical)
+            {
+                foreach (var clause in node.Clauses)
+                {
+                    if (clause.BuiltIn.TryGetValue(out var builtIn))
                     {
-                        return new IfThenElseNode(ToExecutionNode(args[0]), ToExecutionNode(args1[0]), ToExecutionNode(args1[1]));
+                        matches.Add(new BuiltInNode(node, head, builtIn));
+                        continue;
                     }
-                    return new IfThenNode(ToExecutionNode(args[0]), ToExecutionNode(args[1]));
+                    var substitutedClause = clause.Instantiate(ctx);
+                    substitutedClause.Head.GetQualification(out var clauseHead);
+                    if (head.Unify(clauseHead).TryGetValue(out var subs))
+                    {
+                        substitutedClause = Predicate.Substitute(substitutedClause, subs);
+                    }
+                    else continue;
+                    substitutedClause.Head.GetQualification(out clauseHead);
+                    if (clause.IsFactual)
+                    {
+                        var unif = new Complex(new Atom("unify"), head, clauseHead);
+                        var node = graph.GetNode(BuiltInNode.UnifySignature).GetOrThrow(new InvalidOperationException());
+                        matches.Add(new BuiltInNode(node, unif, new Unify()));
+                        continue;
+                    }
+                    matches.Add(ToExecutionGraph(substitutedClause, graph).Root);
                 }
             }
-            // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
-            return null;
+            else
+            {
+                matches.Add(new CyclicalGoalNode(node, goal));
+            }
         }
     }
 }

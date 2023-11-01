@@ -9,7 +9,7 @@ public abstract class SolverBuiltIn
     {
         var module = Signature.Module.GetOr(WellKnown.Modules.Stdlib);
         var head = ((ITerm)new Complex(Signature.Functor, arguments)).Qualified(module);
-        return new Predicate(Documentation, module, head, NTuple.Empty, dynamic: false, exported: true);
+        return new Predicate(Documentation, module, head, NTuple.Empty, dynamic: false, exported: true, default);
     }
 
     protected Evaluation ThrowFalse(SolverScope scope, SolverError error, params object[] args)

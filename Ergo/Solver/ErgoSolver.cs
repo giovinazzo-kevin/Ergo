@@ -134,7 +134,8 @@ public partial class ErgoSolver : IDisposable
                         NTuple.Empty,
                         dynamic: true,
                         exported: false,
-                        tailRecursive: false
+                        tailRecursive: false,
+                        graph: default
                     );
                     if (predicate.Unify(head).TryGetValue(out var matchSubs))
                     {
@@ -178,7 +179,7 @@ public partial class ErgoSolver : IDisposable
             Initialize(scope.InterpreterScope);
         }
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-        var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false);
+        var topLevel = new Predicate(string.Empty, scope.InterpreterScope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
         // Assert the top level query as a predicate, so that libraries are free to transform it
         KnowledgeBase.AssertA(topLevel);
         scope.InterpreterScope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, scope));
@@ -191,11 +192,17 @@ public partial class ErgoSolver : IDisposable
         foreach (var exp in queryExpansions)
         {
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
-            var newPred = Predicate.Substitute(exp.Predicate, exp.Substitutions.Select(x => x.Inverted()));
-            foreach (var s in ctx.Solve(new(newPred.Body), scope.WithCallee(newPred), ct: ct))
+            var subs = exp.Substitutions; subs.Invert();
+            var newPred = Predicate.Substitute(exp.Predicate, subs);
+            scope = scope.WithCallee(newPred);
+            if (newPred.ExecutionGraph.TryGetValue(out var compiled))
             {
-                yield return s;
+                foreach (var s in compiled.Execute(ctx, scope))
+                    yield return s;
+                continue;
             }
+            foreach (var s in ctx.Solve(new(newPred.Body), scope, ct: ct))
+                yield return s;
         }
     }
 

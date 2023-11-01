@@ -49,23 +49,40 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     {
         if (expected.Length != 0)
             Assert.Equal(expectedSolutions, expected.Length);
-        using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, SolverFlags.Default);
         var parsed = Interpreter.Facade.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
             Assert.Equal(query, parsed.Goals.Explain(false));
-        var numSolutions = 0;
-        var timeoutToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10000)).Token;
-        foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope), timeoutToken))
+        Interpreted();
+        Compiled();
+
+        void Interpreted()
         {
-            Assert.InRange(++numSolutions, 1, expectedSolutions);
-            if (expected.Length != 0)
-            {
-                var check = sol.Simplify().Substitutions.Join(s => s.Explain(), ";");
-                Assert.Equal(expected[numSolutions - 1], check);
-            }
+            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default & ~SolverFlags.EnableCompiler) | SolverFlags.UseUnboundedDecimals);
+            Solve(solver, parsed);
         }
 
-        Assert.Equal(expectedSolutions, numSolutions);
+        void Compiled()
+        {
+            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default) | SolverFlags.UseUnboundedDecimals);
+            Solve(solver, parsed);
+        }
+
+        void Solve(ErgoSolver solver, Query parsed)
+        {
+            var numSolutions = 0;
+            var timeoutToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10000)).Token;
+            foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope), timeoutToken))
+            {
+                Assert.InRange(++numSolutions, 1, expectedSolutions);
+                if (expected.Length != 0)
+                {
+                    var check = sol.Simplify().Substitutions.OrderBy(x => x.Lhs).Join(s => s.Explain(), ";");
+                    Assert.Equal(expected[numSolutions - 1], check);
+                }
+            }
+
+            Assert.Equal(expectedSolutions, numSolutions);
+        }
     }
 }

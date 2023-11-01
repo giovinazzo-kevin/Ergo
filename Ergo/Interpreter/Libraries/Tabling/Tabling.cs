@@ -81,7 +81,8 @@ public class Tabling : Library
                     anon,
                     new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }, moduleName.Scope),
                     true,
-                    true
+                    true,
+                    default
                 );
                 var kb = scope.Modules[moduleName].Program.KnowledgeBase;
                 foreach (var match in kb.GetMatches(ctx, anon, desugar: false)
@@ -94,7 +95,8 @@ public class Tabling : Library
                         head.WithFunctor(auxFunctor),
                         match.Predicate.Body,
                         match.Predicate.IsDynamic,
-                        false
+                        false,
+                        default
                     );
                     if (!kb.Retract(head))
                     {

@@ -10,6 +10,7 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
+            ErgoCompiler.ErrorType.UnresolvedPredicate => "Could not resolve predicate: {0}, and it is not marked as dynamic.",
             ErgoCompiler.ErrorType.NotEnoughMemoryToEmitNextInstruction => "The compiler attempted to allocate {1} bytes, but only {0} were available.",
             _ => error.ToString()
         };

@@ -159,6 +159,11 @@ public static class LanguageExtensions
         return sb.ToString();
     }
 
+    public static string Indent(this string s, int indent, int tabWidth = 2)
+    {
+        return s.Split('\n').Select(s => new string(' ', indent * tabWidth) + s).Join("\n");
+    }
+
     public static string ToErgoCase(this string s)
     {
         if (s is null)

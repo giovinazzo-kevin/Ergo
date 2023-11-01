@@ -4,6 +4,7 @@ public partial class ErgoCompiler
 {
     public enum ErrorType
     {
-        NotEnoughMemoryToEmitNextInstruction
+        NotEnoughMemoryToEmitNextInstruction,
+        UnresolvedPredicate
     }
 }

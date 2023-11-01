@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Solver;
+using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
@@ -132,11 +133,6 @@ public static class ExecutionGraphExtensions
                         matches.Add(new BuiltInNode(node, head, builtIn));
                         continue;
                     }
-                    if (clause.IsFactual)
-                    {
-                        facts.Add(clause);
-                        continue;
-                    }
                     var substitutedClause = clause.Instantiate(ctx);
                     substitutedClause.Head.GetQualification(out var clauseHead);
                     if (head.Unify(clauseHead).TryGetValue(out var subs))
@@ -144,10 +140,16 @@ public static class ExecutionGraphExtensions
                         substitutedClause = Predicate.Substitute(substitutedClause, subs);
                     }
                     else continue;
+                    substitutedClause.Head.GetQualification(out clauseHead);
+                    if (clause.IsFactual)
+                    {
+                        var unif = new Complex(new Atom("unify"), head, clauseHead);
+                        var node = graph.GetNode(BuiltInNode.UnifySignature).GetOrThrow(new InvalidOperationException());
+                        matches.Add(new BuiltInNode(node, unif, new Unify()));
+                        continue;
+                    }
                     matches.Add(ToExecutionGraph(substitutedClause, graph).Root);
                 }
-                if (!matches.Any() && facts.Any())
-                    matches.Add(TrueNode.Instance);
             }
             else
             {

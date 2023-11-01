@@ -5,7 +5,7 @@ namespace Ergo.Lang.Compiler;
 
 public class BuiltInNode : GoalNode
 {
-    static readonly Signature UnifySignature = new(new Atom("unify"), 2, WellKnown.Modules.Prologue, default);
+    public static readonly Signature UnifySignature = new(new Atom("unify"), 2, WellKnown.Modules.Prologue, default);
 
     public SolverBuiltIn BuiltIn { get; }
     public BuiltInNode(DependencyGraphNode node, ITerm goal, SolverBuiltIn builtIn) : base(node, goal)

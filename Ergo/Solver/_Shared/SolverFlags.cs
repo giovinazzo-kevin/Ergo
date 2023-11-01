@@ -3,7 +3,7 @@
 [Flags]
 public enum SolverFlags
 {
-    Default = ThrowOnPredicateNotFound | InitializeAutomatically | EnableInliner | EnableCompiler,
+    Default = ThrowOnPredicateNotFound | InitializeAutomatically | EnableInlining | EnableCompiler | EnableCompilerOptimizations,
     None = 0,
     /// <summary>
     /// If set, throws an error when a predicate is not found. If not set, the query fails silently instead.
@@ -16,13 +16,17 @@ public enum SolverFlags
     /// <summary>
     /// If set, predicates in the knowledge base will be inlined when the solver initializes. Safe optimization.
     /// </summary>
-    EnableInliner = 4,
+    EnableInlining = 4,
     /// <summary>
     /// If set, queries will be compiled just in time by the solver. Adds a slight initial overhead, but speeds up execution considerably.
     /// </summary>
     EnableCompiler = 8,
     /// <summary>
+    /// If set, compiled execution graphs will be optimized by performing compile-time checks. This greatly improves performance by discarding branches that are known to be false.
+    /// </summary>
+    EnableCompilerOptimizations = 16,
+    /// <summary>
     /// If set, decimals will have no lower or upper bounds. If not set, decimals will behave like standard CLI decimals and eventually become +/-Infinity.
     /// </summary>
-    UseUnboundedDecimals = 16
+    UseUnboundedDecimals = 32
 }

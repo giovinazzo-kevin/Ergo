@@ -42,7 +42,7 @@ public class Compiler : Library
             {
                 ProcessNode(root);
             }
-            if (sie.Solver.Flags.HasFlag(SolverFlags.EnableInliner))
+            if (sie.Solver.Flags.HasFlag(SolverFlags.EnableInlining))
             {
                 foreach (var inlined in InlineInContext(sie.Scope, DependencyGraph))
                 {
@@ -87,8 +87,13 @@ public class Compiler : Library
                 if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
                 {
                     qse.Solver.KnowledgeBase.Retract(topLevel);
-                    if (!qse.Scope.InterpreterScope.ExceptionHandler.TryGet(() => topLevel.WithExecutionGraph(topLevel.ToExecutionGraph(DependencyGraph)))
-                        .TryGetValue(out topLevel))
+                    if (!qse.Scope.InterpreterScope.ExceptionHandler.TryGet(() =>
+                    {
+                        var graph = topLevel.ToExecutionGraph(DependencyGraph);
+                        if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompilerOptimizations))
+                            graph = graph.Optimized();
+                        return topLevel.WithExecutionGraph(graph);
+                    }).TryGetValue(out topLevel))
                         return;
                     qse.Solver.KnowledgeBase.AssertZ(topLevel);
                 }

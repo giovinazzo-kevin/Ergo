@@ -36,7 +36,7 @@ public partial class ErgoShell
             .WithExceptionHandler(LoggingExceptionHandler)
             .WithRuntime(true);
         var kb = scope.BuildKnowledgeBase();
-        return transformShell(new(scope, false, kb));
+        return transformShell(new(scope, false, kb, Solver.SolverFlags.Default));
     }
 
     internal ErgoShell(

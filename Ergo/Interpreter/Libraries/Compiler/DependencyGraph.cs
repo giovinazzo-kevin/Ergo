@@ -2,6 +2,7 @@
 
 public class DependencyGraphNode
 {
+    public DependencyGraph Graph { get; set; }
     public List<Predicate> Clauses { get; } = new();
     public Signature Signature { get; set; }
     public HashSet<DependencyGraphNode> Dependencies { get; } = new();
@@ -68,7 +69,7 @@ public class DependencyGraph
         var sig = GetKey(pred);
         if (!_nodes.TryGetValue(sig, out var node))
         {
-            node = new DependencyGraphNode { Signature = sig };
+            node = new DependencyGraphNode { Signature = sig, Graph = this };
             _nodes[sig] = node;
         }
         node.Clauses.Add(pred);

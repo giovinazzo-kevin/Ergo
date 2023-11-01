@@ -42,12 +42,12 @@ public abstract class SolveShellCommand : ShellCommand
         }
 
         var key = scope.KnowledgeBase.GetHashCode() + scope.KnowledgeBase.Count;
-        if (!SolverCache.TryGetValue(key, out var solver))
+        if (!SolverCache.TryGetValue(key, out var solver) || solver.Flags != scope.SolverFlags)
         {
             foreach (var (k, s) in SolverCache)
                 s.Dispose();
             SolverCache.Clear();
-            solver = SolverCache[key] = shell.Facade.BuildSolver(scope.KnowledgeBase);
+            solver = SolverCache[key] = shell.Facade.BuildSolver(scope.KnowledgeBase, scope.SolverFlags);
         }
         var parsed = shell.Facade.Parse<Query>(scope.InterpreterScope, userQuery);
         if (!parsed.TryGetValue(out var query))

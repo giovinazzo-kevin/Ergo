@@ -12,6 +12,7 @@ public class IfThenNode : ExecutionNode
 
     public ExecutionNode Condition { get; }
     public ExecutionNode TrueBranch { get; }
+    public override IfThenNode Optimize() => new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
@@ -39,5 +40,5 @@ public class IfThenNode : ExecutionNode
     {
         return new IfThenNode(Condition.Substitute(s), TrueBranch.Substitute(s));
     }
-    public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n\t->({TrueBranch.Explain(canonical)})\r\n";
+    public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n{("-> " + TrueBranch.Explain(canonical)).Indent(1)}";
 }

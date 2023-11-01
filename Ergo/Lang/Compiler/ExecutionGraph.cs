@@ -1,4 +1,6 @@
-﻿using Ergo.Solver;
+﻿using Ergo.Interpreter;
+using Ergo.Solver;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -17,9 +19,13 @@ public readonly struct ExecutionGraph
         return new(Root.Substitute(s));
     }
 
+    public ExecutionGraph Optimized() => new(Root.Optimize());
+
     public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
     {
         var execScope = ExecutionScope.Empty;
+        var expl = Root.Explain();
+        Debug.WriteLine(expl);
         foreach (var step in Root.Execute(ctx, scope, execScope))
         {
             if (!step.IsSolution)
@@ -34,102 +40,111 @@ public static class ExecutionGraphExtensions
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph)
     {
         var scope = graph.Scope.WithCurrentModule(clause.DeclaringModule);
-        return new(ToExecutionNode(clause.Body));
+        var root = ToExecutionNode(clause.Body, graph, scope);
+        if (root is SequenceNode seq)
+            root = seq.AsRoot(); // Enables some optimizations
+        return new(root);
+    }
 
-        ExecutionNode ToExecutionNode(ITerm goal)
+    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null)
+    {
+        ctx ??= new InstantiationContext("__E");
+        var scope = mbScope.GetOr(graph.Scope);
+        if (goal is NTuple tup)
         {
-            if (goal is NTuple tup)
+            var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, ctx)).ToList();
+            if (list.Count == 0)
+                return TrueNode.Instance;
+            if (list.Count == 1)
+                return list[0];
+            return new SequenceNode(list);
+        }
+        if (goal is Variable v)
+            return new VariableNode(v);
+        if (goal is Atom { Value: true })
+            return TrueNode.Instance;
+        if (goal is Atom { Value: false })
+            return FalseNode.Instance;
+        if (goal.Equals(WellKnown.Literals.Cut))
+            return new CutNode();
+        if (goal is Complex { Functor: var functor, Arity: var arity, Arguments: var args })
+        {
+            if (arity == 2 && WellKnown.Operators.If.Synonyms.Contains(functor))
             {
-                var list = tup.Contents.Select(x => ToExecutionNode(x)).ToList();
-                if (list.Count == 1)
-                    return list[0];
-                return new SequenceNode(list);
+                return new IfThenNode(ToExecutionNode(args[0], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
             }
-            if (goal is Variable v)
-                return new VariableNode(v);
-            if (goal is Atom { Value: true })
-                return new TrueNode();
-            if (goal is Atom { Value: false })
-                return new FalseNode();
-            if (goal.Equals(WellKnown.Literals.Cut))
-                return new CutNode();
-            if (goal is Complex { Functor: var functor, Arity: var arity, Arguments: var args })
+            if (arity == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor))
             {
-                if (arity == 2 && WellKnown.Operators.If.Synonyms.Contains(functor))
+                if (args[0] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 } && arity1 == 2 && WellKnown.Operators.If.Synonyms.Contains(functor1))
                 {
-                    return new IfThenNode(ToExecutionNode(args[0]), ToExecutionNode(args[1]));
+                    return new IfThenElseNode(ToExecutionNode(args1[0], graph, scope, ctx), ToExecutionNode(args1[1], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
                 }
-                if (arity == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor))
-                {
-                    if (args[0] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 } && arity1 == 2 && WellKnown.Operators.If.Synonyms.Contains(functor1))
-                    {
-                        return new IfThenElseNode(ToExecutionNode(args1[0]), ToExecutionNode(args1[1]), ToExecutionNode(args[1]));
-                    }
-                    return new BranchNode(ToExecutionNode(args[0]), ToExecutionNode(args[1]));
-                }
+                return new BranchNode(ToExecutionNode(args[0], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
             }
-            // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
-            var matches = new List<ExecutionNode>();
-            var sig = goal.GetSignature();
-            // Qualified match
-            if (graph.GetNode(sig).TryGetValue(out var node))
-                Node(goal);
-            // Qualified variadic match
-            if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
-                matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
-            // Resolve all possible callees
-            if (!sig.Module.TryGetValue(out var module))
+        }
+        // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
+        var matches = new List<ExecutionNode>();
+        var sig = goal.GetSignature();
+        // Qualified match
+        if (graph.GetNode(sig).TryGetValue(out var node))
+            Node(goal);
+        // Qualified variadic match
+        if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
+            matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
+        // Resolve all possible callees
+        if (!sig.Module.TryGetValue(out var module))
+        {
+            foreach (var possibleQualif in scope.VisibleModules)
             {
-                foreach (var possibleQualif in scope.VisibleModules)
-                {
-                    sig = sig.WithModule(possibleQualif);
-                    // Match
-                    if (graph.GetNode(sig).TryGetValue(out node))
-                        Node(goal.Qualified(possibleQualif));
-                    // Variadic match
-                    if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
-                        matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
-                    // Dynamic match
-                    if (scope.Modules[possibleQualif].DynamicPredicates.Contains(sig))
-                        matches.Add(new DynamicNode(goal.Qualified(possibleQualif)));
-                }
+                sig = sig.WithModule(possibleQualif);
+                // Match
+                if (graph.GetNode(sig).TryGetValue(out node))
+                    Node(goal.Qualified(possibleQualif));
+                // Variadic match
+                if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
+                    matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
+                // Dynamic match
+                if (scope.Modules[possibleQualif].DynamicPredicates.Contains(sig))
+                    matches.Add(new DynamicNode(goal.Qualified(possibleQualif)));
             }
-            if (matches.Count == 0)
-            {
-                throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
-            }
-            if (matches.Count == 1)
-                return matches[0];
-            return matches.Aggregate((a, b) => new BranchNode(a, b));
+        }
+        if (matches.Count == 0)
+        {
+            throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
+        }
+        if (matches.Count == 1)
+            return matches[0];
+        return matches.Aggregate((a, b) => new BranchNode(a, b));
 
-            void Node(ITerm goal)
+        void Node(ITerm goal)
+        {
+            goal.GetQualification(out var head);
+            var tailRec = node.Clauses.Any(c => c.IsTailRecursive);
+            if (!node.IsCyclical || tailRec)
             {
-                goal.GetQualification(out var head);
-                if (!node.IsCyclical)
+                foreach (var clause in node.Clauses)
                 {
-                    foreach (var clause in node.Clauses)
+                    if (clause.BuiltIn.TryGetValue(out var builtIn))
                     {
-                        if (clause.BuiltIn.TryGetValue(out var builtIn))
-                        {
-                            matches.Add(new BuiltInNode(node, head, builtIn));
-                            continue;
-                        }
-                        if (clause.IsTailRecursive)
-                        {
-
-                        }
-                        var substitutedClause = clause;
-                        if (head.Unify(clause.Head).TryGetValue(out var subs))
-                        {
-                            substitutedClause = Predicate.Substitute(substitutedClause, subs);
-                        }
-                        matches.Add(ToExecutionGraph(substitutedClause, graph).Root);
+                        matches.Add(new BuiltInNode(node, head, builtIn));
+                        continue;
                     }
+                    var substitutedClause = clause;
+                    if (head.Unify(clause.Head).TryGetValue(out var subs))
+                    {
+                        substitutedClause = Predicate.Substitute(substitutedClause, subs);
+                    }
+                    if (clause.IsTailRecursive)
+                    {
+                        matches.Add(new TailRecursiveGoalNode(node, substitutedClause.Body));
+                        continue;
+                    }
+                    matches.Add(ToExecutionGraph(substitutedClause, graph).Root);
                 }
-                else
-                {
-                    matches.Add(new CyclicalGoalNode(node, goal));
-                }
+            }
+            else
+            {
+                matches.Add(new CyclicalGoalNode(node, goal));
             }
         }
     }

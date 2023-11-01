@@ -18,6 +18,7 @@ public class IfThenElseNode : ExecutionNode
     public ExecutionNode TrueBranch { get; }
     public ExecutionNode FalseBranch { get; }
 
+    public override IfThenElseNode Optimize() => new IfThenElseNode(Condition.Optimize(), TrueBranch.Optimize(), FalseBranch.Optimize());
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
@@ -48,5 +49,5 @@ public class IfThenElseNode : ExecutionNode
     {
         return new IfThenElseNode(Condition.Substitute(s), TrueBranch.Substitute(s), FalseBranch.Substitute(s));
     }
-    public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n\t->({TrueBranch.Explain(canonical)})\r\n\t; ({FalseBranch.Explain(canonical)})\r\n";
+    public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n{("-> " + TrueBranch.Explain(canonical)).Indent(1)}\r\n{(" ; " + FalseBranch.Explain(canonical)).Indent(1)}";
 }

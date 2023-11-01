@@ -1,9 +1,10 @@
 ﻿:- module(dict, [
-	'='/2
+	'&='/2
 ]).
 
 :- op(900, yfx, ['.']).
 :- op(890, fy, ['&']).
+:- op(50, xfx, ['&=']).
 :- op(850, xfy, [with]).
 :- op(850, xfy, [without]).
 
@@ -29,12 +30,12 @@ dict_deref_(D, Key, Val) :-
 	nonvar(D), 
 	term_type(Key, atom),
 	% Recursively expands itself to handle nested dictionaries!
-	dict(Tag, Args) = D, 
+	dict(Tag, Args) &= D, 
 	dict_key_value(dict(Tag, Args), Key, Val),
 	% Prevent further unification
 	!.
 %: Dereferences D.Key and unifies the result with Val
-Val = D.Key :- dict_deref_(D, Key, Val), !.
+Val &= D.Key :- dict_deref_(D, Key, Val), !.
 
 dict_merge(dict(T1, A1), dict(_, A2), dict(T1, A3)) :-
 	union(A1, A2, A3).

@@ -16,6 +16,16 @@ public class BranchNode : ExecutionNode
         Right = right;
     }
 
+    public override ExecutionNode Optimize()
+    {
+        var left = Left.Optimize();
+        var right = Right.Optimize();
+        if (left is FalseNode)
+            return right;
+        if (right is FalseNode)
+            return left;
+        return new BranchNode(left, right);
+    }
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
@@ -40,5 +50,5 @@ public class BranchNode : ExecutionNode
     {
         return new BranchNode(Left.Substitute(s), Right.Substitute(s));
     }
-    public override string Explain(bool canonical = false) => $"  {Left.Explain(canonical)}\r\n; {Right.Explain(canonical)}";
+    public override string Explain(bool canonical = false) => $"( {Left.Explain(canonical)}\r\n; {Right.Explain(canonical)} )";
 }

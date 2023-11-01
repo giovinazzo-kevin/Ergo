@@ -1,6 +1,9 @@
-﻿using Ergo.Solver;
+﻿using Ergo.Lang.Compiler;
+using Ergo.Solver;
 
 namespace Ergo.Interpreter.Libraries;
+
+public readonly record struct CompiledPredicate(ExecutionGraph Graph, int Arity);
 
 public readonly record struct Hook(Signature Signature)
 {

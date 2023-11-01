@@ -1,6 +1,7 @@
 ﻿using Ergo.Events.Solver;
 using Ergo.Facade;
 using Ergo.Interpreter;
+using Ergo.Lang.Compiler;
 using Ergo.Solver.DataBindings;
 using System.IO;
 
@@ -15,13 +16,12 @@ public partial class ErgoSolver : IDisposable
 
     public readonly ErgoFacade Facade;
     public readonly KnowledgeBase KnowledgeBase;
-    public readonly HashSet<Atom> DataSinks = new();
-    public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
-
     public TextReader In { get; private set; }
     public TextWriter Out { get; private set; }
     public TextWriter Err { get; private set; }
 
+    public readonly HashSet<Atom> DataSinks = new();
+    public readonly Dictionary<Signature, HashSet<DataSource>> DataSources = new();
     public event Action<ErgoSolver, ITerm> DataPushed;
     public event Action<ErgoSolver> Disposing;
 
@@ -170,7 +170,7 @@ public partial class ErgoSolver : IDisposable
         }
     }
 
-    public IEnumerable<Solution> Solve(Query query, SolverScope scope, CancellationToken ct = default)
+    private void InitializeGuard(SolverScope scope)
     {
         if (!_initialized)
         {
@@ -178,9 +178,13 @@ public partial class ErgoSolver : IDisposable
                 throw new InvalidOperationException("Solver uninitialized. Call Initialize() first.");
             Initialize(scope.InterpreterScope);
         }
+    }
+
+    private List<KBMatch> GetQueryExpansions(Query query, SolverScope scope)
+    {
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
         var topLevel = new Predicate(string.Empty, scope.InterpreterScope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
-        // Assert the top level query as a predicate, so that libraries are free to transform it
+
         KnowledgeBase.AssertA(topLevel);
         scope.InterpreterScope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, scope));
         var queryExpansions = KnowledgeBase
@@ -189,7 +193,30 @@ public partial class ErgoSolver : IDisposable
             .SelectMany(x => x)
             .ToList();
         KnowledgeBase.RetractAll(topLevelHead);
-        foreach (var exp in queryExpansions)
+        return queryExpansions;
+    }
+
+    public ExecutionGraph Compile(Query query, SolverScope scope)
+    {
+        InitializeGuard(scope);
+        var list = new List<ExecutionNode>();
+        foreach (var exp in GetQueryExpansions(query, scope))
+        {
+            var subs = exp.Substitutions; subs.Invert();
+            var newPred = Predicate.Substitute(exp.Predicate, subs);
+            scope = scope.WithCallee(newPred);
+            if (newPred.ExecutionGraph.TryGetValue(out var compiled))
+            {
+                list.Add(compiled.Root);
+            }
+        }
+        return new ExecutionGraph(list.Aggregate((a, b) => new BranchNode(a, b)).Optimize());
+    }
+
+    public IEnumerable<Solution> Solve(Query query, SolverScope scope, CancellationToken ct = default)
+    {
+        InitializeGuard(scope);
+        foreach (var exp in GetQueryExpansions(query, scope))
         {
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
             var subs = exp.Substitutions; subs.Invert();

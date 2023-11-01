@@ -6,6 +6,7 @@ namespace Ergo.Lang;
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
     protected readonly OrderedDictionary Predicates = new();
+    public DependencyGraph DependencyGraph { get; internal set; }
 
     public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
 

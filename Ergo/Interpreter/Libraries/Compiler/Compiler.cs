@@ -13,8 +13,6 @@ public class Compiler : Library
 {
     public override int LoadOrder => 100;
 
-    public DependencyGraph DependencyGraph { get; private set; }
-
     public Compiler()
     {
 
@@ -35,16 +33,16 @@ public class Compiler : Library
         {
             // This library reacts last to ErgoEvents (in a standard environment), so all predicates
             // that have been marked for inlining are known by now. It's time for some static analysis.
-            DependencyGraph = new DependencyGraph(sie.Scope, sie.Solver.KnowledgeBase);
+            var depGraph = sie.Solver.KnowledgeBase.DependencyGraph = new DependencyGraph(sie.Scope, sie.Solver.KnowledgeBase);
             // The concept is similar to term expansions, but instead of recursively expanding each term,
             // inlining works at the goal level, allowing it to be qualified with a module and thus be more specific.
-            foreach (var root in DependencyGraph.GetRootNodes())
+            foreach (var root in depGraph.GetRootNodes())
             {
                 ProcessNode(root);
             }
             if (sie.Solver.Flags.HasFlag(SolverFlags.EnableInlining))
             {
-                foreach (var inlined in InlineInContext(sie.Scope, DependencyGraph))
+                foreach (var inlined in InlineInContext(sie.Scope, depGraph))
                 {
                     foreach (var (pred, clause) in inlined.Clauses.Zip(inlined.InlinedClauses))
                     {
@@ -55,27 +53,6 @@ public class Compiler : Library
                     inlined.Clauses.AddRange(inlined.InlinedClauses);
                 }
             }
-            //if (sie.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
-            //{
-            //    // Now that everything has been inlined, we can build the execution graph for each predicate.
-            //    foreach (var node in DependencyGraph.GetAllNodes())
-            //    {
-            //        for (int i = node.Clauses.Count - 1; i >= 0; --i)
-            //        {
-            //            var pred = node.Clauses[i];
-            //            if (!pred.IsBuiltIn)
-            //            {
-            //                if (!sie.Scope.ExceptionHandler.TryGet(() => pred.ToExecutionGraph(DependencyGraph)).TryGetValue(out var execGraph))
-            //                    continue;
-            //                sie.Solver.KnowledgeBase.Retract(pred);
-            //                pred = pred.WithExecutionGraph(execGraph);
-            //                sie.Solver.KnowledgeBase.AssertZ(pred);
-            //                node.Clauses.RemoveAt(i);
-            //                node.Clauses.Insert(i, pred);
-            //            }
-            //        }
-            //    }
-            //}
         }
         else if (evt is QuerySubmittedEvent qse)
         {
@@ -89,7 +66,7 @@ public class Compiler : Library
                     qse.Solver.KnowledgeBase.Retract(topLevel);
                     if (!qse.Scope.InterpreterScope.ExceptionHandler.TryGet(() =>
                     {
-                        var graph = topLevel.ToExecutionGraph(DependencyGraph);
+                        var graph = topLevel.ToExecutionGraph(qse.Solver.KnowledgeBase.DependencyGraph);
                         if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompilerOptimizations))
                             graph = graph.Optimized();
                         return topLevel.WithExecutionGraph(graph);

@@ -9,14 +9,6 @@ using System.Collections.Generic;
 
 public class Compiler : Library
 {
-    public class CompilerNode : DependencyGraphNode
-    {
-        public bool IsInlined { get; set; }
-        public bool IsCyclical { get; set; }
-        public List<Predicate> InlinedClauses { get; set; } = null;
-
-    }
-
     public override int LoadOrder => 100;
 
     public Compiler()
@@ -41,14 +33,13 @@ public class Compiler : Library
                 return;
             // This library reacts last to ErgoEvents (in a standard environment), so all predicates
             // that have been marked for inlining are known by now. It's time for some static analysis.
-            var graph = new DependencyGraph<CompilerNode>();
+            var graph = new DependencyGraph(sie.Scope, sie.Solver.KnowledgeBase);
             // The concept is similar to term expansions, but instead of recursively expanding each term,
             // inlining works at the goal level, allowing it to be qualified with a module and thus be more specific.
             // For example, you can inline prologue:(=)/2 without inlining dict:(=)/2 even though they share a signature.
             // This is because while we can still reference dict:(=)/2 unambiguously by its module, producing:
             // (unify(A, B) ; dict:(=)(A, B))
             // This allows us to be selective in how goals are expanded and to only inline when it improves performance.
-            graph.BuildGraph(sie.Scope, sie.Solver.KnowledgeBase);
             foreach (var root in graph.GetRootNodes())
             {
                 ProcessNode(root);
@@ -64,7 +55,7 @@ public class Compiler : Library
                 inlined.Clauses.AddRange(inlined.InlinedClauses);
             }
         }
-        void ProcessNode(CompilerNode node, HashSet<Signature> visited = null)
+        void ProcessNode(DependencyGraphNode node, HashSet<Signature> visited = null)
         {
             visited ??= new HashSet<Signature>();
             if (visited.Contains(node.Signature))
@@ -74,7 +65,7 @@ public class Compiler : Library
             }
             node.InlinedClauses ??= new(node.Clauses);
             visited.Add(node.Signature);
-            foreach (var child in node.Dependents.Cast<CompilerNode>())
+            foreach (var child in node.Dependents.Cast<DependencyGraphNode>())
             {
                 var copy = visited.ToHashSet();
                 ProcessNode(child, copy);
@@ -87,7 +78,7 @@ public class Compiler : Library
         }
     }
 
-    public IEnumerable<CompilerNode> InlineInContext(InterpreterScope scope, DependencyGraph<CompilerNode> graph)
+    public IEnumerable<DependencyGraphNode> InlineInContext(InterpreterScope scope, DependencyGraph graph)
     {
         var ctx = new InstantiationContext("__I");
         foreach (var node in graph.GetRootNodes()
@@ -97,11 +88,11 @@ public class Compiler : Library
         }
     }
 
-    IEnumerable<CompilerNode> InlineNodeWithContext(InterpreterScope scope, InstantiationContext ctx, CompilerNode node, HashSet<Signature> processed = null)
+    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, InstantiationContext ctx, DependencyGraphNode node, HashSet<Signature> processed = null)
     {
         processed ??= new HashSet<Signature>();
         processed.Add(node.Signature);
-        foreach (var dependent in node.Dependents.Cast<CompilerNode>())
+        foreach (var dependent in node.Dependents.Cast<DependencyGraphNode>())
         {
             if (node.IsInlined)
             {
@@ -136,7 +127,7 @@ public class Compiler : Library
             }
         }
 
-        IEnumerable<CompilerNode> Inline(CompilerNode node, CompilerNode dependent)
+        IEnumerable<DependencyGraphNode> Inline(DependencyGraphNode node, DependencyGraphNode dependent)
         {
             if (node.InlinedClauses.Count == 1)
             {
@@ -160,7 +151,7 @@ public class Compiler : Library
             }
         }
 
-        IEnumerable<CompilerNode> InlineInner(Predicate inlined, CompilerNode dependent)
+        IEnumerable<DependencyGraphNode> InlineInner(Predicate inlined, DependencyGraphNode dependent)
         {
             var newClauses = new List<Predicate>();
             foreach (var clause in dependent.InlinedClauses)

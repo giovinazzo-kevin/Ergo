@@ -8,7 +8,7 @@ public sealed class Term : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
         if (termArg is not Variable)
@@ -20,11 +20,11 @@ public sealed class Term : SolverBuiltIn
                 || !LanguageExtensions.Unify(args, new List((new[] { tag }).Append(new List(dict.KeyValuePairs, default, dict.Scope)), default, dict.Scope))
                         .TryGetValue(out var listSubs))
                 {
-                    yield return new(WellKnown.Literals.False);
+                    yield return False();
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(funSubs, listSubs));
+                yield return True(SubstitutionMap.MergeRef(funSubs, listSubs));
                 yield break;
             }
 
@@ -33,11 +33,11 @@ public sealed class Term : SolverBuiltIn
                 if (!LanguageExtensions.Unify(functorArg, complex.Functor).TryGetValue(out var funSubs)
                 || !LanguageExtensions.Unify(args, new List(complex.Arguments, default, complex.Scope)).TryGetValue(out var listSubs))
                 {
-                    yield return new(WellKnown.Literals.False);
+                    yield return False();
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(funSubs, listSubs));
+                yield return True(SubstitutionMap.MergeRef(funSubs, listSubs));
                 yield break;
             }
 
@@ -46,11 +46,11 @@ public sealed class Term : SolverBuiltIn
                 if (!LanguageExtensions.Unify(functorArg, atom).TryGetValue(out var funSubs)
                 || !LanguageExtensions.Unify(args, WellKnown.Literals.EmptyList).TryGetValue(out var listSubs))
                 {
-                    yield return new(WellKnown.Literals.False);
+                    yield return False();
                     yield break;
                 }
 
-                yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(funSubs, listSubs));
+                yield return True(SubstitutionMap.MergeRef(funSubs, listSubs));
                 yield break;
             }
         }
@@ -78,21 +78,21 @@ public sealed class Term : SolverBuiltIn
             if (!LanguageExtensions.Unify(termArg, functor).TryGetValue(out var subs)
             || !LanguageExtensions.Unify(args, WellKnown.Literals.EmptyList).TryGetValue(out var argsSubs))
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, SubstitutionMap.MergeRef(argsSubs, subs));
+            yield return True(SubstitutionMap.MergeRef(argsSubs, subs));
         }
         else
         {
             if (!LanguageExtensions.Unify(termArg, new Complex(functor, argsList.Contents.ToArray())).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
-            yield return new(WellKnown.Literals.True, subs);
+            yield return True(subs);
         }
     }
 }

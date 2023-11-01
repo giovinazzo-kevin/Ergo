@@ -9,7 +9,7 @@ public sealed class Compare : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var cmp = arguments[1].CompareTo(arguments[2]);
         if (arguments[0].IsGround)
@@ -17,17 +17,17 @@ public sealed class Compare : SolverBuiltIn
             if (!arguments[0].Matches<int>(out var result))
             {
                 scope.Throw(SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, arguments[0].Explain());
-                yield return new(WellKnown.Literals.False);
+                yield return False();
                 yield break;
             }
 
             if (result.Equals(cmp))
             {
-                yield return new(WellKnown.Literals.True);
+                yield return True();
             }
             else
             {
-                yield return new(WellKnown.Literals.False);
+                yield return False();
             }
 
             yield break;

@@ -7,15 +7,15 @@ public sealed class AssertA : DynamicPredicateBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         if (Assert(context.Solver, scope, arguments[0], z: false))
         {
-            yield return new(WellKnown.Literals.True);
+            yield return True();
         }
         else
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

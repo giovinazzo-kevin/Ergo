@@ -3,13 +3,18 @@
 public sealed class Eval : MathBuiltIn
 {
     public Eval()
-        : base("", new("eval"), Maybe<int>.Some(1))
+        : base("", new("eval"), Maybe<int>.Some(2))
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
-        var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Evaluation(new Atom(Evaluate(context.Solver, scope, arguments[0]))));
-        yield return eval.GetOr(False());
+        var eval = scope.InterpreterScope.ExceptionHandler.TryGet(() => new Atom(Evaluate(context.Solver, scope, arguments[1])));
+        if (eval.TryGetValue(out var result) && LanguageExtensions.Unify(arguments[0], result).TryGetValue(out var subs))
+        {
+            yield return True(subs);
+            yield break;
+        }
+        yield return False();
     }
 }

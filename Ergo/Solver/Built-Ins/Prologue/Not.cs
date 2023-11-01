@@ -8,16 +8,16 @@ public sealed class Not : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var solutions = context.Solver.Solve(new Query(arguments.Single()), scope);
         if (solutions.Any())
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
         else
         {
-            yield return new(WellKnown.Literals.True);
+            yield return True();
         }
     }
 }

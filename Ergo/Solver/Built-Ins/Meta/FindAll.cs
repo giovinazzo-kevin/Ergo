@@ -8,7 +8,7 @@ public sealed class FindAll : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
@@ -24,7 +24,7 @@ public sealed class FindAll : SolverBuiltIn
         {
             if (args[2].IsGround && args[2].Equals(WellKnown.Literals.EmptyList))
             {
-                yield return new Evaluation(WellKnown.Literals.True);
+                yield return new Evaluation(true);
             }
             else if (!args[2].IsGround)
             {
@@ -40,7 +40,7 @@ public sealed class FindAll : SolverBuiltIn
             var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))), default, default);
             if (args[2].IsGround && args[2].Equals(list))
             {
-                yield return new Evaluation(WellKnown.Literals.True);
+                yield return new Evaluation(true);
             }
             else if (!args[2].IsGround)
             {

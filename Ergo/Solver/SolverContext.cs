@@ -1,7 +1,6 @@
 ﻿using Ergo.Debugger;
 using Ergo.Events.Solver;
 using Ergo.Interpreter;
-using Ergo.Solver.BuiltIns;
 using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 
@@ -68,55 +67,6 @@ public sealed class SolverContext : IDisposable
         return root;
     }
 
-    /// <summary>
-    /// Attempts to resolve 'goal' as a built-in call, and evaluates its result. On failure evaluates 'goal' as-is.
-    /// </summary>
-    public IEnumerable<Evaluation> ResolveGoal(ITerm goal, SolverScope scope, CancellationToken ct = default)
-    {
-        var any = false;
-        var sig = goal.GetSignature();
-        if (!goal.IsQualified)
-        {
-            // Try resolving the built-in's module automatically
-            foreach (var key in scope.InterpreterScope.VisibleBuiltInsKeys)
-            {
-                if (!key.Module.TryGetValue(out var module))
-                    continue;
-                var withoutModule = key.WithModule(default);
-                if (withoutModule.Equals(sig))
-                {
-                    goal = goal.Qualified(module);
-                    sig = key;
-                    break;
-                }
-            }
-        }
-
-        if (scope.InterpreterScope.VisibleBuiltIns.TryGetValue(sig, out var builtIn))
-        {
-            goal.GetQualification(out goal);
-            var args = goal.GetArguments();
-            scope.Trace(SolverTraceType.BuiltInResolution, goal);
-            if (builtIn.Signature.Arity.TryGetValue(out var arity) && args.Length != arity)
-            {
-                scope.Throw(SolverError.UndefinedPredicate, sig.WithArity(args.Length).Explain());
-                yield break;
-            }
-
-            foreach (var eval in builtIn.Apply(this, scope, args.ToArray()))
-            {
-                _debuggerSignal.WaitOne();
-                goal = eval.Result;
-                sig = goal.GetSignature();
-                yield return eval;
-                any = true;
-            }
-        }
-
-        if (!any)
-            yield return new(goal);
-    }
-
     public IEnumerable<Solution> Solve(Query goal, SolverScope scope, CancellationToken ct = default)
     {
         scope.InterpreterScope.ExceptionHandler.Throwing += Cancel;
@@ -134,6 +84,11 @@ public sealed class SolverContext : IDisposable
         scope.InterpreterScope.ExceptionHandler.Throwing -= Cancel;
         scope.InterpreterScope.ExceptionHandler.Caught -= Cancel;
         void Cancel(ExceptionDispatchInfo _) => _exceptionCts.Cancel(false);
+    }
+
+    public void Cut()
+    {
+        _choicePointCts.Cancel(false);
     }
 
 
@@ -223,6 +178,17 @@ public sealed class SolverContext : IDisposable
         if (goal.IsParenthesized)
             scope = scope.WithChoicePoint();
 
+        if (goal is Atom { Value: true })
+        {
+            yield return new(scope, new());
+            yield break;
+        }
+
+        if (goal is Variable || goal is Atom { Value: false })
+        {
+            yield break;
+        }
+
         // Treat comma-expression complex ITerms as proper expressions
         if (goal is NTuple goalList)
         {
@@ -238,89 +204,76 @@ public sealed class SolverContext : IDisposable
             }
             yield break;
         }
-
-        // If goal resolves to a builtin, it is called on the spot and its solutions enumerated (usually just ⊤ or ⊥, plus a list of substitutions)
-        // If goal does not resolve to a builtin it is returned as-is, and it is then matched against the knowledge base.
-        foreach (var resolvedGoal in ResolveGoal(goal, scope, ct: ct))
+        // Attempts qualifying a goal with a module, then finds matches in the knowledge base
+        var noMatches = true;
+        var matches = ErgoSolver.GetImplicitGoalQualifications(goal, scope)
+            .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x, desugar: false))
+            .Where(x => x.TryGetValue(out _) && !(noMatches = false))
+            .Take(1)
+            .SelectMany(m => m.AsEnumerable().SelectMany(x => x));
+        foreach (var m in matches)
         {
-            _debuggerSignal.WaitOne();
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.False) || resolvedGoal.Result is Variable)
+            // Create a new scope and context for this procedure call, essentially creating a choice point
+            var innerScope = scope
+                .WithDepth(scope.Depth + 1)
+                .WithModule(m.Predicate.DeclaringModule)
+                .WithCallee(m.Predicate)
+                .WithCaller(scope.Callee)
+                .WithChoicePoint();
+            scope.Trace(SolverTraceType.Call, m.Goal);
+            if (m.Predicate.BuiltIn.TryGetValue(out var builtIn))
             {
-                scope.Trace(SolverTraceType.BuiltInResolution, WellKnown.Literals.False);
-                yield break;
-            }
-
-            if (resolvedGoal.Result.Equals(WellKnown.Literals.True))
-            {
-                yield return new(scope, resolvedGoal.Substitutions);
-                if (goal.Equals(WellKnown.Literals.Cut))
-                    _choicePointCts.Cancel(false);
+                foreach (var eval in builtIn.Apply(this, scope, goal.GetArguments()))
+                {
+                    if (!eval.Result)
+                        yield break;
+                    else
+                        yield return new(scope, eval.Substitutions);
+                }
                 continue;
             }
-
-            // Attempts qualifying a goal with a module, then finds matches in the knowledge base
-            var noMatches = true;
-            var matches = ErgoSolver.GetImplicitGoalQualifications(resolvedGoal.Result, scope)
-                .Select(x => Solver.KnowledgeBase.GetMatches(scope.InstantiationContext, x, desugar: false))
-                .Where(x => x.TryGetValue(out _) && !(noMatches = false))
-                .Take(1)
-                .SelectMany(m => m.AsEnumerable().SelectMany(x => x));
-            foreach (var m in matches)
-            {
-                // Create a new scope and context for this procedure call, essentially creating a choice point
-                var innerScope = scope
-                    .WithDepth(scope.Depth + 1)
-                    .WithModule(m.Rhs.DeclaringModule)
-                    .WithCallee(m.Rhs)
-                    .WithCaller(scope.Callee)
-                    .WithChoicePoint();
-                var callerVars = scope.Callee.Body.Variables;
-                var calleeVars = m.Rhs.Body.Variables;
 #if !ERGO_SOLVER_DISABLE_TCO
-                if (m.Rhs.IsTailRecursive)
-                {
-                    // PROBLEM: This branch should only be entered iff the predicate is known to be determinate at this point
-                    // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/Last-Clause-Determinacy-Detection.html
-                    // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/What-is-Detected.html#What-is-Detected
-                    // https://www.mercurylang.org/information/doc-latest/mercury_ref/Determinism.html#Determinism-categories
-                    // https://www.metalevel.at/prolog/fun
-                    // Yield a "fake" solution to the caller, which will then use it to perform TCO
-                    scope.Trace(SolverTraceType.TailCallOptimization, m.Lhs);
-                    _debuggerSignal.WaitOne();
-                    yield return new(innerScope, SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions));
-                    continue;
-                }
-#endif
-                using var innerCtx = CreateChild();
-                scope.Trace(SolverTraceType.Call, m.Lhs);
-                foreach (var s in innerCtx.SolveQuery(m.Rhs.Body, innerScope, ct: ct))
-                {
-                    scope.Trace(SolverTraceType.Exit, m.Rhs.Head.Substitute(s.Substitutions));
-                    var innerSubs = SubstitutionMap.MergeRef(m.Substitutions, resolvedGoal.Substitutions);
-                    yield return s.PrependSubstitutions(innerSubs);
-                }
-                if (innerCtx._choicePointCts.IsCancellationRequested)
-                    break;
-                // Backtrack
-                scope.Trace(SolverTraceType.Backtrack, m.Lhs);
-                _debuggerSignal.WaitOne();
-            }
-            if (noMatches)
+            if (m.Predicate.IsTailRecursive)
             {
-                var signature = resolvedGoal.Result.GetSignature();
-                if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
-                    continue;
-                var dyn = scope.InterpreterScope.Modules.Values
-                    .SelectMany(m => m.DynamicPredicates)
-                    .SelectMany(p => new[] { p, p.WithModule(default) })
-                    .ToHashSet();
-                if (dyn.Contains(signature))
-                    continue;
-                if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
-                    scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
-                _choicePointCts.Cancel(false);
-                yield break;
+                // PROBLEM: This branch should only be entered iff the predicate is known to be determinate at this point
+                // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/Last-Clause-Determinacy-Detection.html
+                // https://sicstus.sics.se/sicstus/docs/3.12.8/html/sicstus/What-is-Detected.html#What-is-Detected
+                // https://www.mercurylang.org/information/doc-latest/mercury_ref/Determinism.html#Determinism-categories
+                // https://www.metalevel.at/prolog/fun
+                // Yield a "fake" solution to the caller, which will then use it to perform TCO
+                scope.Trace(SolverTraceType.TailCallOptimization, m.Goal);
+                _debuggerSignal.WaitOne();
+                yield return new(innerScope, m.Substitutions);
+                continue;
             }
+#endif
+            using var innerCtx = CreateChild();
+            foreach (var s in innerCtx.SolveQuery(m.Predicate.Body, innerScope, ct: ct))
+            {
+                scope.Trace(SolverTraceType.Exit, m.Predicate.Head.Substitute(s.Substitutions));
+                yield return s.PrependSubstitutions(m.Substitutions);
+            }
+            if (innerCtx._choicePointCts.IsCancellationRequested)
+                break;
+            // Backtrack
+            scope.Trace(SolverTraceType.Backtrack, m.Goal);
+            _debuggerSignal.WaitOne();
+        }
+        if (noMatches)
+        {
+            var signature = goal.GetSignature();
+            if (Solver.KnowledgeBase.Any(p => p.Head.GetSignature().Equals(signature)))
+                yield break;
+            var dyn = scope.InterpreterScope.Modules.Values
+                .SelectMany(m => m.DynamicPredicates)
+                .SelectMany(p => new[] { p, p.WithModule(default) })
+                .ToHashSet();
+            if (dyn.Contains(signature))
+                yield break;
+            if (Solver.Flags.HasFlag(SolverFlags.ThrowOnPredicateNotFound))
+                scope.Throw(SolverError.UndefinedPredicate, signature.Explain());
+            _choicePointCts.Cancel(false);
+            yield break;
         }
     }
 

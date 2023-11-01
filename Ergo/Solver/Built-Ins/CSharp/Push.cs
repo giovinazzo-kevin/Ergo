@@ -9,16 +9,16 @@ public sealed class Push : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         if (!args[0].IsGround)
         {
             scope.Throw(SolverError.TermNotSufficientlyInstantiated, args[0].Explain(true));
-            yield return new(WellKnown.Literals.False);
+            yield return False();
             yield break;
         }
 
         context.Solver.PushData(args[0]);
-        yield return new(WellKnown.Literals.True);
+        yield return True();
     }
 }

@@ -2,14 +2,14 @@
 
 public readonly struct KBMatch
 {
-    public readonly ITerm Lhs;
-    public readonly Predicate Rhs;
+    public readonly ITerm Goal;
+    public readonly Predicate Predicate;
     public readonly SubstitutionMap Substitutions;
 
     public KBMatch(ITerm lhs, Predicate rhs, SubstitutionMap substitutions)
     {
-        Lhs = lhs;
-        Rhs = rhs;
+        Goal = lhs;
+        Predicate = rhs;
         Substitutions = substitutions;
     }
 }

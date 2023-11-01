@@ -7,7 +7,7 @@ public sealed class TermType : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var type = arguments[0] switch
         {
@@ -19,15 +19,15 @@ public sealed class TermType : SolverBuiltIn
 
         if (!arguments[1].IsGround)
         {
-            yield return new(WellKnown.Literals.True, new Substitution(arguments[1], type));
+            yield return True(new Substitution(arguments[1], type));
         }
         else if (LanguageExtensions.Unify(arguments[1], type).TryGetValue(out var subs))
         {
-            yield return new(WellKnown.Literals.True, subs);
+            yield return True(subs);
         }
         else
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

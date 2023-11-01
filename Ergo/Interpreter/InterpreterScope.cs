@@ -98,6 +98,10 @@ public readonly struct InterpreterScope
     public KnowledgeBase BuildKnowledgeBase()
     {
         var kb = new KnowledgeBase();
+        foreach (var builtIn in VisibleBuiltIns.Values)
+        {
+            kb.AssertZ(new Predicate(builtIn));
+        }
         foreach (var module in VisibleModules)
         {
             foreach (var pred in Modules[module].Program.KnowledgeBase)

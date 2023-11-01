@@ -7,21 +7,21 @@ public sealed class Pull : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         var any = false;
         foreach (var item in context.Solver.GetDataSourceMatches(args[0]).ToEnumerable())
         {
-            if (item.Rhs.Unify(args[0]).TryGetValue(out var subs))
+            if (item.Predicate.Unify(args[0]).TryGetValue(out var subs))
             {
                 any = true;
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
             }
         }
 
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

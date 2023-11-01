@@ -9,7 +9,7 @@ public sealed class Tabled : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         /* tabled/1 overrides the regular SLD resolution with SLDT resolution.
          * Predicates tagged by the 'table' directive are rewritten as follows:

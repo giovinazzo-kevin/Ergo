@@ -8,7 +8,7 @@ public sealed class Union : SolverBuiltIn
 
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> args)
     {
         if (args[0] is Set s1)
         {

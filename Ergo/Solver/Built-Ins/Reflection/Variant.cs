@@ -7,7 +7,7 @@ public sealed class Variant : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] args)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         if (args[0].IsVariantOf(args[1]))
             yield return True(new SubstitutionMap());

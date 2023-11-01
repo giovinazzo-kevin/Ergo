@@ -16,7 +16,7 @@
 :- op(1000, xfy,  [':']).
 :- op(920, fx, ['*']).
 
-:- inline(['≠'/2, '¬'/1, '∨'/2, '∧'/2, '*'/1, '='/2]).
+:- inline(['≠'/2, '¬'/1, '*'/1]).
 
 % OPERATOR IMPLEMENTATIONS
 
@@ -29,16 +29,13 @@ If -> Then :- If, !, Then.
 %: Logical disjunction of A and B.
 ';'(_A, B) :- B.
 
-'∨'(A, B) :- A ; B.
-'∧'(A, B) :- A , B.
-
 %: Logical complement of A (negation).
 %: ⊤ iff A cannot be proven.
 '¬'(A) :- not(A), !.
 %: Unification of A and B.
 '='(A, B) :- unify(A, B).
 %: Negation of the unification of A and B.
-'≠'(A, B) :- \+(A = B).
+'≠'(A, B) :- not(unify(A, B)).
 %: Used for declarative debugging; "comments out" the following statement.
 %: Note: this predicate is automatically inlined, which means that it effectively removes the statement from the goal list.
 *_. 

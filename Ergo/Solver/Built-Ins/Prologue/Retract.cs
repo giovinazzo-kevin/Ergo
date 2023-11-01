@@ -7,18 +7,18 @@ public sealed class Retract : DynamicPredicateBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var any = false;
         while (Retract(context.Solver, scope, arguments[0], all: false))
         {
-            yield return new(WellKnown.Literals.True);
+            yield return True();
             any = true;
         }
 
         if (!any)
         {
-            yield return new(WellKnown.Literals.False);
+            yield return False();
         }
     }
 }

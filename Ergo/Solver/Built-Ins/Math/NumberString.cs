@@ -9,7 +9,7 @@ public sealed class NumberString : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var (str, num) = (arguments[1], arguments[0]);
         if (!str.IsGround && !num.IsGround)

@@ -54,7 +54,8 @@ public readonly struct Signature
 
     public static bool operator !=(Signature left, Signature right) => !(left == right);
 
-    public override int GetHashCode() => HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
+    public override int GetHashCode() => HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode(),
+        1 - Arity.TryGetValue(out _).GetHashCode(), 1 - Module.TryGetValue(out _).GetHashCode());
 
     public static bool FromCanonical(ITerm term, out Signature sig)
     {

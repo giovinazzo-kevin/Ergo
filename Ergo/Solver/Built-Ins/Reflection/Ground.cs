@@ -7,8 +7,8 @@ public sealed class Ground : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
-        yield return new(new Atom(arguments[0].IsGround));
+        yield return Bool(arguments[0].IsGround);
     }
 }

@@ -7,8 +7,8 @@ public sealed class Nonvar : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
-        yield return new(new Atom(arguments[0] is not Variable));
+        yield return Bool(arguments[0] is not Variable);
     }
 }

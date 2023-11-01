@@ -8,7 +8,7 @@ public sealed class SequenceType : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ITerm[] arguments)
+    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         var (type, seq) = (arguments[1], arguments[0]);
         if (seq is Variable)
@@ -21,7 +21,7 @@ public sealed class SequenceType : SolverBuiltIn
         {
             if (LanguageExtensions.Unify(type, new Atom("list")).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
@@ -30,7 +30,7 @@ public sealed class SequenceType : SolverBuiltIn
         {
             if (LanguageExtensions.Unify(type, new Atom("comma_list")).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
@@ -39,11 +39,11 @@ public sealed class SequenceType : SolverBuiltIn
         {
             if (LanguageExtensions.Unify(type, new Atom("bracy_list")).TryGetValue(out var subs))
             {
-                yield return new(WellKnown.Literals.True, subs);
+                yield return True(subs);
                 yield break;
             }
         }
 
-        yield return new(WellKnown.Literals.False);
+        yield return False();
     }
 }

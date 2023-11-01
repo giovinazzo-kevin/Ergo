@@ -179,7 +179,7 @@ public partial class ErgoSolver : IDisposable
             Initialize(scope.InterpreterScope);
         }
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-        var topLevel = new Predicate(string.Empty, WellKnown.Modules.User, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+        var topLevel = new Predicate(string.Empty, scope.InterpreterScope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
         // Assert the top level query as a predicate, so that libraries are free to transform it
         KnowledgeBase.AssertA(topLevel);
         scope.InterpreterScope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, scope));

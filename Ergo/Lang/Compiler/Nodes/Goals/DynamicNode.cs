@@ -19,7 +19,10 @@ public class DynamicNode : ExecutionNode
         var inst = Goal.Substitute(execScope.CurrentSubstitutions);
         foreach (var sol in ctx.Solve(new Query(inst), solverScope))
         {
-            yield return execScope.ApplySubstitutions(sol.Substitutions).AsSolution();
+            yield return execScope
+                .ApplySubstitutions(sol.Substitutions)
+                .AsSolution()
+                .ChoicePoint();
         }
     }
 

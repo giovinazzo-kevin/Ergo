@@ -1,6 +1,5 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Solver;
-using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -25,7 +24,7 @@ public readonly struct ExecutionGraph
     {
         var execScope = ExecutionScope.Empty;
         var expl = Root.Explain();
-        Debug.WriteLine(expl);
+        Console.WriteLine(expl);
         foreach (var step in Root.Execute(ctx, scope, execScope))
         {
             if (!step.IsSolution)
@@ -108,19 +107,23 @@ public static class ExecutionGraphExtensions
                     matches.Add(new DynamicNode(goal.Qualified(possibleQualif)));
             }
         }
-        if (matches.Count == 0)
+        else
         {
-            throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
+            // Qualified dynamic match
+            if (scope.Modules[module].DynamicPredicates.Contains(sig))
+                matches.Add(new DynamicNode(goal));
         }
+        if (matches.Count == 0)
+            throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
         if (matches.Count == 1)
             return matches[0];
         return matches.Aggregate((a, b) => new BranchNode(a, b));
 
         void Node(ITerm goal)
         {
+            var facts = new List<Predicate>();
             goal.GetQualification(out var head);
-            var tailRec = node.Clauses.Any(c => c.IsTailRecursive);
-            if (!node.IsCyclical || tailRec)
+            if (!node.IsCyclical)
             {
                 foreach (var clause in node.Clauses)
                 {
@@ -129,18 +132,22 @@ public static class ExecutionGraphExtensions
                         matches.Add(new BuiltInNode(node, head, builtIn));
                         continue;
                     }
-                    var substitutedClause = clause;
-                    if (head.Unify(clause.Head).TryGetValue(out var subs))
+                    if (clause.IsFactual)
+                    {
+                        facts.Add(clause);
+                        continue;
+                    }
+                    var substitutedClause = clause.Instantiate(ctx);
+                    substitutedClause.Head.GetQualification(out var clauseHead);
+                    if (head.Unify(clauseHead).TryGetValue(out var subs))
                     {
                         substitutedClause = Predicate.Substitute(substitutedClause, subs);
                     }
-                    if (clause.IsTailRecursive)
-                    {
-                        matches.Add(new TailRecursiveGoalNode(node, substitutedClause.Body));
-                        continue;
-                    }
+                    else continue;
                     matches.Add(ToExecutionGraph(substitutedClause, graph).Root);
                 }
+                if (!matches.Any() && facts.Any())
+                    matches.Add(TrueNode.Instance);
             }
             else
             {

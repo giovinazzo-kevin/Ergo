@@ -1,10 +1,11 @@
 ﻿:- module(tests, [
 	fail/0, succeed/0
 ]).
-
 :- use_module(case01).
 :- use_module(case02).
 :- use_module(case03).
+:- dynamic(t/0).
+:- dynamic(t/1).
 
 fail :- false.
 succeed.

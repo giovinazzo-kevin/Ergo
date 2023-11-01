@@ -45,11 +45,11 @@ public class AdvancedSolverTests : ErgoTests
     #region Rows
     [Theory]
     [InlineData("assertz(t:-⊥)", "tests:t", "retractall(t)", 0)]
-    [InlineData("assertz(t:-⊤)", "tests:t", "retractall(t)", 1, "")]
-    [InlineData("assertz(t:-(⊤; ⊤))", "tests:t", "retractall(t)", 2, "", "")]
-    [InlineData("assertz(t), assertz(t)", "tests:t", "retractall(t)", 2, "", "")]
+    [InlineData("assertz(t:-⊤)", "t", "retractall(t)", 1, "")]
+    [InlineData("assertz(t:-(⊤; ⊤))", "t", "retractall(t)", 2, "", "")]
+    [InlineData("assertz(t), assertz(t)", "t", "retractall(t)", 2, "", "")]
     [InlineData("assertz(t(_))", "tests:t(_X)", "retractall(t(_))", 1, "")]
-    [InlineData("assertz(t(X):-(X=⊤))", "tests:t(X), X", "retractall(t(_))", 1, "X/⊤")]
+    [InlineData("assertz(t(X):-(X=⊤))", "t(X), X", "retractall(t(_))", 1, "X/⊤")]
     #endregion
     public void ShouldSolveSetups(string setup, string goal, string cleanup, int numSolutions, params string[] expected)
         => ShouldSolve($"setup_call_cleanup(({setup}), ({goal}), ({cleanup}))", numSolutions, false, expected);

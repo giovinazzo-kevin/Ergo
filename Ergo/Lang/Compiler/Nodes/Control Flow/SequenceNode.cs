@@ -1,4 +1,5 @@
 ﻿using Ergo.Solver;
+using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
@@ -40,7 +41,7 @@ public class SequenceNode : ExecutionNode
                 {
                     var lookbehind = newList[i - 1];
                     if (Redundant(lookbehind, current))
-                        newList.RemoveAt(i);
+                        newList.RemoveAt(i - 1);
                     else if (Coalesce(lookbehind, current).TryGetValue(out var coalesced))
                     {
                         newList.RemoveAt(i);
@@ -65,11 +66,35 @@ public class SequenceNode : ExecutionNode
             }
         }
         while (newList.Count < count);
+        SimplifyConstantUnifications();
         if (newList.Count == 0)
             return TrueNode.Instance;
         if (newList.Count == 1)
             return newList[0];
         return new SequenceNode(newList, IsRoot);
+
+        void SimplifyConstantUnifications()
+        {
+            // By now most evaluations on constants have reduced down to the form:
+            // unify(__Kx, c)
+            // When we find this pattern, we can remove the unification and replace __Kx with c wherever it occurs.
+            var constantUnifications = newList.Where(x => x is BuiltInNode b && b.BuiltIn is Unify && IsConstUnif(b.Goal.GetArguments()))
+                .ToDictionary(x => (Variable)((BuiltInNode)x).Goal.GetArguments()[0]);
+            var subs = constantUnifications
+                .Select(kv => new Substitution(kv.Key, ((BuiltInNode)kv.Value).Goal.GetArguments()[1]))
+                .ToList();
+            for (int i = newList.Count - 1; i >= 0; i--)
+            {
+                var current = newList[i];
+                if (constantUnifications.Values.Contains(current))
+                {
+                    newList.RemoveAt(i);
+                    continue;
+                }
+                newList[i] = current.Substitute(subs);
+            }
+            bool IsConstUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true } && args[1].IsGround;
+        }
 
         bool RedundantStart(ExecutionNode a)
         {
@@ -110,7 +135,6 @@ public class SequenceNode : ExecutionNode
             foreach (var resultScope in ExecuteSequence(ctx, solverScope, newScope, index + 1))
             {
                 yield return resultScope;
-
                 if (resultScope.IsCut) // Stop the loop if a cut has been encountered
                 {
                     yield break;
@@ -118,7 +142,7 @@ public class SequenceNode : ExecutionNode
             }
             if (newScope.IsCut)
             {
-                yield return newScope;
+                yield return newScope.AsSolution(false);
                 yield break;
             }
         }

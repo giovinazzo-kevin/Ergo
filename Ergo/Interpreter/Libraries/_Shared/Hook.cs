@@ -1,5 +1,6 @@
 ﻿using Ergo.Lang.Compiler;
 using Ergo.Solver;
+using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries;
 
@@ -31,20 +32,28 @@ public readonly record struct Hook(Signature Signature)
     {
         if (kb.DependencyGraph is null || !IsDefined(kb, out var predicates))
             return default;
+        var ctx = new InstantiationContext("__H");
+        var unifyNode = kb.DependencyGraph.GetNode(BuiltInNode.UnifySignature).GetOrThrow(new InvalidOperationException());
+        var unifyBuiltIn = new Unify();
         var anon = Signature.Functor
-            .BuildAnonymousTerm(Signature.Arity.GetOr(0));
-        var root = predicates.Select(p =>
+            .BuildAnonymousTerm(Signature.Arity.GetOr(0), ignoredVars: false);
+        try
         {
-            var s = p;
-            if (anon.Unify(p.Head).TryGetValue(out var subs))
+            var root = predicates.Select(p =>
             {
-                subs.Invert();
-                s = Predicate.Substitute(s, subs);
-            }
-            return s.ToExecutionGraph(kb.DependencyGraph).Root;
-        }).Aggregate((a, b) => new BranchNode(a, b)).Optimize();
-        var graph = new ExecutionGraph(root);
-        return new CompiledHook(graph, anon);
+                var s = p.Instantiate(ctx); s.Head.GetQualification(out var pHead);
+                if (anon.Unify(pHead).TryGetValue(out var subs))
+                {
+                    var unifications = subs.Select(s => ((ITerm)new Complex(new Atom("unify"), s.Lhs, s.Rhs)).Qualified(WellKnown.Modules.Prologue));
+                    s = s.WithHead(anon).WithBody(new(unifications.Concat(s.Body.Contents).ToImmutableArray()));
+                }
+                return s.ToExecutionGraph(kb.DependencyGraph).Root;
+            }).Aggregate((a, b) => new BranchNode(a, b)).Optimize();
+            var graph = new ExecutionGraph(root);
+            return new CompiledHook(graph, anon);
+        }
+        catch (CompilerException) { }
+        return default;
     }
     public IEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args, CancellationToken ct = default)
     {

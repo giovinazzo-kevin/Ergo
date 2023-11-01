@@ -104,12 +104,12 @@ public static class LanguageExtensions
         );
     }
 
-    public static ITerm BuildAnonymousTerm(this Atom functor, int arity)
+    public static ITerm BuildAnonymousTerm(this Atom functor, int arity, bool ignoredVars = true)
     {
         if (arity == 0)
             return functor;
         return new Complex(functor, Enumerable.Range(0, arity)
-            .Select(i => (ITerm)new Variable($"__A{i}"))
+            .Select(i => (ITerm)new Variable(ignoredVars ? $"__A{i}" : $"A{i}"))
             .ToArray());
     }
 

@@ -67,6 +67,7 @@ public class SequenceNode : ExecutionNode
         }
         while (newList.Count < count);
         SimplifyConstantUnifications();
+        RemoveDeadUnifications();
         if (newList.Count == 0)
             return TrueNode.Instance;
         if (newList.Count == 1)
@@ -94,6 +95,30 @@ public class SequenceNode : ExecutionNode
                 newList[i] = current.Substitute(subs);
             }
             bool IsConstUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true } && args[1].IsGround;
+        }
+
+        void RemoveDeadUnifications()
+        {
+            // When compiling queries and hooks, unification stubs are generated for all arguments.
+            // If these variables are not used, however, they result in dead code of the form:
+            // unify(_X, _)
+            // Where _X isn't referenced anywhere else. These are safe to remove.
+            var refCounts = newList.Where(x => x is DynamicNode).Cast<DynamicNode>()
+                .SelectMany(x => x.Goal.Variables)
+                .ToLookup(v => v.Name)
+                .ToDictionary(l => l.Key, l => l.Count());
+            var deadUnifications = newList.Where(x => x is BuiltInNode b && b.BuiltIn is Unify && IsDeadUnif(b.Goal.GetArguments()))
+                .ToDictionary(x => (Variable)((BuiltInNode)x).Goal.GetArguments()[0]);
+            for (int i = newList.Count - 1; i >= 0; i--)
+            {
+                var current = newList[i];
+                if (deadUnifications.Values.Contains(current))
+                {
+                    newList.RemoveAt(i);
+                    continue;
+                }
+            }
+            bool IsDeadUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true, Name: var name } && refCounts[name] == 1;
         }
 
         bool RedundantStart(ExecutionNode a)

@@ -24,8 +24,6 @@ public readonly struct ExecutionGraph
     public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
     {
         var execScope = ExecutionScope.Empty;
-        var expl = Root.Explain();
-        Console.WriteLine(expl);
         foreach (var step in Root.Execute(ctx, scope, execScope))
         {
             if (!step.IsSolution)
@@ -37,9 +35,11 @@ public readonly struct ExecutionGraph
 
 public static class ExecutionGraphExtensions
 {
+    private static readonly InstantiationContext CompilerContext = new("__E");
+
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph)
     {
-        var scope = graph.Scope.WithCurrentModule(clause.DeclaringModule);
+        var scope = graph.Scope/*.WithCurrentModule(clause.DeclaringModule)*/;
         var root = ToExecutionNode(clause.Body, graph, scope);
         if (root is SequenceNode seq)
             root = seq.AsRoot(); // Enables some optimizations
@@ -48,7 +48,7 @@ public static class ExecutionGraphExtensions
 
     public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null)
     {
-        ctx ??= new InstantiationContext("__E");
+        ctx ??= CompilerContext;
         var scope = mbScope.GetOr(graph.Scope);
         if (goal is NTuple tup)
         {

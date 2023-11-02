@@ -33,9 +33,11 @@ public class BuiltInNode : GoalNode
         ExecutionNode Ground() => Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
         ExecutionNode Unify()
         {
+            var args = Goal.GetArguments();
+            //if (args[0] is Variable { Ignored: true } && args[1] is Variable)
+            //    return TrueNode.Instance; // TODO: verify, might be sketchy
             if (!Goal.IsGround)
                 return this;
-            var args = Goal.GetArguments();
             if (args[0].Unify(args[1]).TryGetValue(out _))
                 return TrueNode.Instance;
             return FalseNode.Instance;
@@ -44,7 +46,7 @@ public class BuiltInNode : GoalNode
         {
             if (!Goal.IsGround)
                 return this;
-            var arg = Goal.GetArguments()[0].ToExecutionNode(Node.Graph).Optimize();
+            var arg = Goal.GetArguments()[0].ToExecutionNode(Node.Graph, ctx: new("__NOT")).Optimize();
             if (arg is TrueNode)
                 return FalseNode.Instance;
             if (arg is FalseNode)

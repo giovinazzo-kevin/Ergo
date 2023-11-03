@@ -33,7 +33,7 @@ public readonly record struct Hook(Signature Signature)
             return default;
         var ctx = new InstantiationContext("__H");
         var unifyNode = kb.DependencyGraph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
-        var unifyBuiltIn = new Unify();
+        var unifyBuiltIn = Unify.Instance;
         var anon = Signature.Functor
             .BuildAnonymousTerm(Signature.Arity.GetOr(0), ignoredVars: false);
         try

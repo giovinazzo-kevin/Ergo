@@ -1,12 +1,40 @@
 ﻿using Ergo.Interpreter.Libraries.Tabling;
+using Ergo.Lang.Compiler;
 
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class Tabled : SolverBuiltIn
 {
+    public override int OptimizationOrder => base.OptimizationOrder;
+
     public Tabled()
         : base("(called by tabled predicates implicitly)", new("tabled"), 1, WellKnown.Modules.Tabling)
     {
+    }
+
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    {
+        // If there are multiple calls to the same variant of a tabled predicate, they can be coalesced into one call.
+        // This requires removing all redundant calls after the first, and replacing all referenced variables with variables from the pioneer.
+        var tabledCalls = nodes
+            .OfType<BuiltInNode>()
+            .Where(x => x.BuiltIn is Tabled)
+            .GroupBy(x => x.Goal.NumberVars())
+            .Where(g => g.Count() > 1)
+            .Select(g => (Pioneer: g.First(), Followers: g.Skip(1).ToArray()))
+            .ToArray();
+        var subs = new SubstitutionMap();
+        foreach (var (pioneer, followers) in tabledCalls)
+        {
+            foreach (var follower in followers)
+            {
+                nodes.Remove(follower);
+                if (pioneer.Goal.Unify(follower.Goal).TryGetValue(out var innerSubs))
+                    SubstitutionMap.MergeRef(subs, innerSubs);
+            }
+        }
+        nodes = nodes.Select(n => n.Substitute(subs)).ToList();
+        return nodes;
     }
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)

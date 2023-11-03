@@ -115,38 +115,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     /// </summary>
     bool IsVariantOf(ITerm b)
     {
-        // TODO: Fix for cyclic terms
-        if (this is Atom && b is Atom)
-            return Equals(b);
-        if (this is Variable && b is Variable)
-            return true;
-        var ctxA = new InstantiationContext("V");
-        var ctxB = new InstantiationContext("V");
-        var dictA = new Dictionary<string, Variable>();
-        var dictB = new Dictionary<string, Variable>();
-        if (this is Complex ca && b is Complex cb)
-        {
-            if (!cb.Arity.Equals(cb.Arity))
-                return false;
-            if (!ca.Functor.Equals(cb.Functor))
-                return false;
-            for (int i = 0; i < ca.Arity; i++)
-            {
-                if (ca.Arguments[i] is Variable va)
-                {
-                    if (cb.Arguments[i] is not Variable vb)
-                        return false;
-                    va = (Variable)va.Instantiate(ctxA, dictA);
-                    vb = (Variable)vb.Instantiate(ctxB, dictB);
-                    if (!va.Equals(vb))
-                        return false;
-                }
-                else if (!ca.Arguments[i].IsVariantOf(cb.Arguments[i]))
-                    return false;
-            }
-            return true;
-        }
-        return false;
+        return this.NumberVars().Equals(b.NumberVars());
     }
 }
 

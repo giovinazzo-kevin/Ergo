@@ -14,7 +14,7 @@ public class Prologue : Library
         .Append(new Retract())
         .Append(new RetractAll())
         .Append(new Unifiable())
-        .Append(new Unify())
+        .Append(Unify.Instance)
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

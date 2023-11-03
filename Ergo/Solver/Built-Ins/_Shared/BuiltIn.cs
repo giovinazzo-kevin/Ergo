@@ -7,7 +7,10 @@ public abstract class SolverBuiltIn
     public readonly Signature Signature;
     public readonly string Documentation;
 
+    public virtual int OptimizationOrder => 0;
+
     public virtual Maybe<ExecutionNode> Optimize(BuiltInNode node) => default;
+    public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
 
     public Predicate GetStub(ImmutableArray<ITerm> arguments)
     {

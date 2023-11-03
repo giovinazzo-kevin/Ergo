@@ -143,7 +143,7 @@ public static class ExecutionGraphExtensions
                     substitutedClause.Head.GetQualification(out clauseHead);
                     var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
                     var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
-                    var unifNode = new BuiltInNode(unifDep, unif, new Unify());
+                    var unifNode = new BuiltInNode(unifDep, unif, Unify.Instance);
                     if (clause.IsFactual)
                     {
                         matches.Add(unifNode);

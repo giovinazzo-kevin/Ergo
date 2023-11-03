@@ -26,7 +26,11 @@ public enum SolverFlags
     /// </summary>
     EnableCompilerOptimizations = 16,
     /// <summary>
-    /// If set, decimals will have no lower or upper bounds. If not set, decimals will behave like standard CLI decimals and eventually become +/-Infinity.
+    /// If set, decimals will have no lower or upper bounds. If not set and UseFastDecimals is not set, decimals will behave like standard CLI decimals and eventually become +/-Infinity.
     /// </summary>
-    UseUnboundedDecimals = 32
+    UseUnboundedDecimals = 32,
+    /// <summary>
+    /// If set, decimals will use 16 bits instead of 96. If not set and UseUnboundedDecimals is not set, decimals will behave like standard CLI decimals and eventually become +/-Infinity. Has precedence over UseUnboundedDecimals.
+    /// </summary>
+    UseFastDecimals = 64
 }

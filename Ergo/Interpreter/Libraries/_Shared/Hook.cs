@@ -15,8 +15,7 @@ public readonly record struct CompiledHook(ExecutionGraph Graph, ITerm Head)
                 : throw new NotSupportedException();
         if (!newHead.Unify(Head).TryGetValue(out var subs))
             yield break;
-        var newRoot = Graph.Root.Substitute(subs);
-        foreach (var sol in newRoot.Execute(ctx, scope, ExecutionScope.Empty)
+        foreach (var sol in Graph.Root.Execute(ctx, scope, ExecutionScope.Empty.ApplySubstitutions(subs))
             .Where(x => x.IsSolution))
         {
             yield return new Solution(scope, sol.CurrentSubstitutions);

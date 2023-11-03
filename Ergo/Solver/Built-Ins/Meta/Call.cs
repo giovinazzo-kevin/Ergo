@@ -12,7 +12,7 @@ public sealed class Call : SolverBuiltIn
     {
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
-            .WithCallee(GetStub(args));
+            .WithCallee(new(GetStub(args), context));
         if (args.Length == 0)
         {
             yield return ThrowFalse(scope, SolverError.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(0)).Explain());

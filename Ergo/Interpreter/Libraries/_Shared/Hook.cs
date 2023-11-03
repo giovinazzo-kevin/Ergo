@@ -75,7 +75,7 @@ public readonly record struct Hook(Signature Signature)
         var module = Signature.Module.GetOr(WellKnown.Modules.User);
         anon = anon.Qualified(module);
         var callee = new Predicate($"<hook:{Signature.Explain()}>", module, anon, NTuple.Empty, dynamic: true, exported: false, default);
-        foreach (var s in ctx.Solve(new(anon), scope.WithCallee(callee), ct: ct))
+        foreach (var s in ctx.Solve(new(anon), scope.WithCallee(new(callee, ctx)), ct: ct))
             yield return s;
     }
 }

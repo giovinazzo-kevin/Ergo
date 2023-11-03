@@ -7,12 +7,12 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
     {
     }
 
-    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoSolver solver, SolverScope scope, ImmutableArray<ITerm> args)
+    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args)
     {
         var (template, goal, instances) = (args[0], args[1], args[2]);
         scope = scope.WithDepth(scope.Depth + 1)
             .WithCaller(scope.Callee)
-            .WithCallee(GetStub(args))
+            .WithCallee(new(GetStub(args), ctx))
             .WithChoicePoint();
 
         if (goal is Variable)
@@ -42,7 +42,7 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
                 new NTuple(new[]{ listVars, template }, default))
             .AsOperator(WellKnown.Operators.Unification)
         }, default);
-        var solutions = solver.Solve(new(goalClauses), scope)
+        var solutions = ctx.Solver.Solve(new(goalClauses), scope)
             .Select(s => s.Simplify());
         foreach (var sol in solutions
             .Select(sol =>

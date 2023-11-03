@@ -22,6 +22,8 @@ public sealed class SolverContext : IDisposable
     private readonly CancellationTokenSource _exceptionCts;
     private readonly ConcurrentBag<ErgoTask> _tasks;
 
+    public bool IsCutRequested => _choicePointCts.IsCancellationRequested;
+
     public readonly InterpreterScope Scope;
     public readonly ErgoSolver Solver;
 
@@ -116,7 +118,7 @@ public sealed class SolverContext : IDisposable
         {
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)), query.Scope);
 #if !ERGO_SOLVER_DISABLE_TCO
-            if (s.Scope.Callee.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Body))
+            if (s.Scope.Callee.Predicate.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Predicate.Body))
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
                 if (s.Scope.Callers.Any())
@@ -125,14 +127,14 @@ public sealed class SolverContext : IDisposable
                 tcoVars.UnionWith(s.Variables);
                 // Remove all substitutions that don't pertain to any variables in the current scope
                 tcoSubs.Prune(tcoVars);
-                query = new(s.Scope.Callee.Body.Contents.Concat(rest.Contents), query.Scope);
-                tcoPred = s.Scope.Callee;
+                query = new(s.Scope.Callee.Predicate.Body.Contents.Concat(rest.Contents), query.Scope);
+                tcoPred = s.Scope.Callee.Predicate;
                 goto TCO;
             }
             if (rest.Contents.Length > 0 && tcoPred.TryGetValue(out var p))
             {
-                var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.IsSameDeclarationAs(p));
-                if (mostRecentCaller.Equals(p))
+                var mostRecentCaller = s.Scope.Callers.Reverse().Prepend(s.Scope.Callee).FirstOrDefault(x => x.Predicate.IsSameDeclarationAs(p));
+                if (mostRecentCaller.Predicate.Equals(p))
                 {
                     tcoSubs.AddRange(s.Substitutions);
                     tcoVars.UnionWith(s.Variables);
@@ -141,7 +143,7 @@ public sealed class SolverContext : IDisposable
                     goto TCO;
                 }
                 else
-                    tcoPred = mostRecentCaller;
+                    tcoPred = mostRecentCaller.Predicate;
             }
 #endif
             if (rest.Contents.Length == 0)
@@ -210,21 +212,22 @@ public sealed class SolverContext : IDisposable
             .SelectMany(m => m.AsEnumerable().SelectMany(x => x));
         foreach (var m in matches)
         {
+            using var innerCtx = CreateChild();
             // Create a new scope and context for this procedure call, essentially creating a choice point
             var innerScope = scope
                 .WithDepth(scope.Depth + 1)
                 .WithModule(m.Predicate.DeclaringModule)
-                .WithCallee(m.Predicate)
+                .WithCallee(new(m.Predicate, innerCtx))
                 .WithCaller(scope.Callee);
             scope.Trace(SolverTraceType.Call, m.Goal);
             if (m.Predicate.BuiltIn.TryGetValue(out var builtIn))
             {
-                foreach (var eval in builtIn.Apply(this, scope, goal.GetArguments()))
+                foreach (var eval in builtIn.Apply(this, innerScope, goal.GetArguments()))
                 {
                     if (!eval.Result)
                         yield break;
                     else
-                        yield return new(scope, eval.Substitutions);
+                        yield return new(innerScope, eval.Substitutions);
                 }
                 continue;
             }
@@ -249,7 +252,6 @@ public sealed class SolverContext : IDisposable
                 continue;
             }
 #endif
-            using var innerCtx = CreateChild();
             foreach (var s in innerCtx.SolveQuery(m.Predicate.Body, innerScope, ct: ct))
             {
                 scope.Trace(SolverTraceType.Exit, m.Predicate.Head.Substitute(s.Substitutions));

@@ -10,7 +10,7 @@ public sealed class BagOf : SolutionAggregationBuiltIn
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         var any = false;
-        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context.Solver, scope, args))
+        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context, scope, args))
         {
             if (!LanguageExtensions.Unify(ListVars, ArgVars).TryGetValue(out var listSubs)
             || !LanguageExtensions.Unify(args[2], ListTemplate).TryGetValue(out var instSubs))

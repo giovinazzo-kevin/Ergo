@@ -159,8 +159,8 @@ public partial class ErgoSolver : IDisposable
         yield return goal;
         if (!goal.IsQualified)
         {
-            yield return goal.Qualified(scope.Callee.DeclaringModule);
-            if (scope.Callers.Any() && scope.Callers.Last().Head.GetQualification(out _).TryGetValue(out var qualif))
+            yield return goal.Qualified(scope.Callee.Predicate.DeclaringModule);
+            if (scope.Callers.Any() && scope.Callers.Last().Predicate.Head.GetQualification(out _).TryGetValue(out var qualif))
                 yield return goal.Qualified(qualif);
             yield return goal.Qualified(scope.InterpreterScope.Entry);
         }
@@ -200,7 +200,7 @@ public partial class ErgoSolver : IDisposable
         {
             var subs = exp.Substitutions; subs.Invert();
             var newPred = Predicate.Substitute(exp.Predicate, subs);
-            scope = scope.WithCallee(newPred);
+            scope = scope.WithCallee(new(newPred, null));
             if (newPred.ExecutionGraph.TryGetValue(out var compiled))
             {
                 list.Add(compiled.Root);
@@ -217,7 +217,7 @@ public partial class ErgoSolver : IDisposable
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
             var subs = exp.Substitutions; subs.Invert();
             var newPred = Predicate.Substitute(exp.Predicate, subs);
-            scope = scope.WithCallee(newPred);
+            scope = scope.WithCallee(new(newPred, ctx));
             if (newPred.ExecutionGraph.TryGetValue(out var compiled))
             {
                 foreach (var s in compiled.Execute(ctx, scope))

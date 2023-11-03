@@ -10,7 +10,7 @@ public sealed class SetOf : SolutionAggregationBuiltIn
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
         var any = false;
-        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context.Solver, scope, args))
+        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context, scope, args))
         {
             var argSet = new Set(ArgVars.Contents, ArgVars.Scope);
             var setVars = new Set(ListVars.Contents, ArgVars.Scope);

@@ -17,6 +17,8 @@ public class DynamicNode : ExecutionNode
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
         var inst = Goal.Substitute(execScope.CurrentSubstitutions);
+        inst.GetQualification(out var ih);
+        var callerRef = default(Maybe<PredicateCall>);
         foreach (var sol in ctx.Solve(new Query(inst), solverScope))
         {
             var ret = execScope
@@ -24,6 +26,20 @@ public class DynamicNode : ExecutionNode
                 .AsSolution()
                 .ChoicePoint();
             yield return ret;
+            if (callerRef.TryGetValue(out _))
+                continue;
+            foreach (var caller in sol.Scope.Callers.Add(sol.Scope.Callee).Where(x => x.Context != null))
+            {
+                if (ih.Unify(caller.Predicate.Head).TryGetValue(out _))
+                {
+                    callerRef = caller;
+                    break;
+                }
+            }
+        }
+        if (callerRef.Select(x => x.Context.IsCutRequested).GetOr(false))
+        {
+            yield return execScope.AsSolution(false).Cut();
         }
     }
 

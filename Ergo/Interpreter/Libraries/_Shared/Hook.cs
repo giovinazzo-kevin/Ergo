@@ -4,7 +4,7 @@ using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries;
 
-public readonly record struct CompiledHook(ExecutionGraph Graph, ITerm Head)
+public readonly record struct CompiledHook(Signature Signature, ExecutionGraph Graph, ITerm Head)
 {
     public IEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args)
     {
@@ -50,9 +50,9 @@ public readonly record struct Hook(Signature Signature)
                 return s.ToExecutionGraph(kb.DependencyGraph).Root;
             }).Aggregate((a, b) => new BranchNode(a, b)).Optimize();
             var graph = new ExecutionGraph(root);
-            return new CompiledHook(graph, anon);
+            return new CompiledHook(Signature, graph, anon);
         }
-        catch (CompilerException) { }
+        catch (CompilerException e) { }
         return default;
     }
     public IEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args, CancellationToken ct = default)

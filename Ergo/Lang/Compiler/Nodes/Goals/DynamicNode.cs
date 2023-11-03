@@ -37,7 +37,8 @@ public class DynamicNode : ExecutionNode
                 }
             }
         }
-        if (callerRef.Select(x => x.Context.IsCutRequested).GetOr(false))
+        // TODO: Feels somewhat hackish, figure out a more elegant solution
+        if (execScope.IsBranch && callerRef.Select(x => x.Context.IsCutRequested).GetOr(false))
         {
             yield return execScope.AsSolution(false).Cut();
         }

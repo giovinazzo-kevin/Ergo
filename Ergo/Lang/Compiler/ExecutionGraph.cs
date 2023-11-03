@@ -141,14 +141,24 @@ public static class ExecutionGraphExtensions
                     }
                     else continue;
                     substitutedClause.Head.GetQualification(out clauseHead);
+                    var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
+                    var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
+                    var unifNode = new BuiltInNode(unifDep, unif, new Unify());
                     if (clause.IsFactual)
                     {
-                        var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
-                        var node = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
-                        matches.Add(new BuiltInNode(node, unif, new Unify()));
+                        matches.Add(unifNode);
                         continue;
                     }
-                    matches.Add(ToExecutionGraph(substitutedClause, graph).Root);
+                    var inner = ToExecutionGraph(substitutedClause, graph).Root;
+                    if (!head.Equals(clauseHead))
+                    {
+                        var seq = new SequenceNode(new() { unifNode, inner });
+                        matches.Add(seq);
+                    }
+                    else
+                    {
+                        matches.Add(inner);
+                    }
                 }
             }
             else

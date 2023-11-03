@@ -30,15 +30,17 @@ public class BranchNode : ExecutionNode
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
         var cut = false;
-        foreach (var res in Left.Execute(ctx, solverScope, execScope.ChoicePoint()))
+        var branchScope = execScope.ChoicePoint().Branch();
+        foreach (var res in Left.Execute(ctx, solverScope, branchScope))
         {
-            yield return res;
+            if (res.IsSolution)
+                yield return res.Branch(false);
             cut |= res.IsCut;
         }
         if (cut) yield break;
-        foreach (var res in Right.Execute(ctx, solverScope, execScope.ChoicePoint()))
+        foreach (var res in Right.Execute(ctx, solverScope, branchScope))
         {
-            yield return res;
+            yield return res.Branch(false);
         }
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

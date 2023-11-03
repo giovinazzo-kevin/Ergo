@@ -191,8 +191,8 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(this, new(this, stream, operators ?? Enumerable.Empty<Operator>())));
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
-    public ErgoSolver BuildSolver(KnowledgeBase kb = null, SolverFlags flags = SolverFlags.Default)
-        => ConfigureSolver(new(this, kb ?? new(), flags));
+    public ErgoSolver BuildSolver(KnowledgeBase kb = null, SolverFlags flags = SolverFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
+        => ConfigureSolver(new(this, kb ?? new(), flags, decimalType));
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));
 

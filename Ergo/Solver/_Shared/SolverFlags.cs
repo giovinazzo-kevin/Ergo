@@ -24,13 +24,5 @@ public enum SolverFlags
     /// <summary>
     /// If set, compiled execution graphs will be optimized by performing compile-time checks. This greatly improves performance by discarding branches that are known to be false.
     /// </summary>
-    EnableCompilerOptimizations = 16,
-    /// <summary>
-    /// If set, decimals will have no lower or upper bounds. If not set and UseFastDecimals is not set, decimals will behave like standard CLI decimals and eventually become +/-Infinity.
-    /// </summary>
-    UseUnboundedDecimals = 32,
-    /// <summary>
-    /// If set, decimals will use 16 bits instead of 96. If not set and UseUnboundedDecimals is not set, decimals will behave like standard CLI decimals and eventually become +/-Infinity. Has precedence over UseUnboundedDecimals.
-    /// </summary>
-    UseFastDecimals = 64
+    EnableCompilerOptimizations = 16
 }

@@ -12,12 +12,12 @@ public abstract class MathBuiltIn : SolverBuiltIn
 
     public dynamic Evaluate(ErgoSolver solver, SolverScope scope, ITerm t)
     {
-        var flags = (solver?.Flags ?? SolverFlags.Default);
-        var context = flags.HasFlag(SolverFlags.UseFastDecimals)
-            ? EContext.Binary16
-            : flags.HasFlag(SolverFlags.UseUnboundedDecimals)
-                ? EContext.Unlimited
-                : EContext.CliDecimal;
+        var context = (solver?.DecimalType ?? DecimalType.CliDecimal) switch
+        {
+            DecimalType.BigDecimal => EContext.Unlimited,
+            DecimalType.Binary16 => EContext.Binary16,
+            _ => EContext.CliDecimal,
+        };
         return Evaluate(t);
         dynamic Evaluate(ITerm t)
         {

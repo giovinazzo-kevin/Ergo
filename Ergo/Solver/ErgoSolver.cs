@@ -13,6 +13,7 @@ public partial class ErgoSolver : IDisposable
     private volatile bool _initialized;
 
     public readonly SolverFlags Flags;
+    public readonly DecimalType DecimalType;
 
     public readonly ErgoFacade Facade;
     public readonly KnowledgeBase KnowledgeBase;
@@ -36,7 +37,7 @@ public partial class ErgoSolver : IDisposable
         return signature;
     }
 
-    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default)
+    internal ErgoSolver(ErgoFacade facade, KnowledgeBase kb, SolverFlags flags = SolverFlags.Default, DecimalType decimalType = default)
     {
         Facade = facade;
         Flags = flags;
@@ -44,6 +45,7 @@ public partial class ErgoSolver : IDisposable
         In = Console.In;
         Out = Console.Out;
         Err = Console.Error;
+        DecimalType = decimalType;
     }
 
     public void Initialize(InterpreterScope scope)

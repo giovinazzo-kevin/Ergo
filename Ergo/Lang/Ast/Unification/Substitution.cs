@@ -70,25 +70,33 @@ public readonly struct Substitution
     {
         if (!x.Equals(y))
         {
-            if (y is Variable)
+            if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
+            {
+                foreach (var s in ayWithX)
+                {
+                    if (x is Variable)
+                        ApplySubstitution(new Substitution(x, y));
+                    else E.Enqueue(s);
+                }
+                return true;
+            }
+            else if (x is AbstractTerm ax && ax.Unify(y).TryGetValue(out var axWithY))
+            {
+                foreach (var s in axWithY)
+                {
+                    if (y is Variable)
+                        ApplySubstitution(new Substitution(y, x));
+                    else E.Enqueue(s);
+                }
+                return true;
+            }
+            else if (y is Variable)
             {
                 ApplySubstitution(new Substitution(y, x));
             }
             else if (x is Variable)
             {
                 ApplySubstitution(new Substitution(x, y));
-            }
-            else if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
-            {
-                foreach (var s in ayWithX)
-                    E.Enqueue(s);
-                return true;
-            }
-            else if (x is AbstractTerm ax && ax.Unify(y).TryGetValue(out var axWithY))
-            {
-                foreach (var s in axWithY)
-                    E.Enqueue(s);
-                return true;
             }
             else if (x is Complex cx && y is Complex cy)
             {

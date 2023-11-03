@@ -8,7 +8,7 @@ public sealed class TermMarshallingContext
     public readonly Stack<object> ReferenceStack = new();
     internal readonly Dictionary<TermMarshalling, Dictionary<int, ITerm>> ToCache = new();
 
-    internal bool TryGetCached(TermMarshalling mode, object key, Type type, Maybe<Atom> functor, out ITerm cached)
+    public bool TryGetCached(TermMarshalling mode, object key, Type type, Maybe<Atom> functor, out ITerm cached)
     {
         cached = default;
         if (key is null)

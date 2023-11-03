@@ -34,6 +34,7 @@ public readonly record struct SolverScope(
     public string Explain()
     {
         var depth = Depth;
+        if (depth == 0) return string.Empty;
         var numCallers = Callers.Length;
         var stackTrace = Callers
             .Select((c, i) => $"[{depth - i}] {c.Head?.Explain(canonical: true)}");

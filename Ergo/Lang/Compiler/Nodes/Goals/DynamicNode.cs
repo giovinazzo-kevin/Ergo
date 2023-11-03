@@ -23,8 +23,6 @@ public class DynamicNode : ExecutionNode
                 .ApplySubstitutions(sol.Substitutions)
                 .AsSolution()
                 .ChoicePoint();
-            //if (sol.Scope.IsCutRequested)
-            //    ret = ret.Cut();
             yield return ret;
         }
     }

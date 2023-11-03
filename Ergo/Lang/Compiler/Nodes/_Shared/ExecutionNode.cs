@@ -1,7 +1,9 @@
 ﻿using Ergo.Solver;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
+[DebuggerDisplay("{Explain(false)}")]
 public abstract class ExecutionNode : IExplainable
 {
     public virtual ExecutionNode Optimize() => this;

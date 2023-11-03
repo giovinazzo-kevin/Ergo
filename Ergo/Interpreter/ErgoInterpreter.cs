@@ -12,6 +12,8 @@ public partial class ErgoInterpreter
     public readonly ErgoFacade Facade;
     public readonly InterpreterFlags Flags;
 
+    private readonly Dictionary<Atom, InterpreterScope> ModuleCache = new();
+
     protected readonly DiagnosticProbe Probe = new()
     {
 #if !ERGO_INTERPRETER_DIAGNOSTICS
@@ -146,7 +148,19 @@ public partial class ErgoInterpreter
 
     public Maybe<Module> Load(ref InterpreterScope scope, Atom module, int loadOrder = 0)
     {
-        return Load(ref scope, module, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)), loadOrder);
+        if (ModuleCache.TryGetValue(module, out var cachedScope))
+        {
+            scope = cachedScope;
+            return cachedScope.Modules[module];
+        }
+        if (Load(ref scope, module, FileStreamUtils.FileStream(scope.SearchDirectories, module.AsQuoted(false).Explain(false)), loadOrder)
+            .TryGetValue(out var ret))
+        {
+            if (!ret.Program.IsPartial)
+                ModuleCache[module] = scope;
+            return ret;
+        }
+        return default;
     }
     public virtual Maybe<Module> Load(ref InterpreterScope scope, Atom moduleName, ErgoStream stream, int loadOrder = 0)
     {
@@ -157,7 +171,6 @@ public partial class ErgoInterpreter
         var modulesToCheck = new Stack<Atom>();
         foreach (Atom m in module.Imports.Contents)
             modulesToCheck.Push(m);
-        var tasks = new ConcurrentBag<Task<Maybe<Module>>>();
         var checkedModulesConcurrent = new ConcurrentDictionary<Atom, bool>();
         while (modulesToCheck.Count > 0)
         {
@@ -166,24 +179,15 @@ public partial class ErgoInterpreter
                 if (!scope.Modules[import].Program.IsPartial)
                     continue;
                 var importScope = scope.WithCurrentModule(moduleName);
-                tasks.Add(Task.Run(() =>
-                {
-                    if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
-                        return Maybe.None<Module>();
-                    importModule.Imports.Contents
-                        .Select(x => (Atom)x)
-                        .Where(m => checkedModulesConcurrent.TryAdd(m, true))
-                        .ToList()
-                        .ForEach(m => modulesToCheck.Push(m));
-                    return importModule;
-                }));
+                if (!Load(ref importScope, import, loadOrder + 1).TryGetValue(out var importModule))
+                    return Maybe.None<Module>();
+                importModule.Imports.Contents
+                    .Select(x => (Atom)x)
+                    .Where(m => checkedModulesConcurrent.TryAdd(m, true))
+                    .ToList()
+                    .ForEach(modulesToCheck.Push);
+                scope = scope.WithModule(importModule);
             }
-        }
-        var newModules = Task.WhenAll(tasks).GetAwaiter().GetResult();
-        foreach (var newMod in newModules
-            .SelectMany(x => x.AsEnumerable()))
-        {
-            scope = scope.WithModule(newMod);
         }
 
         var parser = Facade.BuildParser(stream, scope.VisibleOperators);

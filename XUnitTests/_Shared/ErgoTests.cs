@@ -58,13 +58,13 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
 
         void Interpreted()
         {
-            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default & ~SolverFlags.EnableCompiler) | SolverFlags.UseUnboundedDecimals);
+            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default & ~SolverFlags.EnableCompiler), DecimalType.BigDecimal);
             Solve(solver, parsed);
         }
 
         void Compiled()
         {
-            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default) | SolverFlags.UseUnboundedDecimals);
+            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default), DecimalType.BigDecimal);
             Solve(solver, parsed);
         }
 

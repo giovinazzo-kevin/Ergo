@@ -50,13 +50,13 @@
 %: Inequivalence of the arithmetic evaluations of A and B.
 '=\\='(A, B) :-eval(Ae, A), eval(Be, B), Ae \== Be.
 %: Arithmetic comparison (gt).
-'>'(A, B)  :- eval(true, A > B).
+'>'(A, B)  :- eval(1, A > B).
 %: Arithmetic comparison (lt).
-'<'(A, B)  :- eval(true, A < B).
+'<'(A, B)  :- eval(1, A < B).
 %: Arithmetic comparison (gte).
-'>='(A, B) :- eval(true, A >= B).
+'>='(A, B) :- eval(1, A >= B).
 %: Arithmetic comparison (lte).
-'<='(A, B) :- eval(true, A <= B).
+'<='(A, B) :- eval(1, A <= B).
 
 % HELPERS
 

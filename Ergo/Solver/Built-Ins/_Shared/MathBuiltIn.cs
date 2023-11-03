@@ -15,7 +15,7 @@ public abstract class MathBuiltIn : SolverBuiltIn
         var context = (solver?.DecimalType ?? DecimalType.CliDecimal) switch
         {
             DecimalType.BigDecimal => EContext.Unlimited,
-            DecimalType.Binary16 => EContext.Binary16,
+            DecimalType.FastDecimal => EContext.Binary16,
             _ => EContext.CliDecimal,
         };
         return Evaluate(t);

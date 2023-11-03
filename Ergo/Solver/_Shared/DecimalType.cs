@@ -2,7 +2,7 @@
 
 public enum DecimalType
 {
-    Binary16,
+    FastDecimal,
     CliDecimal,
     BigDecimal
 }

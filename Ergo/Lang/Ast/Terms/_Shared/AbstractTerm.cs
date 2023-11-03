@@ -59,7 +59,6 @@ public abstract class AbstractTerm : ITerm
     public abstract string Explain(bool canonical = false);
     public abstract ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);
     public abstract ITerm Substitute(Substitution s);
-    public abstract ITerm NumberVars();
     public ITerm Substitute(IEnumerable<Substitution> s) => s.Aggregate((ITerm)this, (a, b) => a.Substitute(b));
     public abstract Maybe<SubstitutionMap> Unify(ITerm other);
 

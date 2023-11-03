@@ -203,6 +203,5 @@ public class Dict : AbstractTerm
     }
 
     public override Signature GetSignature() => CanonicalForm.GetSignature();
-    public override ITerm NumberVars() => CanonicalForm.NumberVars();
     public override AbstractTerm AsParenthesized(bool parenthesized) => new Dict(Functor, Dictionary, Scope, IsParenthesized);
 }

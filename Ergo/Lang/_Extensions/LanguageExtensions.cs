@@ -115,27 +115,7 @@ public static class LanguageExtensions
 
     public static ITerm NumberVars(this ITerm term)
     {
-        int i = 0;
-        return Inner(term, ref i);
-        ITerm Inner(ITerm term, ref int i)
-        {
-            if (term is Atom a)
-                return a;
-            if (term is Variable v)
-                return new Variable($"$VAR({i++})");
-            if (term is Complex c)
-            {
-                var args = new ITerm[c.Arguments.Length];
-                for (int j = 0; j < c.Arguments.Length; j++)
-                {
-                    args[j] = Inner(c.Arguments[j], ref i);
-                }
-                term = c.WithArguments(args.ToImmutableArray());
-            }
-            if (term is AbstractTerm abs)
-                return abs.NumberVars();
-            return term;
-        }
+        return term.Instantiate(new("$VAR"), new());
     }
 
     public static string ToCSharpCase(this string s)

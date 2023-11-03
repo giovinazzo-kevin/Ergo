@@ -83,7 +83,6 @@ public abstract class AbstractList : AbstractTerm
         }
         return Create(builder.ToImmutableArray(), Scope, IsParenthesized);
     }
-    public override ITerm NumberVars() => CanonicalForm.NumberVars();
     /// <summary>
     /// Folds a list in the canonical way by composing f/2 recursively, appending the empty element at the end.
     /// </summary>

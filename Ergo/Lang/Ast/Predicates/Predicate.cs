@@ -139,16 +139,6 @@ public readonly struct Predicate : IExplainable
                                 yield return WellKnown.Literals.True;
                                 continue;
                             }
-                            else if (!leftEmpty && rightEmpty)
-                            {
-                                yield return left;
-                                continue;
-                            }
-                            else if (!rightEmpty && leftEmpty)
-                            {
-                                yield return right;
-                                continue;
-                            }
                             ret = expandGoal(op.ToComplex(left, Maybe.Some(right)));
                         }
                         else

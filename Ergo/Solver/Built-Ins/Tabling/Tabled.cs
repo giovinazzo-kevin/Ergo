@@ -33,7 +33,10 @@ public sealed class Tabled : SolverBuiltIn
                     SubstitutionMap.MergeRef(subs, innerSubs);
             }
         }
-        nodes = nodes.Select(n => n.Substitute(subs)).ToList();
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            nodes[i] = nodes[i].Substitute(subs);
+        }
         return nodes;
     }
 

@@ -161,7 +161,7 @@ public sealed class SolverContext : IDisposable
     }
 
 
-    public IEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, CancellationToken ct = default)
+    private IEnumerable<Solution> SolveTerm(ITerm goal, SolverScope scope, CancellationToken ct = default)
     {
         _debuggerSignal.WaitOne();
         try
@@ -175,6 +175,9 @@ public sealed class SolverContext : IDisposable
         }
 
     begin:
+        if (goal.IsParenthesized)
+            scope = scope.WithChoicePoint();
+
         if (goal is Atom { Value: true })
         {
             yield return new(scope, new());
@@ -215,7 +218,8 @@ public sealed class SolverContext : IDisposable
                 .WithDepth(scope.Depth + 1)
                 .WithModule(m.Predicate.DeclaringModule)
                 .WithCallee(m.Predicate)
-                .WithCaller(scope.Callee);
+                .WithCaller(scope.Callee)
+                .WithChoicePoint();
             scope.Trace(SolverTraceType.Call, m.Goal);
             if (m.Predicate.BuiltIn.TryGetValue(out var builtIn))
             {

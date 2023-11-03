@@ -2,6 +2,7 @@
 
 public static partial class WellKnown
 {
+
     public static class Functors
     {
         public static readonly HashSet<Atom> Conjunction = new(new Atom[] { new(","), new("∧") });

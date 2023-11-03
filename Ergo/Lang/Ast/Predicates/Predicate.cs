@@ -241,7 +241,6 @@ public readonly struct Predicate : IExplainable
         var inst = pred.Instantiate(ctx);
         if (inst.Head is not Complex cplx)
             return inst;
-        var unify = new Atom("unify");
         var varArgs = cplx.Arguments
             .Select(x => x is Variable ? x : ctx.GetFreeVariable())
             .ToImmutableArray();
@@ -252,7 +251,7 @@ public readonly struct Predicate : IExplainable
             if (cplx.Arguments[i] is Variable)
                 continue;
             any = true;
-            var unif = new Complex(unify, varArgs[i], cplx.Arguments[i]);
+            var unif = new Complex(WellKnown.Signatures.Unify.Functor, varArgs[i], cplx.Arguments[i]);
             preconditions.Add(unif);
         }
         if (!any)

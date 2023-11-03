@@ -5,8 +5,6 @@ namespace Ergo.Lang.Compiler;
 
 public class BuiltInNode : GoalNode
 {
-    public static readonly Signature UnifySignature = new(new Atom("unify"), 2, WellKnown.Modules.Prologue, default);
-
     public SolverBuiltIn BuiltIn { get; }
     public BuiltInNode(DependencyGraphNode node, ITerm goal, SolverBuiltIn builtIn) : base(node, goal)
     {
@@ -25,51 +23,9 @@ public class BuiltInNode : GoalNode
     }
     public override ExecutionNode Optimize()
     {
-        if (BuiltIn is Ground) return Ground();
-        if (BuiltIn is Unify) return Unify();
-        if (BuiltIn is Not) return Not();
-        if (BuiltIn is Eval) return Eval();
+        if (BuiltIn.Optimize(this).TryGetValue(out var optimized))
+            return optimized;
         return this;
-        ExecutionNode Ground() => Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
-        ExecutionNode Unify()
-        {
-            var args = Goal.GetArguments();
-            //if (args[0] is Variable { Ignored: true } && args[1] is Variable)
-            //    return TrueNode.Instance; // TODO: verify, might be sketchy
-            if (!Goal.IsGround)
-                return this;
-            if (args[0].Unify(args[1]).TryGetValue(out _))
-                return TrueNode.Instance;
-            return FalseNode.Instance;
-        }
-        ExecutionNode Not()
-        {
-            if (!Goal.IsGround)
-                return this;
-            var arg = Goal.GetArguments()[0].ToExecutionNode(Node.Graph, ctx: new("__NOT")).Optimize();
-            if (arg is TrueNode)
-                return FalseNode.Instance;
-            if (arg is FalseNode)
-                return TrueNode.Instance;
-            return this;
-        }
-        ExecutionNode Eval()
-        {
-            var args = Goal.GetArguments();
-            if (!args[1].IsGround)
-                return this;
-            var ret = new Eval().Evaluate(null, default, args[1]);
-            if (args[0].IsGround)
-            {
-                if (args[0].Equals(new Atom(ret)))
-                    return TrueNode.Instance;
-            }
-            else if (Node.Graph.GetNode(UnifySignature).TryGetValue(out var unifyNode))
-            {
-                return new BuiltInNode(unifyNode, new Complex(new Atom("unify"), args[0], new Atom(ret)), new Unify());
-            }
-            return FalseNode.Instance;
-        }
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

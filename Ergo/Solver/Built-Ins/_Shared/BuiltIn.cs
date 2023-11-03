@@ -1,9 +1,13 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public abstract class SolverBuiltIn
 {
     public readonly Signature Signature;
     public readonly string Documentation;
+
+    public virtual Maybe<ExecutionNode> Optimize(BuiltInNode node) => default;
 
     public Predicate GetStub(ImmutableArray<ITerm> arguments)
     {

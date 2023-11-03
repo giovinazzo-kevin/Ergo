@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Ground : SolverBuiltIn
 {
@@ -6,6 +8,9 @@ public sealed class Ground : SolverBuiltIn
         : base("", new("ground"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
     {
     }
+
+    public override Maybe<ExecutionNode> Optimize(BuiltInNode node) =>
+        node.Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {

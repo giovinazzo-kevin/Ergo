@@ -1,10 +1,30 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Eval : MathBuiltIn
 {
     public Eval()
         : base("", new("eval"), Maybe<int>.Some(2))
     {
+    }
+
+    public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
+    {
+        var args = node.Goal.GetArguments();
+        if (!args[1].IsGround)
+            return node;
+        var ret = new Eval().Evaluate(null, default, args[1]);
+        if (args[0].IsGround)
+        {
+            if (args[0].Equals(new Atom(ret)))
+                return TrueNode.Instance;
+        }
+        else if (node.Node.Graph.GetNode(WellKnown.Signatures.Unify).TryGetValue(out var unifyNode))
+        {
+            return new BuiltInNode(unifyNode, new Complex(new Atom("unify"), args[0], new Atom(ret)), new Unify());
+        }
+        return FalseNode.Instance;
     }
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)

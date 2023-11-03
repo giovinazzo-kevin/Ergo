@@ -12,6 +12,27 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
     public void Clear() => Predicates.Clear();
 
+    public KnowledgeBase()
+    {
+
+    }
+
+    private KnowledgeBase(OrderedDictionary predicates, DependencyGraph dependencyGraph)
+    {
+        Predicates = predicates;
+        DependencyGraph = dependencyGraph;
+    }
+
+    public KnowledgeBase Clone()
+    {
+        var inner = new OrderedDictionary();
+        foreach (var kv in Predicates.Cast<KeyValuePair<Signature, List<Predicate>>>())
+        {
+            inner.Add(kv.Key, kv.Value);
+        }
+        return new(inner, DependencyGraph);
+    }
+
     private List<Predicate> GetOrCreate(Signature key, bool append = false)
     {
         if (!Predicates.Contains(key))

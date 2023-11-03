@@ -45,7 +45,7 @@ public readonly record struct Hook(Signature Signature)
                 if (anon.Unify(pHead).TryGetValue(out var subs))
                 {
                     var unifications = subs
-                        .Select(s => ((ITerm)new Complex(new Atom("unify"), s.Lhs, s.Rhs)).Qualified(WellKnown.Modules.Prologue));
+                        .Select(s => ((ITerm)new Complex(WellKnown.Signatures.Unify.Functor, s.Lhs, s.Rhs)).Qualified(WellKnown.Modules.Prologue));
                     s = s.WithHead(anon).WithBody(new(unifications.Concat(s.Body.Contents).ToImmutableArray()));
                 }
                 return s.ToExecutionGraph(kb.DependencyGraph).Root;

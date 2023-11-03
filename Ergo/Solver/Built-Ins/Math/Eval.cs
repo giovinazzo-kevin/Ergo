@@ -22,7 +22,7 @@ public sealed class Eval : MathBuiltIn
         }
         else if (node.Node.Graph.GetNode(WellKnown.Signatures.Unify).TryGetValue(out var unifyNode))
         {
-            return new BuiltInNode(unifyNode, new Complex(new Atom("unify"), args[0], new Atom(ret)), new Unify());
+            return new BuiltInNode(unifyNode, new Complex(WellKnown.Signatures.Unify.Functor, args[0], new Atom(ret)), new Unify());
         }
         return FalseNode.Instance;
     }

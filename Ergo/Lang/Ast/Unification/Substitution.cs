@@ -109,10 +109,7 @@ public readonly struct Substitution
     public override bool Equals(object obj)
     {
         if (obj is Substitution eq)
-        {
             return eq.Lhs.Equals(Lhs) && eq.Rhs.Equals(Rhs);
-        }
-
         return false;
     }
 
@@ -121,4 +118,14 @@ public readonly struct Substitution
     public override int GetHashCode() => HashCode.Combine(Lhs, Rhs);
 
     public string Explain() => $"{Lhs.Explain()}/{Rhs.Explain()}";
+
+    public static bool operator ==(Substitution left, Substitution right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Substitution left, Substitution right)
+    {
+        return !(left == right);
+    }
 }

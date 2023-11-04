@@ -121,4 +121,14 @@ public readonly struct Substitution
     public override int GetHashCode() => HashCode.Combine(Lhs, Rhs);
 
     public string Explain() => $"{Lhs.Explain()}/{Rhs.Explain()}";
+
+    public static bool operator ==(Substitution left, Substitution right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Substitution left, Substitution right)
+    {
+        return !(left == right);
+    }
 }

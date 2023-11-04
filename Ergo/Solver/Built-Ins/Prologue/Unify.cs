@@ -4,7 +4,19 @@ namespace Ergo.Solver.BuiltIns;
 
 public sealed class Unify : SolverBuiltIn
 {
-    public static readonly Unify Instance = new();
+    // TODO: Evaluate performance difference of using memoization and whether it introduces logical errors
+    static Func<T, TResult> Memoize<T, TResult>(Func<T, TResult> func)
+    {
+        var cache = new Dictionary<T, TResult>();
+        return arg =>
+        {
+            if (cache.TryGetValue(arg, out var value))
+                return value;
+            value = func(arg);
+            cache[arg] = value;
+            return value;
+        };
+    }
     public Unify()
         : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)
     {
@@ -75,9 +87,10 @@ public sealed class Unify : SolverBuiltIn
         return FalseNode.Instance;
     }
 
+    private readonly Func<Substitution, Maybe<SubstitutionMap>> _memoizedUnify = Memoize<Substitution, Maybe<SubstitutionMap>>(Substitution.Unify);
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
-        if (arguments[0].Unify(arguments[1]).TryGetValue(out var subs))
+        if (_memoizedUnify(new(arguments[0], arguments[1])).TryGetValue(out var subs))
             yield return True(subs);
         else
             yield return False();

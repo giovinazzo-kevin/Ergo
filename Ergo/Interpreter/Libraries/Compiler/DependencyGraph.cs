@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Solver.BuiltIns;
 
 public class DependencyGraphNode
 {
@@ -17,6 +18,10 @@ public class DependencyGraph
     private readonly Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
     public readonly KnowledgeBase KnowledgeBase;
     public readonly InterpreterScope Scope;
+    /// <summary>
+    /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
+    /// </summary>
+    public readonly Unify UnifyInstance = new();
 
     public DependencyGraph(InterpreterScope scope, KnowledgeBase knowledgeBase)
     {

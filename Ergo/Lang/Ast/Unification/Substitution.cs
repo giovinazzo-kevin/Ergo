@@ -32,6 +32,8 @@ public readonly struct Substitution
         rhs = Rhs;
     }
 
+    public static Maybe<SubstitutionMap> Unify(Substitution s) => s.Unify();
+
     public Maybe<SubstitutionMap> Unify()
     {
         var map = new SubstitutionMap();

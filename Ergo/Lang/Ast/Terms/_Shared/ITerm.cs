@@ -88,7 +88,22 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 
     ITerm Substitute(IEnumerable<Substitution> subs)
     {
-        return subs.Aggregate(this, (a, b) => a.Substitute(b));
+        var steps = subs.ToDictionary(s => s.Lhs, s => s.Rhs);
+        var variables = Variables.Where(var => steps.ContainsKey(var));
+        var @base = this;
+        while (variables.Any())
+        {
+            foreach (var var in variables)
+            {
+                @base = @base.Substitute(new Substitution(var, steps[var]));
+            }
+
+            var newVariables = @base.Variables.Where(var => steps.ContainsKey(var));
+            if (variables.SequenceEqual(newVariables))
+                break;
+            variables = newVariables;
+        }
+        return @base;
     }
 
     ITerm StripTemporaryVariables() => Substitute(Variables

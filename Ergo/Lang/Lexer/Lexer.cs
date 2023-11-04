@@ -25,7 +25,6 @@ public partial class ErgoLexer : IDisposable
         new("\\\\[abfnrtv?\"'\\\\]|\\\\[0-3]?[0-7]{1,2}|\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}|.", RegexOptions.Compiled);
     #endregion
 
-    private readonly DiagnosticProbe Probe = new();
     public StreamState State => new(Stream.FileName, Position, Line, Column, Context);
 
     private void Memoize(StreamState state, Token tok, [CallerMemberName] string caller = null)

@@ -4,6 +4,8 @@ namespace Ergo.Lang.Utils;
 
 public sealed class DiagnosticProbe : IDisposable
 {
+    private static readonly Stopwatch _sw = new Stopwatch();
+
     private record struct Datum(int Hits, int Leaves, int Recursion, TimeSpan TotalTime, TimeSpan AverageTime, ImmutableDictionary<string, int> Counters);
     private Dictionary<string, Datum> _data = new();
 
@@ -12,15 +14,15 @@ public sealed class DiagnosticProbe : IDisposable
     public string GetCurrentMethodName([CallerMemberName] string callerName = "") => callerName;
     public Stopwatch Enter([CallerMemberName] string callerName = "")
     {
-        var sw = new Stopwatch();
         if (IsEnabled)
         {
+            var sw = new Stopwatch();
             sw.Start();
             if (!_data.TryGetValue(callerName, out var datum))
                 _data[callerName] = datum = new(0, 0, 0, default, default, ImmutableDictionary.Create<string, int>());
             _data[callerName] = datum with { Hits = datum.Hits + 1 };
         }
-        return sw;
+        return _sw;
     }
 
     public void Leave(Stopwatch sw, [CallerMemberName] string callerName = "")

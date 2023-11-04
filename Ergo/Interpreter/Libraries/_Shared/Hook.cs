@@ -31,6 +31,7 @@ public readonly record struct CompiledHook(Signature Signature, ExecutionGraph G
             if (!step.IsSolution)
                 continue;
             yield return new Solution(scope, step.CurrentSubstitutions);
+            Substitution.Pool.Release(step.CurrentSubstitutions);
         }
 #if ERGO_COMPILER_DIAGNOSTICS
         execScope.Stopwatch.Stop();

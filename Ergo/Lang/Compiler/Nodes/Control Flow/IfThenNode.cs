@@ -16,7 +16,7 @@ public class IfThenNode : ExecutionNode
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
-        var conditionSubs = new SubstitutionMap();
+        var conditionSubs = Substitution.Pool.Acquire();
         var satisfied = false;
         foreach (var res in Condition.Execute(ctx, solverScope, execScope))
         {
@@ -26,6 +26,7 @@ public class IfThenNode : ExecutionNode
         if (satisfied)
         {
             execScope = execScope.ApplySubstitutions(conditionSubs);
+            Substitution.Pool.Release(conditionSubs);
             foreach (var res in TrueBranch.Execute(ctx, solverScope, execScope))
             {
                 yield return res;

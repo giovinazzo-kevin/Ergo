@@ -11,7 +11,7 @@ public sealed class NumberVars : SolverBuiltIn
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
     {
-        var allSubs = new SubstitutionMap();
+        var allSubs = Substitution.Pool.Acquire();
         var (start, end) = (0, 0);
         if (LanguageExtensions.Unify(args[1], new Atom(start)).TryGetValue(out var subs1))
         {
@@ -19,6 +19,7 @@ public sealed class NumberVars : SolverBuiltIn
             {
                 allSubs.AddRange(subs1);
             }
+            Substitution.Pool.Release(subs1);
         }
         else if (args[1].IsGround && args[1] is Atom { Value: EDecimal d })
         {
@@ -44,6 +45,7 @@ public sealed class NumberVars : SolverBuiltIn
             yield break;
         }
         allSubs.AddRange(subs0);
+        Substitution.Pool.Release(subs0);
 
         if (LanguageExtensions.Unify(args[2], new Atom(end)).TryGetValue(out var subs2))
         {
@@ -51,6 +53,7 @@ public sealed class NumberVars : SolverBuiltIn
             {
                 allSubs.AddRange(subs2);
             }
+            Substitution.Pool.Release(subs2);
         }
         else if (args[2].IsGround && args[2] is Atom { Value: EDecimal d } && d.ToInt32IfExact() != end)
         {

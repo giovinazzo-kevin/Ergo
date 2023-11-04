@@ -18,7 +18,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public static SubstitutionMap MergeCopy(SubstitutionMap A, SubstitutionMap B)
     {
-        var newMap = new SubstitutionMap();
+        var newMap = Substitution.Pool.Acquire();
         newMap.AddRange(A);
         newMap.AddRange(B);
         return newMap;

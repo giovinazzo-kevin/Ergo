@@ -52,7 +52,8 @@ public abstract class AbstractList : AbstractTerm
     {
         if (other is Variable v)
         {
-            var ret2 = new SubstitutionMap() { new Substitution(v, this) };
+            var ret2 = Substitution.Pool.Acquire();
+            ret2.Add(new Substitution(v, this));
             return ret2;
         }
         // Canonical unification works, but then the result is no longer an abstract term.

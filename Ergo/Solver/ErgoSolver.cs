@@ -110,8 +110,9 @@ public partial class ErgoSolver : IDisposable
                 {
                     continue;
                 }
-
-                await foreach (var item in GetDataSourceMatches(anon.Substitute(subs)))
+                anon = anon.Substitute(subs);
+                Substitution.Pool.Release(subs);
+                await foreach (var item in GetDataSourceMatches(anon))
                 {
                     yield return item;
                 }

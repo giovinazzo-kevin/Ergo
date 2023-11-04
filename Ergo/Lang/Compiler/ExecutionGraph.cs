@@ -38,6 +38,7 @@ public readonly struct ExecutionGraph
             if (!step.IsSolution)
                 continue;
             yield return new(scope, step.CurrentSubstitutions);
+            Substitution.Pool.Release(step.CurrentSubstitutions);
         }
 #if ERGO_COMPILER_DIAGNOSTICS
         execScope.Stopwatch.Stop();

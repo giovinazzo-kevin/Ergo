@@ -9,6 +9,9 @@ public readonly struct Substitution
     public readonly ITerm Lhs;
     public readonly ITerm Rhs;
 
+    private static readonly Pool<Queue<Substitution>> QueuePool = new(() => new(), q => q.Clear());
+    public static readonly Pool<SubstitutionMap> Pool = new(() => new(), q => q.Clear());
+
     public Substitution(ITerm lhs, ITerm rhs)
     {
         Lhs = lhs;
@@ -31,9 +34,9 @@ public readonly struct Substitution
 
     public Maybe<SubstitutionMap> Unify()
     {
-        var map = new SubstitutionMap();
-        var E = new Queue<Substitution>();
-        var S = new Queue<Substitution>();
+        var map = Pool.Acquire();
+        var E = QueuePool.Acquire();
+        var S = QueuePool.Acquire();
         E.Enqueue(this);
         while (E.TryDequeue(out var sub))
         {
@@ -41,6 +44,8 @@ public readonly struct Substitution
                 return default;
         }
         map.AddRange(S);
+        QueuePool.Release(E);
+        QueuePool.Release(S);
         return Maybe.Some(map);
         bool Unify(ITerm x, ITerm y)
         {

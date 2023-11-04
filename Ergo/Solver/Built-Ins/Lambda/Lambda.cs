@@ -41,8 +41,9 @@ public sealed class Lambda : SolverBuiltIn
                 yield break;
             }
 
-            var newSubs = LanguageExtensions.Unify(rest[i], list.Contents[i]).GetOr(new SubstitutionMap());
+            var newSubs = LanguageExtensions.Unify(rest[i], list.Contents[i]).GetOr(Substitution.Pool.Acquire());
             lambda = lambda.Substitute(newSubs);
+            Substitution.Pool.Release(newSubs);
         }
 
         var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : ImmutableArray<ITerm>.Empty;

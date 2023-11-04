@@ -116,12 +116,13 @@ public class Dict : AbstractTerm
     {
         if (other is Variable v)
         {
-            var ret2 = new SubstitutionMap() { new Substitution(v, this) };
+            var ret2 = Substitution.Pool.Acquire();
+            ret2.Add(new Substitution(v, this));
             return ret2;
         }
         if (other is not Dict dict)
             return LanguageExtensions.Unify(CanonicalForm, other);
-        var map = new SubstitutionMap();
+        var map = Substitution.Pool.Acquire();
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
         // complication: the form dict(_, Variable) should be parsed, but

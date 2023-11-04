@@ -40,7 +40,7 @@ public sealed class FormatString : SolverBuiltIn
         var resultStrRaw = resultStr.AsQuoted(false).Explain(canonical: false);
         var formatStrRaw = formatStr;
         var matches = PositionalParamRegex.Matches(formatStrRaw).ToList();
-        var varSubs = new SubstitutionMap();
+        var varSubs = Substitution.Pool.Acquire();
         for (int i = 0; i < matches.Count; i++)
         {
             var match = matches[i];

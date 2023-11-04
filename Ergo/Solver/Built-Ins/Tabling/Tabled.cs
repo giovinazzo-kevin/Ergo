@@ -23,7 +23,7 @@ public sealed class Tabled : SolverBuiltIn
             .Where(g => g.Count() > 1)
             .Select(g => (Pioneer: g.First(), Followers: g.Skip(1).ToArray()))
             .ToArray();
-        var subs = new SubstitutionMap();
+        var subs = Substitution.Pool.Acquire();
         foreach (var (pioneer, followers) in tabledCalls)
         {
             foreach (var follower in followers)
@@ -37,6 +37,7 @@ public sealed class Tabled : SolverBuiltIn
         {
             nodes[i] = nodes[i].Substitute(subs);
         }
+        Substitution.Pool.Release(subs);
         return nodes;
     }
 

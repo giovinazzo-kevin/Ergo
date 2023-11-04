@@ -100,7 +100,7 @@ public sealed class SolverContext : IDisposable
     {
         var tcoPred = Maybe<Predicate>.None;
         var tcoVars = new HashSet<Variable>();
-        var tcoSubs = new SubstitutionMap();
+        var tcoSubs = Substitution.Pool.Acquire();
     TCO:
         if (ct.IsCancellationRequested)
             yield break;

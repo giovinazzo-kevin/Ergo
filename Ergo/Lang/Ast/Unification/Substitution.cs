@@ -62,16 +62,13 @@ public readonly struct Substitution
         }
         S.Enqueue(s);
     }
-    private void ApplySubstitutions(SubstitutionMap map)
-    {
-        foreach (var s in map)
-            ApplySubstitution(s);
-    }
 
     private bool Unify(ITerm x, ITerm y)
     {
         if (!x.Equals(y))
         {
+            if (x.IsGround && y.IsGround)
+                return false;
             if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
             {
                 foreach (var s in ayWithX)

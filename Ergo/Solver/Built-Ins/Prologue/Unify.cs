@@ -65,8 +65,6 @@ public sealed class Unify : SolverBuiltIn
     public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
-        //if (args[0] is Variable { Ignored: true } && args[1] is Variable)
-        //    return TrueNode.Instance; // TODO: verify, might be sketchy
         if (!node.Goal.IsGround)
             return node;
         if (!args[0].Unify(args[1]).TryGetValue(out _))

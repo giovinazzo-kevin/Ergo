@@ -144,20 +144,17 @@ public class Dict : AbstractTerm
             Substitution.Pool.Release(subs);
             if (Dictionary.Count == 0 || dict.Dictionary.Count == 0)
                 return map;
-            var any = false;
-            var keys = Dictionary.Count < dict.Dictionary.Count ? Dictionary.Keys : dict.Dictionary.Keys;
+            var keys = new HashSet<Atom>(Dictionary.Keys);
+            keys.IntersectWith(dict.Dictionary.Keys);
+            if (keys.Count == 0)
+                return default;
             foreach (var key in keys)
             {
-                if (!Dictionary.TryGetValue(key, out var a) || !dict.Dictionary.TryGetValue(key, out var b))
-                    continue;
-                if (!a.Unify(b).TryGetValue(out subs))
+                if (!Dictionary[key].Unify(dict.Dictionary[key]).TryGetValue(out subs))
                     return default;
-                any = true;
                 map.AddRange(subs);
                 Substitution.Pool.Release(subs);
             }
-            if (!any)
-                return default;
         }
         return Maybe.Some(map);
     }

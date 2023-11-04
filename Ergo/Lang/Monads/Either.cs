@@ -39,7 +39,6 @@ public readonly struct Either<TA, TB>
 
         return mapB(B);
     }
-
     public void Do(Action<TA> mapA, Action<TB> mapB)
     {
         if (IsA)

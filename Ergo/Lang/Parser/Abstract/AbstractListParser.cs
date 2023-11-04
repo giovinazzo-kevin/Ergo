@@ -41,8 +41,7 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
         // Canonical list: a [|] b [|] []
         return ParseCanonical()
         // Sugared list: [a, b]
-            .Or(ParseSugared)
-            .Or(() => parser.MemoizeFailureAndFail<L>(scope.LexerState));
+            .Or(ParseSugared);
 
         Maybe<L> ParseCanonical() => parser.Complex()
             .Where(a => a.Arity == 2 && Empty.Operator.Synonyms.Contains(a.Functor))

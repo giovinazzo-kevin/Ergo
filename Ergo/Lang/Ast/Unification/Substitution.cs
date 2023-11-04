@@ -9,7 +9,7 @@ public readonly struct Substitution
     public readonly ITerm Lhs;
     public readonly ITerm Rhs;
 
-    private static readonly Pool<Queue<Substitution>> QueuePool = new(() => new(), q => q.Clear());
+    internal static readonly Pool<Queue<Substitution>> QueuePool = new(() => new(), q => q.Clear());
     public static readonly Pool<SubstitutionMap> Pool = new(() => new(), q => q.Clear());
 
     public Substitution(ITerm lhs, ITerm rhs)

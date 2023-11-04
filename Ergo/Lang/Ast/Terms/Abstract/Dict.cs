@@ -114,15 +114,14 @@ public class Dict : AbstractTerm
 
     public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
+        var map = Substitution.Pool.Acquire();
         if (other is Variable v)
         {
-            var ret2 = Substitution.Pool.Acquire();
-            ret2.Add(new Substitution(v, this));
-            return ret2;
+            map.Add(new Substitution(v, this));
+            return map;
         }
         if (other is not Dict dict)
             return LanguageExtensions.Unify(CanonicalForm, other);
-        var map = Substitution.Pool.Acquire();
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
         // complication: the form dict(_, Variable) should be parsed, but
@@ -139,21 +138,30 @@ public class Dict : AbstractTerm
         {
             // Proper dictionaries unify if the intersection of their properties unifies.
             // This is different from equality, which is more strict and checks if all elements are equal.
-            var set = Dictionary.Keys.Intersect(dict.Dictionary.Keys);
-            if (!set.Any() && Dictionary.Count != 0 && dict.Dictionary.Count != 0)
-                return default;
             if (!dxFunctor.Unify(dyFunctor).TryGetValue(out var subs))
                 return default;
             map.AddRange(subs);
-            foreach (var key in set)
+            Substitution.Pool.Release(subs);
+            if (Dictionary.Count == 0 || dict.Dictionary.Count == 0)
+                return map;
+            var any = false;
+            var keys = Dictionary.Count < dict.Dictionary.Count ? Dictionary.Keys : dict.Dictionary.Keys;
+            foreach (var key in keys)
             {
-                if (!Dictionary[key].Unify(dict.Dictionary[key]).TryGetValue(out subs))
+                if (!Dictionary.TryGetValue(key, out var a) || !dict.Dictionary.TryGetValue(key, out var b))
+                    continue;
+                if (!a.Unify(b).TryGetValue(out subs))
                     return default;
+                any = true;
                 map.AddRange(subs);
+                Substitution.Pool.Release(subs);
             }
+            if (!any)
+                return default;
         }
         return Maybe.Some(map);
     }
+
 
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

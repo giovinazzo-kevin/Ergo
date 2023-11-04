@@ -69,7 +69,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Invert()
     {
-        var toAdd = new Queue<Substitution>();
+        var toAdd = Substitution.QueuePool.Acquire();
         foreach (var (lhs, rhs) in Map)
         {
             Map.Remove(lhs);
@@ -77,6 +77,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         }
         while (toAdd.TryDequeue(out var s))
             Add(s);
+        Substitution.QueuePool.Release(toAdd);
     }
 
     public IEnumerator<Substitution> GetEnumerator()

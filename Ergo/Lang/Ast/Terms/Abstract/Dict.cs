@@ -7,7 +7,7 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain(false) }")]
 public class Dict : AbstractTerm
 {
-    protected override ITerm CanonicalForm { get; set; }
+    public override ITerm CanonicalForm { get; set; }
     public Signature Signature { get; }
     public override bool IsQualified => CanonicalForm.IsQualified;
     public override bool IsParenthesized { get; }

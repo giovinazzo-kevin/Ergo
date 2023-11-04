@@ -1,6 +1,9 @@
 ﻿using Ergo.Lang.Compiler;
 using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
+#if ERGO_COMPILER_DIAGNOSTICS
+using System.Diagnostics;
+#endif
 
 namespace Ergo.Interpreter.Libraries;
 
@@ -15,11 +18,33 @@ public readonly record struct CompiledHook(Signature Signature, ExecutionGraph G
                 : throw new NotSupportedException();
         if (!newHead.Unify(Head).TryGetValue(out var subs))
             yield break;
-        foreach (var sol in Graph.Root.Execute(ctx, scope, ExecutionScope.Empty.ApplySubstitutions(subs))
-            .Where(x => x.IsSolution))
+        var execScope = ExecutionScope.Empty().ApplySubstitutions(subs);
+#if ERGO_COMPILER_DIAGNOSTICS
+        var steps = new List<ExecutionScope>();
+        execScope.Stopwatch.Start();
+#endif
+        foreach (var step in Graph.Root.Execute(ctx, scope, execScope))
         {
-            yield return new Solution(scope, sol.CurrentSubstitutions);
+#if ERGO_COMPILER_DIAGNOSTICS
+            steps.Add(step);
+#endif
+            if (!step.IsSolution)
+                continue;
+            yield return new Solution(scope, step.CurrentSubstitutions);
         }
+#if ERGO_COMPILER_DIAGNOSTICS
+        execScope.Stopwatch.Stop();
+        Task.Run(() =>
+        {
+            foreach (var step in steps)
+            {
+                foreach (var caller in step.Callers)
+                {
+                    Debug.WriteLine($"[{caller.Time.TotalMilliseconds:0.000ms}] {caller.Node.Select(n => n.Substitute(step.CurrentSubstitutions).Explain(false)).GetOr(string.Empty)}");
+                }
+            }
+        });
+#endif
     }
 }
 

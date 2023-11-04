@@ -26,7 +26,7 @@ public abstract class AbstractList : AbstractTerm
     public abstract (string Open, string Close) Braces { get; }
     public Signature Signature { get; }
 
-    protected override ITerm CanonicalForm { get; set; }
+    public override ITerm CanonicalForm { get; set; }
 
     public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized)
         : base(scope)

@@ -6,7 +6,7 @@ namespace Ergo.Lang.Ast.Terms.Interfaces;
 public abstract class AbstractTerm : ITerm
 {
     public Maybe<ParserScope> Scope { get; }
-    protected abstract ITerm CanonicalForm { get; set; }
+    public abstract ITerm CanonicalForm { get; set; }
     public abstract bool IsGround { get; }
     public abstract bool IsQualified { get; }
     public abstract bool IsParenthesized { get; }

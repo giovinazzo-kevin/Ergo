@@ -8,7 +8,7 @@ public class TrueNode : StaticNode
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
-        yield return execScope.AsSolution();
+        yield return execScope.AsSolution().Now(this);
     }
     public override string Explain(bool canonical = false) => $"⊤";
 }

@@ -17,7 +17,7 @@ public class BuiltInNode : GoalNode
         foreach (var eval in BuiltIn.Apply(ctx, solverScope, inst.GetArguments()))
         {
             if (eval.Result)
-                yield return execScope.ApplySubstitutions(eval.Substitutions).AsSolution();
+                yield return execScope.ApplySubstitutions(eval.Substitutions).AsSolution().Now(this);
             else yield break;
         }
     }

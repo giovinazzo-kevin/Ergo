@@ -14,7 +14,7 @@ public sealed class NTuple : AbstractList
     public override Operator Operator => WellKnown.Operators.Conjunction;
     public override Atom EmptyElement => WellKnown.Literals.EmptyCommaList;
     public override (string Open, string Close) Braces => ("(", ")");
-    protected override ITerm CanonicalForm { get; set; }
+    public override ITerm CanonicalForm { get; set; }
     protected override AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized) => new NTuple(head, scope, parenthesized);
 
     public ITerm SingleOrSelf() => Contents.Length == 1 ? Contents.Single() : this;

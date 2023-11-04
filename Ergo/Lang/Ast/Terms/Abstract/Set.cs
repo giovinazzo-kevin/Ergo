@@ -15,7 +15,7 @@ public sealed class Set : AbstractList
     public override Operator Operator => WellKnown.Operators.Set;
     public override Atom EmptyElement => WellKnown.Literals.EmptySet;
     public override (string Open, string Close) Braces => ("{", "}");
-    protected override ITerm CanonicalForm { get; set; }
+    public override ITerm CanonicalForm { get; set; }
     static IEnumerable<ITerm> Sort(IEnumerable<ITerm> terms)
     {
         var sorted = terms

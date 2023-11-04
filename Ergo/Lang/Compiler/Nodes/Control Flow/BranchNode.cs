@@ -34,13 +34,13 @@ public class BranchNode : ExecutionNode
         foreach (var res in Left.Execute(ctx, solverScope, branchScope))
         {
             if (res.IsSolution)
-                yield return res.Branch(false);
+                yield return res.Branch(false).Now(this);
             cut |= res.IsCut;
         }
         if (cut) yield break;
         foreach (var res in Right.Execute(ctx, solverScope, branchScope))
         {
-            yield return res.Branch(false);
+            yield return res.Branch(false).Now(this);
         }
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

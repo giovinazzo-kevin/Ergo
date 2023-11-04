@@ -25,7 +25,7 @@ public class DynamicNode : ExecutionNode
                 .ApplySubstitutions(sol.Substitutions)
                 .AsSolution()
                 .ChoicePoint();
-            yield return ret;
+            yield return ret.Now(this);
             if (callerRef.TryGetValue(out _))
                 continue;
             foreach (var caller in sol.Scope.Callers.Add(sol.Scope.Callee).Where(x => x.Context != null))

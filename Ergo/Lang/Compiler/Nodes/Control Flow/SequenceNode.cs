@@ -128,7 +128,7 @@ public class SequenceNode : ExecutionNode
             }
             if (newScope.IsCut)
             {
-                yield return newScope.AsSolution(false);
+                yield return newScope.AsSolution(false).Now(this);
                 yield break;
             }
         }

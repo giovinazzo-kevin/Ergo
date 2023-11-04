@@ -13,7 +13,7 @@ public class VariableNode : ExecutionNode
 
     public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
     {
-        yield return execScope;
+        yield return execScope.Now(this);
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

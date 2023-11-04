@@ -65,59 +65,49 @@ public readonly struct Substitution
 
     private bool Unify(ITerm x, ITerm y)
     {
-        if (!x.Equals(y))
+        if (x.Equals(y))
+            return true;
+        if (x.IsGround && y.IsGround)
+            return false;
+        if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
         {
-            if (x.IsGround && y.IsGround)
-                return false;
-            if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
+            foreach (var s in ayWithX)
             {
-                foreach (var s in ayWithX)
-                {
-                    if (x is Variable)
-                        ApplySubstitution(new Substitution(x, y));
-                    else E.Enqueue(s);
-                }
-                return true;
+                if (x is Variable)
+                    ApplySubstitution(new Substitution(x, y));
+                else E.Enqueue(s);
             }
-            else if (x is AbstractTerm ax && ax.Unify(y).TryGetValue(out var axWithY))
-            {
-                foreach (var s in axWithY)
-                {
-                    if (y is Variable)
-                        ApplySubstitution(new Substitution(y, x));
-                    else E.Enqueue(s);
-                }
-                return true;
-            }
-            else if (y is Variable)
-            {
-                ApplySubstitution(new Substitution(y, x));
-            }
-            else if (x is Variable)
-            {
-                ApplySubstitution(new Substitution(x, y));
-            }
-            else if (x is Complex cx && y is Complex cy)
-            {
-                if (!cx.Matches(cy))
-                {
-                    return false;
-                }
-
-                for (var i = 0; i < cx.Arguments.Length; i++)
-                {
-                    E.Enqueue(new Substitution(cx.Arguments[i], cy.Arguments[i]));
-                }
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return true;
         }
-        // x equals y, so they unify by default
-        return true;
+        else if (x is AbstractTerm ax && ax.Unify(y).TryGetValue(out var axWithY))
+        {
+            foreach (var s in axWithY)
+            {
+                if (y is Variable)
+                    ApplySubstitution(new Substitution(y, x));
+                else E.Enqueue(s);
+            }
+            return true;
+        }
+        else if (y is Variable)
+        {
+            ApplySubstitution(new Substitution(y, x));
+            return true;
+        }
+        else if (x is Variable)
+        {
+            ApplySubstitution(new Substitution(x, y));
+            return true;
+        }
+        else if (x is Complex cx && y is Complex cy)
+        {
+            if (!cx.Matches(cy))
+                return false;
+            for (var i = 0; i < cx.Arguments.Length; i++)
+                E.Enqueue(new Substitution(cx.Arguments[i], cy.Arguments[i]));
+            return true;
+        }
+        return false;
     }
 
     public override bool Equals(object obj)

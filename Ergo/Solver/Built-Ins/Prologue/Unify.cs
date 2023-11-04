@@ -67,11 +67,15 @@ public sealed class Unify : SolverBuiltIn
         var args = node.Goal.GetArguments();
         //if (args[0] is Variable { Ignored: true } && args[1] is Variable)
         //    return TrueNode.Instance; // TODO: verify, might be sketchy
-        if (!node.Goal.IsGround)
-            return node;
-        if (args[0].Unify(args[1]).TryGetValue(out _))
+        if (!args[0].Unify(args[1]).TryGetValue(out var subs))
+            return FalseNode.Instance;
+        if (node.Goal.IsGround)
             return TrueNode.Instance;
-        return FalseNode.Instance;
+        // When unifying complex structures, we don't need to unify the whole structure at run-time.
+        // Instead, we can simply unify the variables, assuming that the rest of the structure unifies.
+        // And if the structure doesn't unify, then we can replace this call with false for free!
+        var newUnif = new Complex(WellKnown.Signatures.Unify.Functor, new NTuple(subs.Select(s => s.Lhs)), new NTuple(subs.Select(s => s.Rhs)));
+        return new BuiltInNode(node.Node, newUnif, node.BuiltIn);
     }
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)

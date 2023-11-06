@@ -28,7 +28,7 @@ public readonly struct ExecutionGraph
         var vm = new ErgoVM() { Context = ctx, Scope = scope };
         vm.Query = Root.Compile(vm);
         vm.Run();
-        return vm.Solutions.Select(subs => new Solution(scope, subs));
+        return vm.Solutions.Reverse().Select(subs => new Solution(scope, subs));
     }
 }
 

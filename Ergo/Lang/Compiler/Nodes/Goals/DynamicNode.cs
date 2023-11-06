@@ -16,7 +16,6 @@ public class DynamicNode : ExecutionNode
         var anySolutions = false;
         var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);
         var goal = vm.Context.Solve(new Query(query), vm.Scope).GetEnumerator();
-        vm.PushChoice(NextGoal);
         NextGoal();
 
         void NextGoal()
@@ -25,6 +24,7 @@ public class DynamicNode : ExecutionNode
             {
                 anySolutions = true;
                 vm.Solution(goal.Current.Substitutions);
+                vm.NextGoal = NextGoal;
             }
             else if (!anySolutions)
             {

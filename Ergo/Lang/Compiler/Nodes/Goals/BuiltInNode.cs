@@ -16,7 +16,6 @@ public class BuiltInNode : GoalNode
 
         var anySolutions = false;
         var goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
-        vm.PushChoice(NextGoal);
         NextGoal();
 
         void NextGoal()
@@ -30,6 +29,7 @@ public class BuiltInNode : GoalNode
                 }
                 anySolutions = true;
                 vm.Solution(goal.Current.Substitutions);
+                vm.NextGoal = NextGoal;
             }
             else if (!anySolutions)
             {

@@ -8,7 +8,7 @@ Unification allows for very complex pattern-matching, and users can even impleme
 Initially a purely interpreted language, Ergo is now (optionally) compiled down to IL. This enables all sorts of optimizations, and makes Ergo competitive with native C# code in cases where the interpreter overhead would be a deal-breaker.
 In fact, Ergo comes with three _execution modes_, each an improvement over the previous one:
 - Interpreted: the slowest, but safest mode. Implements recursive backtracking through a IEnumerable interface and has to resolve each goal through the knowledge base every time.
-- Executed: a good mix between Interpreted and Compiled. Performs static analysis on a query or hook and compiles them to an intermediate execution graph that can be optionally be further optimized.
+- Executed: a good mix between Interpreted and Compiled. Performs static analysis on a query or hook and compiles them to an intermediate execution graph that can be optionally further optimized.
   - Built-ins can optimize their own execution graphs, sometimes even optimizing themselves away in the process.
   - This is where, forr instance, optimizations that propagate constant unifications or remove dead unifications are performed.
   - The interface is otherwise similar to that exposed by the Interpreted mode, and goals that can't be optimized will be called through the interpreter.

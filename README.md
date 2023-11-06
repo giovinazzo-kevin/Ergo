@@ -37,6 +37,6 @@ In fact, Ergo comes with three _execution modes_, each an improvement over the p
   - Dynamic goals will still be resolved in interpreted mode through a wrapper much like built-ins that don't emit their own IL.
 
 ## Roadmap
-At the time of writing, Ergo is fully interpreted toy language with much room for optimization. 
+At the time of writing, Ergo is ~~fully interpreted~~ **partially compiled** toy language with much room for optimization. 
 
 For a rough roadmap, please refer to: https://github.com/users/G3Kappa/projects/1/views/1

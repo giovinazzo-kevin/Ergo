@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 /// <summary>
 /// Represents a logical disjunction.
@@ -16,6 +14,7 @@ public class BranchNode : ExecutionNode
         Right = right;
     }
 
+    public override Action Compile(ErgoVM vm) => vm.Or(Left.Compile(vm), Right.Compile(vm));
     public override ExecutionNode Optimize()
     {
         var left = Left.Optimize();
@@ -27,22 +26,6 @@ public class BranchNode : ExecutionNode
         return new BranchNode(left, right);
     }
 
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        var cut = false;
-        var branchScope = execScope.ChoicePoint().Branch();
-        foreach (var res in Left.Execute(ctx, solverScope, branchScope))
-        {
-            if (res.IsSolution)
-                yield return res.Branch(false).Now(this);
-            cut |= res.IsCut;
-        }
-        if (cut) yield break;
-        foreach (var res in Right.Execute(ctx, solverScope, branchScope))
-        {
-            yield return res.Branch(false).Now(this);
-        }
-    }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new BranchNode(Left.Instantiate(ctx, vars), Right.Instantiate(ctx, vars));

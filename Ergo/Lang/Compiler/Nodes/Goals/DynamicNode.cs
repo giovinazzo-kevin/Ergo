@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 /// <summary>
 /// Represents a goal that could not be resolved at compile time.
@@ -13,36 +11,47 @@ public class DynamicNode : ExecutionNode
     }
 
     public ITerm Goal { get; }
-
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    public override Action Compile(ErgoVM vm) => () =>
     {
-        var inst = Goal.Substitute(execScope.CurrentSubstitutions);
-        inst.GetQualification(out var ih);
-        var callerRef = default(Maybe<PredicateCall>);
-        foreach (var sol in ctx.Solve(new Query(inst), solverScope))
+        var anySolutions = false;
+        var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);
+        var goal = vm.Context.Solve(new Query(query), vm.Scope).GetEnumerator();
+        vm.PushChoice(NextGoal);
+        NextGoal();
+
+        void NextGoal()
         {
-            var ret = execScope
-                .ApplySubstitutions(sol.Substitutions)
-                .AsSolution()
-                .ChoicePoint();
-            yield return ret.Now(this);
-            if (callerRef.TryGetValue(out _))
-                continue;
-            foreach (var caller in sol.Scope.Callers.Add(sol.Scope.Callee).Where(x => x.Context != null))
+            if (goal.MoveNext())
             {
-                if (ih.Unify(caller.Predicate.Head).TryGetValue(out _))
-                {
-                    callerRef = caller;
-                    break;
-                }
+                anySolutions = true;
+                vm.Solution(goal.Current.Substitutions);
+            }
+            else if (!anySolutions)
+            {
+                vm.Fail();
             }
         }
-        // TODO: Feels somewhat hackish, figure out a more elegant solution
-        if (execScope.IsBranch && callerRef.Select(x => x.Context.IsCutRequested).GetOr(false))
-        {
-            yield return execScope.AsSolution(false).Cut();
-        }
-    }
+    };
+
+    //public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    //{
+    //    var inst = Goal.Substitute(execScope.CurrentSubstitutions);
+    //    inst.GetQualification(out var ih);
+    //    var callerRef = default(Maybe<PredicateCall>);
+    //    foreach (var sol in ctx.Solve(new Query(inst), solverScope))
+    //    {
+    //        var ret = execScope
+    //            .ApplySubstitutions(sol.Substitutions)
+    //            .AsSolution()
+    //            .ChoicePoint();
+    //        yield return ret.Now(this);
+    //    }
+    //    // TODO: Feels somewhat hackish, figure out a more elegant solution
+    //    if (execScope.IsBranch && callerRef.Select(x => x.Context.IsCutRequested).GetOr(false))
+    //    {
+    //        yield return execScope.AsSolution(false).Cut();
+    //    }
+    //}
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

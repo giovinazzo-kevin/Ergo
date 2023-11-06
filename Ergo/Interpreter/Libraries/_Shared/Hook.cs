@@ -9,44 +9,44 @@ namespace Ergo.Interpreter.Libraries;
 
 public readonly record struct CompiledHook(Signature Signature, ExecutionGraph Graph, ITerm Head)
 {
-    public IEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args)
-    {
-        var newHead = Head is Complex c
-            ? c.WithArguments(args)
-            : args.Length == 0 && Head is Atom
-                ? Head
-                : throw new NotSupportedException();
-        if (!newHead.Unify(Head).TryGetValue(out var subs))
-            yield break;
-        var execScope = ExecutionScope.Empty().ApplySubstitutions(subs);
-#if ERGO_COMPILER_DIAGNOSTICS
-        var steps = new List<ExecutionScope>();
-        execScope.Stopwatch.Start();
-#endif
-        foreach (var step in Graph.Root.Execute(ctx, scope, execScope))
-        {
-#if ERGO_COMPILER_DIAGNOSTICS
-            steps.Add(step);
-#endif
-            if (!step.IsSolution)
-                continue;
-            yield return new Solution(scope, step.CurrentSubstitutions);
-            Substitution.Pool.Release(step.CurrentSubstitutions);
-        }
-#if ERGO_COMPILER_DIAGNOSTICS
-        execScope.Stopwatch.Stop();
-        Task.Run(() =>
-        {
-            foreach (var step in steps)
-            {
-                foreach (var caller in step.Callers)
-                {
-                    Debug.WriteLine($"[{caller.Time.TotalMilliseconds:0.000ms}] {caller.Node.Select(n => n.Substitute(step.CurrentSubstitutions).Explain(false)).GetOr(string.Empty)}");
-                }
-            }
-        });
-#endif
-    }
+    //    public IEnumerable<Solution> Call(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args)
+    //    {
+    //        var newHead = Head is Complex c
+    //            ? c.WithArguments(args)
+    //            : args.Length == 0 && Head is Atom
+    //                ? Head
+    //                : throw new NotSupportedException();
+    //        if (!newHead.Unify(Head).TryGetValue(out var subs))
+    //            yield break;
+    //        var execScope = ExecutionScope.Empty().ApplySubstitutions(subs);
+    //#if ERGO_COMPILER_DIAGNOSTICS
+    //        var steps = new List<ExecutionScope>();
+    //        execScope.Stopwatch.Start();
+    //#endif
+    //        foreach (var step in Graph.Root.Execute(ctx, scope, execScope))
+    //        {
+    //#if ERGO_COMPILER_DIAGNOSTICS
+    //            steps.Add(step);
+    //#endif
+    //            if (!step.IsSolution)
+    //                continue;
+    //            yield return new Solution(scope, step.CurrentSubstitutions);
+    //            Substitution.Pool.Release(step.CurrentSubstitutions);
+    //        }
+    //#if ERGO_COMPILER_DIAGNOSTICS
+    //        execScope.Stopwatch.Stop();
+    //        Task.Run(() =>
+    //        {
+    //            foreach (var step in steps)
+    //            {
+    //                foreach (var caller in step.Callers)
+    //                {
+    //                    Debug.WriteLine($"[{caller.Time.TotalMilliseconds:0.000ms}] {caller.Node.Select(n => n.Substitute(step.CurrentSubstitutions).Explain(false)).GetOr(string.Empty)}");
+    //                }
+    //            }
+    //        });
+    //#endif
+    //}
 }
 
 public readonly record struct Hook(Signature Signature)

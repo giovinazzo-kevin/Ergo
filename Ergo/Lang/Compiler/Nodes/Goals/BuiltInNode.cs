@@ -1,5 +1,4 @@
-﻿using Ergo.Solver;
-using Ergo.Solver.BuiltIns;
+﻿using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
@@ -11,16 +10,44 @@ public class BuiltInNode : GoalNode
         BuiltIn = builtIn;
     }
 
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    public override Action Compile(ErgoVM vm) => () =>
     {
-        Goal.Substitute(execScope.CurrentSubstitutions).GetQualification(out var inst);
-        foreach (var eval in BuiltIn.Apply(ctx, solverScope, inst.GetArguments()))
+        Goal.Substitute(vm.Environment).GetQualification(out var inst);
+
+        var anySolutions = false;
+        var goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
+        vm.PushChoice(NextGoal);
+        NextGoal();
+
+        void NextGoal()
         {
-            if (eval.Result)
-                yield return execScope.ApplySubstitutions(eval.Substitutions).AsSolution().Now(this);
-            else yield break;
+            if (goal.MoveNext())
+            {
+                if (!goal.Current.Result)
+                {
+                    vm.Fail();
+                    return;
+                }
+                anySolutions = true;
+                vm.Solution(goal.Current.Substitutions);
+            }
+            else if (!anySolutions)
+            {
+                vm.Fail();
+            }
         }
-    }
+    };
+
+    //public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    //{
+    //    Goal.Substitute(execScope.CurrentSubstitutions).GetQualification(out var inst);
+    //    foreach (var eval in BuiltIn.Apply(ctx, solverScope, inst.GetArguments()))
+    //    {
+    //        if (eval.Result)
+    //            yield return execScope.ApplySubstitutions(eval.Substitutions).AsSolution().Now(this);
+    //        else yield break;
+    //    }
+    //}
     public override ExecutionNode Optimize()
     {
         if (BuiltIn.Optimize(this).TryGetValue(out var optimized))

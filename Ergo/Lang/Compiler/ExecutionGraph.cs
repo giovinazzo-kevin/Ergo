@@ -25,34 +25,10 @@ public readonly struct ExecutionGraph
 
     public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
     {
-        var execScope = ExecutionScope.Empty();
-#if ERGO_COMPILER_DIAGNOSTICS
-        var steps = new List<ExecutionScope>();
-        execScope.Stopwatch.Start();
-#endif
-        foreach (var step in Root.Execute(ctx, scope, execScope))
-        {
-#if ERGO_COMPILER_DIAGNOSTICS
-            steps.Add(step);
-#endif
-            if (!step.IsSolution)
-                continue;
-            yield return new(scope, step.CurrentSubstitutions);
-            Substitution.Pool.Release(step.CurrentSubstitutions);
-        }
-#if ERGO_COMPILER_DIAGNOSTICS
-        execScope.Stopwatch.Stop();
-        Task.Run(() =>
-        {
-            foreach (var step in steps)
-            {
-                foreach (var caller in step.Callers)
-                {
-                    Debug.WriteLine($"[{caller.Time.TotalMilliseconds:0.000ms}] {caller.Node.Select(n => n.Substitute(step.CurrentSubstitutions).Explain(false)).GetOr(string.Empty)}");
-                }
-            }
-        });
-#endif
+        var vm = new ErgoVM() { Context = ctx, Scope = scope };
+        vm.Query = Root.Compile(vm);
+        vm.Run();
+        return vm.Solutions.Select(subs => new Solution(scope, subs));
     }
 }
 

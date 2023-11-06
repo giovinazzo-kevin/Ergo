@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 /// <summary>
 /// Represents an if-then-else statement.
@@ -18,28 +16,8 @@ public class IfThenElseNode : ExecutionNode
     public ExecutionNode TrueBranch { get; }
     public ExecutionNode FalseBranch { get; }
 
+    public override Action Compile(ErgoVM vm) => vm.IfThenElse(Condition.Compile(vm), TrueBranch.Compile(vm), FalseBranch.Compile(vm));
     public override IfThenElseNode Optimize() => new IfThenElseNode(Condition.Optimize(), TrueBranch.Optimize(), FalseBranch.Optimize());
-
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        var satisfied = false;
-        foreach (var condScope in Condition.Execute(ctx, solverScope, execScope))
-        {
-            satisfied = true;
-            foreach (var res in TrueBranch.Execute(ctx, solverScope, condScope))
-            {
-                yield return res;
-            }
-            break;
-        }
-        if (!satisfied)
-        {
-            foreach (var res in FalseBranch.Execute(ctx, solverScope, execScope))
-            {
-                yield return res;
-            }
-        }
-    }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

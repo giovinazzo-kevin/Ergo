@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 /// <summary>
 /// Represents a logical conjunction.
@@ -19,6 +17,7 @@ public class SequenceNode : ExecutionNode
 
     public SequenceNode AsRoot() => new(Nodes, true);
 
+    public override Action Compile(ErgoVM vm) => vm.And(Nodes.Select(n => n.Compile(vm)).ToArray());
     public override ExecutionNode Optimize()
     {
         var newList = Nodes.SelectMany(n =>
@@ -99,38 +98,6 @@ public class SequenceNode : ExecutionNode
             if (a is TrueNode && b is FalseNode || a is FalseNode && b is TrueNode)
                 return FalseNode.Instance;
             return default;
-        }
-    }
-
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        return ExecuteSequence(ctx, solverScope, execScope, 0);
-    }
-    private IEnumerable<ExecutionScope> ExecuteSequence(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope, int index)
-    {
-        if (index >= Nodes.Count)
-        {
-            yield return execScope;
-            yield break;
-        }
-
-        var currentNode = Nodes[index];
-        foreach (var newScope in currentNode.Execute(ctx, solverScope, execScope))
-        {
-            // Run the remaining nodes in the sequence on the current scope
-            foreach (var resultScope in ExecuteSequence(ctx, solverScope, newScope, index + 1))
-            {
-                yield return resultScope;
-                if (resultScope.IsCut) // Stop the loop if a cut has been encountered
-                {
-                    yield break;
-                }
-            }
-            if (newScope.IsCut)
-            {
-                yield return newScope.AsSolution(false).Now(this);
-                yield break;
-            }
         }
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

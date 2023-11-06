@@ -1,13 +1,11 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 public class CutNode : StaticNode
 {
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    public override Action Compile(ErgoVM vm) => () =>
     {
-        // Clear the stack to prevent further backtracking
-        yield return execScope.Cut().Now(this);
-    }
+        vm.Cut();
+        vm.Solution();
+    };
     public override string Explain(bool canonical = false) => $"!";
 }

@@ -4,44 +4,55 @@ namespace Ergo.Lang.Compiler;
 
 public class ErgoVM
 {
-    public readonly record struct ChoicePoint(Action Invoke, SubstitutionMap Environment, Stack<Action> Continuations);
+    public readonly record struct ChoicePoint(Action Invoke, SubstitutionMap Environment);
 
+    // Temporary, these two properties will be removed in due time.
     public SolverContext Context { get; set; }
     public SolverScope Scope { get; set; }
 
-    private Stack<ChoicePoint> choicePoints = new();
-    private Stack<SubstitutionMap> solutions = new();
-    private int cutIndex = int.MaxValue;
-    private bool failure;
+    public Stack<ChoicePoint> ChoicePoints = new();
+    public Stack<SubstitutionMap> Solutions = new();
+    protected int CutIndex = int.MaxValue;
+    protected bool Failure = false;
 
     public SubstitutionMap Environment { get; private set; }
-    public bool Success => !failure;
-    public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(Scope, x));
+    public bool Success => !Failure;
 
     static void NoOp() { }
-    private Action query = NoOp;
+    private Action _query = NoOp;
     public Action Query
     {
-        get => query;
-        set => query = value ?? NoOp;
+        get => _query;
+        set => _query = value ?? NoOp;
     }
 
-    public Action And(Stack<Action> goalStack) => () =>
+    private Action _next = NoOp;
+    public Action NextGoal
     {
-        while (goalStack.Any())
-        {
-            var currentGoal = goalStack.Pop();
-            currentGoal();
-            if (failure)
-                return;
-            MergeEnvironment();
-        }
-        Solution();
-    };
+        get => _next;
+        set => _next = value ?? NoOp;
+    }
+
     public Action And(params Action[] goals) => () =>
     {
-        var goalStack = new Stack<Action>(goals.Reverse());
-        And(goalStack)();
+        Inner(goals, 0);
+
+        void Inner(Action[] goals, int goalIndex)
+        {
+            for (int i = goalIndex; i < goals.Length; i++)
+            {
+                goals[i]();
+                if (Failure)
+                    return;
+                goals[i] = NextGoal;
+                MergeEnvironment();
+            }
+            var j = goalIndex + 1;
+            if (j < goals.Length)
+                NextGoal = () => Inner(goals, j);
+            else NextGoal = NoOp;
+            Solution();
+        }
     };
     public Action Or(params Action[] branches) => () =>
     {
@@ -61,9 +72,9 @@ public class ErgoVM
     public Action IfThenElse(Action condition, Action consequence, Action alternative) => () =>
     {
         var backupEnvironment = new SubstitutionMap(Environment);
-        var backupChoicePoints = new Stack<ChoicePoint>(choicePoints.Reverse());
+        var backupChoicePoints = new Stack<ChoicePoint>(ChoicePoints.Reverse());
         condition();
-        if (!failure)
+        if (!Failure)
         {
             MergeEnvironment();
             consequence();
@@ -71,43 +82,22 @@ public class ErgoVM
         else
         {
             Environment = backupEnvironment;
-            choicePoints = backupChoicePoints;
-            failure = false;
+            ChoicePoints = backupChoicePoints;
+            Failure = false;
             alternative();
         }
     };
     public Action IfThen(Action condition, Action consequence) => IfThenElse(condition, consequence, NoOp);
-    public void ContinueWith(Action next)
-    {
-        if (choicePoints.Any())
-        {
-            choicePoints.Peek().Continuations.Push(next);
-        }
-        else
-        {
-            PushChoice(next);
-        }
-    }
-
-    public void Continue(int i)
-    {
-        if (!choicePoints.Any())
-            return;
-        var choicePoint = choicePoints.Peek();
-        if (choicePoint.Continuations.Count > 0)
-        {
-            And(choicePoint.Continuations.Skip(i).ToArray())();
-        }
-    }
 
     public void Fail()
     {
-        failure = true;
+        Failure = true;
+        NextGoal = null;
         Backtrack(); // Go back to the last choice point
     }
     public void MergeEnvironment()
     {
-        var subs = solutions.Pop();
+        var subs = Solutions.Pop();
         if (Environment == subs)
             return;
         Environment.AddRange(subs);
@@ -116,51 +106,53 @@ public class ErgoVM
     public void Solution(SubstitutionMap subs)
     {
         subs.AddRange(Environment);
-        solutions.Push(subs);
+        Solutions.Push(subs);
     }
     public void Solution()
     {
-        solutions.Push(new(Environment));
+        Solutions.Push(new(Environment));
     }
     public void Backtrack()
     {
-        while (choicePoints.Count >= cutIndex && cutIndex > 0)
+        while (ChoicePoints.Count >= CutIndex && CutIndex > 0)
         {
-            Substitution.Pool.Release(choicePoints.Pop().Environment);
+            Substitution.Pool.Release(ChoicePoints.Pop().Environment);
         }
     }
     public void Cut()
     {
-        cutIndex = choicePoints.Count;
+        CutIndex = ChoicePoints.Count;
     }
     public void PushChoice(Action action)
     {
-        choicePoints.Push(new(action, new(Environment), new()));
+        ChoicePoints.Push(new(action, new(Environment)));
     }
     private void PushQuery(Action query)
     {
-        choicePoints.Push(new(query, Substitution.Pool.Acquire(), new()));
+        ChoicePoints.Push(new(query, Substitution.Pool.Acquire()));
     }
 
     private void Initialize()
     {
         Environment = new();
-        cutIndex = int.MaxValue;
-        failure = false;
+        CutIndex = int.MaxValue;
+        Failure = false;
     }
+
     public void Run()
     {
         Initialize();
         PushQuery(Query);
-        while (choicePoints.Count > 0)
+        while (ChoicePoints.Count > 0)
         {
-            failure = false;
-            var choicePoint = choicePoints.Pop();
+            Failure = false;
+            var choicePoint = ChoicePoints.Pop();
             Environment = choicePoint.Environment;
             choicePoint.Invoke();
-            while (choicePoint.Continuations.Count > 0 && !failure)
+            if (NextGoal != NoOp)
             {
-                And(choicePoint.Continuations)();
+                PushChoice(NextGoal);
+                NextGoal = NoOp;
             }
             Backtrack();
         }

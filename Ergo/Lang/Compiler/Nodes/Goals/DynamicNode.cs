@@ -13,6 +13,7 @@ public class DynamicNode : ExecutionNode
     public ITerm Goal { get; }
     public override Action Compile(ErgoVM vm) => () =>
     {
+        var anySolutions = false;
         var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);
         var goal = vm.Context.Solve(new Query(query), vm.Scope).GetEnumerator();
         NextGoal();
@@ -21,10 +22,11 @@ public class DynamicNode : ExecutionNode
         {
             if (goal.MoveNext())
             {
+                anySolutions = true;
                 vm.Solution(goal.Current.Substitutions);
-                vm.ContinueWith(NextGoal);
+                vm.NextGoal = NextGoal;
             }
-            else
+            else if (!anySolutions)
             {
                 vm.Fail();
             }

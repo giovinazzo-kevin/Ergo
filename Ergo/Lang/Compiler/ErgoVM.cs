@@ -34,6 +34,10 @@ public class ErgoVM
         while (Rest.TryDequeue(out var goal))
         {
             goal();
+            if (goal == Cut)
+            {
+                continue;
+            }
             if (Failure)
                 return;
             MergeEnvironment();
@@ -78,7 +82,7 @@ public class ErgoVM
     public void Fail()
     {
         Failure = true;
-        Backtrack(); // Go back to the last choice point
+        Backtrack();
     }
     public void MergeEnvironment()
     {
@@ -105,6 +109,7 @@ public class ErgoVM
             Substitution.Pool.Release(Environment);
             Environment = ChoicePoints.Pop().Environment;
         }
+        CutIndex = int.MaxValue;
     }
     public void Cut()
     {
@@ -112,13 +117,16 @@ public class ErgoVM
     }
     public void PushChoice(Action action)
     {
-        if (CutIndex <= ChoicePoints.Count)
+        if (ChoicePoints.Count >= CutIndex)
+        {
             return;
+        }
+
         if (Rest.Count == 0)
-            ChoicePoints.Push(new(action, new(Environment)));
+            ChoicePoints.Push(new ChoicePoint(action, new SubstitutionMap(Environment)));
         else
         {
-            ChoicePoints.Push(new(And(Rest.Prepend(action).ToArray()), new(Environment)));
+            ChoicePoints.Push(new ChoicePoint(And(Rest.Prepend(action).ToArray()), new SubstitutionMap(Environment)));
         }
     }
     private void PushQuery(Action query)
@@ -137,14 +145,16 @@ public class ErgoVM
     public void Run()
     {
         Initialize();
-        PushQuery(Query);
+        Query();
         while (ChoicePoints.Count > 0)
         {
             Failure = false;
             var choicePoint = ChoicePoints.Pop();
-            Environment = choicePoint.Environment;
-            choicePoint.Invoke();
-            Backtrack();
+            if (CutIndex > ChoicePoints.Count + 1)
+            {
+                Environment = choicePoint.Environment;
+                choicePoint.Invoke();
+            }
         }
     }
 }

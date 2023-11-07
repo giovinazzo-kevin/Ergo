@@ -45,26 +45,6 @@ public class DynamicNode : ExecutionNode
         return self;
     }
 
-    //public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    //{
-    //    var inst = Goal.Substitute(execScope.CurrentSubstitutions);
-    //    inst.GetQualification(out var ih);
-    //    var callerRef = default(Maybe<PredicateCall>);
-    //    foreach (var sol in ctx.Solve(new Query(inst), solverScope))
-    //    {
-    //        var ret = execScope
-    //            .ApplySubstitutions(sol.Substitutions)
-    //            .AsSolution()
-    //            .ChoicePoint();
-    //        yield return ret.Now(this);
-    //    }
-    //    // TODO: Feels somewhat hackish, figure out a more elegant solution
-    //    if (execScope.IsBranch && callerRef.Select(x => x.Context.IsCutRequested).GetOr(false))
-    //    {
-    //        yield return execScope.AsSolution(false).Cut();
-    //    }
-    //}
-
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new DynamicNode(Goal.Instantiate(ctx, vars));

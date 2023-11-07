@@ -26,13 +26,6 @@ public class ErgoVM
         set => _query = value ?? NoOp;
     }
 
-    private Action _next = NoOp;
-    public Action NextGoal
-    {
-        get => _next;
-        set => _next = value ?? NoOp;
-    }
-
     public Action And(params Action[] goals) => () =>
     {
         Inner(goals, 0);
@@ -44,13 +37,8 @@ public class ErgoVM
                 goals[i]();
                 if (Failure)
                     return;
-                goals[i] = NextGoal;
                 MergeEnvironment();
             }
-            var j = goalIndex + 1;
-            if (j < goals.Length)
-                NextGoal = () => Inner(goals, j);
-            else NextGoal = NoOp;
             Solution();
         }
     };
@@ -92,7 +80,6 @@ public class ErgoVM
     public void Fail()
     {
         Failure = true;
-        NextGoal = null;
         Backtrack(); // Go back to the last choice point
     }
     public void MergeEnvironment()
@@ -149,11 +136,6 @@ public class ErgoVM
             var choicePoint = ChoicePoints.Pop();
             Environment = choicePoint.Environment;
             choicePoint.Invoke();
-            if (NextGoal != NoOp)
-            {
-                PushChoice(NextGoal);
-                NextGoal = NoOp;
-            }
             Backtrack();
         }
     }

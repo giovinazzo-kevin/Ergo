@@ -29,7 +29,6 @@ public class BuiltInNode : GoalNode
                 }
                 anySolutions = true;
                 vm.Solution(goal.Current.Substitutions);
-                vm.NextGoal = NextGoal;
             }
             else if (!anySolutions)
             {

@@ -10,43 +10,42 @@ public class BuiltInNode : GoalNode
         BuiltIn = builtIn;
     }
 
-    public override Action Compile(ErgoVM vm) => () =>
+    public override Action Compile(ErgoVM vm)
     {
-        Goal.Substitute(vm.Environment).GetQualification(out var inst);
-
-        var anySolutions = false;
-        var goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
-        NextGoal();
-
-        void NextGoal()
+        var initialized = false;
+        var goal = default(IEnumerator<Evaluation>);
+        var self = ErgoVM.NoOp;
+        self = () =>
         {
-            if (goal.MoveNext())
+            if (!initialized)
             {
-                if (!goal.Current.Result)
+                Goal.Substitute(vm.Environment).GetQualification(out var inst);
+                goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
+                initialized = true;
+            }
+            NextGoal();
+            void NextGoal()
+            {
+                if (goal.MoveNext())
+                {
+                    if (!goal.Current.Result)
+                    {
+                        vm.Fail();
+                        return;
+                    }
+                    vm.Solution(goal.Current.Substitutions);
+                    vm.PushChoice(self);
+                }
+                else
                 {
                     vm.Fail();
-                    return;
+                    initialized = false;
                 }
-                anySolutions = true;
-                vm.Solution(goal.Current.Substitutions);
             }
-            else if (!anySolutions)
-            {
-                vm.Fail();
-            }
-        }
-    };
+        };
+        return self;
+    }
 
-    //public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    //{
-    //    Goal.Substitute(execScope.CurrentSubstitutions).GetQualification(out var inst);
-    //    foreach (var eval in BuiltIn.Apply(ctx, solverScope, inst.GetArguments()))
-    //    {
-    //        if (eval.Result)
-    //            yield return execScope.ApplySubstitutions(eval.Substitutions).AsSolution().Now(this);
-    //        else yield break;
-    //    }
-    //}
     public override ExecutionNode Optimize()
     {
         if (BuiltIn.Optimize(this).TryGetValue(out var optimized))

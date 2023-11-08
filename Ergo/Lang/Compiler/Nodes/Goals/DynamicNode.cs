@@ -13,6 +13,7 @@ public class DynamicNode : ExecutionNode
     public ITerm Goal { get; }
     public override ErgoVM.Op Compile()
     {
+
         return vm =>
         {
             var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);

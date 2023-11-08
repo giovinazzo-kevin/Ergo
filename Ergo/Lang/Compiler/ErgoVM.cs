@@ -18,7 +18,6 @@ public class ErgoVM
     public Queue<Action> Rest;
 
     public SubstitutionMap Environment { get; private set; }
-    public bool Success => !Failure;
 
     public static void NoOp() { }
     private Action _query = NoOp;
@@ -35,9 +34,7 @@ public class ErgoVM
         {
             goal();
             if (goal == Cut)
-            {
                 continue;
-            }
             if (Failure)
                 return;
             MergeEnvironment();
@@ -82,7 +79,6 @@ public class ErgoVM
     public void Fail()
     {
         Failure = true;
-        Backtrack();
     }
     public void MergeEnvironment()
     {
@@ -103,8 +99,7 @@ public class ErgoVM
     }
     public void Backtrack()
     {
-        if (CutIndex <= 0) return;
-        while (CutIndex <= ChoicePoints.Count)
+        while (CutIndex < ChoicePoints.Count)
         {
             Substitution.Pool.Release(Environment);
             Environment = ChoicePoints.Pop().Environment;
@@ -117,11 +112,6 @@ public class ErgoVM
     }
     public void PushChoice(Action action)
     {
-        if (ChoicePoints.Count >= CutIndex)
-        {
-            return;
-        }
-
         if (Rest.Count == 0)
             ChoicePoints.Push(new ChoicePoint(action, new SubstitutionMap(Environment)));
         else
@@ -129,16 +119,11 @@ public class ErgoVM
             ChoicePoints.Push(new ChoicePoint(And(Rest.Prepend(action).ToArray()), new SubstitutionMap(Environment)));
         }
     }
-    private void PushQuery(Action query)
-    {
-        ChoicePoints.Push(new(query, Substitution.Pool.Acquire()));
-    }
-
     private void Initialize()
     {
         Rest = new();
         Environment = new();
-        CutIndex = int.MaxValue;
+        CutIndex = 0;
         Failure = false;
     }
 
@@ -146,15 +131,12 @@ public class ErgoVM
     {
         Initialize();
         Query();
-        while (ChoicePoints.Count > 0)
+        while (CutIndex < ChoicePoints.Count)
         {
             Failure = false;
             var choicePoint = ChoicePoints.Pop();
-            if (CutIndex > ChoicePoints.Count + 1)
-            {
-                Environment = choicePoint.Environment;
-                choicePoint.Invoke();
-            }
+            Environment = choicePoint.Environment;
+            choicePoint.Invoke();
         }
     }
 }

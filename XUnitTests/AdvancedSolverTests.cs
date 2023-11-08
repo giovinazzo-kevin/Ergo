@@ -14,6 +14,8 @@ public class AdvancedSolverTests : ErgoTests
     [InlineData("X = 1, X == 1 -> Y = a ; Y = b", 1, "X/1;Y/a")]
     [InlineData("X = 2, X == 1 -> Y = a ; Y = b", 1, "Y/b")]
     [InlineData("member(X,[1,2]) -> member(Y,[a,b]) ; member(Y,[c,d])", 2, "X/1;Y/a", "X/1;Y/b")]
+    [InlineData("⊤, !, ⊤, !, ⊤", 1, "")]
+    [InlineData("⊤, ⊤ ; ⊤, !", 2, "", "")]
     [InlineData("(⊤ ; ⊤), !, (⊤ ; ⊤ ; ⊤)", 3, "", "", "")]
     [InlineData("!, (⊤ ; (⊤ ; (⊤ ; (⊤ ; ⊤))))", 5, "", "", "", "", "")]
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤ ; ⊤, !))))", 5, "", "", "", "", "")]

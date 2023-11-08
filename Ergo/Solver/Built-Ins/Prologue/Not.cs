@@ -10,7 +10,7 @@ public sealed class Not : SolverBuiltIn
     {
     }
 
-    public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(BuiltInNode node)
     {
         if (!node.Goal.IsGround)
             return node;

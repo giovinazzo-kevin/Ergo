@@ -18,9 +18,9 @@ public class SequenceNode : ExecutionNode
     public SequenceNode AsRoot() => new(Nodes, true);
 
     public override Action Compile(ErgoVM vm) => vm.And(Nodes.Select(n => n.Compile(vm)).ToArray());
-    public override ExecutionNode Optimize()
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
-        var newList = Nodes.SelectMany(n =>
+        var newList = nodes.SelectMany(n =>
         {
             var opt = n.Optimize();
             if (opt is SequenceNode seq)
@@ -64,22 +64,16 @@ public class SequenceNode : ExecutionNode
             }
         }
         while (newList.Count < count);
-        var optimizationPasses = newList
-            .OfType<BuiltInNode>()
-            .Select(x => x.BuiltIn)
-            .Distinct()
+        var optimizationPassesFromNodes = newList
+            .Select(n => (n.OptimizationOrder, Optimize: (Func<List<ExecutionNode>, List<ExecutionNode>>)n.OptimizeSequence));
+        var query = optimizationPassesFromNodes
             .OrderBy(x => x.OptimizationOrder)
-            .Select(b => (Func<List<ExecutionNode>, List<ExecutionNode>>)b.OptimizeSequence)
-            .ToList();
-        foreach (var opt in optimizationPasses)
+            .Select(x => x.Optimize);
+        foreach (var opt in query)
         {
             newList = opt(newList);
         }
-        if (newList.Count == 0)
-            return TrueNode.Instance;
-        if (newList.Count == 1)
-            return newList[0];
-        return new SequenceNode(newList, IsRoot);
+        return newList;
 
         bool RedundantStart(ExecutionNode a)
         {
@@ -99,6 +93,15 @@ public class SequenceNode : ExecutionNode
                 return FalseNode.Instance;
             return default;
         }
+    }
+    public override ExecutionNode Optimize()
+    {
+        var newList = OptimizeSequence(Nodes);
+        if (newList.Count == 0)
+            return TrueNode.Instance;
+        if (newList.Count == 1)
+            return newList[0];
+        return new SequenceNode(newList, IsRoot);
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

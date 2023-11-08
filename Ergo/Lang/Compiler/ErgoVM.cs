@@ -10,6 +10,7 @@ public class ErgoVM
     // Temporary, these two properties will be removed in due time.
     public SolverContext Context { get; set; }
     public SolverScope Scope { get; set; }
+    public KnowledgeBase KnowledgeBase { get; set; }
 
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
@@ -34,16 +35,51 @@ public class ErgoVM
         else
             choicePoints.Push(new ChoicePoint(And(rest.Prepend(action).ToArray()), env));
     }
+    public Action Goal(ITerm goal) => () =>
+    {
+        if (!KnowledgeBase.GetMatches(new("__X"), goal, false).TryGetValue(out var matches))
+        {
+            Fail();
+            return;
+        }
+        Solution();
+        PushChoice(Or(matches.Select(m => Goals(m.Predicate.Body)).ToArray()));
+
+        var goalEnum = matches.GetEnumerator();
+        NextGoal();
+        void NextGoal()
+        {
+            if (goalEnum.MoveNext())
+            {
+                Solution(goalEnum.Current.Substitutions);
+                var rest = Goals(goalEnum.Current.Predicate.Body);
+                if (!goalEnum.Current.Predicate.Body.IsEmpty)
+                    PushChoice(NextGoal);
+            }
+            else
+            {
+                Fail();
+            }
+        }
+    };
+    public Action Goals(NTuple goals)
+    {
+        var actions = goals.Contents.Select(Goal).ToArray();
+        return And(actions);
+    }
     public Action And(params Action[] goals) => () =>
     {
         rest = new(goals);
         while (rest.TryDequeue(out var goal))
         {
+            var nSols = solutions.Count;
             goal();
-            if (goal == Cut)
-                continue;
             if (failure)
                 return;
+            // If a goal doesn't fail and doesn't produce solutions, that means it's a built-in such as unification or cut.
+            // There's no need to merge the environments since there is no solution to pop.
+            if (nSols == solutions.Count)
+                continue;
             MergeEnvironment();
         }
         Solution();
@@ -132,6 +168,9 @@ public class ErgoVM
             Environment = choicePoint.Environment;
             choicePoint.Invoke();
         }
-        Substitution.Pool.Release(Environment);
+        // If the query was a builtin like unify that doesn't produce solutions on its own, return the current environment
+        if (!failure && solutions.Count == 0)
+            Solution();
+        else Substitution.Pool.Release(Environment);
     }
 }

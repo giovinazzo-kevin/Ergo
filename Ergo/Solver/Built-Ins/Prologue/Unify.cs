@@ -62,7 +62,7 @@ public sealed class Unify : SolverBuiltIn
         }
     }
 
-    public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         if (!node.Goal.IsGround)
@@ -75,7 +75,7 @@ public sealed class Unify : SolverBuiltIn
     public override bool Solve(ErgoVM vm, ImmutableArray<ITerm> arguments)
     {
         if (Substitution.Unify(new(arguments[0], arguments[1])).TryGetValue(out var subs))
-            vm.Solution(subs);
+            vm.Environment.AddRange(subs);
         else
             vm.Fail();
         return true;

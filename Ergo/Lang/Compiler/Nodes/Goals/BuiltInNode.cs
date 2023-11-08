@@ -44,10 +44,13 @@ public class BuiltInNode : GoalNode
 
     public override ExecutionNode Optimize()
     {
-        if (BuiltIn.Optimize(this).TryGetValue(out var optimized))
-            return optimized;
-        return this;
+        return BuiltIn.Optimize(this);
     }
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    {
+        return BuiltIn.OptimizeSequence(nodes);
+    }
+
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new BuiltInNode(Node, Goal.Instantiate(ctx, vars), BuiltIn);

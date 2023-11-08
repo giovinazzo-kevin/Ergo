@@ -9,7 +9,7 @@ public sealed class Eval : MathBuiltIn
     {
     }
 
-    public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         if (!args[1].IsGround)

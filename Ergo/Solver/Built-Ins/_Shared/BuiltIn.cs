@@ -9,7 +9,7 @@ public abstract class SolverBuiltIn
 
     public virtual int OptimizationOrder => 0;
 
-    public virtual Maybe<ExecutionNode> Optimize(BuiltInNode node) => default;
+    public virtual ExecutionNode Optimize(BuiltInNode node) => node;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
 
     public Predicate GetStub(ImmutableArray<ITerm> arguments)

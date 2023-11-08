@@ -12,17 +12,10 @@ public class BuiltInNode : GoalNode
 
     public override Action Compile(ErgoVM vm)
     {
-        var initialized = false;
-        var goal = default(IEnumerator<Evaluation>);
-        var self = ErgoVM.NoOp;
-        self = () =>
+        return () =>
         {
-            if (!initialized)
-            {
-                Goal.Substitute(vm.Environment).GetQualification(out var inst);
-                goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
-                initialized = true;
-            }
+            Goal.Substitute(vm.Environment).GetQualification(out var inst);
+            var goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
             NextGoal();
             void NextGoal()
             {
@@ -34,16 +27,14 @@ public class BuiltInNode : GoalNode
                         return;
                     }
                     vm.Solution(goal.Current.Substitutions);
-                    vm.PushChoice(self);
+                    vm.PushChoice(NextGoal);
                 }
                 else
                 {
                     vm.Fail();
-                    initialized = false;
                 }
             }
         };
-        return self;
     }
 
     public override ExecutionNode Optimize()

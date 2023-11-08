@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 /// <summary>
 /// Represents a goal that could not be resolved at compile time.
@@ -15,17 +13,10 @@ public class DynamicNode : ExecutionNode
     public ITerm Goal { get; }
     public override Action Compile(ErgoVM vm)
     {
-        var initialized = false;
-        var goal = default(IEnumerator<Solution>);
-        var self = ErgoVM.NoOp;
-        self = () =>
+        return () =>
         {
-            if (!initialized)
-            {
-                var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);
-                goal = vm.Context.Solve(new Query(query), vm.Scope).GetEnumerator();
-                initialized = true;
-            }
+            var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);
+            var goal = vm.Context.Solve(new Query(query), vm.Scope).GetEnumerator();
             NextGoal();
 
             void NextGoal()
@@ -33,16 +24,14 @@ public class DynamicNode : ExecutionNode
                 if (goal.MoveNext())
                 {
                     vm.Solution(goal.Current.Substitutions);
-                    vm.PushChoice(self);
+                    vm.PushChoice(NextGoal);
                 }
                 else
                 {
                     vm.Fail();
-                    initialized = false;
                 }
             }
         };
-        return self;
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

@@ -4,38 +4,45 @@ namespace Ergo.Lang.Compiler;
 
 public class ErgoVM
 {
+    public static void NoOp() { } // unit action
     public readonly record struct ChoicePoint(Action Invoke, SubstitutionMap Environment);
 
     // Temporary, these two properties will be removed in due time.
     public SolverContext Context { get; set; }
     public SolverScope Scope { get; set; }
 
-    public Stack<ChoicePoint> ChoicePoints = new();
-    public Stack<SubstitutionMap> Solutions = new();
-    protected int CutIndex = int.MaxValue;
-    protected bool Failure = false;
-
-    public Queue<Action> Rest;
+    protected Stack<ChoicePoint> choicePoints = new();
+    protected Stack<SubstitutionMap> solutions = new();
+    protected int cutIndex = int.MaxValue;
+    protected bool failure = false;
+    protected Queue<Action> rest;
 
     public SubstitutionMap Environment { get; private set; }
+    public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(Scope, x));
 
-    public static void NoOp() { }
     private Action _query = NoOp;
     public Action Query
     {
         get => _query;
         set => _query = value ?? NoOp;
     }
-
+    public void PushChoice(Action action)
+    {
+        var env = CloneEnvironment();
+        if (rest.Count == 0)
+            choicePoints.Push(new ChoicePoint(action, env));
+        else
+            choicePoints.Push(new ChoicePoint(And(rest.Prepend(action).ToArray()), env));
+    }
     public Action And(params Action[] goals) => () =>
     {
-        Rest = new(goals);
-        while (Rest.TryDequeue(out var goal))
+        rest = new(goals);
+        while (rest.TryDequeue(out var goal))
         {
             goal();
             if (goal == Cut)
                 continue;
-            if (Failure)
+            if (failure)
                 return;
             MergeEnvironment();
         }
@@ -58,18 +65,17 @@ public class ErgoVM
     };
     public Action IfThenElse(Action condition, Action consequence, Action alternative) => () =>
     {
-        var backupEnvironment = new SubstitutionMap(Environment);
-        var backupChoicePoints = new Stack<ChoicePoint>(ChoicePoints.Reverse());
+        var backupEnvironment = CloneEnvironment();
         condition();
-        ChoicePoints = backupChoicePoints;
-        if (!Failure)
+        Cut();
+        if (!failure)
         {
             MergeEnvironment();
             consequence();
         }
         else
         {
-            Failure = false;
+            failure = false;
             Environment = backupEnvironment;
             alternative();
         }
@@ -78,65 +84,54 @@ public class ErgoVM
 
     public void Fail()
     {
-        Failure = true;
+        failure = true;
     }
     public void MergeEnvironment()
     {
-        var subs = Solutions.Pop();
-        if (Environment == subs)
-            return;
+        var subs = solutions.Pop();
         Environment.AddRange(subs);
         Substitution.Pool.Release(subs);
     }
     public void Solution(SubstitutionMap subs)
     {
         subs.AddRange(Environment);
-        Solutions.Push(subs);
+        solutions.Push(subs);
     }
     public void Solution()
     {
-        Solutions.Push(new(Environment));
-    }
-    public void Backtrack()
-    {
-        while (CutIndex < ChoicePoints.Count)
-        {
-            Substitution.Pool.Release(Environment);
-            Environment = ChoicePoints.Pop().Environment;
-        }
-        CutIndex = int.MaxValue;
+        solutions.Push(CloneEnvironment());
     }
     public void Cut()
     {
-        CutIndex = ChoicePoints.Count;
+        cutIndex = choicePoints.Count;
     }
-    public void PushChoice(Action action)
+    public SubstitutionMap CloneEnvironment()
     {
-        if (Rest.Count == 0)
-            ChoicePoints.Push(new ChoicePoint(action, new SubstitutionMap(Environment)));
-        else
-        {
-            ChoicePoints.Push(new ChoicePoint(And(Rest.Prepend(action).ToArray()), new SubstitutionMap(Environment)));
-        }
+        var env = Substitution.Pool.Acquire();
+        env.AddRange(Environment);
+        return env;
     }
     private void Initialize()
     {
-        Rest = new();
+        rest = new();
         Environment = new();
-        CutIndex = 0;
-        Failure = false;
+        cutIndex = 0;
+        failure = false;
     }
 
     public void Run()
     {
         Initialize();
         Query();
-        while (CutIndex < ChoicePoints.Count)
+        // Backtrack
+        while (cutIndex < choicePoints.Count)
         {
-            Failure = false;
-            var choicePoint = ChoicePoints.Pop();
+            failure = false;
+            var choicePoint = choicePoints.Pop();
+            Substitution.Pool.Release(Environment);
             Environment = choicePoint.Environment;
             choicePoint.Invoke();
         }
+        Substitution.Pool.Release(Environment);
     }
 }

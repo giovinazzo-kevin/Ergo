@@ -1,8 +1,10 @@
-﻿namespace Ergo.Lang.Compiler;
+﻿
+namespace Ergo.Lang.Compiler;
 
 public class CyclicalGoalNode : GoalNode
 {
     public CyclicalGoalNode(DependencyGraphNode node, ITerm goal) : base(node, goal) { }
+    //public override ErgoVM.Op Compile() => ErgoVM.Goal(Goal);
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new CyclicalGoalNode(Node, Goal.Instantiate(ctx, vars));

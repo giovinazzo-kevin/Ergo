@@ -25,10 +25,9 @@ public readonly struct ExecutionGraph
 
     public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
     {
-        var vm = new ErgoVM() { Context = ctx, Scope = scope };
-        vm.Query = Root.Compile(vm);
-        vm.Run();
-        return vm.Solutions;
+        var vm = new ErgoVM() { Context = ctx, Scope = scope, KnowledgeBase = ctx.Solver.KnowledgeBase };
+        vm.Query = Root.Compile();
+        return vm.RunInteractive();
     }
 }
 

@@ -3,7 +3,8 @@ namespace Ergo.Lang.Compiler;
 
 public class CutNode : StaticNode
 {
-    public override Action Compile(ErgoVM vm) => vm.Cut;
+    static void Cut(ErgoVM vm) => vm.Cut();
+    public override ErgoVM.Op Compile() => Cut;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
         var lastCut = nodes.LastOrDefault(x => x is CutNode);

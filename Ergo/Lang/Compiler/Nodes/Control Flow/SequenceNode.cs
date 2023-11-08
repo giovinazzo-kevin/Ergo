@@ -17,7 +17,7 @@ public class SequenceNode : ExecutionNode
 
     public SequenceNode AsRoot() => new(Nodes, true);
 
-    public override Action Compile(ErgoVM vm) => vm.And(Nodes.Select(n => n.Compile(vm)).ToArray());
+    public override ErgoVM.Op Compile() => ErgoVM.And(Nodes.Select(n => n.Compile()).ToArray());
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
         var newList = nodes.SelectMany(n =>

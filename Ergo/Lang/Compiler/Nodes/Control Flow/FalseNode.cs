@@ -3,6 +3,7 @@
 public class FalseNode : StaticNode
 {
     public static readonly FalseNode Instance = new();
-    public override Action Compile(ErgoVM vm) => vm.Fail;
+    static void Fail(ErgoVM vm) => vm.Fail();
+    public override ErgoVM.Op Compile() => Fail;
     public override string Explain(bool canonical = false) => "⊥";
 }

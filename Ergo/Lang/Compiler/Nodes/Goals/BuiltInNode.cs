@@ -10,19 +10,21 @@ public class BuiltInNode : GoalNode
         BuiltIn = builtIn;
     }
 
-    public override Action Compile(ErgoVM vm)
+    public override ErgoVM.Op Compile()
     {
-        return () =>
+        return vm =>
         {
             Goal.Substitute(vm.Environment).GetQualification(out var inst);
             var args = inst.GetArguments();
-            if (BuiltIn.Solve(vm, args))
+            var op = BuiltIn.Execute(args);
+            if (ErgoVM.NoOp != op)
             {
+                op(vm);
                 return;
             }
             var goal = BuiltIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
-            NextGoal();
-            void NextGoal()
+            NextGoal(vm);
+            void NextGoal(ErgoVM vm)
             {
                 if (goal.MoveNext())
                 {

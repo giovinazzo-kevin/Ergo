@@ -10,7 +10,7 @@ public class IfThenNode : ExecutionNode
 
     public ExecutionNode Condition { get; }
     public ExecutionNode TrueBranch { get; }
-    public override Action Compile(ErgoVM vm) => vm.IfThen(Condition.Compile(vm), TrueBranch.Compile(vm));
+    public override ErgoVM.Op Compile() => ErgoVM.IfThen(Condition.Compile(), TrueBranch.Compile());
     public override IfThenNode Optimize() => new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

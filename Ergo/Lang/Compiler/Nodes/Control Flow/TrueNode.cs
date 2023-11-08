@@ -3,9 +3,6 @@
 public class TrueNode : StaticNode
 {
     public static readonly TrueNode Instance = new();
-    public override Action Compile(ErgoVM vm) => () =>
-    {
-        vm.Solution();
-    };
+    public override ErgoVM.Op Compile() => ErgoVM.NoOp;
     public override string Explain(bool canonical = false) => $"⊤";
 }

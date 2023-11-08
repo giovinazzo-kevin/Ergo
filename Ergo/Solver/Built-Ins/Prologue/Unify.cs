@@ -72,14 +72,7 @@ public sealed class Unify : SolverBuiltIn
         return TrueNode.Instance;
     }
 
-    public override bool Solve(ErgoVM vm, ImmutableArray<ITerm> arguments)
-    {
-        if (Substitution.Unify(new(arguments[0], arguments[1])).TryGetValue(out var subs))
-            vm.Environment.AddRange(subs);
-        else
-            vm.Fail();
-        return true;
-    }
+    public override ErgoVM.Op Execute(ImmutableArray<ITerm> arguments) => ErgoVM.Unify(arguments[0], arguments[1]);
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {

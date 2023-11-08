@@ -1,14 +1,6 @@
 ﻿using Ergo.Facade;
-using Ergo.Lang.Compiler;
 using Ergo.Solver;
 using Ergo.Solver.DataBindings;
-
-var kb = new KnowledgeBase();
-kb.AssertA(new Predicate("", new Atom("user"), new Atom("fiero"), new NTuple(new ITerm[] { new Complex(new Atom("cool"), new Variable("X")) }), false, false, default));
-kb.AssertA(new Predicate("", new Atom("user"), new Complex(new Atom("cool"), new Atom("1")), new NTuple(new ITerm[] { }), false, false, default));
-var vm = new ErgoVM() { KnowledgeBase = kb };
-vm.Query = vm.Goal(new Atom("fiero"));
-vm.Run();
 
 using var consoleSink = new DataSink<Person>();
 using var feedbackSink = new DataSink<Person>();

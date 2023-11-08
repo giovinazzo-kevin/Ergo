@@ -11,15 +11,15 @@ public class DynamicNode : ExecutionNode
     }
 
     public ITerm Goal { get; }
-    public override Action Compile(ErgoVM vm)
+    public override ErgoVM.Op Compile()
     {
-        return () =>
+        return vm =>
         {
             var query = Goal.Substitute(vm.Environment); query.GetQualification(out var ih);
             var goal = vm.Context.Solve(new Query(query), vm.Scope).GetEnumerator();
-            NextGoal();
+            NextGoal(vm);
 
-            void NextGoal()
+            void NextGoal(ErgoVM vm)
             {
                 if (goal.MoveNext())
                 {

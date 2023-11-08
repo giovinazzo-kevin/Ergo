@@ -15,7 +15,12 @@ public class BuiltInNode : GoalNode
         return () =>
         {
             Goal.Substitute(vm.Environment).GetQualification(out var inst);
-            var goal = BuiltIn.Apply(vm.Context, vm.Scope, inst.GetArguments()).GetEnumerator();
+            var args = inst.GetArguments();
+            if (BuiltIn.Solve(vm, args))
+            {
+                return;
+            }
+            var goal = BuiltIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
             NextGoal();
             void NextGoal()
             {

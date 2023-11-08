@@ -29,7 +29,7 @@ public abstract class SolverBuiltIn
     protected Evaluation True() => new(true);
     protected Evaluation True(SubstitutionMap subs) => new(true, subs);
     protected Evaluation True(Substitution sub) => new(true, sub);
-
+    public virtual bool Solve(ErgoVM vm, ImmutableArray<ITerm> arguments) => false;
     public abstract IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> arguments);
 
     public SolverBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)

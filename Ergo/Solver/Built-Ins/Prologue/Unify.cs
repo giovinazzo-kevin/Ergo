@@ -72,6 +72,15 @@ public sealed class Unify : SolverBuiltIn
         return TrueNode.Instance;
     }
 
+    public override bool Solve(ErgoVM vm, ImmutableArray<ITerm> arguments)
+    {
+        if (Substitution.Unify(new(arguments[0], arguments[1])).TryGetValue(out var subs))
+            vm.Solution(subs);
+        else
+            vm.Fail();
+        return true;
+    }
+
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {
         if (Substitution.Unify(new(arguments[0], arguments[1])).TryGetValue(out var subs))

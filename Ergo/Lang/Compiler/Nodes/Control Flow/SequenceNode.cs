@@ -20,14 +20,15 @@ public class SequenceNode : ExecutionNode
     public override ErgoVM.Op Compile() => ErgoVM.Ops.And(Nodes.Select(n => n.Compile()).ToArray());
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
+        var fixpoint = false;
         var newList = nodes.SelectMany(n =>
         {
-            var opt = n.Optimize();
-            if (opt is SequenceNode seq)
+            if (n is SequenceNode seq)
                 return seq.Nodes.AsEnumerable();
-            return new[] { opt };
+            return new[] { n };
         }).ToList();
         // Remove duplicates such as consecutive truths or cuts.
+        // Then, applies all available optimizations from the child nodes until a fixed point is reached.
         var count = newList.Count;
         do
         {
@@ -63,17 +64,26 @@ public class SequenceNode : ExecutionNode
                 while (newList.Count > 0 && RedundantStart(newList[0]))
                     newList.RemoveAt(0);
             }
+            for (int i = 0; i < newList.Count; i++)
+            {
+                newList[i] = newList[i].Optimize();
+            }
+            var optimizationPassesFromNodes = newList
+                .Select(n => (n.OptimizationOrder, Optimize: (Func<List<ExecutionNode>, List<ExecutionNode>>)n.OptimizeSequence))
+                    .OrderBy(x => x.OptimizationOrder)
+                    .Select(n => n.Optimize);
+            foreach (var opt in optimizationPassesFromNodes)
+            {
+                newList = opt(newList);
+            }
+            if (newList.Count == count)
+            {
+                if (!fixpoint) fixpoint = true;
+                else break;
+            }
+            else fixpoint = false;
         }
-        while (newList.Count < count);
-        var optimizationPassesFromNodes = newList
-            .Select(n => (n.OptimizationOrder, Optimize: (Func<List<ExecutionNode>, List<ExecutionNode>>)n.OptimizeSequence));
-        var query = optimizationPassesFromNodes
-            .OrderBy(x => x.OptimizationOrder)
-            .Select(x => x.Optimize);
-        foreach (var opt in query)
-        {
-            newList = opt(newList);
-        }
+        while (newList.Count <= count);
         return newList;
 
         bool RedundantStart(ExecutionNode a)
@@ -86,7 +96,9 @@ public class SequenceNode : ExecutionNode
             return (a is TrueNode && b is TrueNode)
                 || (a is FalseNode && b is FalseNode)
                 || (a is CutNode && b is CutNode)
-                || (a is TrueNode && b is DynamicNode);
+                || (a is TrueNode && b is DynamicNode)
+                || (a is TrueNode && b is SequenceNode)
+                || (a is TrueNode && b is BranchNode);
         }
         Maybe<ExecutionNode> Coalesce(ExecutionNode a, ExecutionNode b)
         {

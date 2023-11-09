@@ -11,7 +11,14 @@ public class IfThenNode : ExecutionNode
     public ExecutionNode Condition { get; }
     public ExecutionNode TrueBranch { get; }
     public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThen(Condition.Compile(), TrueBranch.Compile());
-    public override IfThenNode Optimize() => new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
+    public override ExecutionNode Optimize()
+    {
+        if (Condition is TrueNode)
+            return TrueBranch.Optimize();
+        if (Condition is FalseNode)
+            return Condition;
+        return new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
+    }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new IfThenNode(Condition.Instantiate(ctx, vars), TrueBranch.Instantiate(ctx, vars));

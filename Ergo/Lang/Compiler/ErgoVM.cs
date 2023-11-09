@@ -46,10 +46,15 @@ public class ErgoVM
             }
             for (int i = branches.Length - 1; i >= 1; i--)
             {
-                vm.PushChoice(branches[i]);
+                vm.PushChoice(Branch(branches[i]));
             }
-            branches[0](vm);
-            vm.SuccessToSolution();
+            Branch(branches[0])(vm);
+
+            Op Branch(Op branch) => vm =>
+            {
+                branch(vm);
+                vm.SuccessToSolution();
+            };
         };
         public static Op IfThenElse(Op condition, Op consequence, Op alternative) => vm =>
         {
@@ -173,15 +178,13 @@ public class ErgoVM
             void Resolve(ErgoVM vm)
             {
                 // TODO: check if substituting does anything; if not, move outer part of method to Goal
-                var inst = goal;
+                var inst = goal.Substitute(vm.Environment);
                 if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, inst, false).TryGetValue(out var matches))
                 {
-                    // TODO: Handle dynamic predicates! (by making the knowledge base aware of them)
-                    // Static predicates have been resolved by now, so a failing match is an error.
+                    // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
                     Throw(ErrorType.MatchFailed, inst.Explain(false));
                     return;
                 }
-                var expl = inst.Explain(false);
                 var matchEnum = matches.GetEnumerator();
                 NextMatch(vm);
                 void NextMatch(ErgoVM vm)
@@ -189,12 +192,12 @@ public class ErgoVM
                     if (matchEnum.MoveNext())
                     {
                         vm.PushChoice(NextMatch);
-                        matchEnum.Current.Substitutions.Invert();
-                        var pred = Predicate.Substitute(matchEnum.Current.Predicate, matchEnum.Current.Substitutions);
+                        vm.Environment.AddRange(matchEnum.Current.Substitutions);
+                        var pred = matchEnum.Current.Predicate;
                         if (pred.ExecutionGraph.TryGetValue(out var graph))
-                            graph.Substitute(vm.Environment).Compile()(vm);
+                            graph.Compile()(vm);
                         else if (pred.BuiltIn.TryGetValue(out var builtIn))
-                            BuiltInGoal(inst, builtIn)(vm);
+                            BuiltInGoal(pred.Head, builtIn)(vm);
                         else if (!pred.IsFactual)
                             Goals(pred.Body)(vm);
                         else

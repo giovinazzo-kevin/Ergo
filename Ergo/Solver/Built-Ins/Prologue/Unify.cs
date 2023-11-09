@@ -8,7 +8,7 @@ public sealed class Unify : SolverBuiltIn
         : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)
     {
     }
-    public override int OptimizationOrder => base.OptimizationOrder + 1000;
+    public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
         SimplifyConstantUnifications();
@@ -16,6 +16,8 @@ public sealed class Unify : SolverBuiltIn
         return nodes;
         void SimplifyConstantUnifications()
         {
+            // TODO:  unify(between_(1,3,1,X),between_(X,3,1,X)))
+
             // By now most evaluations on constants have reduced down to the form:
             // unify(__Kx, c)
             // When we find this pattern, we can remove the unification and replace __Kx with c wherever it occurs.

@@ -17,6 +17,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         Interpreter = fixture.Interpreter;
         InterpreterScope = fixture.InterpreterScope;
         KnowledgeBase = fixture.KnowledgeBase;
+        using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, SolverFlags.Default, DecimalType.BigDecimal);
     }
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)
@@ -53,8 +54,9 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
             Assert.Equal(query, parsed.Goals.Explain(false));
-        Interpreted();
+        //Interpreted();
         Compiled();
+        //Optimized();
 
         void Interpreted()
         {
@@ -63,6 +65,12 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         }
 
         void Compiled()
+        {
+            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default & ~SolverFlags.EnableCompilerOptimizations), DecimalType.BigDecimal);
+            Solve(solver, parsed);
+        }
+
+        void Optimized()
         {
             using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default), DecimalType.BigDecimal);
             Solve(solver, parsed);

@@ -12,6 +12,7 @@ public class BuiltInNode : GoalNode
 
     public override ErgoVM.Op Compile() => ErgoVM.Ops.BuiltInGoal(Goal, BuiltIn);
 
+    public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override ExecutionNode Optimize()
     {
         return BuiltIn.Optimize(this);

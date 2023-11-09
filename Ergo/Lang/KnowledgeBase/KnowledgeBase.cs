@@ -26,7 +26,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     public KnowledgeBase Clone()
     {
         var inner = new OrderedDictionary();
-        foreach (var kv in Predicates.Cast<KeyValuePair<Signature, List<Predicate>>>())
+        foreach (DictionaryEntry kv in Predicates)
         {
             inner.Add(kv.Key, kv.Value);
         }
@@ -161,6 +161,24 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 if (predicate.IsSameDefinitionAs(pred))
                 {
                     matches.RemoveAt(i);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    public bool Replace(Predicate pred, Predicate other)
+    {
+        if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
+        {
+            for (var i = matches.Count - 1; i >= 0; i--)
+            {
+                var predicate = matches[i];
+                if (predicate.IsSameDefinitionAs(pred))
+                {
+                    matches.RemoveAt(i);
+                    matches.Insert(i, other);
                     return true;
                 }
             }

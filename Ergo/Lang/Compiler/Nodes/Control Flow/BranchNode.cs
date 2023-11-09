@@ -14,6 +14,22 @@ public class BranchNode : ExecutionNode
         Right = right;
     }
 
+    public IEnumerable<ExecutionNode> Unfold()
+    {
+        if (Left is BranchNode bl)
+        {
+            foreach (var u in bl.Unfold())
+                yield return u;
+        }
+        else yield return Left;
+        if (Right is BranchNode br)
+        {
+            foreach (var u in br.Unfold())
+                yield return u;
+        }
+        else yield return Right;
+    }
+    //public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Unfold().Select(x => x.Compile()).ToArray());
     public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Left.Compile(), Right.Compile());
     public override ExecutionNode Optimize()
     {

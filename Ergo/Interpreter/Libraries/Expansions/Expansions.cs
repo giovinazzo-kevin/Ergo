@@ -35,6 +35,7 @@ public class Expansions : Library
                 }
                 if (expansions.Count > 0)
                 {
+                    // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
                     if (!sie.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
@@ -62,6 +63,7 @@ public class Expansions : Library
                 }
                 if (expansions.Count > 0)
                 {
+                    // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
                     if (!qse.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
@@ -153,7 +155,7 @@ public class Expansions : Library
                         new(newBody, p.Head.Scope),
                         p.IsDynamic,
                         p.IsExported,
-                        p.ExecutionGraph
+                        default
                     );
                 }
             }

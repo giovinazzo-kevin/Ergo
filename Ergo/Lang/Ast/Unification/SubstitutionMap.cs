@@ -32,12 +32,12 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
-        if (s.Lhs is Variable { Ignored: true } && Map.TryGetRvalue(s.Lhs, out var prevLhs))
+        if (false && s.Lhs is Variable { Ignored: true } && Map.TryGetRvalue(s.Lhs, out var prevLhs))
         {
             Map.Remove(prevLhs);
             Map.Add(prevLhs, s.Rhs);
         }
-        else if (s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
+        else if (false && s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
         {
             Map.Remove(s.Rhs);
             Map.Add(s.Lhs, prevRhs);
@@ -72,6 +72,8 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         var toAdd = Substitution.QueuePool.Acquire();
         foreach (var (lhs, rhs) in Map)
         {
+            if (lhs is not Variable || rhs is not Variable)
+                continue;
             Map.Remove(lhs);
             toAdd.Enqueue(new(rhs, lhs));
         }

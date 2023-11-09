@@ -17,7 +17,14 @@ public class IfThenElseNode : ExecutionNode
     public ExecutionNode FalseBranch { get; }
 
     public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThenElse(Condition.Compile(), TrueBranch.Compile(), FalseBranch.Compile());
-    public override IfThenElseNode Optimize() => new IfThenElseNode(Condition.Optimize(), TrueBranch.Optimize(), FalseBranch.Optimize());
+    public override ExecutionNode Optimize()
+    {
+        if (Condition is TrueNode)
+            return TrueBranch.Optimize();
+        if (Condition is FalseNode)
+            return FalseBranch.Optimize();
+        return new IfThenElseNode(Condition.Optimize(), TrueBranch.Optimize(), FalseBranch.Optimize());
+    }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

@@ -6,6 +6,21 @@ namespace Ergo.Lang.Utils;
 
 public static class ExceptionUtils
 {
+    public static string GetRuntimeError(ErgoVM.ErrorType error, params object[] args)
+    {
+        var msg = error switch
+        {
+            ErgoVM.ErrorType.MatchFailed => "Could not resolve predicate: {0}, and it is not marked as dynamic.",
+            _ => error.ToString()
+        };
+
+        if (args != null && args.Length > 0)
+        {
+            msg = string.Format(msg, args);
+        }
+
+        return msg;
+    }
     public static string GetCompilerError(ErgoCompiler.ErrorType error, params object[] args)
     {
         var msg = error switch

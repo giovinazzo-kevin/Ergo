@@ -221,9 +221,11 @@ public partial class ErgoSolver : IDisposable
             var subs = exp.Substitutions; subs.Invert();
             var newPred = Predicate.Substitute(exp.Predicate, subs);
             scope = scope.WithCallee(new(newPred, ctx));
-            if (newPred.ExecutionGraph.TryGetValue(out var compiled))
+            if (newPred.ExecutionGraph.TryGetValue(out var graph))
             {
-                foreach (var s in compiled.Execute(ctx, scope))
+                var vm = new ErgoVM() { Context = ctx, Scope = scope, KnowledgeBase = KnowledgeBase };
+                vm.Query = graph.Compile();
+                foreach (var s in vm.RunInteractive())
                     yield return s;
                 continue;
             }

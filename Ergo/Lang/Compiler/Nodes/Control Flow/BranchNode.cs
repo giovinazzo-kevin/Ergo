@@ -14,7 +14,7 @@ public class BranchNode : ExecutionNode
         Right = right;
     }
 
-    public override ErgoVM.Op Compile() => ErgoVM.Or(Left.Compile(), Right.Compile());
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Left.Compile(), Right.Compile());
     public override ExecutionNode Optimize()
     {
         var left = Left.Optimize();

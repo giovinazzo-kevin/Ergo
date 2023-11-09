@@ -72,7 +72,7 @@ public sealed class Unify : SolverBuiltIn
         return TrueNode.Instance;
     }
 
-    public override ErgoVM.Op Execute(ImmutableArray<ITerm> arguments) => ErgoVM.Unify(arguments[0], arguments[1]);
+    public override ErgoVM.Op Compile(ImmutableArray<ITerm> arguments) => ErgoVM.Ops.Unify(arguments[0], arguments[1]);
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {

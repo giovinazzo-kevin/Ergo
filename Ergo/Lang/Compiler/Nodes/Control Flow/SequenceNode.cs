@@ -17,7 +17,7 @@ public class SequenceNode : ExecutionNode
 
     public SequenceNode AsRoot() => new(Nodes, true);
 
-    public override ErgoVM.Op Compile() => ErgoVM.And(Nodes.Select(n => n.Compile()).ToArray());
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.And(Nodes.Select(n => n.Compile()).ToArray());
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
         var newList = nodes.SelectMany(n =>
@@ -59,6 +59,7 @@ public class SequenceNode : ExecutionNode
             }
             if (IsRoot)
             {
+                // These optimizations don't work on partial lists.
                 while (newList.Count > 0 && RedundantStart(newList[0]))
                     newList.RemoveAt(0);
             }
@@ -105,11 +106,11 @@ public class SequenceNode : ExecutionNode
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
-        return new SequenceNode(Nodes.Select(n => n.Instantiate(ctx, vars)).ToList());
+        return new SequenceNode(Nodes.Select(n => n.Instantiate(ctx, vars)).ToList(), IsRoot);
     }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
-        return new SequenceNode(Nodes.Select(n => n.Substitute(s)).ToList());
+        return new SequenceNode(Nodes.Select(n => n.Substitute(s)).ToList(), IsRoot);
     }
     public override string Explain(bool canonical = false) => Nodes.Select((n, i) => ((i == 0 ? "" : ",  ") + n.Explain(canonical))).Join("\r\n");
 }

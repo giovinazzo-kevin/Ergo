@@ -1,24 +1,226 @@
 ﻿using Ergo.Solver;
+using Ergo.Solver.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
 public class ErgoVM
 {
     #region Type Declarations
+    public enum ErrorType
+    {
+        MatchFailed
+    }
     /// <summary>
     /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
     /// </summary>
     public delegate void Op(ErgoVM vm);
+    public static class Ops
+    {
+        public static Op NoOp => _ => { };
+        public static Op Fail => vm => vm.Fail();
+        public static Op Cut => vm => vm.Cut();
+        public static Op Solution => vm => vm.Solution();
+        public static Op And(params Op[] goals) => vm =>
+        {
+            vm.rest = new(goals);
+            while (vm.rest.TryDequeue(out var goal))
+            {
+                goal(vm);
+                switch (vm.State)
+                {
+                    case VMState.Fail: return;
+                    case VMState.Solution: vm.MergeEnvironment(); break;
+                }
+            }
+            vm.Solution();
+        };
+        public static Op Or(params Op[] branches) => vm =>
+        {
+            if (branches.Length == 0)
+                return;
+            if (branches.Length == 1)
+            {
+                branches[0](vm);
+                return;
+            }
+            for (int i = branches.Length - 1; i >= 1; i--)
+            {
+                vm.PushChoice(branches[i]);
+            }
+            branches[0](vm);
+            vm.SuccessToSolution();
+        };
+        public static Op IfThenElse(Op condition, Op consequence, Op alternative) => vm =>
+        {
+            var backupEnvironment = vm.CloneEnvironment();
+            condition(vm);
+            vm.Cut();
+            if (vm.State != VMState.Fail)
+            {
+                if (vm.State == VMState.Solution)
+                    vm.MergeEnvironment();
+                consequence(vm);
+            }
+            else
+            {
+                vm.State = VMState.Success;
+                vm.Environment = backupEnvironment;
+                alternative(vm);
+                vm.SuccessToSolution();
+            }
+        };
+        public static Op IfThen(Op condition, Op consequence) => IfThenElse(condition, consequence, NoOp);
+        /// <summary>
+        /// Adds the current set of substitutions to te VM's environment, and then releases it back into the substitution map pool.
+        /// </summary>
+        public static Op UpdateEnvironment(SubstitutionMap subsToAdd) => vm =>
+        {
+            vm.Environment.AddRange(subsToAdd);
+            Substitution.Pool.Release(subsToAdd);
+        };
+        /// <summary>
+        /// Performs the unification at the time when Unify is called.
+        /// Either returns Ops.Fail or Ops.UpdateEnvironment with the result of unification.
+        /// See also UnifyLazy for a version that delays unification until necessary.
+        /// </summary>
+        public static Op Unify(ITerm left, ITerm right)
+        {
+            // In this case unification is really just the act of updating the environment with the *result* of unification.
+            // The Op is provided for convenience and as a wrapper. Note that unification is performed eagerly in this case. 
+            if (Substitution.Unify(new(left, right)).TryGetValue(out var subs))
+            {
+                return UpdateEnvironment(subs);
+            }
+            return Fail;
+        }
+        /// <summary>
+        /// This should not be required by anything in standard Ergo, but some extensions may benefit from
+        /// delaying term unification until the very moment it should be performed. Standard terms are 
+        /// immutable, so they wouldn't change between the call to UnifyLazy and the moment when the op is
+        /// executed on the VM. But if a term can change e.g. on backtracking, then UnifyLazy is the way to go.
+        /// </summary>
+        public static Op UnifyLazy(ITerm left, ITerm right)
+        {
+            // The difference from just returning Unify(left, right) is that, this way,
+            // the args are captured by the closure and evaluated *every time the op is ran*,
+            // including on backtracking. Stateful abstract terms may unify to something else by then.
+            return vm => Unify(left, right)(vm);
+        }
+        /// <summary>
+        /// Converts a query into the corresponding Op.
+        /// </summary>
+        public static Op Goals(NTuple goals)
+        {
+            if (goals.Contents.Length == 0)
+                return NoOp;
+            if (goals.Contents.Length == 1)
+                return Goal(goals.Contents[0]);
+            return And(goals.Contents.Select(Goal).ToArray());
+        }
+        /// <summary>
+        /// Calls a built-in by passing it the matching goal's arguments.
+        /// </summary>
+        public static Op BuiltInGoal(ITerm goal, SolverBuiltIn builtIn) => vm =>
+        {
+            goal.Substitute(vm.Environment).GetQualification(out var inst);
+            var args = inst.GetArguments();
+            var op = builtIn.Compile(args);
+            // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
+            if (NoOp != op)
+            {
+                op(vm);
+                return;
+            }
+            #region temporary code
+            var expl = goal.Explain(false);
+            var next = builtIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
+            NextGoal(vm);
+            void NextGoal(ErgoVM vm)
+            {
+                if (next.MoveNext())
+                {
+                    if (!next.Current.Result)
+                    {
+                        vm.Fail();
+                        return;
+                    }
+                    vm.Solution(next.Current.Substitutions);
+                    vm.PushChoice(NextGoal);
+                }
+                else
+                {
+                    vm.Fail();
+                }
+            }
+            #endregion
+        };
+        /// <summary>
+        /// Calls an individual goal.
+        /// </summary>
+        public static Op Goal(ITerm goal)
+        {
+            const string cutValue = "!";
+            return goal switch
+            {
+                NTuple tup => Goals(tup),
+                Atom { Value: true } => NoOp,
+                Atom { Value: false } => Fail,
+                Atom { Value: cutValue, IsQuoted: false } => Cut,
+                _ => Resolve
+            };
+
+            void Resolve(ErgoVM vm)
+            {
+                // TODO: check if substituting does anything; if not, move outer part of method to Goal
+                var inst = goal;
+                if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, inst, false).TryGetValue(out var matches))
+                {
+                    // TODO: Handle dynamic predicates! (by making the knowledge base aware of them)
+                    // Static predicates have been resolved by now, so a failing match is an error.
+                    Throw(ErrorType.MatchFailed, inst.Explain(false));
+                    return;
+                }
+                var expl = inst.Explain(false);
+                var matchEnum = matches.GetEnumerator();
+                NextMatch(vm);
+                void NextMatch(ErgoVM vm)
+                {
+                    if (matchEnum.MoveNext())
+                    {
+                        vm.PushChoice(NextMatch);
+                        matchEnum.Current.Substitutions.Invert();
+                        var pred = Predicate.Substitute(matchEnum.Current.Predicate, matchEnum.Current.Substitutions);
+                        if (pred.ExecutionGraph.TryGetValue(out var graph))
+                            graph.Substitute(vm.Environment).Compile()(vm);
+                        else if (pred.BuiltIn.TryGetValue(out var builtIn))
+                            BuiltInGoal(inst, builtIn)(vm);
+                        else if (!pred.IsFactual)
+                            Goals(pred.Body)(vm);
+                        else
+                            vm.Solution();
+                        Substitution.Pool.Release(matchEnum.Current.Substitutions);
+                    }
+                    else
+                    {
+                        vm.Fail();
+                    }
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
-    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
+    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment, Queue<Op> Rest);
     public enum VMState { Ready, Fail, Solution, Success }
     #endregion
     // Temporary, these two properties will be removed in due time.
     public SolverContext Context { get; set; }
     public SolverScope Scope { get; set; }
     public KnowledgeBase KnowledgeBase { get; set; }
+    public readonly InstantiationContext InstCtx = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
@@ -38,11 +240,11 @@ public class ErgoVM
     /// The current set of solutions. See also RunInteractive.
     /// </summary>
     public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(Scope, x));
-    private Op _query = NoOp;
+    private Op _query = Ops.NoOp;
     public Op Query
     {
         get => _query;
-        set => _query = value ?? NoOp;
+        set => _query = value ?? Ops.NoOp;
     }
     public void Run()
     {
@@ -73,6 +275,11 @@ public class ErgoVM
     }
     #endregion
     #region Goal API
+    public static void Throw(ErrorType error, params object[] args)
+    {
+        throw new RuntimeException(error, args);
+    }
+
     public void Fail()
     {
         State = VMState.Fail;
@@ -82,11 +289,13 @@ public class ErgoVM
         subs.AddRange(Environment);
         solutions.Push(subs);
         State = VMState.Solution;
+        LogState();
     }
     public void Solution()
     {
         solutions.Push(CloneEnvironment());
         State = VMState.Solution;
+        LogState();
     }
     public void Cut()
     {
@@ -94,23 +303,20 @@ public class ErgoVM
     }
     public void PushChoice(Op choice)
     {
+        var restCopy = new Queue<Op>(rest);
         var env = CloneEnvironment();
         if (rest.Count == 0)
-            choicePoints.Push(new ChoicePoint(choice, env));
+            choicePoints.Push(new ChoicePoint(choice, env, restCopy));
         else
-            choicePoints.Push(new ChoicePoint(And(rest.Prepend(choice).ToArray()), env));
+            choicePoints.Push(new ChoicePoint(vm => Ops.And(restCopy.Prepend(choice).ToArray())(vm), env, restCopy));
     }
     #endregion
-    #region State Management
-    /// <summary>
-    /// If no solutions were pushed at the end of the current branch, as signaled by State being Success instead of Solution, 
-    /// then the current environment is promoted to a solution.
-    /// Allows creating goals that don't push solutions directly, like true/0, or !/0, or unify/2.
-    /// This is effectively an optimization since, otherwise, those goals would have to push "empty" solutions 
-    /// that would get merged immediately afterwards. 
-    /// For example, unify works directly on the environment and sets the state to either success or failure,
-    /// but in principle it could also push a solution containing the new substitutions plus the environment at that time (wasteful).
-    /// </summary>
+
+    [Conditional("ERGO_VM_DIAGNOSTICS")]
+    protected void LogState([CallerMemberName] string caller = null)
+    {
+        Trace.WriteLine($"{State} {{{Environment.Where(x => x.Lhs is not Variable { Ignored: true }).Select(x => x.Explain()).Join(";")}}} ({rest.Count}) @ {caller}");
+    }
     private void SuccessToSolution()
     {
         if (State == VMState.Success)
@@ -141,8 +347,10 @@ public class ErgoVM
             var choicePoint = choicePoints.Pop();
             Substitution.Pool.Release(Environment);
             Environment = choicePoint.Environment;
+            rest = choicePoint.Rest;
             choicePoint.Continue(this);
             SuccessToSolution();
+            LogState();
             return true;
         }
         return false;
@@ -159,98 +367,4 @@ public class ErgoVM
         SuccessToSolution();
         Substitution.Pool.Release(Environment);
     }
-    #endregion
-    #region Control Flow
-    /// <summary>
-    /// Does nothing, causing the state to remain successful.
-    /// </summary>
-    public static Op NoOp => _ => { };
-    public static Op Goal(ITerm goal) => vm =>
-    {
-        goal.Substitute(vm.Environment);
-        if (!vm.KnowledgeBase.GetMatches(new("__X"), goal, false).TryGetValue(out var matches))
-        {
-            vm.Fail();
-            return;
-        }
-        var goalEnum = matches.GetEnumerator();
-        NextGoal(vm);
-        void NextGoal(ErgoVM vm)
-        {
-            if (goalEnum.MoveNext())
-            {
-                vm.Solution(goalEnum.Current.Substitutions);
-                var rest = Goal(goalEnum.Current.Predicate.Body);
-                if (!goalEnum.Current.Predicate.Body.IsEmpty)
-                    vm.PushChoice(NextGoal);
-            }
-            else
-            {
-                vm.Fail();
-            }
-        }
-    };
-    public static Op Goal(NTuple goals) => And(goals.Contents.Select(Goal).ToArray());
-    public static Op And(params Op[] goals) => vm =>
-    {
-        vm.rest = new(goals);
-        while (vm.rest.TryDequeue(out var goal))
-        {
-            goal(vm);
-            switch (vm.State)
-            {
-                case VMState.Fail: return;
-                case VMState.Solution: vm.MergeEnvironment(); break;
-            }
-        }
-        vm.Solution();
-    };
-    public static Op Or(params Op[] branches) => vm =>
-    {
-        if (branches.Length == 0)
-            return;
-        if (branches.Length == 1)
-        {
-            branches[0](vm);
-            return;
-        }
-        for (int i = branches.Length - 1; i >= 1; i--)
-        {
-            vm.PushChoice(branches[i]);
-        }
-        branches[0](vm);
-        vm.SuccessToSolution();
-    };
-    public static Op IfThenElse(Op condition, Op consequence, Op alternative) => vm =>
-    {
-        var backupEnvironment = vm.CloneEnvironment();
-        condition(vm);
-        vm.Cut();
-        if (vm.State != VMState.Fail)
-        {
-            if (vm.State == VMState.Solution)
-                vm.MergeEnvironment();
-            consequence(vm);
-        }
-        else
-        {
-            vm.State = VMState.Success;
-            vm.Environment = backupEnvironment;
-            alternative(vm);
-            vm.SuccessToSolution();
-        }
-    };
-    public static Op IfThen(Op condition, Op consequence) => IfThenElse(condition, consequence, NoOp);
-    public static Op Unify(ITerm left, ITerm right) => vm =>
-    {
-        // Unification doesn't produce a solution, it simply updates the environment
-        if (Substitution.Unify(new(left, right)).TryGetValue(out var subs))
-        {
-            vm.Environment.AddRange(subs);
-            Substitution.Pool.Release(subs);
-        }
-        else
-            vm.Fail();
-    };
-    #endregion
 }

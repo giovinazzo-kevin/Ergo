@@ -1,16 +1,19 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Solver;
-#if ERGO_COMPILER_DIAGNOSTICS
-using System.Diagnostics;
-#endif
 
 namespace Ergo.Lang.Compiler;
 
-public readonly struct ExecutionGraph
+public class ExecutionGraph
 {
+    private Maybe<ErgoVM.Op> Compiled;
     public readonly ExecutionNode Root;
 
     public ExecutionGraph(ExecutionNode root) => Root = root;
+    private ErgoVM.Op CompileAndCache()
+    {
+        var op = Root.Compile();
+        Compiled = op;
+        return op;
+    }
 
     public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
@@ -23,11 +26,13 @@ public readonly struct ExecutionGraph
 
     public ExecutionGraph Optimized() => new(Root.Optimize());
 
-    public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
+    /// <summary>
+    /// Compiles the current graph to an Op that can run on the ErgoVM.
+    /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
+    /// </summary>
+    public ErgoVM.Op Compile()
     {
-        var vm = new ErgoVM() { Context = ctx, Scope = scope, KnowledgeBase = ctx.Solver.KnowledgeBase };
-        vm.Query = Root.Compile();
-        return vm.RunInteractive();
+        return Compiled.GetOr(CompileAndCache());
     }
 }
 

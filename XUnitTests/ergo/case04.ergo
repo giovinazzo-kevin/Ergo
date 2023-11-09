@@ -1,0 +1,22 @@
+﻿:- module(case04, [
+	cyclic/1, builtin_cyclic/1
+]).
+% These are all equivalent because they are compiled down to branching unifications
+one_solution(1).
+a_(2.1).
+two_solutions(X) :- a_(X).
+two_solutions(2.2).
+one_solution_two_vars(X, Y) :-
+	one_solution(X), one_solution(Y).
+two_solutions_two_vars_1(X, Y) :-
+	one_solution(X), two_solutions(Y).
+two_solutions_two_vars_2(X, Y) :-
+	two_solutions(X), one_solution(Y).
+four_solutions_two_vars(X, Y) :-
+	two_solutions(X), two_solutions(Y).
+
+cyclic(2).
+cyclic(A_) :- cyclic(A_), !.
+
+builtin_cyclic(A) :- eval(A, (1 + 1)).
+builtin_cyclic(A_) :- builtin_cyclic(A_), !.

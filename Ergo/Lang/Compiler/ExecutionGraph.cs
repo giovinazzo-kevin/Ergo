@@ -1,5 +1,4 @@
 ﻿using Ergo.Interpreter;
-using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -17,8 +16,8 @@ public class ExecutionGraph
     private ErgoVM.Op CompileAndCache()
     {
         var op = Root.Compile();
-        var expl = Root.Explain();
-        Trace.WriteLine(expl);
+        // var expl = Root.Explain();
+        // Trace.WriteLine(expl);
         Compiled = op;
         return op;
     }
@@ -46,7 +45,7 @@ public class ExecutionGraph
 
 public static class ExecutionGraphExtensions
 {
-    private static readonly InstantiationContext CompilerContext = new("__E");
+    private static readonly InstantiationContext CompilerContext = new("E");
 
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {

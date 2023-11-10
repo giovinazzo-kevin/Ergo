@@ -10,7 +10,13 @@ public class CyclicalCallNode : DynamicNode
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
-        => new CyclicalCallNode(Goal.Instantiate(ctx, vars));
+    {
+        if (IsGround) return this;
+        return new CyclicalCallNode(Goal.Instantiate(ctx, vars));
+    }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
-        => new CyclicalCallNode(Goal.Substitute(s));
+    {
+        if (IsGround) return this;
+        return new CyclicalCallNode(Goal.Substitute(s));
+    }
 }

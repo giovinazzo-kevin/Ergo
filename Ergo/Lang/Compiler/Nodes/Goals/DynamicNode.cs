@@ -5,6 +5,8 @@
 /// </summary>
 public class DynamicNode : ExecutionNode
 {
+    public override bool IsGround => Goal.IsGround;
+
     public DynamicNode(ITerm goal)
     {
         Goal = goal;
@@ -18,10 +20,12 @@ public class DynamicNode : ExecutionNode
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround) return this;
         return new DynamicNode(Goal.Instantiate(ctx, vars));
     }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
+        if (IsGround) return this;
         return new DynamicNode(Goal.Substitute(s));
     }
 

@@ -5,6 +5,7 @@ namespace Ergo.Lang.Compiler;
 [DebuggerDisplay("{Explain(false)}")]
 public abstract class ExecutionNode : IExplainable
 {
+    public virtual bool IsGround => true;
     public virtual int OptimizationOrder => 0;
     public virtual ExecutionNode Optimize() => this;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;

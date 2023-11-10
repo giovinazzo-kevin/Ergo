@@ -91,8 +91,8 @@ minus(A, B, C) :- \+ground(A), ground(B), ground(C), !, A := B + C.
 increment(A, A1) :- A1 := A + 1.
 decrement(A, A1) :- A1 := A - 1.
 		
-fibonacci(0, 0).
-fibonacci(1, 1).
+fibonacci(0, 0) :- !.
+fibonacci(1, 1) :- !.
 fibonacci(N,Result) :- fibonacci(N, 0, 1, Result).
 fibonacci(0, N, _, N).
 fibonacci(N, Prev1, Prev2, Result) :- N > 0, fibonacci(:=(N - 1), Prev2, :=(Prev1 + Prev2), Result).

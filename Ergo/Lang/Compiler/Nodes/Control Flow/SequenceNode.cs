@@ -7,6 +7,8 @@ public class SequenceNode : ExecutionNode
 {
     public readonly bool IsRoot;
 
+    public override bool IsGround => Nodes.All(n => n.IsGround);
+
     public SequenceNode(List<ExecutionNode> nodes, bool isRoot = false)
     {
         Nodes = nodes;
@@ -118,10 +120,12 @@ public class SequenceNode : ExecutionNode
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround) return this;
         return new SequenceNode(Nodes.Select(n => n.Instantiate(ctx, vars)).ToList(), IsRoot);
     }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
+        if (IsGround) return this;
         return new SequenceNode(Nodes.Select(n => n.Substitute(s)).ToList(), IsRoot);
     }
     public override string Explain(bool canonical = false) => Nodes.Select((n, i) => ((i == 0 ? "" : ",  ") + n.Explain(canonical))).Join("\r\n");

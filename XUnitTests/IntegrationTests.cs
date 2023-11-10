@@ -19,6 +19,8 @@ public class IntegrationTests : ErgoTests
     [InlineData("case04 : two_solutions_two_vars_1(X,Y)", 2, "X/1;Y/2.1", "X/1;Y/2.2")]
     [InlineData("case04 : two_solutions_two_vars_2(X,Y)", 2, "X/2.1;Y/1", "X/2.2;Y/1")]
     [InlineData("case04 : four_solutions_two_vars(X,Y)", 4, "X/2.1;Y/2.1", "X/2.1;Y/2.2", "X/2.2;Y/2.1", "X/2.2;Y/2.2")]
+    [InlineData("case04 : eight_solutions_three_vars(X,Y,Z)", 8, "X/2.1;Y/2.1;Z/2.1", "X/2.1;Y/2.1;Z/2.2", "X/2.1;Y/2.2;Z/2.1", "X/2.1;Y/2.2;Z/2.2",
+        "X/2.2;Y/2.1;Z/2.1", "X/2.2;Y/2.1;Z/2.2", "X/2.2;Y/2.2;Z/2.1", "X/2.2;Y/2.2;Z/2.2")]
     [InlineData("case04 : cyclic(X)", 2, "X/2", "X/2")]
     [InlineData("case04 : builtin_cyclic(X)", 2, "X/2", "X/2")]
     //[InlineData("list_element_rest([a,b],E,Rest)", 2, "E/a;Rest/b", "E/b;Rest/a")]

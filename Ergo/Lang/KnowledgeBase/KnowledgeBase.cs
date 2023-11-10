@@ -97,14 +97,13 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             return buf
                 .Select(k =>
                 {
-                    var predicate = k.Instantiate(ctx);
-                    if (predicate.IsVariadic && predicate.Head.GetFunctor().TryGetValue(out var fun))
-                    {
-                        predicate = predicate.WithHead(fun.BuildAnonymousTerm(goal.GetArguments().Length));
-                        return Maybe.Some(new KBMatch(goal, predicate, new()));
-                    }
+                    var predicate = k;
+                    if (k.IsVariadic && k.Head.GetFunctor().TryGetValue(out var fun))
+                        predicate = k.WithHead(fun.BuildAnonymousTerm(goal.GetArguments().Length));
+                    predicate = predicate.Instantiate(ctx);
                     if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                     {
+                        matchSubs.Invert();
                         predicate = Predicate.Substitute(predicate, matchSubs);
                         return Maybe.Some(new KBMatch(goal, predicate, matchSubs));
                     }

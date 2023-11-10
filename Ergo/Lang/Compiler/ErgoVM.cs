@@ -21,42 +21,56 @@ public class ErgoVM
         public static Op Fail => vm => vm.Fail();
         public static Op Cut => vm => vm.Cut();
         public static Op Solution => vm => vm.Solution();
-        public static Op And(params Op[] goals) => vm =>
+        public static Op And(params Op[] goals)
         {
-            var rest = vm.rest = new(goals);
-            while (rest.TryDequeue(out var goal))
+            if (goals.Length == 0)
+                return NoOp;
+            if (goals.Length == 1)
+                return goals[0];
+            return vm =>
             {
-                vm.rest = rest;
-                goal(vm);
-                switch (vm.State)
+                ContinueFrom(vm, 0);
+                void ContinueFrom(ErgoVM vm, int j)
                 {
-                    case VMState.Fail: return;
-                    case VMState.Solution: vm.MergeEnvironment(); break;
+                    if (j >= goals.Length) return;
+                    for (int i = j; i < goals.Length; i++)
+                    {
+                        var k = i + 1;
+                        var @continue = vm.@continue;
+                        vm.@continue = vm => ContinueFrom(vm, k);
+                        goals[i](vm);
+                        vm.@continue = @continue;
+                        switch (vm.State)
+                        {
+                            case VMState.Fail: return;
+                            case VMState.Solution: vm.MergeEnvironment(); break;
+                        }
+                    }
+                    vm.Solution();
                 }
-            }
-            vm.Solution();
-        };
-        public static Op Or(params Op[] branches) => vm =>
+            };
+        }
+        public static Op Or(params Op[] branches)
         {
             if (branches.Length == 0)
-                return;
+                return NoOp;
             if (branches.Length == 1)
+                return branches[0];
+            return vm =>
             {
-                branches[0](vm);
-                return;
-            }
-            for (int i = branches.Length - 1; i >= 1; i--)
-            {
-                vm.PushChoice(Branch(branches[i]));
-            }
-            Branch(branches[0])(vm);
+                for (int i = branches.Length - 1; i >= 1; i--)
+                {
+                    vm.PushChoice(Branch(branches[i]));
+                }
+                Branch(branches[0])(vm);
 
-            Op Branch(Op branch) => vm =>
-            {
-                branch(vm);
-                vm.SuccessToSolution();
+                Op Branch(Op branch) => vm =>
+                {
+                    branch(vm);
+                    vm.SuccessToSolution();
+                };
             };
-        };
+        }
         public static Op IfThenElse(Op condition, Op consequence, Op alternative) => vm =>
         {
             var backupEnvironment = vm.CloneEnvironment();
@@ -179,7 +193,6 @@ public class ErgoVM
 
             void Resolve(ErgoVM vm)
             {
-                vm.LogState($"G:" + goal.Explain(false));
                 // TODO: check if substituting does anything; if not, move outer part of method to Goal
                 var inst = goal.Substitute(vm.Environment);
                 if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, inst, false).TryGetValue(out var matches))
@@ -198,15 +211,13 @@ public class ErgoVM
                         vm.Environment.AddRange(matchEnum.Current.Substitutions);
                         var pred = matchEnum.Current.Predicate;
                         vm.LogState($"M:" + pred.Body.Explain(false));
-                        /*if (pred.ExecutionGraph.TryGetValue(out var graph))
-                            graph.Compile()(vm);
-                        else*/
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
                             BuiltInGoal(pred.Head, builtIn)(vm);
-                        else if (!pred.IsFactual)
+                        else if (pred.ExecutionGraph.TryGetValue(out var graph))
+                            graph.Compile()(vm);
+                        else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
                             Goals(pred.Body)(vm);
-                        else
-                            vm.Solution();
+                        vm.SuccessToSolution();
                         Substitution.Pool.Release(matchEnum.Current.Substitutions);
                     }
                     else
@@ -221,7 +232,7 @@ public class ErgoVM
     /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
-    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment, Queue<Op> Rest);
+    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     public enum VMState { Ready, Fail, Solution, Success }
     #endregion
     // Temporary, these two properties will be removed in due time.
@@ -232,8 +243,8 @@ public class ErgoVM
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
-    protected int cutIndex = int.MaxValue;
-    protected Queue<Op> rest;
+    protected int cutIndex;
+    protected Op @continue;
     #endregion
     #region VM API
     /// <summary>
@@ -311,19 +322,19 @@ public class ErgoVM
     }
     public void PushChoice(Op choice)
     {
-        var restCopy = new Queue<Op>(rest);
         var env = CloneEnvironment();
-        if (rest.Count == 0)
-            choicePoints.Push(new ChoicePoint(choice, env, restCopy));
+        var cont = @continue;
+        if (cont == Ops.NoOp)
+            choicePoints.Push(new ChoicePoint(choice, env));
         else
-            choicePoints.Push(new ChoicePoint(vm => Ops.And(restCopy.Prepend(choice).ToArray())(vm), env, restCopy));
+            choicePoints.Push(new ChoicePoint(vm => Ops.And(choice, cont)(vm), env));
     }
     #endregion
 
     [Conditional("ERGO_VM_DIAGNOSTICS")]
     protected void LogState([CallerMemberName] string caller = null)
     {
-        Trace.WriteLine($"{State} {{{Environment.Select(x => x.Explain()).Join(";")}}} ({rest.Count}) @ {caller}");
+        Trace.WriteLine($"{State} {{{Environment.Select(x => x.Explain()).Join(", ")}}} ({@continue.Method.Name}) @ {caller}");
     }
     private void SuccessToSolution()
     {
@@ -355,7 +366,6 @@ public class ErgoVM
             var choicePoint = choicePoints.Pop();
             Substitution.Pool.Release(Environment);
             Environment = choicePoint.Environment;
-            rest = choicePoint.Rest;
             choicePoint.Continue(this);
             SuccessToSolution();
             LogState();
@@ -366,9 +376,9 @@ public class ErgoVM
     protected virtual void Initialize()
     {
         State = VMState.Ready;
-        rest = new();
         Environment = new();
         cutIndex = 0;
+        @continue = Ops.NoOp;
     }
     protected virtual void CleanUp()
     {

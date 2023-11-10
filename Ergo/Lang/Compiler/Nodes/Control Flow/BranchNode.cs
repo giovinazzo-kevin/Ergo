@@ -8,6 +8,8 @@ public class BranchNode : ExecutionNode
     public readonly ExecutionNode Left;
     public readonly ExecutionNode Right;
 
+    public override bool IsGround => Left.IsGround && Right.IsGround;
+
     public BranchNode(ExecutionNode left, ExecutionNode right)
     {
         Left = left;
@@ -44,11 +46,13 @@ public class BranchNode : ExecutionNode
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround) return this;
         return new BranchNode(Left.Instantiate(ctx, vars), Right.Instantiate(ctx, vars));
     }
 
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
+        if (IsGround) return this;
         return new BranchNode(Left.Substitute(s), Right.Substitute(s));
     }
     public override string Explain(bool canonical = false) => $"( {Left.Explain(canonical)}\r\n; {Right.Explain(canonical)} )";

@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -17,6 +18,7 @@ public class ExecutionGraph
     {
         var op = Root.Compile();
         var expl = Root.Explain();
+        Trace.WriteLine(expl);
         Compiled = op;
         return op;
     }
@@ -130,14 +132,15 @@ public static class ExecutionGraphExtensions
 
         void Node(ITerm goal)
         {
-            if (cyclicalCallMap.TryGetValue(sig, out var cyclical))
+            //if (cyclicalCallMap.TryGetValue(sig, out var cyclical))
+            //{
+            //    matches.Add(new CyclicalCallNode(goal));
+            //    return;
+            //}
+            if ((node.IsCyclical || node.Clauses.Any(c => c.IsTailRecursive)))
             {
-                matches.Add(new CyclicalCallNode(goal));
+                matches.Add(cyclicalCallMap[sig] = new CyclicalCallNode(goal));
                 return;
-            }
-            if (node.IsCyclical || node.Clauses.Any(c => c.IsTailRecursive) && !cyclicalCallMap.ContainsKey(sig))
-            {
-                cyclicalCallMap[sig] = new CyclicalCallNode(goal);
             }
             foreach (var clause in node.Clauses)
             {

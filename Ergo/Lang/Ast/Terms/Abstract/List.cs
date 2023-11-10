@@ -38,6 +38,36 @@ public sealed class List : AbstractList
             Scope,
             IsParenthesized
         );
+
+    public override bool Equals(ITerm other)
+    {
+        if (other is not List list)
+            return base.Equals(other);
+        var minLength = Math.Min(Contents.Length, list.Contents.Length);
+        for (int i = 0; i < minLength; i++)
+        {
+            if (!Contents[i].Equals(list.Contents[i]))
+                return false;
+        }
+        if (Contents.Length > minLength)
+        {
+            var tailList = new List(Contents.Skip(minLength).ToArray());
+            if (!tailList.Equals(list.Tail))
+                return false;
+        }
+        else if (list.Contents.Length > minLength)
+        {
+            var tailList = new List(list.Contents.Skip(minLength).ToArray());
+            if (!tailList.Equals(Tail))
+                return false;
+        }
+        else if (!Tail.Equals(list.Tail))
+        {
+            return false;
+        }
+        return true;
+    }
+
     public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
         if (other is not List list)

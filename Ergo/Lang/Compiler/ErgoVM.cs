@@ -132,6 +132,7 @@ public class ErgoVM
             goal.Substitute(vm.Environment).GetQualification(out var inst);
             var args = inst.GetArguments();
             var op = builtIn.Compile(args);
+            vm.LogState($"B:" + goal.Explain(false));
             // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
             if (NoOp != op)
             {
@@ -178,6 +179,7 @@ public class ErgoVM
 
             void Resolve(ErgoVM vm)
             {
+                vm.LogState($"G:" + goal.Explain(false));
                 // TODO: check if substituting does anything; if not, move outer part of method to Goal
                 var inst = goal.Substitute(vm.Environment);
                 if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, inst, false).TryGetValue(out var matches))
@@ -195,9 +197,11 @@ public class ErgoVM
                         vm.PushChoice(NextMatch);
                         vm.Environment.AddRange(matchEnum.Current.Substitutions);
                         var pred = matchEnum.Current.Predicate;
-                        if (pred.ExecutionGraph.TryGetValue(out var graph))
+                        vm.LogState($"M:" + pred.Body.Explain(false));
+                        /*if (pred.ExecutionGraph.TryGetValue(out var graph))
                             graph.Compile()(vm);
-                        else if (pred.BuiltIn.TryGetValue(out var builtIn))
+                        else*/
+                        if (pred.BuiltIn.TryGetValue(out var builtIn))
                             BuiltInGoal(pred.Head, builtIn)(vm);
                         else if (!pred.IsFactual)
                             Goals(pred.Body)(vm);
@@ -319,7 +323,7 @@ public class ErgoVM
     [Conditional("ERGO_VM_DIAGNOSTICS")]
     protected void LogState([CallerMemberName] string caller = null)
     {
-        Trace.WriteLine($"{State} {{{Environment.Where(x => x.Lhs is not Variable { Ignored: true }).Select(x => x.Explain()).Join(";")}}} ({rest.Count}) @ {caller}");
+        Trace.WriteLine($"{State} {{{Environment.Select(x => x.Explain()).Join(";")}}} ({rest.Count}) @ {caller}");
     }
     private void SuccessToSolution()
     {

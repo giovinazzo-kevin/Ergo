@@ -55,8 +55,8 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         if (checkParse)
             Assert.Equal(query, parsed.Goals.Explain(false));
         //Interpreted();
-        Compiled();
-        //Optimized();
+        //Compiled();
+        Optimized();
 
         void Interpreted()
         {

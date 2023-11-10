@@ -16,6 +16,7 @@ public class ExecutionGraph
     private ErgoVM.Op CompileAndCache()
     {
         var op = Root.Compile();
+        var expl = Root.Explain();
         Compiled = op;
         return op;
     }

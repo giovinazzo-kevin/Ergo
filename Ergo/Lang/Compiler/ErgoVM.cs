@@ -23,9 +23,10 @@ public class ErgoVM
         public static Op Solution => vm => vm.Solution();
         public static Op And(params Op[] goals) => vm =>
         {
-            vm.rest = new(goals);
-            while (vm.rest.TryDequeue(out var goal))
+            var rest = vm.rest = new(goals);
+            while (rest.TryDequeue(out var goal))
             {
+                vm.rest = rest;
                 goal(vm);
                 switch (vm.State)
                 {

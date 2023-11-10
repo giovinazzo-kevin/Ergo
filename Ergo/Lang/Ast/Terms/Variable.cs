@@ -61,6 +61,8 @@ public readonly struct Variable : ITerm
     }
     public override bool Equals(object obj)
     {
+        if (obj is AbstractTerm abs)
+            return abs.Equals(this);
         if (obj is not Variable other)
         {
             return false;

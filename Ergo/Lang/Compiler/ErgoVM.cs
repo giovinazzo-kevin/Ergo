@@ -218,7 +218,7 @@ public class ErgoVM
                     if (matchEnum.MoveNext())
                     {
                         vm.PushChoice(NextMatch);
-                        vm.Environment.AddRange(matchEnum.Current.Substitutions);
+                        UpdateEnvironment(matchEnum.Current.Substitutions)(vm);
                         var pred = matchEnum.Current.Predicate;
                         vm.LogState($"M:" + pred.Body.Explain(false));
                         Op runGoal = NoOp;
@@ -230,7 +230,6 @@ public class ErgoVM
                             runGoal = Goals(pred.Body);
                         runGoal(vm);
                         vm.SuccessToSolution();
-                        Substitution.Pool.Release(matchEnum.Current.Substitutions);
                     }
                     else
                     {
@@ -359,11 +358,10 @@ public class ErgoVM
         if (State == VMState.Success)
             Solution();
     }
-    protected void MergeEnvironment()
+    public void MergeEnvironment()
     {
         var subs = solutions.Pop();
-        Environment.AddRange(subs);
-        Substitution.Pool.Release(subs);
+        Ops.UpdateEnvironment(subs)(this);
         State = VMState.Success;
     }
     protected SubstitutionMap CloneEnvironment()

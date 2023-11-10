@@ -131,15 +131,14 @@ public static class ExecutionGraphExtensions
 
         void Node(ITerm goal)
         {
-            //if (cyclicalCallMap.TryGetValue(sig, out var cyclical))
-            //{
-            //    matches.Add(new CyclicalCallNode(goal));
-            //    return;
-            //}
-            if ((node.IsCyclical || node.Clauses.Any(c => c.IsTailRecursive)))
+            if (cyclicalCallMap.TryGetValue(sig, out var cyclical))
             {
-                matches.Add(cyclicalCallMap[sig] = new CyclicalCallNode(goal));
+                matches.Add(new CyclicalCallNode(goal) { Clause = cyclical.Clause });
                 return;
+            }
+            if (node.IsCyclical || node.Clauses.Any(c => c.IsTailRecursive))
+            {
+                cyclicalCallMap[sig] = new CyclicalCallNode(goal);
             }
             foreach (var clause in node.Clauses)
             {
@@ -164,9 +163,9 @@ public static class ExecutionGraphExtensions
             var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
             var unifNode = new BuiltInNode(unifDep, unif, graph.UnifyInstance);
             if (clause.IsFactual)
-            {
                 return unifNode;
-            }
+            if (cyclicalCallMap.TryGetValue(sig, out var cycleNode))
+                cycleNode.Clause = clause;
             var execGraph = substitutedClause.ExecutionGraph
                 .GetOr(ToExecutionGraph(substitutedClause, graph, cyclicalCallMap));
             if (!head.Equals(clauseHead))

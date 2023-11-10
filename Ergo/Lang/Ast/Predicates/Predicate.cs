@@ -26,10 +26,10 @@ public readonly struct Predicate : IExplainable
     {
         if (head.Equals(WellKnown.Literals.TopLevel))
             return false;
-        return IsLastCall(head, body);
+        return IsTailCall(head, body);
     }
 
-    public static bool IsLastCall(ITerm head, NTuple body)
+    public static bool IsTailCall(ITerm head, NTuple body)
     {
         if (head is Variable)
             return false;

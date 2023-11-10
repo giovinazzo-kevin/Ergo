@@ -9,7 +9,8 @@ public class ErgoVM
     #region Type Declarations
     public enum ErrorType
     {
-        MatchFailed
+        MatchFailed,
+        StackEmpty
     }
     /// <summary>
     /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
@@ -36,9 +37,13 @@ public class ErgoVM
                     for (int i = j; i < goals.Length; i++)
                     {
                         var k = i + 1;
+                        // Cache continuation so that goals calling PushChoice know where to continue from.
                         var @continue = vm.@continue;
-                        vm.@continue = vm => ContinueFrom(vm, k);
+                        vm.@continue = @continue == NoOp
+                            ? vm => ContinueFrom(vm, k)
+                            : vm => { @continue(vm); ContinueFrom(vm, k); };
                         goals[i](vm);
+                        // Restore previous continuation before potentially yielding control to another And.
                         vm.@continue = @continue;
                         switch (vm.State)
                         {
@@ -98,6 +103,11 @@ public class ErgoVM
         {
             vm.Environment.AddRange(subsToAdd);
             Substitution.Pool.Release(subsToAdd);
+        };
+        public static Op SetEnvironment(SubstitutionMap newEnv) => vm =>
+        {
+            Substitution.Pool.Release(vm.Environment);
+            vm.Environment = newEnv;
         };
         /// <summary>
         /// Performs the unification at the time when Unify is called.
@@ -211,12 +221,14 @@ public class ErgoVM
                         vm.Environment.AddRange(matchEnum.Current.Substitutions);
                         var pred = matchEnum.Current.Predicate;
                         vm.LogState($"M:" + pred.Body.Explain(false));
+                        Op runGoal = NoOp;
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
-                            BuiltInGoal(pred.Head, builtIn)(vm);
+                            runGoal = BuiltInGoal(pred.Head, builtIn);
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
-                            graph.Compile()(vm);
+                            runGoal = graph.Compile();
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
-                            Goals(pred.Body)(vm);
+                            runGoal = Goals(pred.Body);
+                        runGoal(vm);
                         vm.SuccessToSolution();
                         Substitution.Pool.Release(matchEnum.Current.Substitutions);
                     }
@@ -319,6 +331,12 @@ public class ErgoVM
     public void Cut()
     {
         cutIndex = choicePoints.Count;
+    }
+    public Maybe<ChoicePoint> PopChoice()
+    {
+        if (choicePoints.TryPop(out var ret))
+            return ret;
+        return default;
     }
     public void PushChoice(Op choice)
     {

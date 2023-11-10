@@ -32,7 +32,12 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
-        if (!s.Rhs.Equals(WellKnown.Literals.Discard))
+        if (s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
+        {
+            Map.Remove(s.Rhs);
+            Map.Add(s.Lhs, prevRhs);
+        }
+        else if (!s.Rhs.Equals(WellKnown.Literals.Discard))
         {
             Map.Add(s.Lhs, s.Rhs);
         }

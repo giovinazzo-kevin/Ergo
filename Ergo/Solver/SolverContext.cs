@@ -118,7 +118,7 @@ public sealed class SolverContext : IDisposable
         {
             var rest = new NTuple(goals.Select(x => x.Substitute(s.Substitutions)), query.Scope);
 #if !ERGO_SOLVER_DISABLE_TCO
-            if (s.Scope.Callee.Predicate.IsTailRecursive && Predicate.IsLastCall(subGoal, s.Scope.Callee.Predicate.Body))
+            if (s.Scope.Callee.Predicate.IsTailRecursive && Predicate.IsTailCall(subGoal, s.Scope.Callee.Predicate.Body))
             {
                 // SolveTerm returned early with a "fake" solution that signals SolveQuery to perform TCO on the callee.
                 if (s.Scope.Callers.Any())

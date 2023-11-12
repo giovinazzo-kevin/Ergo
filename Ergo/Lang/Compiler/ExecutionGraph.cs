@@ -58,6 +58,8 @@ public static class ExecutionGraphExtensions
     {
         ctx ??= CompilerContext;
         cyclicalCallMap ??= new();
+        var ret = default(ExecutionNode);
+        Action<ExecutionNode> onReturn = _ => { };
         var scope = mbScope.GetOr(graph.Scope);// Handle the cyclical call node if it's present
         if (goal is NTuple tup)
         {
@@ -126,24 +128,32 @@ public static class ExecutionGraphExtensions
         if (matches.Count == 0)
             throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
         if (matches.Count == 1)
-            return matches[0];
-        return matches.Aggregate((a, b) => new BranchNode(a, b));
-
+            ret = matches[0];
+        else ret = matches.Aggregate((a, b) => new BranchNode(a, b));
+        onReturn(ret);
+        return ret;
         void Node(ITerm goal)
         {
             if (cyclicalCallMap.TryGetValue(sig, out var cyclical))
             {
-                matches.Add(new CyclicalCallNode(goal) { Clause = cyclical.Clause });
+                matches.Add(new CyclicalCallNode(goal) { Clause = cyclical.Clause, Ref = cyclical.Ref });
                 return;
             }
             if (node.IsCyclical || node.Clauses.Any(c => c.IsTailRecursive))
             {
                 cyclicalCallMap[sig] = new CyclicalCallNode(goal);
             }
+            var newMatches = new List<ExecutionNode>();
             foreach (var clause in node.Clauses)
             {
                 if (Clause(clause).TryGetValue(out var match))
-                    matches.Add(match);
+                    newMatches.Add(match);
+            }
+            matches.AddRange(newMatches);
+            if (cyclicalCallMap.TryGetValue(sig, out var c))
+            {
+                onReturn += ret =>
+                c.Ref.Node = ret;
             }
         }
         Maybe<ExecutionNode> Clause(Predicate clause)

@@ -16,18 +16,20 @@ public class ExecutionGraph
     private ErgoVM.Op CompileAndCache()
     {
         var op = Root.Compile();
-        // var expl = Root.Explain();
-        // Trace.WriteLine(expl);
         Compiled = op;
         return op;
     }
 
     public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (Root.IsGround)
+            return this;
         return new(Root.Instantiate(ctx, vars));
     }
     public ExecutionGraph Substitute(IEnumerable<Substitution> s)
     {
+        if (Root.IsGround)
+            return this;
         return new(Root.Substitute(s));
     }
 
@@ -45,7 +47,7 @@ public class ExecutionGraph
 
 public static class ExecutionGraphExtensions
 {
-    private static readonly InstantiationContext CompilerContext = new("E");
+    public static readonly InstantiationContext CompilerContext = new("E");
 
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
@@ -167,7 +169,7 @@ public static class ExecutionGraphExtensions
             substitutedClause.Head.GetQualification(out var clauseHead);
             if (!head.Unify(clauseHead).TryGetValue(out var subs))
                 return default;
-            substitutedClause = Predicate.Substitute(substitutedClause, subs);
+            substitutedClause = substitutedClause.Substitute(subs);
             substitutedClause.Head.GetQualification(out clauseHead);
             var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
             var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());

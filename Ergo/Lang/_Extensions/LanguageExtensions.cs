@@ -78,7 +78,7 @@ public static class LanguageExtensions
         var h = predicate.Head;
         h.GetQualification(out var qv);
         head.GetQualification(out var hv);
-        return Unify(qv, hv);
+        return Unify(hv, qv);
     }
 
     public static Signature GetSignature(this ITerm term)

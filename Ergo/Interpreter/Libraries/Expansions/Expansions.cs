@@ -54,8 +54,7 @@ public class Expansions : Library
             foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
-                var pred = Predicate.Substitute(match.Predicate, match.Substitutions);
-
+                var pred = match.Predicate.Substitute(match.Substitutions);
                 foreach (var exp in ExpandPredicate(pred, qse.Scope))
                 {
                     if (!exp.IsSameDefinitionAs(pred))
@@ -255,7 +254,7 @@ public class Expansions : Library
                 var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
                 if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
                     continue;
-                var pred = Predicate.Substitute(expInst, subs);
+                var pred = expInst.Substitute(subs);
                 yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);
             }
         }

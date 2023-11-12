@@ -142,7 +142,7 @@ public partial class ErgoSolver : IDisposable
                     );
                     if (predicate.Unify(head).TryGetValue(out var matchSubs))
                     {
-                        predicate = Predicate.Substitute(predicate, matchSubs);
+                        predicate = predicate.Substitute(matchSubs);
                         yield return new KBMatch(head, predicate, matchSubs);
                     }
                     else if (source.Reject(item))
@@ -202,7 +202,7 @@ public partial class ErgoSolver : IDisposable
         foreach (var exp in GetQueryExpansions(query, scope))
         {
             var subs = exp.Substitutions; subs.Invert();
-            var newPred = Predicate.Substitute(exp.Predicate, subs);
+            var newPred = exp.Predicate.Substitute(subs);
             scope = scope.WithCallee(new(newPred, null));
             if (newPred.ExecutionGraph.TryGetValue(out var compiled))
             {
@@ -219,7 +219,7 @@ public partial class ErgoSolver : IDisposable
         {
             using var ctx = SolverContext.Create(this, scope.InterpreterScope);
             var subs = exp.Substitutions; subs.Invert();
-            var newPred = Predicate.Substitute(exp.Predicate, subs);
+            var newPred = exp.Predicate.Substitute(subs);
             scope = scope.WithCallee(new(newPred, ctx));
             if (newPred.ExecutionGraph.TryGetValue(out var graph))
             {

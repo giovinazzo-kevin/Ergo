@@ -14,31 +14,19 @@ public class CyclicalCallNode : DynamicNode
     public Predicate Clause { get; set; }
     public NodeRef Ref { get; set; } = new(default);
     public bool IsTailCall => Predicate.IsTailCall(Goal, Clause.Body);
+    public readonly ITerm Head;
     public CyclicalCallNode(ITerm goal) : base(goal)
     {
         Signature = goal.GetSignature();
+        goal.GetQualification(out Head);
     }
-    private static RuntimeException StackEmpty = new(ErgoVM.ErrorType.StackEmpty);
     public override ErgoVM.Op Compile()
     {
-        return ErgoVM.Ops.Goal(Goal);
         if (IsTailCall)
-            return TCO;
-
-        void TCO(ErgoVM vm)
         {
-            var goal = ErgoVM.Ops.Goal(Goal);
-            while (true)
-            {
-                goal(vm);
-                if (vm.State != ErgoVM.VMState.Solution)
-                    break;
-                vm.MergeEnvironment();
-                var cp = vm.PopChoice().GetOrThrow(StackEmpty);
-                goal = cp.Continue;
-                ErgoVM.Ops.SetEnvironment(cp.Environment)(vm);
-            }
+            return vm => ErgoVM.Ops.Goal(Goal)(vm);
         }
+        return ErgoVM.Ops.Goal(Goal);
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

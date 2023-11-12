@@ -203,39 +203,90 @@ public class ErgoVM
 
             void Resolve(ErgoVM vm)
             {
-                // TODO: check if substituting does anything; if not, move outer part of method to Goal
-                var inst = goal.Substitute(vm.Environment);
-                if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, inst, false).TryGetValue(out var matches))
-                {
-                    // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
-                    Throw(ErrorType.MatchFailed, inst.Explain(false));
-                    return;
-                }
-                var matchEnum = matches.GetEnumerator();
+                goal = goal.Substitute(vm.Environment);
+                var matchEnum = GetEnumerator(vm);
                 NextMatch(vm);
                 void NextMatch(ErgoVM vm)
                 {
-                    if (matchEnum.MoveNext())
+                    var anyMatch = false;
+                TCO:
+                    // In the non-tail recursive case, you can imagine this 'while' as if it were an 'if'.
+                    while (matchEnum.MoveNext())
                     {
+                        anyMatch = true;
+                        // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);
-                        UpdateEnvironment(matchEnum.Current.Substitutions)(vm);
-                        var pred = matchEnum.Current.Predicate;
-                        vm.LogState($"M:" + pred.Body.Explain(false));
+                        // Update the environment by adding the current match's substitutions.
+                        vm.Environment.AddRange(matchEnum.Current.Substitutions);
+                        // Decide how to execute this goal depending on whether:
                         Op runGoal = NoOp;
+                        var pred = matchEnum.Current.Predicate;
+                        // - It's a builtin (we can run it directly with low overhead)
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
                             runGoal = BuiltInGoal(pred.Head, builtIn);
+                        // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
                             runGoal = graph.Compile();
+                        // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
                             runGoal = Goals(pred.Body);
+                        // Track the number of choice points before executing the goal (up to the one we just pushed)
+                        var cpc = vm.NumChoicePoints;
+                        // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
                         runGoal(vm);
+                        // If the VM is in success state, promote that success to a solution by pushing the current environment.
                         vm.SuccessToSolution();
+                        // If this is a tail call of pred, then we can recycle the current stack frame (hence the top-level 'while').
+                        if (pred.IsTailRecursive && Predicate.IsTailCall(goal, pred.Body))
+                        {
+                            // -- Assumes that pred is det; TODO: static analysis
+                            // Pop all choice points that were created by this predicate.
+                            // TODO: figure out if this is actually the correct thing to do.
+                            while (vm.NumChoicePoints > cpc)
+                            {
+                                var cp = vm.PopChoice().GetOr(default);
+                                // Set the environment to that of the oldest popped choice point.
+                                vm.Environment = cp.Environment;
+                                // If runGoal failed, set the vm back to success as we're retrying now.
+                                if (vm.State == VMState.Fail)
+                                    vm.State = VMState.Success;
+                            }
+                            // If the above loop didn't run and runGoal failed, then we can't retry so we exit the outer loop.
+                            if (vm.State == VMState.Fail)
+                                break;
+                            // Keep the list of substitutions that contributed to this iteration.
+                            var bodyVars = pred.Body.Variables.ToHashSet();
+                            var tcoSubs = vm.Environment
+                                .Where(s => bodyVars.Contains((Variable)s.Lhs));
+                            // Substitute the tail call with this list, creating the new head, and qualify it with the current module.
+                            goal = pred.Body.Contents.Last().Substitute(tcoSubs)
+                                .Qualified(pred.DeclaringModule);
+                            // Remove all substitutions that are no longer relevant, including those we just used.
+                            vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
+                            vm.DiscardChoice(); // We don't need the NextMatch choice point anymore.
+                            matchEnum = GetEnumerator(vm);
+                            goto TCO;
+                        }
+                        // Non-tail recursive predicates don't benefit from the while loop and must backtrack as normal.
+                        else break;
                     }
-                    else
+                    // If the 'while' above were an 'if', this would be the 'else' branch.
+                    if (!anyMatch)
                     {
+                        // Essentially, when we exhaust the list of matches for 'goal', we set the VM in a failure state to signal backtracking.
                         vm.Fail();
                     }
                 }
+            }
+            IEnumerator<KBMatch> GetEnumerator(ErgoVM vm)
+            {
+                if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, goal, false).TryGetValue(out var matches))
+                {
+                    // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
+                    Throw(ErrorType.MatchFailed, goal.Explain(false));
+                    return Enumerable.Empty<KBMatch>().GetEnumerator();
+                }
+                return matches.GetEnumerator();
             }
         }
     }
@@ -244,6 +295,7 @@ public class ErgoVM
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
+    public readonly record struct TailCallData(ExecutionNode Graph, Predicate Clause);
     public enum VMState { Ready, Fail, Solution, Success }
     #endregion
     // Temporary, these two properties will be removed in due time.
@@ -255,7 +307,7 @@ public class ErgoVM
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
     protected int cutIndex;
-    protected Op @continue;
+    public Op @continue;
     #endregion
     #region VM API
     /// <summary>
@@ -265,11 +317,12 @@ public class ErgoVM
     /// <summary>
     /// The active set of substitutions.
     /// </summary>
-    public SubstitutionMap Environment { get; private set; }
+    public SubstitutionMap Environment { get; set; }
     /// <summary>
     /// The current set of solutions. See also RunInteractive.
     /// </summary>
     public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(Scope, x));
+    public int NumChoicePoints => choicePoints.Count;
     private Op _query = Ops.NoOp;
     public Op Query
     {
@@ -337,6 +390,14 @@ public class ErgoVM
             return ret;
         return default;
     }
+
+    private static readonly Exception StackEmptyException = new RuntimeException(ErrorType.StackEmpty);
+    public void DiscardChoice()
+    {
+        var cp = PopChoice().GetOrThrow(StackEmptyException);
+        Substitution.Pool.Release(cp.Environment);
+    }
+
     public void PushChoice(Op choice)
     {
         var env = CloneEnvironment();

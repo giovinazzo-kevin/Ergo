@@ -256,12 +256,12 @@ public readonly struct Predicate : IExplainable
         return inst.WithHead(newHead).WithBody(new NTuple(new ITerm[] { ifThenConstruct }));
     }
 
-    public static Predicate Substitute(Predicate k, IEnumerable<Substitution> s)
+    public Predicate Substitute(IEnumerable<Substitution> s)
     {
-        if (k.IsBuiltIn)
-            return k.WithHead(k.Head.Substitute(s));
-        return new(k.Documentation, k.DeclaringModule, k.Head.Substitute(s), (NTuple)k.Body
-            .Substitute(s), k.IsDynamic, k.IsExported, k.IsTailRecursive, k.ExecutionGraph.Select(g => g.Substitute(s)));
+        if (IsBuiltIn)
+            return WithHead(Head.Substitute(s));
+        return new(Documentation, DeclaringModule, Head.Substitute(s), (NTuple)Body
+            .Substitute(s), IsDynamic, IsExported, IsTailRecursive, ExecutionGraph.Select(g => g.Substitute(s)));
     }
     public Predicate WithExecutionGraph(Maybe<ExecutionGraph> newGraph)
     {

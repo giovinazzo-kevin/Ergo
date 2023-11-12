@@ -30,6 +30,17 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         return A;
     }
 
+    public void Remove(Substitution s)
+    {
+        if (Map.TryGetLvalue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
+            Map.Remove(s.Lhs);
+    }
+    public void RemoveRange(IEnumerable<Substitution> source)
+    {
+        foreach (var s in source)
+            Remove(s);
+    }
+
     public void Add(Substitution s)
     {
         if (s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
@@ -56,7 +67,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         foreach (var (lhs, rhs) in Map)
         {
             var vars = lhs.Variables.Concat(rhs.Variables);
-            if (keep.Intersect(vars).Any() || vars.Any(v => !v.Ignored))
+            if (keep.Intersect(vars).Any())
                 continue;
             Map.Remove(lhs);
         }

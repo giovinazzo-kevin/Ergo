@@ -233,7 +233,7 @@ public class ErgoVM
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
                             runGoal = Goals(pred.Body);
                         // Track the number of choice points before executing the goal (up to the one we just pushed)
-                        var cpc = vm.NumChoicePoints;
+                        var numCp = vm.NumChoicePoints;
                         // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
                         runGoal(vm);
                         // If the VM is in success state, promote that success to a solution by pushing the current environment.
@@ -244,10 +244,11 @@ public class ErgoVM
                             // -- Assumes that pred is det; TODO: static analysis
                             // Pop all choice points that were created by this predicate.
                             // TODO: figure out if this is actually the correct thing to do.
-                            while (vm.NumChoicePoints > cpc)
+                            while (vm.NumChoicePoints > numCp)
                             {
                                 var cp = vm.PopChoice().GetOr(default);
                                 // Set the environment to that of the oldest popped choice point.
+                                Substitution.Pool.Release(vm.Environment);
                                 vm.Environment = cp.Environment;
                                 // If runGoal failed, set the vm back to success as we're retrying now.
                                 if (vm.State == VMState.Fail)

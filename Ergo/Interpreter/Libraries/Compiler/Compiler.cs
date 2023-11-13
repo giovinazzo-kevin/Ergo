@@ -6,6 +6,7 @@ using Ergo.Solver.BuiltIns;
 namespace Ergo.Interpreter.Libraries.Compiler;
 
 using Ergo.Lang.Compiler;
+using Ergo.Lang.Exceptions.Handler;
 using Ergo.Solver;
 using System.Collections.Generic;
 
@@ -27,10 +28,23 @@ public class Compiler : Library
         InlinedPredicates.Add(sig);
     }
 
+    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, SolverFlags flags)
+    {
+        return handler.TryGet(() =>
+        {
+            var graph = clause.ToExecutionGraph(depGraph);
+            if (flags.HasFlag(SolverFlags.EnableCompilerOptimizations))
+                graph = graph.Optimized();
+            return clause.WithExecutionGraph(graph);
+        });
+    }
+
     public override void OnErgoEvent(ErgoEvent evt)
     {
         if (evt is SolverInitializingEvent sie)
         {
+            if (sie.Solver.KnowledgeBase.DependencyGraph != null)
+                return;
             // This library reacts last to ErgoEvents (in a standard environment), so all predicates
             // that have been marked for inlining are known by now. It's time for some static analysis.
             var depGraph = sie.Solver.KnowledgeBase.DependencyGraph = new DependencyGraph(sie.Scope, sie.Solver.KnowledgeBase);
@@ -46,11 +60,28 @@ public class Compiler : Library
                 {
                     foreach (var (pred, clause) in inlined.Clauses.Zip(inlined.InlinedClauses))
                     {
-                        sie.Solver.KnowledgeBase.Retract(pred);
-                        sie.Solver.KnowledgeBase.AssertZ(clause);
+                        sie.Solver.KnowledgeBase.Replace(pred, clause);
                     }
                     inlined.Clauses.Clear();
                     inlined.Clauses.AddRange(inlined.InlinedClauses);
+                }
+            }
+            if (sie.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
+            {
+                foreach (var node in depGraph.GetAllNodes())
+                {
+                    for (int i = 0; i < node.Clauses.Count; i++)
+                    {
+                        var clause = node.Clauses[i];
+                        if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
+                            continue;
+                        // TODO: figure out issue with compiler optimizations
+                        if (TryCompile(clause, sie.Scope.ExceptionHandler, depGraph, sie.Solver.Flags & ~SolverFlags.EnableCompilerOptimizations).TryGetValue(out var newClause))
+                        {
+                            sie.Solver.KnowledgeBase.Replace(clause, newClause);
+                            node.Clauses[i] = newClause;
+                        }
+                    }
                 }
             }
         }
@@ -63,16 +94,8 @@ public class Compiler : Library
                 var topLevel = match.Predicate;
                 if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
                 {
-                    qse.Solver.KnowledgeBase.Retract(topLevel);
-                    if (!qse.Scope.InterpreterScope.ExceptionHandler.TryGet(() =>
-                    {
-                        var graph = topLevel.ToExecutionGraph(qse.Solver.KnowledgeBase.DependencyGraph);
-                        if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompilerOptimizations))
-                            graph = graph.Optimized();
-                        return topLevel.WithExecutionGraph(graph);
-                    }).TryGetValue(out topLevel))
-                        return;
-                    qse.Solver.KnowledgeBase.AssertZ(topLevel);
+                    if (TryCompile(topLevel, qse.Scope.InterpreterScope.ExceptionHandler, qse.Solver.KnowledgeBase.DependencyGraph, qse.Solver.Flags).TryGetValue(out var newClause))
+                        qse.Solver.KnowledgeBase.Replace(topLevel, newClause);
                 }
             }
         }

@@ -32,7 +32,7 @@ public class CompilerTests : ErgoTests
             Assert.True(false);
         if (!KnowledgeBase.Get(headTerm.GetSignature()).TryGetValue(out var matches))
             Assert.True(false);
-        Assert.Equal(1, matches.Count);
+        Assert.Single(matches);
         var expl = matches.Single().Explain(false);
         Assert.Equal(expectedExpl, expl);
     }

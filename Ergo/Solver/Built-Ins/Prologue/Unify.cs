@@ -8,7 +8,7 @@ public sealed class Unify : SolverBuiltIn
         : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)
     {
     }
-    public override int OptimizationOrder => base.OptimizationOrder + 1000;
+    public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
         SimplifyConstantUnifications();
@@ -16,6 +16,8 @@ public sealed class Unify : SolverBuiltIn
         return nodes;
         void SimplifyConstantUnifications()
         {
+            // TODO:  unify(between_(1,3,1,X),between_(X,3,1,X)))
+
             // By now most evaluations on constants have reduced down to the form:
             // unify(__Kx, c)
             // When we find this pattern, we can remove the unification and replace __Kx with c wherever it occurs.
@@ -62,7 +64,7 @@ public sealed class Unify : SolverBuiltIn
         }
     }
 
-    public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         if (!node.Goal.IsGround)
@@ -71,6 +73,8 @@ public sealed class Unify : SolverBuiltIn
             return FalseNode.Instance;
         return TrueNode.Instance;
     }
+
+    public override ErgoVM.Op Compile(ImmutableArray<ITerm> arguments) => ErgoVM.Ops.Unify(arguments[0], arguments[1]);
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {

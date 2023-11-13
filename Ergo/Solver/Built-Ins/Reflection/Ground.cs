@@ -9,7 +9,7 @@ public sealed class Ground : SolverBuiltIn
     {
     }
 
-    public override Maybe<ExecutionNode> Optimize(BuiltInNode node) =>
+    public override ExecutionNode Optimize(BuiltInNode node) =>
         node.Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)

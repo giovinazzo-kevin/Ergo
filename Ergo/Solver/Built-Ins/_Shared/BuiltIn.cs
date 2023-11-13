@@ -9,7 +9,7 @@ public abstract class SolverBuiltIn
 
     public virtual int OptimizationOrder => 0;
 
-    public virtual Maybe<ExecutionNode> Optimize(BuiltInNode node) => default;
+    public virtual ExecutionNode Optimize(BuiltInNode node) => node;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
 
     public Predicate GetStub(ImmutableArray<ITerm> arguments)
@@ -29,7 +29,7 @@ public abstract class SolverBuiltIn
     protected Evaluation True() => new(true);
     protected Evaluation True(SubstitutionMap subs) => new(true, subs);
     protected Evaluation True(Substitution sub) => new(true, sub);
-
+    public virtual ErgoVM.Op Compile(ImmutableArray<ITerm> arguments) => ErgoVM.Ops.NoOp;
     public abstract IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> arguments);
 
     public SolverBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)

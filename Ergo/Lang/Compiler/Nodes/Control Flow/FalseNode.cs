@@ -1,15 +1,9 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 public class FalseNode : StaticNode
 {
     public static readonly FalseNode Instance = new();
-
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        yield break;
-    }
-
+    static void Fail(ErgoVM vm) => vm.Fail();
+    public override ErgoVM.Op Compile() => Fail;
     public override string Explain(bool canonical = false) => "⊥";
 }

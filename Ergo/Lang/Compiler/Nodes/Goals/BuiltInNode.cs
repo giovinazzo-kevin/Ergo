@@ -1,5 +1,4 @@
-﻿using Ergo.Solver;
-using Ergo.Solver.BuiltIns;
+﻿using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
@@ -11,28 +10,26 @@ public class BuiltInNode : GoalNode
         BuiltIn = builtIn;
     }
 
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        Goal.Substitute(execScope.CurrentSubstitutions).GetQualification(out var inst);
-        foreach (var eval in BuiltIn.Apply(ctx, solverScope, inst.GetArguments()))
-        {
-            if (eval.Result)
-                yield return execScope.ApplySubstitutions(eval.Substitutions).AsSolution().Now(this);
-            else yield break;
-        }
-    }
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.BuiltInGoal(Goal, BuiltIn);
+
+    public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override ExecutionNode Optimize()
     {
-        if (BuiltIn.Optimize(this).TryGetValue(out var optimized))
-            return optimized;
-        return this;
+        return BuiltIn.Optimize(this);
     }
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    {
+        return BuiltIn.OptimizeSequence(nodes);
+    }
+
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround) return this;
         return new BuiltInNode(Node, Goal.Instantiate(ctx, vars), BuiltIn);
     }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
+        if (IsGround) return this;
         return new BuiltInNode(Node, Goal.Substitute(s), BuiltIn);
     }
 }

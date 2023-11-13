@@ -101,6 +101,8 @@ public readonly partial struct Complex : ITerm
 
     public override bool Equals(object obj)
     {
+        if (obj is AbstractTerm abs)
+            return abs.Equals(this);
         if (obj is not Complex other)
             return false;
         if (!Matches(other))

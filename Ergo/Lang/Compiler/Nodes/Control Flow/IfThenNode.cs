@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 public class IfThenNode : ExecutionNode
 {
@@ -12,33 +10,24 @@ public class IfThenNode : ExecutionNode
 
     public ExecutionNode Condition { get; }
     public ExecutionNode TrueBranch { get; }
-    public override IfThenNode Optimize() => new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
-
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    public override bool IsGround => Condition.IsGround && TrueBranch.IsGround;
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThen(Condition.Compile(), TrueBranch.Compile());
+    public override ExecutionNode Optimize()
     {
-        var conditionSubs = Substitution.Pool.Acquire();
-        var satisfied = false;
-        foreach (var res in Condition.Execute(ctx, solverScope, execScope))
-        {
-            satisfied = true;
-            conditionSubs.AddRange(res.CurrentSubstitutions);
-        }
-        if (satisfied)
-        {
-            execScope = execScope.ApplySubstitutions(conditionSubs);
-            Substitution.Pool.Release(conditionSubs);
-            foreach (var res in TrueBranch.Execute(ctx, solverScope, execScope))
-            {
-                yield return res;
-            }
-        }
+        if (Condition is TrueNode)
+            return TrueBranch.Optimize();
+        if (Condition is FalseNode)
+            return Condition;
+        return new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround) return this;
         return new IfThenNode(Condition.Instantiate(ctx, vars), TrueBranch.Instantiate(ctx, vars));
     }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
+        if (IsGround) return this;
         return new IfThenNode(Condition.Substitute(s), TrueBranch.Substitute(s));
     }
     public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n{("-> " + TrueBranch.Explain(canonical)).Indent(1)}";

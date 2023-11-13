@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 /// <summary>
 /// Represents a logical disjunction.
@@ -10,12 +8,31 @@ public class BranchNode : ExecutionNode
     public readonly ExecutionNode Left;
     public readonly ExecutionNode Right;
 
+    public override bool IsGround => Left.IsGround && Right.IsGround;
+
     public BranchNode(ExecutionNode left, ExecutionNode right)
     {
         Left = left;
         Right = right;
     }
 
+    public IEnumerable<ExecutionNode> Unfold()
+    {
+        if (Left is BranchNode bl)
+        {
+            foreach (var u in bl.Unfold())
+                yield return u;
+        }
+        else yield return Left;
+        if (Right is BranchNode br)
+        {
+            foreach (var u in br.Unfold())
+                yield return u;
+        }
+        else yield return Right;
+    }
+    //public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Unfold().Select(x => x.Compile()).ToArray());
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Left.Compile(), Right.Compile());
     public override ExecutionNode Optimize()
     {
         var left = Left.Optimize();
@@ -27,29 +44,15 @@ public class BranchNode : ExecutionNode
         return new BranchNode(left, right);
     }
 
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        var cut = false;
-        var branchScope = execScope.ChoicePoint().Branch();
-        foreach (var res in Left.Execute(ctx, solverScope, branchScope))
-        {
-            if (res.IsSolution)
-                yield return res.Branch(false).Now(this);
-            cut |= res.IsCut;
-        }
-        if (cut) yield break;
-        foreach (var res in Right.Execute(ctx, solverScope, branchScope))
-        {
-            yield return res.Branch(false).Now(this);
-        }
-    }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (IsGround) return this;
         return new BranchNode(Left.Instantiate(ctx, vars), Right.Instantiate(ctx, vars));
     }
 
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
+        if (IsGround) return this;
         return new BranchNode(Left.Substitute(s), Right.Substitute(s));
     }
     public override string Explain(bool canonical = false) => $"( {Left.Explain(canonical)}\r\n; {Right.Explain(canonical)} )";

@@ -83,6 +83,8 @@ public readonly struct Atom : ITerm
 
     public override bool Equals(object obj)
     {
+        if (obj is AbstractTerm abs)
+            return abs.Equals(this);
         if (obj is not Atom other)
             return false;
         if (other.Value is double n && Value is double m)

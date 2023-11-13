@@ -1,13 +1,16 @@
-﻿using Ergo.Solver;
-
+﻿
 namespace Ergo.Lang.Compiler;
 
 public class CutNode : StaticNode
 {
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
+    static void Cut(ErgoVM vm) => vm.Cut();
+    public override ErgoVM.Op Compile() => Cut;
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
-        // Clear the stack to prevent further backtracking
-        yield return execScope.Cut().Now(this);
+        var lastCut = nodes.LastOrDefault(x => x is CutNode);
+        if (lastCut != null)
+            nodes.RemoveAll(n => n is CutNode && n != lastCut);
+        return nodes;
     }
     public override string Explain(bool canonical = false) => $"!";
 }

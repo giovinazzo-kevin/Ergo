@@ -9,7 +9,8 @@ public sealed class Eval : MathBuiltIn
     {
     }
 
-    public override Maybe<ExecutionNode> Optimize(BuiltInNode node)
+    public override int OptimizationOrder => base.OptimizationOrder + 20;
+    public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         if (!args[1].IsGround)
@@ -26,6 +27,17 @@ public sealed class Eval : MathBuiltIn
         }
         return FalseNode.Instance;
     }
+
+    public override ErgoVM.Op Compile(ImmutableArray<ITerm> arguments) => vm =>
+    {
+        var eval = vm.Scope.InterpreterScope.ExceptionHandler.TryGet(() => new Atom(Evaluate(vm.Context.Solver, vm.Scope, arguments[1])));
+        if (!eval.TryGetValue(out var value))
+        {
+            vm.Fail();
+            return;
+        }
+        ErgoVM.Ops.Unify(arguments[0], value)(vm);
+    };
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
     {

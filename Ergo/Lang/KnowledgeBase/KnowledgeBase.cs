@@ -26,7 +26,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     public KnowledgeBase Clone()
     {
         var inner = new OrderedDictionary();
-        foreach (var kv in Predicates.Cast<KeyValuePair<Signature, List<Predicate>>>())
+        foreach (DictionaryEntry kv in Predicates)
         {
             inner.Add(kv.Key, kv.Value);
         }
@@ -94,24 +94,20 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         IEnumerable<KBMatch> Inner(IList<Predicate> list)
         {
             var buf = list.ToArray();
-            return buf
-                .Select(k =>
+            foreach (var k in buf)
+            {
+                if (k.BuiltIn.TryGetValue(out _))
                 {
-                    var predicate = k.Instantiate(ctx);
-                    if (predicate.IsVariadic && predicate.Head.GetFunctor().TryGetValue(out var fun))
-                    {
-                        predicate = predicate.WithHead(fun.BuildAnonymousTerm(goal.GetArguments().Length));
-                        return Maybe.Some(new KBMatch(goal, predicate, new()));
-                    }
-                    if (predicate.Unify(goal).TryGetValue(out var matchSubs))
-                    {
-                        predicate = Predicate.Substitute(predicate, matchSubs);
-                        return Maybe.Some(new KBMatch(goal, predicate, matchSubs));
-                    }
-                    return default;
-                })
-                .Where(x => x.TryGetValue(out _))
-                .Select(x => x.GetOrThrow(new InvalidOperationException()));
+                    yield return new KBMatch(goal, k, null);
+                    yield break;
+                }
+                var predicate = k.Instantiate(ctx);
+                if (predicate.Unify(goal).TryGetValue(out var matchSubs))
+                {
+                    predicate = predicate.Substitute(matchSubs);
+                    yield return new KBMatch(goal, predicate, matchSubs);
+                }
+            }
         }
     }
 
@@ -161,6 +157,24 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 if (predicate.IsSameDefinitionAs(pred))
                 {
                     matches.RemoveAt(i);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    public bool Replace(Predicate pred, Predicate other)
+    {
+        if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
+        {
+            for (var i = matches.Count - 1; i >= 0; i--)
+            {
+                var predicate = matches[i];
+                if (predicate.IsSameDefinitionAs(pred))
+                {
+                    matches.RemoveAt(i);
+                    matches.Insert(i, other);
                     return true;
                 }
             }

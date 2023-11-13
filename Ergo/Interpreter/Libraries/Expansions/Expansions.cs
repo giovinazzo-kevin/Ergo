@@ -35,6 +35,7 @@ public class Expansions : Library
                 }
                 if (expansions.Count > 0)
                 {
+                    // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
                     if (!sie.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
@@ -53,8 +54,7 @@ public class Expansions : Library
             foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
-                var pred = Predicate.Substitute(match.Predicate, match.Substitutions);
-
+                var pred = match.Predicate.Substitute(match.Substitutions);
                 foreach (var exp in ExpandPredicate(pred, qse.Scope))
                 {
                     if (!exp.IsSameDefinitionAs(pred))
@@ -62,6 +62,7 @@ public class Expansions : Library
                 }
                 if (expansions.Count > 0)
                 {
+                    // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
                     if (!qse.Solver.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
@@ -153,7 +154,7 @@ public class Expansions : Library
                         new(newBody, p.Head.Scope),
                         p.IsDynamic,
                         p.IsExported,
-                        p.ExecutionGraph
+                        default
                     );
                 }
             }
@@ -253,7 +254,7 @@ public class Expansions : Library
                 var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
                 if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
                     continue;
-                var pred = Predicate.Substitute(expInst, subs);
+                var pred = expInst.Substitute(subs);
                 yield return new(pred.Head, pred.Body, expVars[exp.OutVariable.Name]);
             }
         }

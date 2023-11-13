@@ -30,14 +30,20 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         return A;
     }
 
+    public void Remove(Substitution s)
+    {
+        if (Map.TryGetLvalue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
+            Map.Remove(s.Lhs);
+    }
+    public void RemoveRange(IEnumerable<Substitution> source)
+    {
+        foreach (var s in source)
+            Remove(s);
+    }
+
     public void Add(Substitution s)
     {
-        if (s.Lhs is Variable { Ignored: true } && Map.TryGetRvalue(s.Lhs, out var prevLhs))
-        {
-            Map.Remove(prevLhs);
-            Map.Add(prevLhs, s.Rhs);
-        }
-        else if (s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
+        if (s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
         {
             Map.Remove(s.Rhs);
             Map.Add(s.Lhs, prevRhs);
@@ -61,7 +67,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         foreach (var (lhs, rhs) in Map)
         {
             var vars = lhs.Variables.Concat(rhs.Variables);
-            if (keep.Intersect(vars).Any() || vars.Any(v => !v.Ignored))
+            if (keep.Intersect(vars).Any())
                 continue;
             Map.Remove(lhs);
         }
@@ -72,6 +78,8 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         var toAdd = Substitution.QueuePool.Acquire();
         foreach (var (lhs, rhs) in Map)
         {
+            if (lhs is not Variable || rhs is not Variable)
+                continue;
             Map.Remove(lhs);
             toAdd.Enqueue(new(rhs, lhs));
         }

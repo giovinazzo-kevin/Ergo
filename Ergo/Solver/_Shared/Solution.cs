@@ -56,9 +56,9 @@ public readonly struct Solution
             if (!subs_.Any())
                 continue;
             var sub = subs_.First();
-            output.Remove(output.First(x => x.Lhs.Equals(ans.Lhs)));
             if (sub.Lhs is null)
                 continue;
+            output.Remove(output.First(x => x.Lhs.Equals(ans.Lhs)));
             output.Add(new Substitution(ans.Lhs, sub.Lhs));
         }
 

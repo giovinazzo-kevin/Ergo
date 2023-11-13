@@ -15,7 +15,7 @@ public static class Maybe
 
 public readonly struct Maybe<T>
 {
-    private readonly bool HasValue;
+    public readonly bool HasValue;
     private readonly T Value { get; }
 
     public Maybe<U> Map<U>(Func<T, Maybe<U>> some, Func<Maybe<U>> none = null)

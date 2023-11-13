@@ -1,6 +1,4 @@
-﻿using Ergo.Solver;
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 public class VariableNode : ExecutionNode
 {
@@ -11,10 +9,7 @@ public class VariableNode : ExecutionNode
         Binding = v;
     }
 
-    public override IEnumerable<ExecutionScope> Execute(SolverContext ctx, SolverScope solverScope, ExecutionScope execScope)
-    {
-        yield return execScope.Now(this);
-    }
+    public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(((ITerm)Binding).Substitute(vm.Environment));
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new VariableNode((Variable)Binding.Instantiate(ctx, vars));

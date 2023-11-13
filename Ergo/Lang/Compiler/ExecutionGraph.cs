@@ -1,81 +1,71 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Solver;
-#if ERGO_COMPILER_DIAGNOSTICS
-using System.Diagnostics;
-#endif
 
 namespace Ergo.Lang.Compiler;
 
-public readonly struct ExecutionGraph
+public class ExecutionGraph
 {
+    private Maybe<ErgoVM.Op> Compiled;
     public readonly ExecutionNode Root;
 
-    public ExecutionGraph(ExecutionNode root) => Root = root;
+    public ExecutionGraph(ExecutionNode root)
+    {
+        if (root is SequenceNode seq)
+            root = seq.AsRoot(); // Enables some optimizations
+        Root = root;
+    }
+    private ErgoVM.Op CompileAndCache()
+    {
+        var op = Root.Compile();
+        Compiled = op;
+        return op;
+    }
 
     public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (Root.IsGround)
+            return this;
         return new(Root.Instantiate(ctx, vars));
     }
     public ExecutionGraph Substitute(IEnumerable<Substitution> s)
     {
+        if (Root.IsGround)
+            return this;
         return new(Root.Substitute(s));
     }
 
-    public ExecutionGraph Optimized() => new(Root.Optimize());
+    public ExecutionGraph Optimized() => new(new SequenceNode(new() { Root }).Optimize());
 
-    public IEnumerable<Solution> Execute(SolverContext ctx, SolverScope scope)
+    /// <summary>
+    /// Compiles the current graph to an Op that can run on the ErgoVM.
+    /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
+    /// </summary>
+    public ErgoVM.Op Compile()
     {
-        var execScope = ExecutionScope.Empty();
-#if ERGO_COMPILER_DIAGNOSTICS
-        var steps = new List<ExecutionScope>();
-        execScope.Stopwatch.Start();
-#endif
-        foreach (var step in Root.Execute(ctx, scope, execScope))
-        {
-#if ERGO_COMPILER_DIAGNOSTICS
-            steps.Add(step);
-#endif
-            if (!step.IsSolution)
-                continue;
-            yield return new(scope, step.CurrentSubstitutions);
-            Substitution.Pool.Release(step.CurrentSubstitutions);
-        }
-#if ERGO_COMPILER_DIAGNOSTICS
-        execScope.Stopwatch.Stop();
-        Task.Run(() =>
-        {
-            foreach (var step in steps)
-            {
-                foreach (var caller in step.Callers)
-                {
-                    Debug.WriteLine($"[{caller.Time.TotalMilliseconds:0.000ms}] {caller.Node.Select(n => n.Substitute(step.CurrentSubstitutions).Explain(false)).GetOr(string.Empty)}");
-                }
-            }
-        });
-#endif
+        return Compiled.GetOr(CompileAndCache());
     }
 }
 
 public static class ExecutionGraphExtensions
 {
-    private static readonly InstantiationContext CompilerContext = new("__E");
+    public static readonly InstantiationContext CompilerContext = new("E");
 
-    public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph)
+    public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         var scope = graph.Scope/*.WithCurrentModule(clause.DeclaringModule)*/;
-        var root = ToExecutionNode(clause.Body, graph, scope);
-        if (root is SequenceNode seq)
-            root = seq.AsRoot(); // Enables some optimizations
+        var root = ToExecutionNode(clause.Body, graph, scope, cyclicalCallMap: cyclicalCallMap);
         return new(root);
     }
 
-    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null)
+    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         ctx ??= CompilerContext;
-        var scope = mbScope.GetOr(graph.Scope);
+        cyclicalCallMap ??= new();
+        var ret = default(ExecutionNode);
+        Action<ExecutionNode> onReturn = _ => { };
+        var scope = mbScope.GetOr(graph.Scope);// Handle the cyclical call node if it's present
         if (goal is NTuple tup)
         {
-            var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, ctx)).ToList();
+            var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, ctx, cyclicalCallMap)).ToList();
             if (list.Count == 0)
                 return TrueNode.Instance;
             if (list.Count == 1)
@@ -94,15 +84,15 @@ public static class ExecutionGraphExtensions
         {
             if (arity == 2 && WellKnown.Operators.If.Synonyms.Contains(functor))
             {
-                return new IfThenNode(ToExecutionNode(args[0], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
+                return new IfThenNode(ToExecutionNode(args[0], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, ctx, cyclicalCallMap));
             }
             if (arity == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor))
             {
                 if (args[0] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 } && arity1 == 2 && WellKnown.Operators.If.Synonyms.Contains(functor1))
                 {
-                    return new IfThenElseNode(ToExecutionNode(args1[0], graph, scope, ctx), ToExecutionNode(args1[1], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
+                    return new IfThenElseNode(ToExecutionNode(args1[0], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args1[1], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, ctx, cyclicalCallMap));
                 }
-                return new BranchNode(ToExecutionNode(args[0], graph, scope, ctx), ToExecutionNode(args[1], graph, scope, ctx));
+                return new BranchNode(ToExecutionNode(args[0], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, ctx, cyclicalCallMap));
             }
         }
         // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
@@ -140,54 +130,61 @@ public static class ExecutionGraphExtensions
         if (matches.Count == 0)
             throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
         if (matches.Count == 1)
-            return matches[0];
-        return matches.Aggregate((a, b) => new BranchNode(a, b));
-
+            ret = matches[0];
+        else ret = matches.Aggregate((a, b) => new BranchNode(a, b));
+        onReturn(ret);
+        return ret;
         void Node(ITerm goal)
+        {
+            if (cyclicalCallMap.TryGetValue(sig, out var cyclical))
+            {
+                matches.Add(new CyclicalCallNode(goal) { Clause = cyclical.Clause, Ref = cyclical.Ref });
+                return;
+            }
+            if (node.IsCyclical || node.Clauses.Any(c => c.IsTailRecursive))
+            {
+                cyclicalCallMap[sig] = new CyclicalCallNode(goal);
+            }
+            var newMatches = new List<ExecutionNode>();
+            foreach (var clause in node.Clauses)
+            {
+                if (Clause(clause).TryGetValue(out var match))
+                    newMatches.Add(match);
+            }
+            matches.AddRange(newMatches);
+            if (cyclicalCallMap.TryGetValue(sig, out var c))
+            {
+                onReturn += ret =>
+                c.Ref.Node = ret;
+            }
+        }
+        Maybe<ExecutionNode> Clause(Predicate clause)
         {
             var facts = new List<Predicate>();
             goal.GetQualification(out var head);
-            if (!node.IsCyclical)
+            if (clause.BuiltIn.TryGetValue(out var builtIn))
+                return new BuiltInNode(node, head, builtIn);
+            var instVars = new Dictionary<string, Variable>();
+            var substitutedClause = clause.Instantiate(ctx, instVars);
+            substitutedClause.Head.GetQualification(out var clauseHead);
+            if (!head.Unify(clauseHead).TryGetValue(out var subs))
+                return default;
+            substitutedClause = substitutedClause.Substitute(subs);
+            substitutedClause.Head.GetQualification(out clauseHead);
+            var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
+            var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
+            var unifNode = new BuiltInNode(unifDep, unif, graph.UnifyInstance);
+            if (clause.IsFactual)
+                return unifNode;
+            if (cyclicalCallMap.TryGetValue(sig, out var cycleNode))
+                cycleNode.Clause = clause;
+            var execGraph = substitutedClause.ExecutionGraph
+                .GetOr(ToExecutionGraph(substitutedClause, graph, cyclicalCallMap));
+            if (!head.Equals(clauseHead))
             {
-                foreach (var clause in node.Clauses)
-                {
-                    if (clause.BuiltIn.TryGetValue(out var builtIn))
-                    {
-                        matches.Add(new BuiltInNode(node, head, builtIn));
-                        continue;
-                    }
-                    var substitutedClause = clause.Instantiate(ctx);
-                    substitutedClause.Head.GetQualification(out var clauseHead);
-                    if (head.Unify(clauseHead).TryGetValue(out var subs))
-                    {
-                        substitutedClause = Predicate.Substitute(substitutedClause, subs);
-                    }
-                    else continue;
-                    substitutedClause.Head.GetQualification(out clauseHead);
-                    var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
-                    var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
-                    var unifNode = new BuiltInNode(unifDep, unif, graph.UnifyInstance);
-                    if (clause.IsFactual)
-                    {
-                        matches.Add(unifNode);
-                        continue;
-                    }
-                    var inner = ToExecutionGraph(substitutedClause, graph).Root;
-                    if (!head.Equals(clauseHead))
-                    {
-                        var seq = new SequenceNode(new() { unifNode, inner });
-                        matches.Add(seq);
-                    }
-                    else
-                    {
-                        matches.Add(inner);
-                    }
-                }
+                return new SequenceNode(new() { unifNode, execGraph.Root });
             }
-            else
-            {
-                matches.Add(new CyclicalGoalNode(node, goal));
-            }
+            return execGraph.Root;
         }
     }
 }

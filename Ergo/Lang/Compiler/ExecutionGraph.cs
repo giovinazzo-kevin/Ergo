@@ -16,6 +16,9 @@ public class ExecutionGraph
     private ErgoVM.Op CompileAndCache()
     {
         var op = Root.Compile();
+        // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
+        // TODO: Pre-JIT everything that can be pre-JITted, as this doesn't work recursively.
+        RuntimeHelpers.PrepareDelegate(op);
         Compiled = op;
         return op;
     }

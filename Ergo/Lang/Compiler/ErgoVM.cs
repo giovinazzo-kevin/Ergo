@@ -79,12 +79,14 @@ public class ErgoVM
         public static Op IfThenElse(Op condition, Op consequence, Op alternative) => vm =>
         {
             var backupEnvironment = vm.CloneEnvironment();
+            var numCp = vm.NumChoicePoints;
             condition(vm);
-            vm.Cut();
             if (vm.State != VMState.Fail)
             {
                 if (vm.State == VMState.Solution)
                     vm.MergeEnvironment();
+                // Discard choice points created by the condition. Similar to a cut but more specific.
+                vm.DiscardChoices(vm.NumChoicePoints - numCp);
                 consequence(vm);
             }
             else
@@ -263,7 +265,7 @@ public class ErgoVM
                                 .Qualified(pred.DeclaringModule);
                             // Remove all substitutions that are no longer relevant, including those we just used.
                             vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
-                            vm.DiscardChoice(); // We don't need the NextMatch choice point anymore.
+                            vm.DiscardChoices(1); // We don't need the NextMatch choice point anymore.
                             matchEnum = GetEnumerator(vm);
                             goto TCO;
                         }
@@ -392,10 +394,13 @@ public class ErgoVM
     }
 
     private static readonly Exception StackEmptyException = new RuntimeException(ErrorType.StackEmpty);
-    public void DiscardChoice()
+    public void DiscardChoices(int numChoices)
     {
-        var cp = PopChoice().GetOrThrow(StackEmptyException);
-        Substitution.Pool.Release(cp.Environment);
+        while (numChoices-- > 0)
+        {
+            var cp = PopChoice().GetOrThrow(StackEmptyException);
+            Substitution.Pool.Release(cp.Environment);
+        }
     }
 
     public void PushChoice(Op choice)

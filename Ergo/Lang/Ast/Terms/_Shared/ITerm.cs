@@ -88,6 +88,8 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 
     ITerm Substitute(IEnumerable<Substitution> subs)
     {
+        if (IsGround)
+            return this;
         var steps = subs.ToDictionary(s => s.Lhs, s => s.Rhs);
         var variables = Variables.Where(var => steps.ContainsKey(var));
         var @base = this;

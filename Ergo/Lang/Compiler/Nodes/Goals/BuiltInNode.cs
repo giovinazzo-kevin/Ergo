@@ -5,12 +5,17 @@ namespace Ergo.Lang.Compiler;
 public class BuiltInNode : GoalNode
 {
     public SolverBuiltIn BuiltIn { get; }
+    public readonly ErgoVM.Goal BuiltInGoal;
+    public readonly ITerm Head;
     public BuiltInNode(DependencyGraphNode node, ITerm goal, SolverBuiltIn builtIn) : base(node, goal)
     {
         BuiltIn = builtIn;
+        BuiltInGoal = ErgoVM.Goals.BuiltIn(BuiltIn);
+        RuntimeHelpers.PrepareDelegate(BuiltInGoal);
+        Goal.GetQualification(out Head);
     }
 
-    public override ErgoVM.Op Compile() => ErgoVM.Ops.BuiltInGoal(Goal, BuiltIn);
+    public override ErgoVM.Op Compile() => vm => BuiltInGoal(Head.Substitute(vm.Environment).GetArguments())(vm);
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override ExecutionNode Optimize()

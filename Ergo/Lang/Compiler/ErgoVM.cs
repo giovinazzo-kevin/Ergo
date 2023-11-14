@@ -16,6 +16,60 @@ public class ErgoVM
     /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
     /// </summary>
     public delegate void Op(ErgoVM vm);
+    public delegate Op Goal(ImmutableArray<ITerm> args);
+    public static class Goals
+    {
+        public static Goal True => _ => Ops.NoOp;
+        public static Goal False => _ => Ops.Fail;
+        /// <summary>
+        /// Performs the unification at the time when Unify is called.
+        /// Either returns Ops.Fail or Ops.UpdateEnvironment with the result of unification.
+        /// </summary>
+        public static Goal Unify => args =>
+        {
+            // In this case unification is really just the act of updating the environment with the *result* of unification.
+            // The Op is provided for convenience and as a wrapper. Note that unification is performed eagerly in this case. 
+            if (args[0].Unify(args[1]).TryGetValue(out var subs))
+                return Ops.UpdateEnvironment(subs);
+            return Ops.Fail;
+        };
+        /// <summary>
+        /// Calls a built-in by passing it the matching goal's arguments.
+        /// </summary>
+        public static Goal BuiltIn(SolverBuiltIn builtIn) => args => vm =>
+        {
+            // goal.Substitute(vm.Environment).GetQualification(out var inst);
+            // var args = inst.GetArguments();
+            var op = builtIn.Compile()(args);
+            // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
+            if (Ops.NoOp != op)
+            {
+                op(vm);
+                return;
+            }
+            #region temporary code
+            var next = builtIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
+            NextGoal(vm);
+            void NextGoal(ErgoVM vm)
+            {
+                if (next.MoveNext())
+                {
+                    if (!next.Current.Result)
+                    {
+                        vm.Fail();
+                        return;
+                    }
+                    vm.Solution(next.Current.Substitutions);
+                    vm.PushChoice(NextGoal);
+                }
+                else
+                {
+                    vm.Fail();
+                }
+            }
+            #endregion
+        };
+    }
     public static class Ops
     {
         public static Op NoOp => _ => { };
@@ -112,34 +166,6 @@ public class ErgoVM
             vm.Environment = newEnv;
         };
         /// <summary>
-        /// Performs the unification at the time when Unify is called.
-        /// Either returns Ops.Fail or Ops.UpdateEnvironment with the result of unification.
-        /// See also UnifyLazy for a version that delays unification until necessary.
-        /// </summary>
-        public static Op Unify(ITerm left, ITerm right)
-        {
-            // In this case unification is really just the act of updating the environment with the *result* of unification.
-            // The Op is provided for convenience and as a wrapper. Note that unification is performed eagerly in this case. 
-            if (Substitution.Unify(new(left, right)).TryGetValue(out var subs))
-            {
-                return UpdateEnvironment(subs);
-            }
-            return Fail;
-        }
-        /// <summary>
-        /// This should not be required by anything in standard Ergo, but some extensions may benefit from
-        /// delaying term unification until the very moment it should be performed. Standard terms are 
-        /// immutable, so they wouldn't change between the call to UnifyLazy and the moment when the op is
-        /// executed on the VM. But if a term can change e.g. on backtracking, then UnifyLazy is the way to go.
-        /// </summary>
-        public static Op UnifyLazy(ITerm left, ITerm right)
-        {
-            // The difference from just returning Unify(left, right) is that, this way,
-            // the args are captured by the closure and evaluated *every time the op is ran*,
-            // including on backtracking. Stateful abstract terms may unify to something else by then.
-            return vm => Unify(left, right)(vm);
-        }
-        /// <summary>
         /// Converts a query into the corresponding Op.
         /// </summary>
         public static Op Goals(NTuple goals)
@@ -150,44 +176,6 @@ public class ErgoVM
                 return Goal(goals.Contents[0]);
             return And(goals.Contents.Select(Goal).ToArray());
         }
-        /// <summary>
-        /// Calls a built-in by passing it the matching goal's arguments.
-        /// </summary>
-        public static Op BuiltInGoal(ITerm goal, SolverBuiltIn builtIn) => vm =>
-        {
-            goal.Substitute(vm.Environment).GetQualification(out var inst);
-            var args = inst.GetArguments();
-            var op = builtIn.Compile(args);
-            vm.LogState($"B:" + goal.Explain(false));
-            // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
-            if (NoOp != op)
-            {
-                op(vm);
-                return;
-            }
-            #region temporary code
-            var expl = goal.Explain(false);
-            var next = builtIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
-            NextGoal(vm);
-            void NextGoal(ErgoVM vm)
-            {
-                if (next.MoveNext())
-                {
-                    if (!next.Current.Result)
-                    {
-                        vm.Fail();
-                        return;
-                    }
-                    vm.Solution(next.Current.Substitutions);
-                    vm.PushChoice(NextGoal);
-                }
-                else
-                {
-                    vm.Fail();
-                }
-            }
-            #endregion
-        };
         /// <summary>
         /// Calls an individual goal.
         /// </summary>
@@ -225,7 +213,10 @@ public class ErgoVM
                         var pred = matchEnum.Current.Predicate;
                         // - It's a builtin (we can run it directly with low overhead)
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
-                            runGoal = BuiltInGoal(pred.Head, builtIn);
+                        {
+                            pred.Head.Substitute(vm.Environment).GetQualification(out var inst);
+                            runGoal = ErgoVM.Goals.BuiltIn(builtIn)(inst.GetArguments());
+                        }
                         // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
                             runGoal = graph.Compile();

@@ -28,15 +28,15 @@ public sealed class Eval : MathBuiltIn
         return FalseNode.Instance;
     }
 
-    public override ErgoVM.Op Compile(ImmutableArray<ITerm> arguments) => vm =>
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        var eval = vm.Scope.InterpreterScope.ExceptionHandler.TryGet(() => new Atom(Evaluate(vm.Context.Solver, vm.Scope, arguments[1])));
+        var eval = vm.Scope.InterpreterScope.ExceptionHandler.TryGet(() => new Atom(Evaluate(vm.Context.Solver, vm.Scope, args[1])));
         if (!eval.TryGetValue(out var value))
         {
             vm.Fail();
             return;
         }
-        ErgoVM.Ops.Unify(arguments[0], value)(vm);
+        ErgoVM.Goals.Unify(args.SetItem(1, value))(vm);
     };
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)

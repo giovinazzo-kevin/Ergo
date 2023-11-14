@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
@@ -174,7 +175,7 @@ public static class ExecutionGraphExtensions
                 return default;
             substitutedClause = substitutedClause.Substitute(subs);
             substitutedClause.Head.GetQualification(out clauseHead);
-            var unif = new Complex(WellKnown.Signatures.Unify.Functor, head, clauseHead);
+            var unif = Unify.MakeComplex(head, clauseHead);
             var unifDep = graph.GetNode(WellKnown.Signatures.Unify).GetOrThrow(new InvalidOperationException());
             var unifNode = new BuiltInNode(unifDep, unif, graph.UnifyInstance);
             if (clause.IsFactual)

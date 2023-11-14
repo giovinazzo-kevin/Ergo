@@ -241,7 +241,7 @@ public readonly struct Predicate : IExplainable
             if (cplx.Arguments[i] is Variable)
                 continue;
             any = true;
-            var unif = new Complex(WellKnown.Signatures.Unify.Functor, varArgs[i], cplx.Arguments[i]);
+            var unif = Unify.MakeComplex(varArgs[i], cplx.Arguments[i]);
             preconditions.Add(unif);
         }
         if (!any)

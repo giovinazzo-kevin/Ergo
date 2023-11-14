@@ -8,13 +8,16 @@ public sealed class Unify : SolverBuiltIn
         : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)
     {
     }
+
+    public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new Complex(WellKnown.Signatures.Unify.Functor, lhs, rhs);
+
     public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
-        SimplifyConstantUnifications();
+        PropagateConstants();
         RemoveDeadUnifications();
         return nodes;
-        void SimplifyConstantUnifications()
+        void PropagateConstants()
         {
             // TODO:  unify(between_(1,3,1,X),between_(X,3,1,X)))
 
@@ -63,14 +66,33 @@ public sealed class Unify : SolverBuiltIn
             bool IsDeadUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true, Name: var name } && refCounts[name] == 1;
         }
     }
-
+    // TODO: Maybe use a name that can't be typed by the user.
+    private static readonly Atom _u = new Atom("_u").AsQuoted(false);
     public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
-        if (!node.Goal.IsGround)
+        // If this node was already optimized, nevermind.
+        if (args[0].GetFunctor().Select(x => x.Equals(_u)).GetOr(false))
             return node;
-        if (!args[0].Unify(args[1]).TryGetValue(out _))
+        // If two terms don't unify they don't unify, regardless of whether they're ground or not.
+        if (!args[1].Unify(args[0]).TryGetValue(out var subs))
             return FalseNode.Instance;
+        // However, if the unification produced substitutions then we can't just ignore them. We can actually use them.
+        if (!node.Goal.IsGround && subs.Any())
+        {
+            // So we put all the lvalues on one side, all the rvalues on the other, and wrap them in a complex to
+            // prevent constant propagation from destroying their relationship.
+            // This turns an equation like:
+            // dict { a: c(1, d(2), dict { e: 3 }) } = dict { a: c(X, d(Y), _ { e: Z }) }
+            // into:
+            // _u(1, 2, 3) = _u(X, Y, Z)
+            var lhs = new Complex(_u, subs.Select(x => x.Lhs).ToArray());
+            var rhs = new Complex(_u, subs.Select(x => x.Rhs).ToArray());
+            // The resulting unification has most of the redundant structure factored out so that it executes faster at runtime.
+            // This should be especially noticeable in cases where there's very large structures with deep nesting like dicts.
+            // TODO: This might potentially break some abstract forms like EntityAsTerm in FieroEngine. Test this rigorously.
+            return new BuiltInNode(node.Node, MakeComplex(lhs, rhs), node.BuiltIn);
+        }
         return TrueNode.Instance;
     }
 

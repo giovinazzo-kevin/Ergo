@@ -1,11 +1,11 @@
 {
   "runtimeTarget": {
-    "name": ".NETCoreApp,Version=v7.0",
+    "name": ".NETCoreApp,Version=v8.0",
     "signature": ""
   },
   "compilationOptions": {},
   "targets": {
-    ".NETCoreApp,Version=v7.0": {
+    ".NETCoreApp,Version=v8.0": {
       "Ergo/1.0.0": {
         "dependencies": {
           "Microsoft.CodeAnalysis.CSharp": "4.8.0-2.final",
@@ -309,22 +309,7 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "System.Text.Encoding.CodePages/8.0.0-rc.1.23419.4": {
-        "runtime": {
-          "lib/net7.0/System.Text.Encoding.CodePages.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.41904"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win/lib/net7.0/System.Text.Encoding.CodePages.dll": {
-            "rid": "win",
-            "assetType": "runtime",
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.41904"
-          }
-        }
-      },
+      "System.Text.Encoding.CodePages/8.0.0-rc.1.23419.4": {},
       "System.Threading/4.3.0": {
         "dependencies": {
           "System.Runtime": "4.3.0",

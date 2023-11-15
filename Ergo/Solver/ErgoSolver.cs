@@ -195,23 +195,6 @@ public partial class ErgoSolver : IDisposable
         return queryExpansions;
     }
 
-    public ExecutionGraph Compile(Query query, SolverScope scope)
-    {
-        InitializeGuard(scope);
-        var list = new List<ExecutionNode>();
-        foreach (var exp in GetQueryExpansions(query, scope))
-        {
-            var subs = exp.Substitutions; subs.Invert();
-            var newPred = exp.Predicate.Substitute(subs);
-            scope = scope.WithCallee(new(newPred, null));
-            if (newPred.ExecutionGraph.TryGetValue(out var compiled))
-            {
-                list.Add(compiled.Root);
-            }
-        }
-        return new ExecutionGraph(list.Aggregate((a, b) => new BranchNode(a, b)).Optimize());
-    }
-
     public IEnumerable<Solution> Solve(Query query, SolverScope scope, CancellationToken ct = default)
     {
         InitializeGuard(scope);
@@ -224,7 +207,7 @@ public partial class ErgoSolver : IDisposable
             if (newPred.ExecutionGraph.TryGetValue(out var graph))
             {
                 var vm = new ErgoVM() { Context = ctx, Scope = scope, KnowledgeBase = KnowledgeBase };
-                vm.Query = graph.Compile();
+                vm.Query = graph.Compile()(newPred.Head.GetArguments());
                 foreach (var s in vm.RunInteractive())
                     yield return s;
                 continue;

@@ -34,7 +34,7 @@ public readonly record struct Hook(Signature Signature)
                 }
                 return s.ToExecutionGraph(kb.DependencyGraph).Root;
             }).Aggregate((a, b) => new BranchNode(a, b)).Optimize();
-            var graph = new ExecutionGraph(root);
+            var graph = new ExecutionGraph(anon, root);
             return new CompiledHook(Signature, graph, anon);
         }
         catch (CompilerException e) { }

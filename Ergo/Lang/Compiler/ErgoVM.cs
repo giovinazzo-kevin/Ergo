@@ -214,12 +214,15 @@ public class ErgoVM
                         // - It's a builtin (we can run it directly with low overhead)
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
                         {
-                            pred.Head.Substitute(vm.Environment).GetQualification(out var inst);
+                            matchEnum.Current.Goal.GetQualification(out var inst);
                             runGoal = ErgoVM.Goals.BuiltIn(builtIn)(inst.GetArguments());
                         }
                         // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
-                            runGoal = graph.Compile();
+                        {
+                            matchEnum.Current.Goal.GetQualification(out var inst);
+                            runGoal = graph.Compile()(inst.GetArguments());
+                        }
                         // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
                             runGoal = Goals(pred.Body);

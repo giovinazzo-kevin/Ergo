@@ -10,6 +10,13 @@ public sealed class Unify : SolverBuiltIn
     }
 
     public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new Complex(WellKnown.Signatures.Unify.Functor, lhs, rhs);
+    public static ImmutableArray<ITerm> MakeArgs(ImmutableArray<ITerm> lhs, ImmutableArray<ITerm> rhs)
+    {
+        var builder = ImmutableArray<ITerm>.Empty.ToBuilder();
+        builder.Add(new Complex(_u, lhs));
+        builder.Add(new Complex(_u, rhs));
+        return builder.ToImmutable();
+    }
 
     public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)

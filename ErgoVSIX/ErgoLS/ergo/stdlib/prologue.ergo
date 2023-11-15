@@ -25,9 +25,9 @@ _If -> _Then; Else :- !, Else.
 If -> Then :- If, !, Then.
 
 %: Logical disjunction of A and B.
-';'(A, _B) :- A.
+';'(_A, _B) :- _A.
 %: Logical disjunction of A and B.
-';'(_A, B) :- B.
+';'(_A, _B) :- _B.
 
 %: Logical complement of A (negation).
 %: ⊤ iff A cannot be proven.

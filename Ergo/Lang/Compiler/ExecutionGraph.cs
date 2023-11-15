@@ -1,49 +1,65 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Solver.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
 public class ExecutionGraph
 {
-    private Maybe<ErgoVM.Op> Compiled;
+    private Maybe<ErgoVM.Goal> Compiled;
     public readonly ExecutionNode Root;
+    public readonly ITerm Head;
 
-    public ExecutionGraph(ExecutionNode root)
+    public ExecutionGraph(ITerm head, ExecutionNode root)
     {
         if (root is SequenceNode seq)
             root = seq.AsRoot(); // Enables some optimizations
         Root = root;
+        head.GetQualification(out Head);
     }
-    private ErgoVM.Op CompileAndCache()
+    private ErgoVM.Goal CompileAndCache()
     {
-        var op = Root.Compile();
+        var compiledRoot = Root.Compile();
+        var Args = Head.GetArguments();
+        ErgoVM.Goal op = args => vm =>
+        {
+            if (false)
+            {
+                Debug.Assert(args.Length == Args.Length);
+                ErgoVM.Goals.Unify(Unify.MakeArgs(args, Args))(vm);
+                if (vm.State == ErgoVM.VMState.Fail)
+                    return;
+            }
+            compiledRoot(vm);
+        };
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
         // TODO: Pre-JIT everything that can be pre-JITted, as this doesn't work recursively.
+        RuntimeHelpers.PrepareDelegate(compiledRoot);
         RuntimeHelpers.PrepareDelegate(op);
         Compiled = op;
         return op;
     }
-
     public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         if (Root.IsGround)
             return this;
-        return new(Root.Instantiate(ctx, vars));
+        vars ??= new();
+        return new(Head.Instantiate(ctx, vars), Root.Instantiate(ctx, vars));
     }
     public ExecutionGraph Substitute(IEnumerable<Substitution> s)
     {
         if (Root.IsGround)
             return this;
-        return new(Root.Substitute(s));
+        return new(Head.Substitute(s), Root.Substitute(s));
     }
 
-    public ExecutionGraph Optimized() => new(new SequenceNode(new() { Root }).Optimize());
+    public ExecutionGraph Optimized() => new(Head, new SequenceNode(new() { Root }).Optimize());
 
     /// <summary>
     /// Compiles the current graph to an Op that can run on the ErgoVM.
     /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
     /// </summary>
-    public ErgoVM.Op Compile()
+    public ErgoVM.Goal Compile()
     {
         return Compiled.GetOr(CompileAndCache());
     }
@@ -57,7 +73,7 @@ public static class ExecutionGraphExtensions
     {
         var scope = graph.Scope/*.WithCurrentModule(clause.DeclaringModule)*/;
         var root = ToExecutionNode(clause.Body, graph, scope, cyclicalCallMap: cyclicalCallMap);
-        return new(root);
+        return new(clause.Head, root);
     }
 
     public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
@@ -167,8 +183,9 @@ public static class ExecutionGraphExtensions
             var facts = new List<Predicate>();
             goal.GetQualification(out var head);
             if (clause.BuiltIn.TryGetValue(out var builtIn))
-                return new BuiltInNode(node, head, builtIn);
+                return new BuiltInNode(node, head, (SolverBuiltIn)builtIn);
             var instVars = new Dictionary<string, Variable>();
+
             var substitutedClause = clause.Instantiate(ctx, instVars);
             substitutedClause.Head.GetQualification(out var clauseHead);
             if (!head.Unify(clauseHead).TryGetValue(out var subs))

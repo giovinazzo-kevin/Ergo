@@ -104,7 +104,6 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                 var predicate = k.Instantiate(ctx);
                 if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                 {
-                    predicate = predicate.Substitute(matchSubs);
                     yield return new KBMatch(goal, predicate, matchSubs);
                 }
             }

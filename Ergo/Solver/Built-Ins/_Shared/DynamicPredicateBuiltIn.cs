@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
 {
@@ -7,7 +9,7 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
     {
     }
 
-    protected static Maybe<Predicate> GetPredicate(SolverScope scope, ITerm arg)
+    protected static Maybe<Predicate> GetPredicate(SolverScope scope, ITerm arg, DependencyGraph depGraph)
     {
         if (!Predicate.FromCanonical(arg, scope.InterpreterScope.Entry, out var pred))
         {
@@ -18,13 +20,13 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
         pred = pred.Dynamic();
         if (scope.InterpreterScope.Modules.TryGetValue(pred.DeclaringModule, out var declaringModule) && declaringModule.ContainsExport(pred.Head.GetSignature()))
             pred = pred.Exported();
-
-        return pred.Qualified();
+        return pred.Qualified()
+            .WithExecutionGraph(pred.ToExecutionGraph(depGraph));
     }
 
     protected static bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
     {
-        if (!GetPredicate(scope, arg).TryGetValue(out var pred))
+        if (!GetPredicate(scope, arg, solver.KnowledgeBase.DependencyGraph).TryGetValue(out var pred))
             return false;
         if (!z)
         {

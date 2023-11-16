@@ -13,6 +13,7 @@ public class TailCallOptimizationTests : ErgoTests
     [InlineData("for(I,1,10), for(J,1,10)", 100)]
 
     #endregion
+
     public void ShouldSolveTailRecursivePredicatesWithoutOverflowingTheStack(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
 }

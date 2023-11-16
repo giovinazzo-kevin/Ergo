@@ -183,10 +183,8 @@ public static class ExecutionGraphExtensions
             var facts = new List<Predicate>();
             goal.GetQualification(out var head);
             if (clause.BuiltIn.TryGetValue(out var builtIn))
-                return new BuiltInNode(node, head, (SolverBuiltIn)builtIn);
-            var instVars = new Dictionary<string, Variable>();
-
-            var substitutedClause = clause.Instantiate(ctx, instVars);
+                return new BuiltInNode(node, head, builtIn);
+            var substitutedClause = clause.Instantiate(ctx);
             substitutedClause.Head.GetQualification(out var clauseHead);
             if (!head.Unify(clauseHead).TryGetValue(out var subs))
                 return default;

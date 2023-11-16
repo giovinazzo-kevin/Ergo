@@ -125,15 +125,14 @@ public class Compiler : Library
 
     public IEnumerable<DependencyGraphNode> InlineInContext(InterpreterScope scope, DependencyGraph graph)
     {
-        var ctx = new InstantiationContext("__I");
         foreach (var node in graph.GetRootNodes()
-            .SelectMany(r => InlineNodeWithContext(scope, ctx, r)))
+            .SelectMany(r => InlineNodeWithContext(scope, r)))
         {
             yield return node;
         }
     }
 
-    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, InstantiationContext ctx, DependencyGraphNode node, DependencyGraphNode dependent, HashSet<Signature> processed = null)
+    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, DependencyGraphNode node, DependencyGraphNode dependent, HashSet<Signature> processed = null)
     {
         processed ??= new HashSet<Signature>();
         processed.Add(node.Signature);
@@ -146,7 +145,7 @@ public class Compiler : Library
             // These semantics should be preserved when inlining =/2 and similar predicates. A naive approach might elide other definitions.
             // A smart approach will inline them individually and merge them as a disjunction. A pragmatic approach will just avoid this head scratcher.
             var lookup = dependent.Dependencies
-                .Except(new[] { node })
+                .Except([node])
                 .ToLookup(x => x.Signature.WithModule(default));
             var sig = node.Signature.WithModule(default);
             if (lookup.Contains(sig))
@@ -165,7 +164,7 @@ public class Compiler : Library
         }
         if (!processed.Contains(dependent.Signature))
         {
-            foreach (var inner in InlineNodeWithContext(scope, ctx, dependent, processed))
+            foreach (var inner in InlineNodeWithContext(scope, dependent, processed))
                 yield return inner;
         }
 
@@ -174,7 +173,7 @@ public class Compiler : Library
         {
             if (node.InlinedClauses.Count == 1)
             {
-                var inlined = node.InlinedClauses.Single().Instantiate(ctx);
+                var inlined = node.InlinedClauses.Single();
                 foreach (var ret in InlineInner(inlined, dependent))
                     yield return ret;
             }
@@ -222,11 +221,11 @@ public class Compiler : Library
         }
     }
 
-    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, InstantiationContext ctx, DependencyGraphNode node, HashSet<Signature> processed = null)
+    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, DependencyGraphNode node, HashSet<Signature> processed = null)
     {
         processed ??= new HashSet<Signature>();
         foreach (var inline in node.Dependents.Cast<DependencyGraphNode>()
-            .SelectMany(d => InlineNodeWithContext(scope, ctx, node, d, processed)))
+            .SelectMany(d => InlineNodeWithContext(scope, node, d, processed)))
         {
             yield return inline;
         }

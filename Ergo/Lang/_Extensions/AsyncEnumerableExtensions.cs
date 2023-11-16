@@ -13,6 +13,6 @@ public static class EnumerableExtensions
             emptyProduct,
             (accumulator, sequence) => accumulator.SelectMany(
                 accseq => sequence,
-                (accseq, item) => accseq.Concat(new[] { item })));
+                (accseq, item) => accseq.Concat([item])));
     }
 }

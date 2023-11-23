@@ -108,6 +108,12 @@ public readonly struct Maybe<T>
             return Value;
         throw ex;
     }
+    public T GetOrThrow(Func<Exception> ex)
+    {
+        if (HasValue)
+            return Value;
+        throw ex();
+    }
     public Maybe<Either<T, U>> Either<U>(Func<Maybe<U>> other)
     {
         if (HasValue)

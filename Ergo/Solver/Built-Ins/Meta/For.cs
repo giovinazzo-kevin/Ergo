@@ -69,7 +69,7 @@ public sealed class For : SolverBuiltIn
         {
             if (vm.@continue == ErgoVM.Ops.NoOp)
                 BacktrackUnrolled(vm);
-            else Backtrack(vm);
+            else (cache[hash] = Backtrack)(vm);
         }
         return cache[hash] = ChooseBacktrack;
     };

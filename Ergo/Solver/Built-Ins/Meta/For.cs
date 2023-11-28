@@ -1,7 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using PeterO.Numbers;
-
-namespace Ergo.Solver.BuiltIns;
+﻿namespace Ergo.Solver.BuiltIns;
 
 public sealed class For : SolverBuiltIn
 {

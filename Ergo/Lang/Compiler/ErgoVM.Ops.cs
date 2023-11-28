@@ -9,6 +9,21 @@ public partial class ErgoVM
         public static Op Throw(ErrorType ex, params object[] args) => vm => vm.Throw(ex, args);
         public static Op Cut => vm => vm.Cut();
         public static Op Solution => vm => vm.Solution();
+        public static Op And2(Op a, Op b) => vm =>
+        {
+            // Cache continuation so that goals calling PushChoice know where to continue from.
+            var @continue = vm.@continue;
+            vm.@continue += b;
+            a(vm);
+            // Restore previous continuation before potentially yielding control to another And.
+            vm.@continue = @continue;
+            switch (vm.State)
+            {
+                case VMState.Fail: return;
+                case VMState.Solution: vm.MergeEnvironment(); break;
+            }
+            b(vm);
+        };
         public static Op And(params Op[] goals)
         {
             if (goals.Length == 0)

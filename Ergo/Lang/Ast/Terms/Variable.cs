@@ -14,6 +14,7 @@ public readonly struct Variable : ITerm
 
     public readonly string Name;
     public readonly bool Ignored;
+    public readonly bool Discarded;
 
     private readonly int HashCode;
 
@@ -26,7 +27,8 @@ public readonly struct Variable : ITerm
         }
 
         Name = name;
-        Ignored = name.StartsWith('_');
+        Discarded = name.Equals("_");
+        Ignored = Discarded || name.StartsWith('_');
         HashCode = Name.GetHashCode();
         Scope = scope;
     }
@@ -52,6 +54,8 @@ public readonly struct Variable : ITerm
 
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (Discarded)
+            return this;
         vars ??= new();
         if (vars.TryGetValue(Name, out var inst))
         {

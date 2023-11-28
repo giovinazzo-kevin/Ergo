@@ -40,9 +40,12 @@ public sealed class For : SolverBuiltIn
                 if (++i <= iTo)
                 {
                     vm.PushChoice(Backtrack);
+                    vm.Solution();
                 }
-                else i = iFrom;
-                vm.Solution();
+                else
+                {
+                    i = iFrom;
+                }
             }
             return cache[hash] = Backtrack;
         };

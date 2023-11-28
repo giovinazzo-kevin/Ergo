@@ -9,6 +9,7 @@ public class Meta : Library
 
     public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
         .Append(new BagOf())
+        .Append(new For())
         .Append(new Call())
         .Append(new FindAll())
         .Append(new SetOf())

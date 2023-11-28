@@ -8,6 +8,7 @@ public partial class ErgoVM
     {
         public static Goal True => _ => Ops.NoOp;
         public static Goal False => _ => Ops.Fail;
+        public static Goal Throw(ErrorType ex, params object[] args) => _ => Ops.Throw(ex, args);
         /// <summary>
         /// Performs the unification at the time when Unify is called.
         /// Either returns Ops.Fail or Ops.UpdateEnvironment with the result of unification.

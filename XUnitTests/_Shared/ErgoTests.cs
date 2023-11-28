@@ -53,7 +53,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         var parsed = Interpreter.Facade.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
-            Assert.Equal(query, parsed.Goals.Explain(false));
+            Assert.Equal(query, ((ITerm)parsed.Goals).StripTemporaryVariables().Explain(false));
         //Interpreted();
         //Compiled();
         Optimized();

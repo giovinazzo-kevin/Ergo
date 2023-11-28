@@ -154,7 +154,7 @@ public partial class ErgoVM
         if (cont == Ops.NoOp)
             choicePoints.Push(new ChoicePoint(choice, env));
         else
-            choicePoints.Push(new ChoicePoint(vm => Ops.And(choice, cont)(vm), env));
+            choicePoints.Push(new ChoicePoint(Ops.And(choice, cont), env));
     }
     #endregion
 

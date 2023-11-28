@@ -6,6 +6,7 @@ public partial class ErgoVM
     {
         public static Op NoOp => _ => { };
         public static Op Fail => vm => vm.Fail();
+        public static Op Throw(ErrorType ex, params object[] args) => vm => vm.Throw(ex, args);
         public static Op Cut => vm => vm.Cut();
         public static Op Solution => vm => vm.Solution();
         public static Op And(params Op[] goals)
@@ -88,10 +89,10 @@ public partial class ErgoVM
         /// Adds the current set of substitutions to te VM's environment, and then releases it back into the substitution map pool.
         /// </summary>
         public static Op UpdateEnvironment(SubstitutionMap subsToAdd) => vm =>
-        {
-            vm.Environment.AddRange(subsToAdd);
-            Substitution.Pool.Release(subsToAdd);
-        };
+            {
+                vm.Environment.AddRange(subsToAdd);
+                Substitution.Pool.Release(subsToAdd);
+            };
         public static Op SetEnvironment(SubstitutionMap newEnv) => vm =>
         {
             Substitution.Pool.Release(vm.Environment);

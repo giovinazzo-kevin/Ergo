@@ -41,7 +41,9 @@ public partial class ErgoVM
                         var k = i + 1;
                         // Cache continuation so that goals calling PushChoice know where to continue from.
                         var @continue = vm.@continue;
-                        vm.@continue = @continue == NoOp
+                        vm.@continue = k >= goals.Length
+                        ? @continue
+                        : @continue == NoOp
                             ? vm => ContinueFrom(vm, k)
                             : vm => { @continue(vm); ContinueFrom(vm, k); };
                         goals[i](vm);

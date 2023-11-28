@@ -39,15 +39,39 @@ public sealed class For : SolverBuiltIn
             }
             if (++i <= iTo)
             {
-                vm.PushChoice(Backtrack);
                 vm.Solution();
+                vm.PushChoice(Backtrack);
             }
             else
             {
                 i = iFrom;
             }
         }
-        return cache[hash] = Backtrack;
+        void BacktrackUnrolled(ErgoVM vm)
+        {
+            i = iTo;
+        loop:
+            if (!var.Discarded)
+            {
+                vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
+            }
+            if (--i >= 0)
+            {
+                vm.Solution();
+                goto loop;
+            }
+            else
+            {
+                i = iTo;
+            }
+        }
+        void ChooseBacktrack(ErgoVM vm)
+        {
+            if (vm.@continue == ErgoVM.Ops.NoOp)
+                BacktrackUnrolled(vm);
+            else Backtrack(vm);
+        }
+        return cache[hash] = ChooseBacktrack;
     };
 
     public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)

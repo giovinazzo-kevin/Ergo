@@ -163,7 +163,7 @@ public partial class ErgoVM
     {
         Trace.WriteLine($"{State} {{{Environment.Select(x => x.Explain()).Join(", ")}}} ({@continue.Method.Name}) @ {caller}");
     }
-    private void SuccessToSolution()
+    public void SuccessToSolution()
     {
         if (State == VMState.Success)
             Solution();
@@ -174,7 +174,7 @@ public partial class ErgoVM
         Ops.UpdateEnvironment(subs)(this);
         State = VMState.Success;
     }
-    protected SubstitutionMap CloneEnvironment()
+    public SubstitutionMap CloneEnvironment()
     {
         var env = Substitution.Pool.Acquire();
         env.AddRange(Environment);

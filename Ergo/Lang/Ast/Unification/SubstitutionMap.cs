@@ -4,7 +4,7 @@ namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
-    private readonly BiMap<ITerm, ITerm> Map = new();
+    private readonly Dictionary<ITerm, ITerm> Map = new();
 
     public ITerm this[ITerm key] => Map[key];
 
@@ -32,7 +32,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Remove(Substitution s)
     {
-        if (Map.TryGetLvalue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
+        if (Map.TryGetValue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
             Map.Remove(s.Lhs);
     }
     public void RemoveRange(IEnumerable<Substitution> source)
@@ -45,11 +45,12 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     {
         if (s.Lhs is Variable { Discarded: true })
             return;
+        Map.Remove(s.Lhs);
         if (s.Rhs is Variable v)
         {
             if (v.Discarded)
                 return;
-            if (v.Ignored && Map.TryGetLvalue(s.Rhs, out var prevRhs))
+            if (v.Ignored && Map.TryGetValue(s.Rhs, out var prevRhs))
             {
                 Map.Remove(s.Rhs);
                 Map.Add(s.Lhs, prevRhs);

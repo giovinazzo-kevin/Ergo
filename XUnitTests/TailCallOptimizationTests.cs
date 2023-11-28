@@ -40,10 +40,10 @@ public class TailCallOptimizationTests : ErgoTests
     [Theory]
     [InlineData("fibonacci(1000,X)", 1, $"X/{Fib1000}")]
     [InlineData("factorial(1000,X)", 1, $"X/{Fac1000}")]
-    [InlineData("for(I,1,10000)", 10000)]
-    [InlineData("for(I,1,100), for(J,1,100)", 10000)]
-    [InlineData("for(_,1,10000)", 10000)]
-    [InlineData("for(_,1,100), for(_,1,100)", 10000)]
+    [InlineData("for(I,1,100000)", 100000)]
+    [InlineData("for(_,1,100000)", 100000)]
+    [InlineData("for(I,1,1000), for(J,1,100)", 100000)]
+    [InlineData("for(_,1,1000), for(_,1,100)", 100000)]
 
     #endregion
 

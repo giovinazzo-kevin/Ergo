@@ -148,7 +148,7 @@ public abstract class SolveShellCommand : ShellCommand
         else
         {
             var rowsDict = solutions
-                .Select(s => s.Simplify()
+                .Select(s => s
                     .Substitutions
                     .ToDictionary(r => r.Lhs.Explain(), r => r.Rhs.Explain()))
                 .ToArray();

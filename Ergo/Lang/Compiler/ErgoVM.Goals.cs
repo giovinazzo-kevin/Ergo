@@ -24,38 +24,40 @@ public partial class ErgoVM
         /// <summary>
         /// Calls a built-in by passing it the matching goal's arguments.
         /// </summary>
-        public static Goal BuiltIn(SolverBuiltIn builtIn) => args => vm =>
+        public static Goal BuiltIn(SolverBuiltIn builtIn)
         {
-            // goal.Substitute(vm.Environment).GetQualification(out var inst);
-            // var args = inst.GetArguments();
-            var op = builtIn.Compile()(args);
-            // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
-            if (Ops.NoOp != op)
+            var comp = builtIn.Compile();
+            return args => vm =>
             {
-                op(vm);
-                return;
-            }
-            #region temporary code
-            var next = builtIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
-            NextGoal(vm);
-            void NextGoal(ErgoVM vm)
-            {
-                if (next.MoveNext())
+                var op = comp(args);
+                // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
+                if (Ops.NoOp != op)
                 {
-                    if (!next.Current.Result)
+                    op(vm);
+                    return;
+                }
+                #region temporary code
+                var next = builtIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
+                NextGoal(vm);
+                void NextGoal(ErgoVM vm)
+                {
+                    if (next.MoveNext())
+                    {
+                        if (!next.Current.Result)
+                        {
+                            vm.Fail();
+                            return;
+                        }
+                        vm.Solution(next.Current.Substitutions);
+                        vm.PushChoice(NextGoal);
+                    }
+                    else
                     {
                         vm.Fail();
-                        return;
                     }
-                    vm.Solution(next.Current.Substitutions);
-                    vm.PushChoice(NextGoal);
                 }
-                else
-                {
-                    vm.Fail();
-                }
-            }
-            #endregion
-        };
+                #endregion
+            };
+        }
     }
 }

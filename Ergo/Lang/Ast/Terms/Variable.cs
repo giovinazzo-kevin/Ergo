@@ -13,7 +13,14 @@ public readonly struct Variable : ITerm
     public bool IsParenthesized => false;
 
     public readonly string Name;
+    /// <summary>
+    /// True if this variable is not to be included in the final solution.
+    /// </summary>
     public readonly bool Ignored;
+    /// <summary>
+    /// True if this variable is not and will never be bound to anything.
+    /// </summary>
+    public readonly bool Discarded;
 
     private readonly int HashCode;
 
@@ -26,7 +33,8 @@ public readonly struct Variable : ITerm
         }
 
         Name = name;
-        Ignored = name.StartsWith('_');
+        Discarded = name.Equals("_");
+        Ignored = Discarded || name.StartsWith('_');
         HashCode = Name.GetHashCode();
         Scope = scope;
     }
@@ -39,6 +47,8 @@ public readonly struct Variable : ITerm
 
     public ITerm Substitute(Substitution s)
     {
+        if (Discarded)
+            return this;
         if (Equals(s.Lhs))
         {
             return s.Rhs;
@@ -52,6 +62,8 @@ public readonly struct Variable : ITerm
 
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
+        if (Discarded)
+            return this;
         vars ??= new();
         if (vars.TryGetValue(Name, out var inst))
         {
@@ -64,9 +76,9 @@ public readonly struct Variable : ITerm
         if (obj is AbstractTerm abs)
             return abs.Equals(this);
         if (obj is not Variable other)
-        {
             return false;
-        }
+        if (Discarded || other.Discarded)
+            return false;
         return Equals(Name, other.Name);
     }
     public bool Equals(ITerm obj) => Equals((object)obj);

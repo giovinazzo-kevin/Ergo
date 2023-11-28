@@ -4,7 +4,7 @@ namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
-    private readonly Dictionary<ITerm, ITerm> Map = new();
+    private Dictionary<ITerm, ITerm> Map = new();
 
     public ITerm this[ITerm key] => Map[key];
 
@@ -14,6 +14,13 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     public void Clear()
     {
         Map.Clear();
+    }
+
+    public SubstitutionMap Clone()
+    {
+        var e = Substitution.Pool.Acquire();
+        e.Map = Map.ToDictionary();
+        return e;
     }
 
     public static SubstitutionMap MergeCopy(SubstitutionMap A, SubstitutionMap B)

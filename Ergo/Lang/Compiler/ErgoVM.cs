@@ -174,12 +174,7 @@ public partial class ErgoVM
         Ops.UpdateEnvironment(subs)(this);
         State = VMState.Success;
     }
-    public SubstitutionMap CloneEnvironment()
-    {
-        var env = Substitution.Pool.Acquire();
-        env.AddRange(Environment);
-        return env;
-    }
+    public SubstitutionMap CloneEnvironment() => Environment.Clone();
     protected void Backtrack()
     {
         while (BacktrackOnce()) ;

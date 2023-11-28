@@ -130,9 +130,7 @@ public class Expansions : Library
                 var bodyExpansions = new List<Either<ExpansionResult, ITerm>>[p.Body.Contents.Length];
                 for (int i = 0; i < p.Body.Contents.Length; i++)
                 {
-                    bodyExpansions[i] = new();
-                    foreach (var bodyExp in ExpandTerm(p.Body.Contents[i], scope))
-                        bodyExpansions[i].Add(bodyExp);
+                    bodyExpansions[i] = [.. ExpandTerm(p.Body.Contents[i], scope)];
                     if (bodyExpansions[i].Count == 0)
                         bodyExpansions[i].Add(Either<ExpansionResult, ITerm>.FromB(p.Body.Contents[i]));
                 }

@@ -10,5 +10,8 @@ public class Query
     public Query(NTuple goals) => Goals = goals;
     public Query(params ITerm[] goals) => Goals = new(goals, default);
     public Query(ImmutableArray<ITerm> goals) => Goals = new(goals, default);
-    public ErgoVM.Op Compile() => ErgoVM.Ops.Goals(Goals);
+    public ErgoVM.Op Compile()
+    {
+        return ErgoVM.Ops.Goals(Goals);
+    }
 }

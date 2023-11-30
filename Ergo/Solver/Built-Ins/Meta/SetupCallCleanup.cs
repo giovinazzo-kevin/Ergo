@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class SetupCallCleanup : SolverBuiltIn
 {
@@ -7,33 +9,21 @@ public sealed class SetupCallCleanup : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    private readonly Call CallInst = new Call();
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        var once = new Call().Apply(context, scope, ImmutableArray.Create(args[0])).Select(x => Maybe.Some(x)).FirstOrDefault();
-        if (!once.TryGetValue(out var sol) || !sol.Result)
+        var setup = CallInst.Compile()([args[0]]);
+        ErgoVM.Ops.And2(setup, ErgoVM.Ops.Cut)(vm);
+        vm.SuccessToSolution();
+        if (vm.State != ErgoVM.VMState.Solution || !vm.TryPopSolution(out var sol))
         {
-            yield return False();
-            yield break;
+            vm.Fail();
+            return;
         }
-
-        var any = false;
-        foreach (var sol1 in new Call().Apply(context, scope, ImmutableArray.Create(args[1])))
+        CallInst.Compile()([args[1]])(vm);
+        if (vm.State != ErgoVM.VMState.Fail)
         {
-            if (!sol1.Result)
-            {
-                yield return False();
-                yield break;
-            }
-
-            yield return True(sol1.Substitutions);
-            any = true;
+            CallInst.Compile()([args[2]])(vm);
         }
-
-        _ = new Call().Apply(context, scope, ImmutableArray.Create(args[2])).FirstOrDefault();
-        if (!any)
-        {
-            yield return False();
-            yield break;
-        }
-    }
+    };
 }

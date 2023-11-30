@@ -1,4 +1,5 @@
 ﻿
+using Ergo.Lang.Compiler;
 using PeterO.Numbers;
 
 namespace Ergo.Solver.BuiltIns;
@@ -13,9 +14,9 @@ public abstract class MathBuiltIn : SolverBuiltIn
     {
     }
 
-    public EDecimal Evaluate(ErgoSolver solver, SolverScope scope, ITerm t)
+    public EDecimal Evaluate(ErgoVM vm, ITerm t)
     {
-        var context = (solver?.DecimalType ?? DecimalType.CliDecimal) switch
+        var context = (vm?.DecimalType ?? DecimalType.CliDecimal) switch
         {
             DecimalType.BigDecimal => EContext.Unlimited,
             DecimalType.FastDecimal => EContext.Binary16,
@@ -106,6 +107,12 @@ public abstract class MathBuiltIn : SolverBuiltIn
             return a.Multiply(b, context);
         }
 
-        EDecimal Throw(ITerm t) => throw new SolverException(SolverError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Number, t.Explain());
+        EDecimal Throw(ITerm t)
+        {
+            if (vm != null)
+                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, t.Explain());
+            else throw new RuntimeException(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, t.Explain());
+            return default;
+        }
     }
 }

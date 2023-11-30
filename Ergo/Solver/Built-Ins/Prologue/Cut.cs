@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Cut : SolverBuiltIn
 {
@@ -7,9 +9,5 @@ public sealed class Cut : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
-    {
-        yield return True();
-        context.Cut();
-    }
+    public override ErgoVM.Goal Compile() => args => ErgoVM.Ops.Cut;
 }

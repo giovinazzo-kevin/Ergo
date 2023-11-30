@@ -73,9 +73,4 @@ public sealed class For : SolverBuiltIn
         }
         return cache[hash] = ChooseBacktrack;
     };
-
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
-    {
-        yield break;
-    }
 }

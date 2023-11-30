@@ -14,7 +14,7 @@ public sealed class Not : SolverBuiltIn
     {
         if (!node.Goal.IsGround)
             return node;
-        var arg = node.Goal.GetArguments()[0].ToExecutionNode(node.Node.Graph, ctx: new("__NOT")).Optimize();
+        var arg = node.Goal.GetArguments()[0].ToExecutionNode(node.Node.Graph, ctx: new("NOT")).Optimize();
         if (arg is TrueNode)
             return FalseNode.Instance;
         if (arg is FalseNode)
@@ -22,16 +22,12 @@ public sealed class Not : SolverBuiltIn
         return node;
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        var solutions = context.Solver.Solve(new Query(arguments.Single()), scope);
-        if (solutions.Any())
-        {
-            yield return False();
-        }
-        else
-        {
-            yield return True();
-        }
-    }
+        var newVm = vm.CreateChild();
+        newVm.Query = ErgoVM.Ops.Goal(args.Single());
+        newVm.Run();
+        if (newVm.Solutions.Any())
+            vm.Fail();
+    };
 }

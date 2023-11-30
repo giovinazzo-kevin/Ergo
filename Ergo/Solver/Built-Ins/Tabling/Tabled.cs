@@ -5,6 +5,8 @@ namespace Ergo.Solver.BuiltIns;
 
 public sealed class Tabled : SolverBuiltIn
 {
+    private readonly Dictionary<ErgoVM, MemoizationContext> MemoContexts = new();
+
     public override int OptimizationOrder => base.OptimizationOrder;
 
     public Tabled()
@@ -41,7 +43,7 @@ public sealed class Tabled : SolverBuiltIn
         return nodes;
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         /* tabled/1 overrides the regular SLD resolution with SLDT resolution.
          * Predicates tagged by the 'table' directive are rewritten as follows:
@@ -60,23 +62,25 @@ public sealed class Tabled : SolverBuiltIn
          *     
          * Therefore args[0] is the rewritten goal that should be memoized.
          */
-        scope = scope.WithDepth(scope.Depth + 1);
-        var memoContext = scope.InterpreterScope.GetLibrary<Tabling>(WellKnown.Modules.Tabling)
-            .GetMemoizationContext(context);
+        if (!MemoContexts.TryGetValue(vm, out var memoContext))
+            memoContext = MemoContexts[vm] = new MemoizationContext();
         // The first call for a given tabled goal is dubbed the 'pioneer'.
         args[0].GetQualification(out var variant);
         if (!memoContext.GetPioneer(variant).TryGetValue(out var pioneer))
         {
             memoContext.MemoizePioneer(pioneer = variant);
+            var newVm = vm.CreateChild();
+            newVm.Query = newVm.CompileQuery(new(args));
+            newVm.Run();
             var any = false;
-            foreach (var sol in context.Solve(new(args), scope))
+            foreach (var sol in newVm.Solutions)
             {
                 any = true;
                 memoContext.MemoizeSolution(pioneer, sol.Clone());
-                yield return True(sol.Substitutions);
+                vm.Solution(sol.Substitutions);
             }
             if (!any)
-                yield return False();
+                vm.Fail();
         }
         // Subsequent variant calls are dubbed 'followers' of that pioneer. 
         else
@@ -84,8 +88,8 @@ public sealed class Tabled : SolverBuiltIn
             var any = false;
             foreach (var sol in memoContext.GetSolutions(pioneer))
             {
-                LanguageExtensions.Unify(variant, pioneer.Substitute(sol.Substitutions)).TryGetValue(out var subs);
-                yield return True(subs);
+                ErgoVM.Goals.Unify([variant, pioneer.Substitute(sol.Substitutions)])(vm);
+                vm.Solution();
                 any = true;
             }
             if (!any)
@@ -104,8 +108,8 @@ public sealed class Tabled : SolverBuiltIn
                 //    any = true;
                 //}
                 //if (!any)
-                yield return False();
+                vm.Fail();
             }
         }
-    }
+    };
 }

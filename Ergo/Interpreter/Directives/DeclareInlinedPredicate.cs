@@ -15,7 +15,7 @@ public class DeclareInlinedPredicate : InterpreterDirective
         // TODO: make sure sig is unqualified, accept list of sigs
         if (args[0] is not List list)
         {
-            scope.Throw(InterpreterError.ExpectedTermOfTypeAt, nameof(List), args[0].Explain());
+            scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, nameof(List), args[0].Explain());
             return false;
         }
         foreach (var arg in list.Contents)
@@ -24,7 +24,7 @@ public class DeclareInlinedPredicate : InterpreterDirective
                 sig = args[0].GetSignature();
             if (sig.Module.TryGetValue(out var module) && module != scope.Entry)
             {
-                scope.Throw(InterpreterError.CantInlineForeignGoal, arg.Explain());
+                scope.Throw(ErgoInterpreter.ErrorType.CantInlineForeignGoal, arg.Explain());
                 return false;
             }
             sig = sig.WithModule(scope.Entry);

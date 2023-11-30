@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class RetractAll : DynamicPredicateBuiltIn
 {
@@ -7,9 +9,15 @@ public sealed class RetractAll : DynamicPredicateBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args =>
     {
-        if (Retract(context.Solver, scope, arguments[0], all: true)) yield return True();
-        else yield return False();
-    }
+        return vm =>
+        {
+            if (Retract(vm, args[0], all: true))
+            {
+                vm.Solution();
+            }
+            else vm.Fail();
+        };
+    };
 }

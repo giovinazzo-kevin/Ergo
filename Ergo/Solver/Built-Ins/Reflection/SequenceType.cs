@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class SequenceType : SolverBuiltIn
@@ -8,42 +10,32 @@ public sealed class SequenceType : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    private static readonly Atom _L = new("list");
+    private static readonly Atom _T = new("tuple");
+    private static readonly Atom _S = new("set");
+
+    public override ErgoVM.Goal Compile() => args =>
     {
-        var (type, seq) = (arguments[1], arguments[0]);
-        if (seq is Variable)
+        var (type, seq) = (args[1], args[0]);
+        return vm =>
         {
-            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, seq.Explain());
-            yield break;
-        }
-
-        if (seq is List)
-        {
-            if (LanguageExtensions.Unify(type, new Atom("list")).TryGetValue(out var subs))
+            if (seq is Variable)
             {
-                yield return True(subs);
-                yield break;
+                vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, seq.Explain());
+                return;
             }
-        }
-
-        if (seq is NTuple)
-        {
-            if (LanguageExtensions.Unify(type, new Atom("comma_list")).TryGetValue(out var subs))
+            if (seq is List)
             {
-                yield return True(subs);
-                yield break;
+                ErgoVM.Goals.Unify([type, _L])(vm);
             }
-        }
-
-        if (seq is Set)
-        {
-            if (LanguageExtensions.Unify(type, new Atom("bracy_list")).TryGetValue(out var subs))
+            else if (seq is NTuple)
             {
-                yield return True(subs);
-                yield break;
+                ErgoVM.Goals.Unify([type, _T])(vm);
             }
-        }
-
-        yield return False();
-    }
+            else if (seq is Set)
+            {
+                ErgoVM.Goals.Unify([type, _S])(vm);
+            }
+        };
+    };
 }

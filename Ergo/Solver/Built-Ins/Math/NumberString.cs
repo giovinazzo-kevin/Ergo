@@ -1,4 +1,5 @@
-﻿using PeterO.Numbers;
+﻿using Ergo.Lang.Compiler;
+using PeterO.Numbers;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -9,33 +10,26 @@ public sealed class NumberString : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => arguments => vm =>
     {
         var (str, num) = (arguments[1], arguments[0]);
         if (!str.IsGround && !num.IsGround)
-        {
-            yield return True();
-            yield break;
-        }
+            return;
         else if (!str.IsGround && num.IsGround)
         {
             if (!str.Matches(out EDecimal d))
             {
-                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
-                yield break;
+                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
+                return;
             }
-            if (LanguageExtensions.Unify(num, new Atom(d.ToString())).TryGetValue(out var subs))
-            {
-                yield return True(subs);
-                yield break;
-            }
+            ErgoVM.Goals.Unify([num, new Atom(d.ToString())])(vm);
         }
         else if (str.IsGround)
         {
             if (!str.Matches(out string s))
             {
-                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.String, num);
-                yield break;
+                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.String, num);
+                return;
             }
             EDecimal n = null;
             try
@@ -45,14 +39,10 @@ public sealed class NumberString : SolverBuiltIn
             catch { }
             if (n == null)
             {
-                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
-                yield break;
+                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
+                return;
             }
-            if (LanguageExtensions.Unify(num, new Atom(n)).TryGetValue(out var subs))
-            {
-                yield return True(subs);
-                yield break;
-            }
+            ErgoVM.Goals.Unify([num, new Atom(n)])(vm);
         }
-    }
+    };
 }

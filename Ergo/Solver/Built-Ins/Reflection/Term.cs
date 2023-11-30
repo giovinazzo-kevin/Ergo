@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class Term : SolverBuiltIn
@@ -8,91 +10,89 @@ public sealed class Term : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => arguments =>
     {
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
-        if (termArg is not Variable)
+        return vm =>
         {
-            if (termArg is Dict dict)
+            var env = vm.CloneEnvironment();
+            if (termArg is not Variable)
             {
-                var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
-                if (!LanguageExtensions.Unify(functorArg, new Atom("dict")).TryGetValue(out var funSubs)
-                || !LanguageExtensions.Unify(args, new List((new[] { tag }).Append(new List(dict.KeyValuePairs, default, dict.Scope)), default, dict.Scope))
-                        .TryGetValue(out var listSubs))
+                if (termArg is Dict dict)
                 {
-                    yield return False();
-                    yield break;
+                    var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
+                    ErgoVM.Goals.Unify([functorArg, new Atom("dict")])(vm);
+                    if (ReleaseAndRestoreEarlyReturn()) return;
+                    var newList = new List((new[] { tag }).Append(new List(dict.KeyValuePairs, default, dict.Scope)));
+                    ErgoVM.Goals.Unify([args, newList])(vm);
+                    if (ReleaseAndRestoreEarlyReturn()) return;
                 }
 
-                yield return True(SubstitutionMap.MergeRef(funSubs, listSubs));
-                yield break;
-            }
-
-            if (termArg is Complex complex)
-            {
-                if (!LanguageExtensions.Unify(functorArg, complex.Functor).TryGetValue(out var funSubs)
-                || !LanguageExtensions.Unify(args, new List(complex.Arguments, default, complex.Scope)).TryGetValue(out var listSubs))
+                if (termArg is Complex complex)
                 {
-                    yield return False();
-                    yield break;
+                    ErgoVM.Goals.Unify([functorArg, complex.Functor])(vm);
+                    if (ReleaseAndRestoreEarlyReturn()) return;
+                    ErgoVM.Goals.Unify([args, new List(complex.Arguments, default, complex.Scope)])(vm);
+                    if (ReleaseAndRestoreEarlyReturn()) return;
                 }
 
-                yield return True(SubstitutionMap.MergeRef(funSubs, listSubs));
-                yield break;
-            }
-
-            if (termArg is Atom atom)
-            {
-                if (!LanguageExtensions.Unify(functorArg, atom).TryGetValue(out var funSubs)
-                || !LanguageExtensions.Unify(args, WellKnown.Literals.EmptyList).TryGetValue(out var listSubs))
+                if (termArg is Atom atom)
                 {
-                    yield return False();
-                    yield break;
+                    ErgoVM.Goals.Unify([functorArg, atom])(vm);
+                    if (ReleaseAndRestoreEarlyReturn()) return;
+                    ErgoVM.Goals.Unify([args, WellKnown.Literals.EmptyList])(vm);
+                    if (ReleaseAndRestoreEarlyReturn()) return;
+                }
+            }
+            else if (functorArg is Variable)
+            {
+                vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, functorArg.Explain());
+                return;
+            }
+            else if (functorArg is not Atom functor)
+            {
+                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Atom, functorArg.Explain());
+                return;
+            }
+            else if (args is not List argsList || argsList.Contents.Length == 0)
+            {
+                if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
+                {
+                    vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.List, args.Explain());
+                    return;
                 }
 
-                yield return True(SubstitutionMap.MergeRef(funSubs, listSubs));
-                yield break;
+                ErgoVM.Goals.Unify([termArg, functor])(vm);
+                if (ReleaseAndRestoreEarlyReturn()) return;
+                ErgoVM.Goals.Unify([args, WellKnown.Literals.EmptyList])(vm);
+                if (ReleaseAndRestoreEarlyReturn()) return;
             }
-        }
-
-        if (functorArg is Variable)
-        {
-            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, functorArg.Explain());
-            yield break;
-        }
-
-        if (functorArg is not Atom functor)
-        {
-            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Atom, functorArg.Explain());
-            yield break;
-        }
-
-        if (args is not List argsList || argsList.Contents.Length == 0)
-        {
-            if (args is not Variable && !args.Equals(WellKnown.Literals.EmptyList))
+            else
             {
-                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, args.Explain());
-                yield break;
+                ErgoVM.Goals.Unify([termArg, new Complex(functor, argsList.Contents.ToArray())])(vm);
+                if (ReleaseAndRestoreEarlyReturn()) return;
             }
-
-            if (!LanguageExtensions.Unify(termArg, functor).TryGetValue(out var subs)
-            || !LanguageExtensions.Unify(args, WellKnown.Literals.EmptyList).TryGetValue(out var argsSubs))
+            vm.Solution();
+            ReleaseAndRestore();
+            void ReleaseAndRestore()
             {
-                yield return False();
-                yield break;
+                if (vm.State == ErgoVM.VMState.Fail)
+                {
+                    ReleaseAndRestore();
+                    return;
+                }
+                Substitution.Pool.Release(vm.Environment);
+                vm.Environment = env;
             }
-
-            yield return True(SubstitutionMap.MergeRef(argsSubs, subs));
-        }
-        else
-        {
-            if (!LanguageExtensions.Unify(termArg, new Complex(functor, argsList.Contents.ToArray())).TryGetValue(out var subs))
+            bool ReleaseAndRestoreEarlyReturn()
             {
-                yield return False();
-                yield break;
+                if (vm.State == ErgoVM.VMState.Fail)
+                {
+                    ReleaseAndRestore();
+                    return true;
+                }
+                return false;
             }
-
-            yield return True(subs);
-        }
-    }
+        };
+    };
 }

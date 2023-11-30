@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Explain : SolverBuiltIn
 {
@@ -7,20 +9,9 @@ public sealed class Explain : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args =>
     {
-        var expl = new Atom(arguments[0].AsQuoted(false).Explain(), false);
-        if (!arguments[1].IsGround)
-        {
-            yield return True(new Substitution(arguments[1], expl));
-        }
-        else if (LanguageExtensions.Unify(arguments[1], expl).TryGetValue(out var subs))
-        {
-            yield return True(subs);
-        }
-        else
-        {
-            yield return False();
-        }
-    }
+        var expl = new Atom(args[0].AsQuoted(false).Explain(), false);
+        return ErgoVM.Goals.Unify([args[1], expl]);
+    };
 }

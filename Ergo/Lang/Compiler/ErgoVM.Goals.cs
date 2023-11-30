@@ -11,7 +11,7 @@ public partial class ErgoVM
         public static Goal Throw(ErrorType ex, params object[] args) => _ => Ops.Throw(ex, args);
         /// <summary>
         /// Performs the unification at the time when Unify is called.
-        /// Either returns Ops.Fail or Ops.UpdateEnvironment with the result of unification.
+        /// Returns Ops.Fail or Ops.UpdateEnvironment with the result of the unification.
         /// </summary>
         public static Goal Unify => args =>
         {
@@ -22,42 +22,11 @@ public partial class ErgoVM
             return Ops.Fail;
         };
         /// <summary>
-        /// Calls a built-in by passing it the matching goal's arguments.
+        /// Creates a built-in goal call.
         /// </summary>
         public static Goal BuiltIn(SolverBuiltIn builtIn)
         {
-            var comp = builtIn.Compile();
-            return args => vm =>
-            {
-                var op = comp(args);
-                // Temporary: once Solver is dismantled, remove this check and allow a builtin to resolve to noop.
-                if (Ops.NoOp != op)
-                {
-                    op(vm);
-                    return;
-                }
-                #region temporary code
-                var next = builtIn.Apply(vm.Context, vm.Scope, args).GetEnumerator();
-                NextGoal(vm);
-                void NextGoal(ErgoVM vm)
-                {
-                    if (next.MoveNext())
-                    {
-                        if (!next.Current.Result)
-                        {
-                            vm.Fail();
-                            return;
-                        }
-                        vm.Solution(next.Current.Substitutions);
-                        vm.PushChoice(NextGoal);
-                    }
-                    else
-                    {
-                        vm.Fail();
-                    }
-                }
-                #endregion
-            };
+            return builtIn.Compile();
         }
     }
 }

@@ -11,9 +11,5 @@ public sealed class Ground : SolverBuiltIn
 
     public override ExecutionNode Optimize(BuiltInNode node) =>
         node.Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
-
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
-    {
-        yield return Bool(arguments[0].IsGround);
-    }
+    public override ErgoVM.Goal Compile() => args => args[0].IsGround ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
 }

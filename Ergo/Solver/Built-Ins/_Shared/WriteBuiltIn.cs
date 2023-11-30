@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public abstract class WriteBuiltIn : SolverBuiltIn
 {
@@ -32,28 +34,26 @@ public abstract class WriteBuiltIn : SolverBuiltIn
 
     protected virtual string Explain(ITerm arg) => AsQuoted(arg, Quoted).Explain(Canonical);
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         foreach (var arg in args)
         {
             // https://www.swi-prolog.org/pldoc/man?predicate=portray/1
-            if (Portrayed && arg is not Variable && WellKnown.Hooks.IO.Portray_1.IsDefined(context))
+            if (Portrayed && arg is not Variable && WellKnown.Hooks.IO.Portray_1.IsDefined(vm.KnowledgeBase, out _))
             {
                 var any = false;
-                foreach (var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
-                    any = true;
-                if (any) goto ret; // Do nothing, the hook is responsible for writing the term at this point.
+                //foreach (var _ in WellKnown.Hooks.IO.Portray_1.Call(context, scope, ImmutableArray.Create(arg)))
+                //    any = true;
+                if (any) return; // Do nothing, the hook is responsible for writing the term at this point.
             }
             var text = TransformText(Explain(arg));
-            if (context.Solver.Out.Encoding.IsSingleByte)
+            if (vm.Out.Encoding.IsSingleByte)
             {
                 text = text.Replace("⊤", "true");
                 text = text.Replace("⊥", "false");
             }
-            context.Solver.Out.Write(text);
-            context.Solver.Out.Flush();
+            vm.Out.Write(text);
+            vm.Out.Flush();
         }
-    ret:
-        yield return True();
-    }
+    };
 }

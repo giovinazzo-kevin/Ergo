@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
 {
@@ -7,17 +9,13 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
     {
     }
 
-    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(SolverContext ctx, SolverScope scope, ImmutableArray<ITerm> args)
+    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoVM vm, ImmutableArray<ITerm> args)
     {
         var (template, goal, instances) = (args[0], args[1], args[2]);
-        scope = scope.WithDepth(scope.Depth + 1)
-            .WithCaller(scope.Callee)
-            .WithCallee(new(GetStub(args), ctx))
-            .WithChoicePoint();
-
         if (goal is Variable)
         {
-            throw new SolverException(SolverError.TermNotSufficientlyInstantiated, scope, goal.Explain());
+            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, goal.Explain());
+            yield break;
         }
 
         var templateVars = Enumerable.Empty<Variable>();
@@ -42,9 +40,13 @@ public abstract class SolutionAggregationBuiltIn : SolverBuiltIn
                 new NTuple(new[]{ listVars, template }, default))
             .AsOperator(WellKnown.Operators.Unification)
         }, default);
-        var solutions = ctx.Solver.Solve(new(goalClauses), scope)
-            .Select(s => s.Simplify());
-        foreach (var sol in solutions
+        var query = new Query(goalClauses);
+        var newVm = vm.CreateChild();
+        newVm.Query = newVm.CompileQuery(query);
+        newVm.Run();
+        if (newVm.State == ErgoVM.VMState.Fail)
+            yield break;
+        foreach (var sol in newVm.Solutions
             .Select(sol =>
             {
                 var arg = (NTuple)(sol.Substitutions[variable]);

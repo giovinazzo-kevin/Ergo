@@ -1,4 +1,5 @@
-﻿using PeterO.Numbers;
+﻿using Ergo.Lang.Compiler;
+using PeterO.Numbers;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -9,7 +10,7 @@ public sealed class NumberVars : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         var allSubs = Substitution.Pool.Acquire();
         var (start, end) = (0, 0);
@@ -27,26 +28,21 @@ public sealed class NumberVars : SolverBuiltIn
         }
         else if (args[1] is not Atom)
         {
-            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1]);
-            yield break;
+            vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1]);
+            return;
         }
-
-
         var newVars = new Dictionary<string, Variable>();
         foreach (var (v, i) in args[0].Variables.Select((v, i) => (v, i)))
         {
             newVars[v.Name] = new Variable($"$VAR({i})");
             ++end;
         }
-
-        if (!LanguageExtensions.Unify(args[0].Instantiate(scope.InstantiationContext, newVars), args[0]).TryGetValue(out var subs0))
+        if (!LanguageExtensions.Unify(args[0].Instantiate(vm.InstantiationContext, newVars), args[0]).TryGetValue(out var subs0))
         {
-            yield return False();
-            yield break;
+            vm.Fail();
         }
         allSubs.AddRange(subs0);
         Substitution.Pool.Release(subs0);
-
         if (LanguageExtensions.Unify(args[2], new Atom(end)).TryGetValue(out var subs2))
         {
             if (!args[2].IsGround)
@@ -57,15 +53,13 @@ public sealed class NumberVars : SolverBuiltIn
         }
         else if (args[2].IsGround && args[2] is Atom { Value: EDecimal d } && d.ToInt32IfExact() != end)
         {
-            yield return False();
-            yield break;
+            vm.Fail();
         }
         else if (args[1] is not Atom)
         {
-            yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1]);
-            yield break;
+            vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1]);
+            return;
         }
-
-        yield return True(allSubs);
-    }
+        vm.Solution(allSubs);
+    };
 }

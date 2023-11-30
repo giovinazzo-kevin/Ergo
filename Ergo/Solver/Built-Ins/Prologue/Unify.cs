@@ -104,12 +104,4 @@ public sealed class Unify : SolverBuiltIn
     }
 
     public override ErgoVM.Goal Compile() => ErgoVM.Goals.Unify;
-
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
-    {
-        if (Substitution.Unify(new(arguments[0], arguments[1])).TryGetValue(out var subs))
-            yield return True(subs);
-        else
-            yield return False();
-    }
 }

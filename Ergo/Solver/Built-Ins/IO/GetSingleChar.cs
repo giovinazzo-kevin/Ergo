@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 public sealed class GetSingleChar : SolverBuiltIn
 {
     public GetSingleChar()
@@ -6,16 +8,10 @@ public sealed class GetSingleChar : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => arguments => vm =>
     {
-        int value = context.Solver.In.Read();
+        int value = vm.In.Read();
         ITerm charTerm = value != -1 ? new Atom((char)value) : new Atom("end_of_file");
-
-        if (LanguageExtensions.Unify(arguments[0], charTerm).TryGetValue(out var subs))
-        {
-            yield return True(subs);
-            yield break;
-        }
-        yield return False();
-    }
+        ErgoVM.Goals.Unify([arguments[0], charTerm])(vm);
+    };
 }

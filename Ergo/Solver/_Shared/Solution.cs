@@ -2,18 +2,16 @@
 
 public readonly struct Solution
 {
-    public readonly SolverScope Scope;
     public readonly SubstitutionMap Substitutions;
     public IEnumerable<Variable> Variables => Substitutions.SelectMany(x => x.Rhs.Variables).Distinct();
 
-    public Solution(SolverScope scope, SubstitutionMap subs)
+    public Solution(SubstitutionMap subs)
     {
-        Scope = scope;
         Substitutions = subs;
     }
-    public Solution Clone() => new(Scope, SubstitutionMap.MergeRef(new(), Substitutions));
-    public Solution PrependSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(Substitutions, subs));
-    public Solution AppendSubstitutions(SubstitutionMap subs) => new(Scope, SubstitutionMap.MergeRef(subs, Substitutions));
+    public Solution Clone() => new(SubstitutionMap.MergeRef(new(), Substitutions));
+    public Solution PrependSubstitutions(SubstitutionMap subs) => new(SubstitutionMap.MergeRef(Substitutions, subs));
+    public Solution AppendSubstitutions(SubstitutionMap subs) => new(SubstitutionMap.MergeRef(subs, Substitutions));
 
     /// <summary>
     /// Applies all redundant substitutions and removes them from the set of returned substitutions.
@@ -67,7 +65,7 @@ public readonly struct Solution
 
     public Solution Simplify()
     {
-        return new(Scope, new(Simplify(Substitutions)
+        return new(new(Simplify(Substitutions)
             .Where(s => s.Lhs is Variable { Ignored: false })))
             ;
     }

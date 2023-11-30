@@ -3,6 +3,7 @@ using Ergo.Events.Interpreter;
 using Ergo.Facade;
 using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
 using Ergo.Solver.BuiltIns;
 
@@ -96,9 +97,9 @@ public readonly struct InterpreterScope
         VisibleOperators = GetOperators().ToImmutableArray();
     }
 
-    public KnowledgeBase BuildKnowledgeBase()
+    public KnowledgeBase BuildKnowledgeBase(VMFlags vmFlags)
     {
-        var kb = new KnowledgeBase();
+        var kb = new KnowledgeBase(this);
         foreach (var builtIn in VisibleBuiltIns.Values)
         {
             kb.AssertZ(new Predicate(builtIn));
@@ -115,7 +116,7 @@ public readonly struct InterpreterScope
                 kb.AssertZ(newPred);
             }
         }
-        ForwardEventToLibraries(new KnowledgeBaseCreatedEvent(this, kb));
+        ForwardEventToLibraries(new KnowledgeBaseCreatedEvent(kb, vmFlags));
         return kb;
     }
 
@@ -295,6 +296,6 @@ public readonly struct InterpreterScope
     /// <summary>
     /// Throws an InterpreterException through the ExceptionHandler.
     /// </summary>
-    public void Throw(InterpreterError error, params object[] args) => ExceptionHandler.Throw(new InterpreterException(error, this, args));
+    public void Throw(ErgoInterpreter.ErrorType error, params object[] args) => ExceptionHandler.Throw(new InterpreterException(error, this, args));
 
 }

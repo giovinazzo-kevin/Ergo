@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class SetOf : SolutionAggregationBuiltIn
 {
@@ -7,29 +9,41 @@ public sealed class SetOf : SolutionAggregationBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         var any = false;
-        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(context, scope, args))
+        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm, args))
         {
+            var env = vm.CloneEnvironment();
             var argSet = new Set(ArgVars.Contents, ArgVars.Scope);
             var setVars = new Set(ListVars.Contents, ArgVars.Scope);
             var setTemplate = new Set(ListTemplate.Contents, ArgVars.Scope);
-
-            if (!LanguageExtensions.Unify(setVars, argSet).TryGetValue(out var listSubs)
-            || !LanguageExtensions.Unify(args[2], setTemplate).TryGetValue(out var instSubs))
-            {
-                yield return False();
-                yield break;
-            }
-
-            yield return True(SubstitutionMap.MergeRef(listSubs, instSubs));
+            ErgoVM.Goals.Unify([setVars, argSet])(vm);
+            if (ReleaseAndRestoreEarlyReturn()) return;
+            ErgoVM.Goals.Unify([args[2], setTemplate])(vm);
+            if (ReleaseAndRestoreEarlyReturn()) return;
+            vm.Solution();
+            ReleaseAndRestore();
             any = true;
-        }
 
+            void ReleaseAndRestore()
+            {
+                Substitution.Pool.Release(vm.Environment);
+                vm.Environment = env;
+            }
+            bool ReleaseAndRestoreEarlyReturn()
+            {
+                if (vm.State == ErgoVM.VMState.Fail)
+                {
+                    ReleaseAndRestore();
+                    return true;
+                }
+                return false;
+            }
+        }
         if (!any)
         {
-            yield return False();
+            vm.Fail();
         }
-    }
+    };
 }

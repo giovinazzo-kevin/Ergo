@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Union : SolverBuiltIn
 {
@@ -8,39 +10,26 @@ public sealed class Union : SolverBuiltIn
 
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         if (args[0] is Set s1)
         {
             if (args[1] is Set s2)
             {
                 var s3 = new Set(s1.Contents.Union(s2.Contents), s1.Scope);
-                if (LanguageExtensions.Unify(args[2], s3).TryGetValue(out var subs))
-                {
-                    yield return True(subs);
-                    yield break;
-                }
+                ErgoVM.Goals.Unify([args[2], s3])(vm);
             }
             else if (args[2] is Set s3)
             {
                 s2 = new Set(s3.Contents.Except(s1.Contents), s3.Scope);
-                if (LanguageExtensions.Unify(args[1], s2).TryGetValue(out var subs))
-                {
-                    yield return True(subs);
-                    yield break;
-                }
+                ErgoVM.Goals.Unify([args[1], s2])(vm);
             }
         }
         else if (args[1] is Set s2 && args[2] is Set s3)
         {
             s1 = new Set(s3.Contents.Except(s2.Contents), s3.Scope);
-            if (LanguageExtensions.Unify(args[0], s1).TryGetValue(out var subs))
-            {
-                yield return True(subs);
-                yield break;
-            }
+            ErgoVM.Goals.Unify([args[0], s1])(vm);
         }
-        yield return False();
-        yield break;
-    }
+        else vm.Fail();
+    };
 }

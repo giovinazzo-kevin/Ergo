@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Unifiable : SolverBuiltIn
 {
@@ -7,20 +9,15 @@ public sealed class Unifiable : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args =>
     {
-        if (LanguageExtensions.Unify(arguments[0], arguments[1]).TryGetValue(out var subs))
+        if (args[0].Unify(args[1]).TryGetValue(out var subs))
         {
             var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Operators.Unification.CanonicalFunctor, s.Lhs, s.Rhs)
                 .AsOperator(WellKnown.Operators.Unification));
             List list = new(ImmutableArray.CreateRange(equations), default, default);
-            if (new Substitution(arguments[2], list).Unify().TryGetValue(out subs))
-            {
-                yield return True(subs);
-                yield break;
-            }
+            return ErgoVM.Goals.Unify([args[2], list]);
         }
-
-        yield return False();
-    }
+        return ErgoVM.Ops.Fail;
+    };
 }

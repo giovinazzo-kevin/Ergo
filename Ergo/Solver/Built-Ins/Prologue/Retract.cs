@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Retract : DynamicPredicateBuiltIn
 {
@@ -7,18 +9,21 @@ public sealed class Retract : DynamicPredicateBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
-    {
-        var any = false;
-        while (Retract(context.Solver, scope, arguments[0], all: false))
-        {
-            yield return True();
-            any = true;
-        }
 
-        if (!any)
+    public override ErgoVM.Goal Compile() => args =>
+    {
+        return vm =>
         {
-            yield return False();
+            RetractOp(vm);
+        };
+        void RetractOp(ErgoVM vm)
+        {
+            if (Retract(vm, args[0], all: false))
+            {
+                vm.PushChoice(RetractOp);
+                vm.Solution();
+            }
+            else vm.Fail();
         }
-    }
+    };
 }

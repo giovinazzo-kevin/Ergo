@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Variant : SolverBuiltIn
 {
@@ -7,10 +9,5 @@ public sealed class Variant : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
-    {
-        if (args[0].IsVariantOf(args[1]))
-            yield return True(Substitution.Pool.Acquire());
-        else yield return False();
-    }
+    public override ErgoVM.Goal Compile() => args => args[0].IsVariantOf(args[1]) ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
 }

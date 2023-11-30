@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class With : SolverBuiltIn
@@ -8,7 +10,7 @@ public sealed class With : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         if (args[0] is Dict a)
         {
@@ -16,27 +18,18 @@ public sealed class With : SolverBuiltIn
                 && GetPairs(b).TryGetValue(out var kvps))
             {
                 var merged = Update(a, kvps);
-                if (LanguageExtensions.Unify(args[2], merged).TryGetValue(out var subs))
-                {
-                    yield return True(subs);
-                    yield break;
-                }
+                ErgoVM.Goals.Unify([args[2], merged]);
             }
             else if (args[2] is Dict d)
             {
                 if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], a.Dictionary[k]).TryGetValue(out _)))
                 {
-                    yield return False();
-                    yield break;
+                    vm.Fail();
                 }
                 var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
                 var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                     .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
-                if (LanguageExtensions.Unify(args[1], merged).TryGetValue(out var subs))
-                {
-                    yield return True(subs);
-                    yield break;
-                }
+                ErgoVM.Goals.Unify([args[1], merged]);
             }
         }
         else if (args[0] is Variable
@@ -46,20 +39,14 @@ public sealed class With : SolverBuiltIn
         {
             if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], kvps[k]).TryGetValue(out _)))
             {
-                yield return False();
-                yield break;
+                vm.Fail();
             }
             var diff = d.Dictionary.Keys.Except(kvps.Select(k => k.Key)).ToHashSet();
             var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                 .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
-            if (LanguageExtensions.Unify(args[0], merged).TryGetValue(out var subs))
-            {
-                yield return True(subs);
-                yield break;
-            }
+            ErgoVM.Goals.Unify([args[0], merged]);
         }
-
-        yield return False();
+        else vm.Fail();
 
         static Dict Update(Dict d, IEnumerable<KeyValuePair<Atom, ITerm>> kvps)
         {
@@ -84,5 +71,5 @@ public sealed class With : SolverBuiltIn
             }
             return ret.ToDictionary(x => x.Key, x => x.Value);
         }
-    }
+    };
 }

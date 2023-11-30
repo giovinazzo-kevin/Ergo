@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 
@@ -9,22 +11,21 @@ public sealed class DictKeyValue : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         if (args[0] is Variable)
         {
-            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, args[0].Explain());
-            yield break;
+            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, args[0].Explain());
+            return;
         }
 
         if (args[0] is Dict dict)
         {
             if (!dict.Dictionary.Keys.Any())
             {
-                yield return False();
-                yield break;
+                vm.Fail();
+                return;
             }
-
             var anyKey = false;
             var anyValue = false;
             foreach (var key in dict.Dictionary.Keys)
@@ -37,30 +38,28 @@ public sealed class DictKeyValue : SolverBuiltIn
                     if (s2)
                     {
                         anyValue = true;
-                        yield return True(SubstitutionMap.MergeRef(vSubs, subs));
+                        vm.Solution(SubstitutionMap.MergeRef(vSubs, subs));
                     }
                     else
                     {
-                        yield return False();
-                        yield break;
+                        vm.Fail();
+                        return;
                     }
                 }
             }
 
             if (!anyKey)
             {
-                yield return ThrowFalse(scope, SolverError.KeyNotFound, args[0].Explain(), args[1].Explain());
-                yield break;
+                vm.Throw(ErgoVM.ErrorType.KeyNotFound, args[0].Explain(), args[1].Explain());
+                return;
             }
 
             if (!anyValue)
             {
-                yield return False();
+                vm.Fail();
+                return;
             }
-
-            yield break;
         }
-
-        yield return False();
-    }
+        else vm.Fail();
+    };
 }

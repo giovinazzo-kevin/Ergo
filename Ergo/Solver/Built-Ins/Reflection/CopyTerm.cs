@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class CopyTerm : SolverBuiltIn
 {
@@ -7,15 +9,9 @@ public sealed class CopyTerm : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        var copy = args[0].Instantiate(scope.InstantiationContext);
-        if (!LanguageExtensions.Unify(args[1], copy).TryGetValue(out var subs))
-        {
-            yield return False();
-            yield break;
-        }
-
-        yield return True(subs);
-    }
+        var copy = args[0].Instantiate(vm.InstantiationContext);
+        ErgoVM.Goals.Unify(args.SetItem(0, copy))(vm);
+    };
 }

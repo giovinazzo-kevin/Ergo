@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class IsSet : SolverBuiltIn
 {
@@ -8,10 +10,5 @@ public sealed class IsSet : SolverBuiltIn
 
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext solver, SolverScope scope, ImmutableArray<ITerm> args)
-    {
-        if (args[0] is Set)
-            yield return True();
-        else yield return False();
-    }
+    public override ErgoVM.Goal Compile() => args => args[0] is Set ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
 }

@@ -6,6 +6,13 @@ public partial class ErgoVM
     {
         MatchFailed,
         StackEmpty,
-        ExpectedTermOfTypeAt
+        StackOverflow,
+        ExpectedTermOfTypeAt,
+        TermNotSufficientlyInstantiated,
+        KeyNotFound,
+        CannotRetractImportedPredicate,
+        CannotRetractStaticPredicate,
+        UndefinedPredicate,
+        ExpectedNArgumentsGotM,
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class PeekChar : SolverBuiltIn
 {
@@ -7,16 +9,10 @@ public sealed class PeekChar : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        int value = context.Solver.In.Peek();
+        int value = vm.In.Peek();
         ITerm charTerm = value != -1 ? new Atom((char)value) : new Atom("end_of_file");
-
-        if (LanguageExtensions.Unify(arguments[0], charTerm).TryGetValue(out var subs))
-        {
-            yield return True(subs);
-            yield break;
-        }
-        yield return False();
-    }
+        ErgoVM.Goals.Unify([args[0], charTerm]);
+    };
 }

@@ -1,14 +1,16 @@
 ﻿using Ergo.Events;
-using Ergo.Events.Solver;
+using Ergo.Events.Interpreter;
+using Ergo.Events.VM;
 using Ergo.Interpreter.Directives;
 using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Solver;
 using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Expansions;
 
 public class Expansions : Library
 {
+    private static readonly InstantiationContext InstantiationContext = new("X");
+
     public override int LoadOrder => 1;
 
     public override Atom Module => WellKnown.Modules.Expansions;
@@ -22,13 +24,12 @@ public class Expansions : Library
 
     public override void OnErgoEvent(ErgoEvent evt)
     {
-        if (evt is SolverInitializingEvent sie)
+        if (evt is KnowledgeBaseCreatedEvent kce)
         {
             var expansions = new Queue<Predicate>();
-            var tmpScope = sie.Solver.CreateScope(sie.Scope);
-            foreach (var pred in sie.Solver.KnowledgeBase.ToList())
+            foreach (var pred in kce.KnowledgeBase.ToList())
             {
-                foreach (var exp in ExpandPredicate(pred, tmpScope))
+                foreach (var exp in ExpandPredicate(pred, kce.KnowledgeBase.Scope))
                 {
                     if (!exp.IsSameDefinitionAs(pred))
                         expansions.Enqueue(exp);
@@ -36,12 +37,12 @@ public class Expansions : Library
                 if (expansions.Count > 0)
                 {
                     // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
-                    if (!sie.Solver.KnowledgeBase.Retract(pred))
+                    if (!kce.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
-                        sie.Solver.KnowledgeBase.Retract(exp);
-                        sie.Solver.KnowledgeBase.AssertZ(exp);
+                        kce.KnowledgeBase.Retract(exp);
+                        kce.KnowledgeBase.AssertZ(exp);
                     }
                     expansions.Clear();
                 }
@@ -51,11 +52,11 @@ public class Expansions : Library
         {
             var expansions = new Queue<Predicate>();
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
+            foreach (var match in qse.VM.KnowledgeBase.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
                 var pred = match.Predicate.Substitute(match.Substitutions);
-                foreach (var exp in ExpandPredicate(pred, qse.Scope))
+                foreach (var exp in ExpandPredicate(pred, qse.VM.KnowledgeBase.Scope))
                 {
                     if (!exp.IsSameDefinitionAs(pred))
                         expansions.Enqueue(exp);
@@ -63,12 +64,12 @@ public class Expansions : Library
                 if (expansions.Count > 0)
                 {
                     // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
-                    if (!qse.Solver.KnowledgeBase.Retract(pred))
+                    if (!qse.VM.KnowledgeBase.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
-                        qse.Solver.KnowledgeBase.Retract(exp);
-                        qse.Solver.KnowledgeBase.AssertZ(exp);
+                        qse.VM.KnowledgeBase.Retract(exp);
+                        qse.VM.KnowledgeBase.AssertZ(exp);
                     }
                     expansions.Clear();
                 }
@@ -91,13 +92,13 @@ public class Expansions : Library
 
 
     // See: https://github.com/G3Kappa/Ergo/issues/36
-    public IEnumerable<Predicate> ExpandPredicate(Predicate p, SolverScope scope)
+    public IEnumerable<Predicate> ExpandPredicate(Predicate p, InterpreterScope scope)
     {
         Predicate currentPredicate = p;
         while (true)
         {
             var newPredicate = default(Predicate);
-            foreach (var expanded in ExpandPredicateOnce(currentPredicate, scope))
+            foreach (var expanded in ExpandPredicateOnce(currentPredicate))
             {
                 newPredicate = expanded;
                 yield return expanded;
@@ -109,7 +110,7 @@ public class Expansions : Library
             }
             currentPredicate = newPredicate;
         }
-        IEnumerable<Predicate> ExpandPredicateOnce(Predicate p, SolverScope scope)
+        IEnumerable<Predicate> ExpandPredicateOnce(Predicate p)
         {
             if (p.IsBuiltIn)
             {
@@ -159,7 +160,7 @@ public class Expansions : Library
         }
     }
 
-    public IEnumerable<Either<ExpansionResult, ITerm>> ExpandTerm(ITerm term, SolverScope scope)
+    public IEnumerable<Either<ExpansionResult, ITerm>> ExpandTerm(ITerm term, InterpreterScope scope)
     {
         if (term is Variable)
             yield break;
@@ -184,11 +185,7 @@ public class Expansions : Library
                 var expansions = new List<Either<ExpansionResult, ITerm>>[cplx.Arity];
                 for (var i = 0; i < cplx.Arity; i++)
                 {
-                    expansions[i] = new();
-                    foreach (var argExp in ExpandTerm(cplx.Arguments[i], scope).Distinct())
-                    {
-                        expansions[i].Add(argExp);
-                    }
+                    expansions[i] = [.. ExpandTerm(cplx.Arguments[i], scope).Distinct()];
                     if (expansions[i].Count == 0)
                         expansions[i].Add(Either<ExpansionResult, ITerm>.FromB(cplx.Arguments[i]));
                 }
@@ -228,14 +225,13 @@ public class Expansions : Library
         }
     }
 
-    public IEnumerable<ExpansionResult> GetExpansions(ITerm term, SolverScope scope)
+    public IEnumerable<ExpansionResult> GetExpansions(ITerm term, InterpreterScope scope)
     {
         var sig = term.GetSignature();
         // Try all modules in import order
-        var modules = scope.InterpreterScope.VisibleModules;
+        var modules = scope.VisibleModules;
         foreach (var mod in modules.Reverse())
         {
-            scope = scope.WithModule(mod);
             foreach (var exp in GetDefinedExpansions(mod, sig))
             {
                 // Example expansion:
@@ -249,7 +245,7 @@ public class Expansions : Library
                 // 3. Substitute expansion:
                 // [__K1] >> (head(test) :- body(test, __K1)).
                 var expVars = new Dictionary<string, Variable>();
-                var expInst = exp.Predicate.Instantiate(scope.InstantiationContext, expVars);
+                var expInst = exp.Predicate.Instantiate(InstantiationContext, expVars);
                 if (!LanguageExtensions.Unify(term, expInst.Head).TryGetValue(out var subs))
                     continue;
                 var pred = expInst.Substitute(subs);

@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class Call : SolverBuiltIn
@@ -8,39 +10,29 @@ public sealed class Call : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args =>
     {
-        scope = scope.WithDepth(scope.Depth + 1)
-            .WithCaller(scope.Callee)
-            .WithCallee(new(GetStub(args), context));
-        if (args.Length == 0)
-        {
-            yield return ThrowFalse(scope, SolverError.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(0)).Explain());
-            yield break;
-        }
-
+        var undefined = args.Length == 0;
         var goal = args.Aggregate((a, b) => a.Concat(b));
-        if (goal is Variable)
+        var goalIsVar = goal is Variable;
+        return vm =>
         {
-            yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, goal.Explain());
-            yield break;
-        }
-
-        if (goal is not NTuple comma)
-        {
-            comma = new(ImmutableArray<ITerm>.Empty.Add(goal), goal.Scope);
-        }
-
-        var any = false;
-        foreach (var solution in context.Solver.Solve(new(comma), scope))
-        {
-            yield return True(solution.Substitutions);
-            any = true;
-        }
-
-        if (!any)
-        {
-            yield return False();
-        }
-    }
+            if (undefined)
+            {
+                vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(0)).Explain());
+                return;
+            }
+            if (goalIsVar)
+            {
+                vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, goal.Explain());
+                return;
+            }
+            if (goal is not NTuple comma)
+            {
+                comma = new(ImmutableArray<ITerm>.Empty.Add(goal), goal.Scope);
+            }
+            var query = new Query(comma);
+            vm.CompileQuery(query)(vm);
+        };
+    };
 }

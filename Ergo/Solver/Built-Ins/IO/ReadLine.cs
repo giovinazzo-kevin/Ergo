@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Ergo.Lang.Compiler;
+using System.Text;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -9,23 +10,15 @@ public sealed class ReadLine : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        var builder = new StringBuilder();
         int value;
-
-        while ((value = context.Solver.In.Read()) != -1 && value != '\n')
+        var builder = new StringBuilder();
+        while ((value = vm.In.Read()) != -1 && value != '\n')
         {
             builder.Append((char)value);
         }
-
         ITerm lineTerm = value != -1 ? new Atom(builder.ToString()) : new Atom("end_of_file");
-
-        if (LanguageExtensions.Unify(arguments[0], lineTerm).TryGetValue(out var subs))
-        {
-            yield return True(subs);
-            yield break;
-        }
-        yield return False();
-    }
+        ErgoVM.Goals.Unify([args[0], lineTerm])(vm);
+    };
 }

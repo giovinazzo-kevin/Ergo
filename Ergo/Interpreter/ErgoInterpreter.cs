@@ -11,7 +11,6 @@ public partial class ErgoInterpreter
 {
     public readonly ErgoFacade Facade;
     public readonly InterpreterFlags Flags;
-
     private readonly Dictionary<Atom, InterpreterScope> ModuleCache = new();
 
     protected readonly DiagnosticProbe Probe = new()
@@ -52,7 +51,7 @@ public partial class ErgoInterpreter
 
         if (Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
         {
-            throw new InterpreterException(InterpreterError.UndefinedDirective, scope, d.Explain(canonical: false));
+            throw new InterpreterException(ErrorType.UndefinedDirective, scope, d.Explain(canonical: false));
         }
         Probe.Leave(watch);
         return false;
@@ -99,7 +98,7 @@ public partial class ErgoInterpreter
         if (!scope.ExceptionHandler.TryGet(() => parser.ProgramDirectives()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
-            scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            scope.Throw(ErrorType.CouldNotLoadFile, stream.FileName);
             Probe.Leave(watch);
             return default;
         }
@@ -126,7 +125,7 @@ public partial class ErgoInterpreter
         foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
         {
             stream.Dispose();
-            scope.Throw(InterpreterError.UndefinedDirective, Ast.Explain(false));
+            scope.Throw(ErrorType.UndefinedDirective, Ast.Explain(false));
             Probe.Leave(watch);
             return default;
         }
@@ -194,7 +193,7 @@ public partial class ErgoInterpreter
         if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
-            scope.Throw(InterpreterError.CouldNotLoadFile, stream.FileName);
+            scope.Throw(ErrorType.CouldNotLoadFile, stream.FileName);
             return default;
         }
 

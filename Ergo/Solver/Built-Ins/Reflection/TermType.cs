@@ -1,4 +1,7 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class TermType : SolverBuiltIn
 {
@@ -7,27 +10,21 @@ public sealed class TermType : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    private static readonly Atom _A = new("atom");
+    private static readonly Atom _V = new("variable");
+    private static readonly Atom _C = new("complex");
+    private static readonly Atom _B = new("abstract");
+
+    public override ErgoVM.Goal Compile() => args =>
     {
-        var type = arguments[0] switch
+        var type = args[0] switch
         {
-            Atom => new Atom("atom"),
-            Variable => new Atom("variable"),
-            Complex => new Atom("complex"),
+            Atom => _A,
+            Variable => _V,
+            Complex => _C,
+            AbstractTerm => _B,
             _ => throw new NotSupportedException()
         };
-
-        if (!arguments[1].IsGround)
-        {
-            yield return True(new Substitution(arguments[1], type));
-        }
-        else if (LanguageExtensions.Unify(arguments[1], type).TryGetValue(out var subs))
-        {
-            yield return True(subs);
-        }
-        else
-        {
-            yield return False();
-        }
-    }
+        return ErgoVM.Goals.Unify([args[1], type]);
+    };
 }

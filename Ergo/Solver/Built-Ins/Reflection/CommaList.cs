@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class CommaToList : SolverBuiltIn
@@ -8,47 +10,35 @@ public sealed class CommaToList : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args =>
     {
-        var (commaArg, listArg) = (arguments[0], arguments[1]);
-        if (listArg is not Variable)
+        var (commaArg, listArg) = (args[0], args[1]);
+        return vm =>
         {
-            if (listArg is not List list)
+            if (listArg is not Variable)
             {
-                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
-                yield break;
+                if (listArg is not List list)
+                {
+                    vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.List, listArg.Explain());
+                    return;
+                }
+                var comma = new NTuple(list.Contents, default);
+                ErgoVM.Goals.Unify([commaArg, comma])(vm);
+                return;
             }
 
-            var comma = new NTuple(list.Contents, default);
-            if (!LanguageExtensions.Unify(commaArg, comma).TryGetValue(out var subs))
+            if (commaArg is not Variable)
             {
-                yield return False();
-                yield break;
+                if (commaArg is not NTuple comma)
+                {
+                    vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
+                    return;
+                }
+                var list = new List(comma.Contents, default, default);
+                ErgoVM.Goals.Unify([listArg, list])(vm);
+                return;
             }
-
-            yield return True(subs);
-            yield break;
-        }
-
-        if (commaArg is not Variable)
-        {
-            if (commaArg is not NTuple comma)
-            {
-                yield return ThrowFalse(scope, SolverError.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
-                yield break;
-            }
-
-            var list = new List(comma.Contents, default, default);
-            if (!LanguageExtensions.Unify(listArg, list).TryGetValue(out var subs))
-            {
-                yield return False();
-                yield break;
-            }
-
-            yield return True(subs);
-            yield break;
-        }
-
-        yield return ThrowFalse(scope, SolverError.TermNotSufficientlyInstantiated, commaArg.Explain());
-    }
+            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, WellKnown.Types.List, commaArg.Explain());
+        };
+    };
 }

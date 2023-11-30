@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class FindAll : SolverBuiltIn
@@ -8,48 +10,46 @@ public sealed class FindAll : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
-        scope = scope.WithDepth(scope.Depth + 1)
-            .WithCaller(scope.Callee)
-            .WithCallee(new(GetStub(args), context));
         if (args[1] is not NTuple comma)
         {
-            comma = new(ImmutableArray<ITerm>.Empty.Add(args[1]), default);
+            comma = new([args[1]], default);
         }
 
-        var solutions = context.Solver.Solve(new(comma), scope)
-            .ToArray();
-        if (solutions.Length == 0)
+        var newVm = vm.CreateChild();
+        newVm.Query = newVm.CompileQuery(new(comma));
+        newVm.Run();
+        if (!newVm.Solutions.Any())
         {
             if (args[2].IsGround && args[2].Equals(WellKnown.Literals.EmptyList))
             {
-                yield return new Evaluation(true);
+                // noop
             }
             else if (!args[2].IsGround)
             {
-                yield return True(new Substitution(args[2], WellKnown.Literals.EmptyList));
+                ErgoVM.Goals.Unify([args[2], WellKnown.Literals.EmptyList])(vm);
             }
             else
             {
-                yield return False();
+                vm.Fail();
             }
         }
         else
         {
-            var list = new List(ImmutableArray.CreateRange(solutions.Select(s => args[0].Substitute(s.Substitutions))), default, default);
+            var list = new List(ImmutableArray.CreateRange(newVm.Solutions.Select(s => args[0].Substitute(s.Substitutions))), default, default);
             if (args[2].IsGround && args[2].Equals(list))
             {
-                yield return new Evaluation(true);
+                // noop
             }
             else if (!args[2].IsGround)
             {
-                yield return True(new Substitution(args[2], list));
+                ErgoVM.Goals.Unify([args[2], list])(vm);
             }
             else
             {
-                yield return False();
+                vm.Fail();
             }
         }
-    }
+    };
 }

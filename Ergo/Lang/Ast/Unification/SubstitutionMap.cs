@@ -34,6 +34,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     {
         if (B != null)
             A.AddRange(B);
+        Substitution.Pool.Release(B);
         return A;
     }
 

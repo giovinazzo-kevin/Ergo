@@ -1,4 +1,6 @@
 ﻿
+using Ergo.Lang.Compiler;
+
 namespace Ergo.Solver.BuiltIns;
 
 public sealed class Sort : SolverBuiltIn
@@ -8,25 +10,18 @@ public sealed class Sort : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         if (args[0] is List list)
         {
             var sorted = new List(list.Contents.OrderBy(x => x), default, list.Scope);
-            if (LanguageExtensions.Unify(args[1], sorted).TryGetValue(out var subs))
-                yield return True(subs);
-            else goto fail;
+            ErgoVM.Goals.Unify([args[1], sorted])(vm);
         }
         else if (args[1] is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
-            if (LanguageExtensions.Unify(args[0], lst).TryGetValue(out var subs))
-                yield return True(subs);
-            else goto fail;
+            ErgoVM.Goals.Unify([args[0], lst])(vm);
         }
-        else goto fail;
-        yield break;
-    fail:
-        yield return False();
-    }
+        else vm.Fail();
+    };
 }

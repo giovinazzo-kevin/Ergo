@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Ergo.Lang.Compiler;
+using System.Text;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -9,37 +10,28 @@ public sealed class Read : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         var sb = new StringBuilder();
-
         int ch;
         Maybe<ITerm> maybeTerm = default;
-        while ((ch = context.Solver.In.Read()) != -1)
+        while ((ch = vm.In.Read()) != -1)
         {
             sb.Append((char)ch);
             if (ch == '\n')
             {
-                maybeTerm = context.Solver.Facade.Parse<ITerm>(context.Scope, sb.ToString());
+                maybeTerm = vm.KnowledgeBase.Scope.Facade.Parse<ITerm>(vm.KnowledgeBase.Scope, sb.ToString());
                 if (maybeTerm.TryGetValue(out _))
                     break;
             }
         }
-
         if (!maybeTerm.TryGetValue(out ITerm term))
         {
-            yield return False();
-            yield break;
+            vm.Fail();
+            return;
         }
-
-        while ((ch = context.Solver.In.Peek()) != -1 && ch != '\n')
-            context.Solver.In.Read();
-
-        if (LanguageExtensions.Unify(arguments[0], term).TryGetValue(out var subs))
-        {
-            yield return True(subs);
-            yield break;
-        }
-        yield return False();
-    }
+        while ((ch = vm.In.Peek()) != -1 && ch != '\n')
+            vm.In.Read();
+        ErgoVM.Goals.Unify([args[0], term])(vm);
+    };
 }

@@ -1,4 +1,5 @@
-﻿using Ergo.Lang.Compiler;
+﻿using Ergo.Interpreter;
+using Ergo.Lang.Compiler;
 
 namespace Ergo.Solver.BuiltIns;
 
@@ -9,55 +10,54 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
     {
     }
 
-    protected static Maybe<Predicate> GetPredicate(SolverScope scope, ITerm arg, DependencyGraph depGraph)
+    protected static Maybe<Predicate> GetPredicate(ErgoVM vm, ITerm arg)
     {
-        if (!Predicate.FromCanonical(arg, scope.InterpreterScope.Entry, out var pred))
+        if (!Predicate.FromCanonical(arg, vm.KnowledgeBase.Scope.Entry, out var pred))
         {
-            scope.InterpreterScope.Throw(InterpreterError.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
+            vm.KnowledgeBase.Scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
             return default;
         }
 
         pred = pred.Dynamic();
-        if (scope.InterpreterScope.Modules.TryGetValue(pred.DeclaringModule, out var declaringModule) && declaringModule.ContainsExport(pred.Head.GetSignature()))
+        if (vm.KnowledgeBase.Scope.Modules.TryGetValue(pred.DeclaringModule, out var declaringModule) && declaringModule.ContainsExport(pred.Head.GetSignature()))
             pred = pred.Exported();
         return pred.Qualified()
-            .WithExecutionGraph(pred.ToExecutionGraph(depGraph));
+            .WithExecutionGraph(pred.ToExecutionGraph(vm.KnowledgeBase.DependencyGraph));
     }
 
-    protected static bool Assert(ErgoSolver solver, SolverScope scope, ITerm arg, bool z)
+    protected static bool Assert(ErgoVM vm, ITerm arg, bool z)
     {
-        if (!GetPredicate(scope, arg, solver.KnowledgeBase.DependencyGraph).TryGetValue(out var pred))
+        if (!GetPredicate(vm, arg).TryGetValue(out var pred))
             return false;
         if (!z)
         {
-            solver.KnowledgeBase.AssertA(pred);
+            vm.KnowledgeBase.AssertA(pred);
         }
         else
         {
-            solver.KnowledgeBase.AssertZ(pred);
+            vm.KnowledgeBase.AssertZ(pred);
         }
-
         return true;
     }
 
-    protected static bool Retract(ErgoSolver solver, SolverScope scope, ITerm term, bool all)
+    protected static bool Retract(ErgoVM vm, ITerm term, bool all)
     {
         var sig = term.GetSignature();
         if (!term.IsQualified)
-            term = term.Qualified(scope.InterpreterScope.Entry);
+            term = term.Qualified(vm.KnowledgeBase.Scope.Entry);
         var toRemove = new List<ITerm>();
-        foreach (var match in solver.KnowledgeBase.GetMatches(new("R"), term, desugar: true)
+        foreach (var match in vm.KnowledgeBase.GetMatches(new("R"), term, desugar: true)
             .AsEnumerable().SelectMany(x => x))
         {
             if (!match.Predicate.IsDynamic)
             {
-                scope.Throw(SolverError.CannotRetractStaticPredicate, scope, sig.Explain());
+                vm.Throw(ErgoVM.ErrorType.CannotRetractStaticPredicate, sig.Explain());
                 return false;
             }
 
-            if (scope.InterpreterScope.Entry != match.Predicate.DeclaringModule)
+            if (vm.KnowledgeBase.Scope.Entry != match.Predicate.DeclaringModule)
             {
-                scope.Throw(SolverError.CannotRetractImportedPredicate, scope, sig.Explain(), scope.InterpreterScope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
+                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KnowledgeBase.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
                 return false;
             }
 
@@ -69,7 +69,7 @@ public abstract class DynamicPredicateBuiltIn : SolverBuiltIn
         }
 
         foreach (var item in toRemove)
-            solver.KnowledgeBase.Retract(item);
+            vm.KnowledgeBase.Retract(item);
 
         return toRemove.Count > 0;
     }

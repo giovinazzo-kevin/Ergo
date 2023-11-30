@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public abstract class NthBase : SolverBuiltIn
 {
@@ -7,7 +9,7 @@ public abstract class NthBase : SolverBuiltIn
     public NthBase(int offset)
         : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> args)
+    public override ErgoVM.Goal Compile() => args => vm =>
     {
         if (args[0].Matches<int>(out var index))
         {
@@ -15,19 +17,14 @@ public abstract class NthBase : SolverBuiltIn
             if (args[1] is List list && index >= 0 && index < list.Contents.Length)
             {
                 var elem = list.Contents[index];
-                if (LanguageExtensions.Unify(args[2], elem).TryGetValue(out var subs))
-                {
-                    yield return True(subs);
-                    yield break;
-                }
+                ErgoVM.Goals.Unify([args[2], elem])(vm);
             }
             else if (!args[1].IsGround)
             {
                 var contents = Enumerable.Range(0, index)
                     .Select(x => (ITerm)new Variable("_"))
                     .Append(args[2]);
-                yield return True(new Substitution(args[1], new List(contents, default, args[1].Scope)));
-                yield break;
+                ErgoVM.Goals.Unify([args[1], new List(contents, default, args[1].Scope)])(vm);
             }
         }
         else if (!args[0].IsGround)
@@ -42,23 +39,18 @@ public abstract class NthBase : SolverBuiltIn
                     {
                         any = true;
                         subs.Add(new(args[0], new Atom(i + Offset)));
-                        yield return True(subs);
+                        vm.Solution(subs);
                     }
                 }
-
-                if (any)
-                {
-                    yield break;
-                }
+                if (!any)
+                    vm.Fail();
             }
             else if (!args[1].IsGround)
             {
-                yield return True();
-                yield break;
+                vm.Solution();
             }
         }
-
-        yield return False();
-    }
+        else vm.Fail();
+    };
 }
 

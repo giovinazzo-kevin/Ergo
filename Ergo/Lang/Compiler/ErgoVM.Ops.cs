@@ -227,7 +227,7 @@ public partial class ErgoVM
             }
             IEnumerator<KBMatch> GetEnumerator(ErgoVM vm)
             {
-                if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, goal, false).TryGetValue(out var matches))
+                if (!vm.KnowledgeBase.GetMatches(vm.InstantiationContext, goal, false).TryGetValue(out var matches))
                 {
                     // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
                     vm.Throw(ErrorType.MatchFailed, goal.Explain(false));

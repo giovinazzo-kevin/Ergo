@@ -1,15 +1,14 @@
 ﻿using Ergo.Events;
-using Ergo.Events.Solver;
+using Ergo.Events.VM;
 using Ergo.Interpreter.Directives;
 using Ergo.Solver.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Compiler;
 
+using Ergo.Events.Interpreter;
 using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
-using Ergo.Solver;
 using System.Collections.Generic;
-
 public class Compiler : Library
 {
     public override int LoadOrder => 100;
@@ -28,12 +27,12 @@ public class Compiler : Library
         InlinedPredicates.Add(sig);
     }
 
-    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, SolverFlags flags)
+    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, VMFlags flags)
     {
         return handler.TryGet(() =>
         {
             var graph = clause.ToExecutionGraph(depGraph);
-            if (flags.HasFlag(SolverFlags.EnableCompilerOptimizations))
+            if (flags.HasFlag(VMFlags.EnableOptimizations))
                 graph = graph.Optimized();
             return clause.WithExecutionGraph(graph);
         });
@@ -41,32 +40,30 @@ public class Compiler : Library
 
     public override void OnErgoEvent(ErgoEvent evt)
     {
-        if (evt is SolverInitializingEvent sie)
+        if (evt is KnowledgeBaseCreatedEvent kbc)
         {
-            if (sie.Solver.KnowledgeBase.DependencyGraph != null)
-                return;
             // This library reacts last to ErgoEvents (in a standard environment), so all predicates
             // that have been marked for inlining are known by now. It's time for some static analysis.
-            var depGraph = sie.Solver.KnowledgeBase.DependencyGraph = new DependencyGraph(sie.Scope, sie.Solver.KnowledgeBase);
+            var depGraph = kbc.KnowledgeBase.DependencyGraph;
             // The concept is similar to term expansions, but instead of recursively expanding each term,
             // inlining works at the goal level, allowing it to be qualified with a module and thus be more specific.
             foreach (var root in depGraph.GetRootNodes())
             {
                 ProcessNode(root);
             }
-            if (sie.Solver.Flags.HasFlag(SolverFlags.EnableInlining))
+            if (kbc.Flags.HasFlag(VMFlags.EnableInlining))
             {
-                foreach (var inlined in InlineInContext(sie.Scope, depGraph))
+                foreach (var inlined in InlineInContext(kbc.KnowledgeBase.Scope, depGraph))
                 {
                     foreach (var (pred, clause) in inlined.Clauses.Zip(inlined.InlinedClauses))
                     {
-                        sie.Solver.KnowledgeBase.Replace(pred, clause);
+                        kbc.KnowledgeBase.Replace(pred, clause);
                     }
                     inlined.Clauses.Clear();
                     inlined.Clauses.AddRange(inlined.InlinedClauses);
                 }
             }
-            if (sie.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
+            if (kbc.Flags.HasFlag(VMFlags.EnableCompiler))
             {
                 foreach (var node in depGraph.GetAllNodes())
                 {
@@ -76,9 +73,9 @@ public class Compiler : Library
                         if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
                             continue;
                         // TODO: figure out issue with compiler optimizations
-                        if (TryCompile(clause, sie.Scope.ExceptionHandler, depGraph, sie.Solver.Flags & ~SolverFlags.EnableCompilerOptimizations).TryGetValue(out var newClause))
+                        if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, kbc.Flags & ~VMFlags.EnableOptimizations).TryGetValue(out var newClause))
                         {
-                            sie.Solver.KnowledgeBase.Replace(clause, newClause);
+                            kbc.KnowledgeBase.Replace(clause, newClause);
                             node.Clauses[i] = newClause;
                         }
                     }
@@ -88,14 +85,14 @@ public class Compiler : Library
         else if (evt is QuerySubmittedEvent qse)
         {
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.Solver.KnowledgeBase.GetMatches(qse.Scope.InstantiationContext, topLevelHead, desugar: false)
+            foreach (var match in qse.VM.KnowledgeBase.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
-                if (qse.Solver.Flags.HasFlag(SolverFlags.EnableCompiler))
+                if (qse.Flags.HasFlag(VMFlags.EnableCompiler))
                 {
-                    if (TryCompile(topLevel, qse.Scope.InterpreterScope.ExceptionHandler, qse.Solver.KnowledgeBase.DependencyGraph, qse.Solver.Flags).TryGetValue(out var newClause))
-                        qse.Solver.KnowledgeBase.Replace(topLevel, newClause);
+                    if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags).TryGetValue(out var newClause))
+                        qse.VM.KnowledgeBase.Replace(topLevel, newClause);
                 }
             }
         }

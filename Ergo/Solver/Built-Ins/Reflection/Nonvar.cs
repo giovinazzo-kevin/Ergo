@@ -1,4 +1,6 @@
-﻿namespace Ergo.Solver.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Solver.BuiltIns;
 
 public sealed class Nonvar : SolverBuiltIn
 {
@@ -7,8 +9,5 @@ public sealed class Nonvar : SolverBuiltIn
     {
     }
 
-    public override IEnumerable<Evaluation> Apply(SolverContext context, SolverScope scope, ImmutableArray<ITerm> arguments)
-    {
-        yield return Bool(arguments[0] is not Variable);
-    }
+    public override ErgoVM.Goal Compile() => args => args[0] is not Variable ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
 }

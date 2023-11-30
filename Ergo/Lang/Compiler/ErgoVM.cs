@@ -25,13 +25,17 @@ public partial class ErgoVM
     // Temporary, these properties will be removed in due time.
     public SolverScope Scope { get; set; }
     // Temporary, these properties will be removed in due time.
-    public KnowledgeBase KnowledgeBase { get; set; }
+    public readonly KnowledgeBase KnowledgeBase;
     public readonly InstantiationContext InstCtx = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
     protected int cutIndex;
     public Op @continue;
+    public ErgoVM(KnowledgeBase kb)
+    {
+        KnowledgeBase = kb;
+    }
     #endregion
     #region External VM API
     /// <summary>

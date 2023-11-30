@@ -206,7 +206,7 @@ public partial class ErgoSolver : IDisposable
             scope = scope.WithCallee(new(newPred, ctx));
             if (newPred.ExecutionGraph.TryGetValue(out var graph))
             {
-                var vm = new ErgoVM() { Context = ctx, Scope = scope, KnowledgeBase = KnowledgeBase };
+                var vm = new ErgoVM(KnowledgeBase) { Context = ctx, Scope = scope };
                 vm.Query = graph.Compile()(newPred.Head.GetArguments());
                 foreach (var s in vm.RunInteractive())
                     yield return s;

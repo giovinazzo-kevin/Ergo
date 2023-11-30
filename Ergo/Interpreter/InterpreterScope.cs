@@ -1,4 +1,5 @@
 ﻿using Ergo.Events;
+using Ergo.Events.Interpreter;
 using Ergo.Facade;
 using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
@@ -114,6 +115,7 @@ public readonly struct InterpreterScope
                 kb.AssertZ(newPred);
             }
         }
+        ForwardEventToLibraries(new KnowledgeBaseCreatedEvent(this, kb));
         return kb;
     }
 

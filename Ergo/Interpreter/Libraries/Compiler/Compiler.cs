@@ -64,21 +64,18 @@ public class Compiler : Library
                     inlined.Clauses.AddRange(inlined.InlinedClauses);
                 }
             }
-            if (kbc.Flags.HasFlag(VMFlags.EnableCompiler))
+            foreach (var node in depGraph.GetAllNodes())
             {
-                foreach (var node in depGraph.GetAllNodes())
+                for (int i = 0; i < node.Clauses.Count; i++)
                 {
-                    for (int i = 0; i < node.Clauses.Count; i++)
+                    var clause = node.Clauses[i];
+                    if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
+                        continue;
+                    // TODO: figure out issue with compiler optimizations breaking math:range
+                    if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, kbc.Flags & ~VMFlags.EnableOptimizations).TryGetValue(out var newClause))
                     {
-                        var clause = node.Clauses[i];
-                        if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
-                            continue;
-                        // TODO: figure out issue with compiler optimizations
-                        if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, kbc.Flags & ~VMFlags.EnableOptimizations).TryGetValue(out var newClause))
-                        {
-                            kbc.KnowledgeBase.Replace(clause, newClause);
-                            node.Clauses[i] = newClause;
-                        }
+                        kbc.KnowledgeBase.Replace(clause, newClause);
+                        node.Clauses[i] = newClause;
                     }
                 }
             }
@@ -90,11 +87,8 @@ public class Compiler : Library
                 .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
-                if (qse.Flags.HasFlag(VMFlags.EnableCompiler))
-                {
-                    if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags).TryGetValue(out var newClause))
-                        qse.VM.KnowledgeBase.Replace(topLevel, newClause);
-                }
+                if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags).TryGetValue(out var newClause))
+                    qse.VM.KnowledgeBase.Replace(topLevel, newClause);
             }
         }
 

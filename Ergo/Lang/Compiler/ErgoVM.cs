@@ -8,10 +8,9 @@ namespace Ergo.Lang.Compiler;
 [Flags]
 public enum VMFlags
 {
-    Default = EnableInlining | EnableCompiler | EnableOptimizations,
+    Default = EnableInlining | EnableOptimizations,
     None = 0,
     EnableInlining = 1,
-    EnableCompiler = 2,
     EnableOptimizations = 4
 }
 

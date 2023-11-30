@@ -1,4 +1,4 @@
-﻿using Ergo.Solver;
+﻿using Ergo.Lang.Compiler;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
@@ -8,7 +8,7 @@ public abstract class SolveShellCommand : ShellCommand
     public readonly bool Interactive;
     public readonly ConsoleColor DefaultAccentColor;
 
-    private readonly Dictionary<int, ErgoSolver> SolverCache = new();
+    private readonly Dictionary<int, ErgoVM> VMCache = new();
 
     static string GetColorAlternatives()
     {
@@ -42,12 +42,12 @@ public abstract class SolveShellCommand : ShellCommand
         }
 
         var key = scope.KnowledgeBase.GetHashCode() + scope.KnowledgeBase.Count;
-        if (!SolverCache.TryGetValue(key, out var solver) || solver.Flags != scope.SolverFlags)
+        if (!VMCache.TryGetValue(key, out var vm) || vm.Flags != scope.VMFlags)
         {
-            foreach (var (k, s) in SolverCache)
-                s.Dispose();
-            SolverCache.Clear();
-            solver = SolverCache[key] = shell.Facade.BuildSolver(scope.KnowledgeBase, scope.SolverFlags);
+            //foreach (var (k, s) in VMCache)
+            //    s.Dispose();
+            VMCache.Clear();
+            vm = VMCache[key] = shell.Facade.BuildVM(scope.KnowledgeBase, scope.VMFlags);
         }
         var parsed = shell.Facade.Parse<Query>(scope.InterpreterScope, userQuery);
         if (!parsed.TryGetValue(out var query))
@@ -58,32 +58,32 @@ public abstract class SolveShellCommand : ShellCommand
 
         shell.WriteLine(query.Goals.Explain(false), LogLevel.Dbg);
         var (nonInteractiveTrace, nonInteractiveSolve) = (false, false);
-        var solverScope = solver.CreateScope(scope.InterpreterScope);
         if (scope.TraceEnabled)
         {
-            solverScope.Tracer.Trace += (_, __, type, trace) =>
-            {
-                shell.Write(trace, LogLevel.Trc, type);
-                shell.Write("? ", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
-                switch (char.ToLower(nonInteractiveTrace ? ' ' : shell.ReadChar(true)))
-                {
-                    case 'c':
-                        shell.Write("contn", LogLevel.Rpl, overrideFg: ConsoleColor.Magenta);
-                        nonInteractiveTrace = true;
-                        break;
-                    case ' ':
-                        shell.Write("creep", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
-                        break;
-                    default:
-                        shell.Write("abort", LogLevel.Rpl, overrideFg: ConsoleColor.Red);
-                        requestCancel.Cancel();
-                        break;
-                }
+            //solverScope.Tracer.Trace += (_, __, type, trace) =>
+            //{
+            //    shell.Write(trace, LogLevel.Trc, type);
+            //    shell.Write("? ", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
+            //    switch (char.ToLower(nonInteractiveTrace ? ' ' : shell.ReadChar(true)))
+            //    {
+            //        case 'c':
+            //            shell.Write("contn", LogLevel.Rpl, overrideFg: ConsoleColor.Magenta);
+            //            nonInteractiveTrace = true;
+            //            break;
+            //        case ' ':
+            //            shell.Write("creep", LogLevel.Rpl, overrideFg: ConsoleColor.DarkMagenta);
+            //            break;
+            //        default:
+            //            shell.Write("abort", LogLevel.Rpl, overrideFg: ConsoleColor.Red);
+            //            requestCancel.Cancel();
+            //            break;
+            //    }
 
-                shell.WriteLine();
-            };
+            //    shell.WriteLine();
+            //};
         }
-        var solutions = solver.Solve(query, solverScope, ct: requestCancel.Token); // Solution graph is walked lazily
+        vm.Query = vm.CompileQuery(query);
+        var solutions = vm.RunInteractive(); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
@@ -148,7 +148,7 @@ public abstract class SolveShellCommand : ShellCommand
         else
         {
             var rowsDict = solutions
-                .Select(s => s.Simplify()
+                .Select(s => s
                     .Substitutions
                     .ToDictionary(r => r.Lhs.Explain(), r => r.Rhs.Explain()))
                 .ToArray();

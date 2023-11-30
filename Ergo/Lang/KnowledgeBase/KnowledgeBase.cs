@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Ergo.Interpreter;
+using System.Collections;
 using System.Collections.Specialized;
 
 namespace Ergo.Lang;
@@ -6,22 +7,25 @@ namespace Ergo.Lang;
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
     protected readonly OrderedDictionary Predicates = new();
-    public DependencyGraph DependencyGraph { get; internal set; }
 
-    public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
+    public readonly InterpreterScope Scope;
+    public readonly DependencyGraph DependencyGraph;
 
-    public void Clear() => Predicates.Clear();
-
-    public KnowledgeBase()
+    public KnowledgeBase(InterpreterScope scope)
     {
-
+        Scope = scope;
+        DependencyGraph = new(this);
     }
 
-    private KnowledgeBase(OrderedDictionary predicates, DependencyGraph dependencyGraph)
+    private KnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, DependencyGraph dependencyGraph)
     {
+        Scope = scope;
         Predicates = predicates;
         DependencyGraph = dependencyGraph;
     }
+
+    public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
+    public void Clear() => Predicates.Clear();
 
     public KnowledgeBase Clone()
     {
@@ -30,7 +34,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         {
             inner.Add(kv.Key, kv.Value);
         }
-        return new(inner, DependencyGraph);
+        return new(Scope, inner, DependencyGraph);
     }
 
     private List<Predicate> GetOrCreate(Signature key, bool append = false)

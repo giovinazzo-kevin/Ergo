@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
@@ -56,7 +56,7 @@ public class ExecutionGraph
     public ExecutionGraph Optimized() => new(Head, new SequenceNode(new() { Root }).Optimize());
 
     /// <summary>
-    /// Compiles the current graph to an Op that can run on the ErgoVM.
+    /// Compiles the current graph to a Goal that can run on the ErgoVM.
     /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
     /// </summary>
     public ErgoVM.Goal Compile()
@@ -71,7 +71,7 @@ public static class ExecutionGraphExtensions
 
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
-        var scope = graph.Scope/*.WithCurrentModule(clause.DeclaringModule)*/;
+        var scope = graph.KnowledgeBase.Scope/*.WithCurrentModule(clause.DeclaringModule)*/;
         var root = ToExecutionNode(clause.Body, graph, scope, cyclicalCallMap: cyclicalCallMap);
         return new(clause.Head, root);
     }
@@ -82,7 +82,7 @@ public static class ExecutionGraphExtensions
         cyclicalCallMap ??= new();
         var ret = default(ExecutionNode);
         Action<ExecutionNode> onReturn = _ => { };
-        var scope = mbScope.GetOr(graph.Scope);// Handle the cyclical call node if it's present
+        var scope = mbScope.GetOr(graph.KnowledgeBase.Scope);// Handle the cyclical call node if it's present
         if (goal is NTuple tup)
         {
             var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, ctx, cyclicalCallMap)).ToList();

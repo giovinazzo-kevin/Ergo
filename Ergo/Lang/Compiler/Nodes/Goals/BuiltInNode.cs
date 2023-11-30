@@ -1,13 +1,13 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.VM.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
 public class BuiltInNode : GoalNode
 {
-    public SolverBuiltIn BuiltIn { get; }
+    public BuiltIn BuiltIn { get; }
     public readonly ErgoVM.Goal BuiltInGoal;
     public readonly ITerm Head;
-    public BuiltInNode(DependencyGraphNode node, ITerm goal, SolverBuiltIn builtIn) : base(node, goal)
+    public BuiltInNode(DependencyGraphNode node, ITerm goal, BuiltIn builtIn) : base(node, goal)
     {
         BuiltIn = builtIn;
         BuiltInGoal = ErgoVM.Goals.BuiltIn(BuiltIn);

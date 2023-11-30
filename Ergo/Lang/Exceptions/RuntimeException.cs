@@ -8,5 +8,5 @@ public class RuntimeException : ErgoException
     public readonly ErgoVM.ErrorType ErrorType;
 
     public RuntimeException(ErgoVM.ErrorType error, params object[] args)
-        : base(ExceptionUtils.GetRuntimeError(error, args)) => ErrorType = error;
+        : base(ExceptionUtils.GetVMError(error, args)) => ErrorType = error;
 }

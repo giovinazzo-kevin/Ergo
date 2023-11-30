@@ -1,13 +1,12 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 using Ergo.Shell;
 using Ergo.Shell.Commands;
-using Ergo.Solver;
-using Ergo.Solver.DataBindings;
-using Ergo.Solver.DataBindings.Interfaces;
+using Ergo.VM;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -20,8 +19,6 @@ namespace Ergo.Facade;
 public readonly struct ErgoFacade
 {
     private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(ErgoParser).GetMethod(nameof(ErgoParser.AddAbstractParser));
-    private static readonly MethodInfo Solver_BindDataSource = typeof(ErgoSolver).GetMethod(nameof(ErgoSolver.BindDataSource));
-    private static readonly MethodInfo Solver_BindDataSink = typeof(ErgoSolver).GetMethod(nameof(ErgoSolver.BindDataSink));
     private static readonly MethodInfo This_AddParser = typeof(ErgoFacade).GetMethod(nameof(ErgoFacade.AddAbstractParser));
 
     private static readonly Dictionary<string, ErgoParser> ParserCache = new();
@@ -38,8 +35,6 @@ public readonly struct ErgoFacade
     private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
     private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
     private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
-    private readonly ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> _dataSinks = ImmutableDictionary<Type, ImmutableHashSet<IDataSink>>.Empty;
-    private readonly ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> _dataSources = ImmutableDictionary<Type, ImmutableHashSet<IDataSource>>.Empty;
     public readonly Maybe<TextReader> Input = default;
     public readonly Maybe<TextWriter> Output = default;
     public readonly Maybe<TextWriter> Error = default;
@@ -51,8 +46,6 @@ public readonly struct ErgoFacade
         ImmutableHashSet<Func<Library>> libs,
         ImmutableHashSet<ShellCommand> commands,
         ImmutableDictionary<Type, IAbstractTermParser> parsers,
-        ImmutableDictionary<Type, ImmutableHashSet<IDataSink>> dataSinks,
-        ImmutableDictionary<Type, ImmutableHashSet<IDataSource>> dataSources,
         Maybe<TextReader> inStream,
         Maybe<TextWriter> outStream,
         Maybe<TextWriter> errStream,
@@ -62,8 +55,6 @@ public readonly struct ErgoFacade
         _libraries = libs;
         _commands = commands;
         _parsers = parsers;
-        _dataSinks = dataSinks;
-        _dataSources = dataSources;
         Input = inStream;
         Output = outStream;
         Error = errStream;
@@ -71,26 +62,18 @@ public readonly struct ErgoFacade
     }
 
     public ErgoFacade AddLibrary(Func<Library> lib)
-        => new(_libraries.Add(lib), _commands, _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
+        => new(_libraries.Add(lib), _commands, _parsers, Input, Output, Error, InputReader);
     public ErgoFacade AddCommand(ShellCommand command)
-        => new(_libraries, _commands.Add(command), _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
+        => new(_libraries, _commands.Add(command), _parsers, Input, Output, Error, InputReader);
     public ErgoFacade RemoveCommand(ShellCommand command)
-        => new(_libraries, _commands.Remove(command), _parsers, _dataSinks, _dataSources, Input, Output, Error, InputReader);
+        => new(_libraries, _commands.Remove(command), _parsers, Input, Output, Error, InputReader);
     public ErgoFacade AddAbstractParser<A>(IAbstractTermParser<A> parser) where A : AbstractTerm
-        => new(_libraries, _commands, _parsers.SetItem(typeof(A), parser), _dataSinks, _dataSources, Input, Output, Error, InputReader);
+        => new(_libraries, _commands, _parsers.SetItem(typeof(A), parser), Input, Output, Error, InputReader);
     public ErgoFacade RemoveAbstractParser<A>() where A : AbstractTerm
-        => new(_libraries, _commands, _parsers.Remove(typeof(A)), _dataSinks, _dataSources, Input, Output, Error, InputReader);
-    public ErgoFacade AddDataSink<A>(DataSink<A> sink) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks.SetItem(typeof(A), (_dataSinks.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSink>.Empty).Add(sink)), _dataSources, Input, Output, Error, InputReader);
-    public ErgoFacade RemoveDataSink<A>(DataSink<A> sink) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks.SetItem(typeof(A), (_dataSinks.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSink>.Empty).Remove(sink)), _dataSources, Input, Output, Error, InputReader);
-    public ErgoFacade AddDataSource<A>(DataSource<A> source) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Add(source)), Input, Output, Error, InputReader);
-    public ErgoFacade RemoveDataSource<A>(DataSource<A> source) where A : new()
-        => new(_libraries, _commands, _parsers, _dataSinks, _dataSources.SetItem(typeof(A), (_dataSources.TryGetValue(typeof(A), out var set) ? set : ImmutableHashSet<IDataSource>.Empty).Remove(source)), Input, Output, Error, InputReader);
-    public ErgoFacade SetInput(TextReader input, Maybe<IAsyncInputReader> reader = default) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, input, Output, Error, reader);
-    public ErgoFacade SetOutput(TextWriter output) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, output, Error, InputReader);
-    public ErgoFacade SetError(TextWriter err) => new(_libraries, _commands, _parsers, _dataSinks, _dataSources, Input, Output, err, InputReader);
+        => new(_libraries, _commands, _parsers.Remove(typeof(A)), Input, Output, Error, InputReader);
+    public ErgoFacade SetInput(TextReader input, Maybe<IAsyncInputReader> reader = default) => new(_libraries, _commands, _parsers, input, Output, Error, reader);
+    public ErgoFacade SetOutput(TextWriter output) => new(_libraries, _commands, _parsers, Input, output, Error, InputReader);
+    public ErgoFacade SetError(TextWriter err) => new(_libraries, _commands, _parsers, Input, Output, err, InputReader);
     /// <summary>
     /// Adds all libraries with a public parameterless constructor in the target assembly.
     /// </summary>
@@ -141,26 +124,15 @@ public readonly struct ErgoFacade
         return newFacade;
     }
 
-    private ErgoSolver ConfigureSolver(ErgoSolver solver)
+    private ErgoVM ConfigureVM(ErgoVM vm)
     {
         if (Input.TryGetValue(out var input))
-            solver.SetIn(input);
+            vm.SetIn(input);
         if (Output.TryGetValue(out var output))
-            solver.SetOut(output);
+            vm.SetOut(output);
         if (Error.TryGetValue(out var error))
-            solver.SetErr(error);
-        foreach (var (type, sources) in _dataSources)
-        {
-            foreach (var source in sources)
-                Solver_BindDataSource.MakeGenericMethod(type).Invoke(solver, new object[] { source });
-        }
-
-        foreach (var (type, sinks) in _dataSinks)
-        {
-            foreach (var sink in sinks)
-                Solver_BindDataSink.MakeGenericMethod(type).Invoke(solver, new object[] { sink });
-        }
-        return solver;
+            vm.SetErr(error);
+        return vm;
     }
 
     private ErgoInterpreter ConfigureInterpreter(ErgoInterpreter interpreter)
@@ -191,8 +163,8 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(this, new(this, stream, operators ?? Enumerable.Empty<Operator>())));
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
-    public ErgoSolver BuildSolver(KnowledgeBase kb = null, SolverFlags flags = SolverFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
-        => ConfigureSolver(new(this, kb ?? new(), flags, decimalType));
+    public ErgoVM BuildVM(KnowledgeBase kb, VMFlags flags = VMFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
+        => ConfigureVM(new(kb, flags, decimalType));
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));
 
@@ -200,7 +172,7 @@ public readonly struct ErgoFacade
     {
         onParseFail ??= (str =>
         {
-            scope.Throw(InterpreterError.CouldNotParseTerm, typeof(T), data);
+            scope.Throw(ErgoInterpreter.ErrorType.CouldNotParseTerm, typeof(T), data);
             return Maybe<T>.None;
         });
         var userDefinedOps = scope.VisibleOperators;

@@ -1,8 +1,9 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Extensions;
-using Ergo.Solver;
+using Ergo.VM;
 
 namespace Tests;
 
@@ -17,7 +18,6 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         Interpreter = fixture.Interpreter;
         InterpreterScope = fixture.InterpreterScope;
         KnowledgeBase = fixture.KnowledgeBase;
-        using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, SolverFlags.Default, DecimalType.BigDecimal);
     }
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)
@@ -53,34 +53,29 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         var parsed = Interpreter.Facade.Parse<Query>(InterpreterScope, query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
-            Assert.Equal(query, parsed.Goals.Explain(false));
-        //Interpreted();
+            Assert.Equal(query, ((ITerm)parsed.Goals).StripTemporaryVariables().Explain(false));
         //Compiled();
         Optimized();
 
-        void Interpreted()
-        {
-            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default & ~SolverFlags.EnableCompiler), DecimalType.BigDecimal);
-            Solve(solver, parsed);
-        }
-
-        void Compiled()
-        {
-            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default & ~SolverFlags.EnableCompilerOptimizations), DecimalType.BigDecimal);
-            Solve(solver, parsed);
-        }
+        //void Compiled()
+        //{
+        //    var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), (VMFlags.Default & ~VMFlags.EnableOptimizations), DecimalType.BigDecimal);
+        //    Solve(vm, parsed);
+        //}
 
         void Optimized()
         {
-            using var solver = Interpreter.Facade.BuildSolver(KnowledgeBase, (SolverFlags.Default), DecimalType.BigDecimal);
-            Solve(solver, parsed);
+            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), (VMFlags.Default), DecimalType.BigDecimal);
+            Solve(vm, parsed);
         }
 
-        void Solve(ErgoSolver solver, Query parsed)
+        void Solve(ErgoVM vm, Query parsed)
         {
             var numSolutions = 0;
             var timeoutToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10000)).Token;
-            foreach (var sol in solver.Solve(parsed, solver.CreateScope(InterpreterScope), timeoutToken))
+            vm.Query = vm.CompileQuery(parsed);
+            vm.Run();
+            foreach (var sol in vm.Solutions)
             {
                 Assert.InRange(++numSolutions, 1, expectedSolutions);
                 if (expected.Length != 0)

@@ -5,6 +5,14 @@ public partial class ErgoVM
     public enum ErrorType
     {
         MatchFailed,
-        StackEmpty
+        StackEmpty,
+        StackOverflow,
+        ExpectedTermOfTypeAt,
+        TermNotSufficientlyInstantiated,
+        KeyNotFound,
+        CannotRetractImportedPredicate,
+        CannotRetractStaticPredicate,
+        UndefinedPredicate,
+        ExpectedNArgumentsGotM,
     }
 }

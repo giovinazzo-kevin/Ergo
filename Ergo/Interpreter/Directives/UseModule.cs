@@ -11,13 +11,13 @@ public class UseModule : InterpreterDirective
     {
         if (args[0] is not Atom moduleName)
         {
-            scope.Throw(InterpreterError.ExpectedTermOfTypeAt, WellKnown.Types.String, args[0].Explain());
+            scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.String, args[0].Explain());
             return false;
         }
 
         if (moduleName == scope.Entry || scope.EntryModule.Imports.Contents.Contains(moduleName))
         {
-            scope.Throw(InterpreterError.ModuleAlreadyImported, args[0].Explain());
+            scope.Throw(ErgoInterpreter.ErrorType.ModuleAlreadyImported, args[0].Explain());
             return false;
         }
 

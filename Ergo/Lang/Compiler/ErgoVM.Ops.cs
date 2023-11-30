@@ -6,8 +6,24 @@ public partial class ErgoVM
     {
         public static Op NoOp => _ => { };
         public static Op Fail => vm => vm.Fail();
+        public static Op Throw(ErrorType ex, params object[] args) => vm => vm.Throw(ex, args);
         public static Op Cut => vm => vm.Cut();
         public static Op Solution => vm => vm.Solution();
+        public static Op And2(Op a, Op b) => vm =>
+        {
+            // Cache continuation so that goals calling PushChoice know where to continue from.
+            var @continue = vm.@continue;
+            vm.@continue += b;
+            a(vm);
+            // Restore previous continuation before potentially yielding control to another And.
+            vm.@continue = @continue;
+            switch (vm.State)
+            {
+                case VMState.Fail: return;
+                case VMState.Solution: vm.MergeEnvironment(); break;
+            }
+            b(vm);
+        };
         public static Op And(params Op[] goals)
         {
             if (goals.Length == 0)
@@ -25,7 +41,9 @@ public partial class ErgoVM
                         var k = i + 1;
                         // Cache continuation so that goals calling PushChoice know where to continue from.
                         var @continue = vm.@continue;
-                        vm.@continue = @continue == NoOp
+                        vm.@continue = k >= goals.Length
+                        ? @continue
+                        : @continue == NoOp
                             ? vm => ContinueFrom(vm, k)
                             : vm => { @continue(vm); ContinueFrom(vm, k); };
                         goals[i](vm);
@@ -88,10 +106,10 @@ public partial class ErgoVM
         /// Adds the current set of substitutions to te VM's environment, and then releases it back into the substitution map pool.
         /// </summary>
         public static Op UpdateEnvironment(SubstitutionMap subsToAdd) => vm =>
-        {
-            vm.Environment.AddRange(subsToAdd);
-            Substitution.Pool.Release(subsToAdd);
-        };
+            {
+                vm.Environment.AddRange(subsToAdd);
+                Substitution.Pool.Release(subsToAdd);
+            };
         public static Op SetEnvironment(SubstitutionMap newEnv) => vm =>
         {
             Substitution.Pool.Release(vm.Environment);
@@ -209,7 +227,7 @@ public partial class ErgoVM
             }
             IEnumerator<KBMatch> GetEnumerator(ErgoVM vm)
             {
-                if (!vm.KnowledgeBase.GetMatches(vm.InstCtx, goal, false).TryGetValue(out var matches))
+                if (!vm.KnowledgeBase.GetMatches(vm.InstantiationContext, goal, false).TryGetValue(out var matches))
                 {
                     // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
                     vm.Throw(ErrorType.MatchFailed, goal.Explain(false));

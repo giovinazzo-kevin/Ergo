@@ -9,13 +9,9 @@ ignore(Goal) :- Goal, !.
 ignore(_).
 ignore_all(Goal) :- findall(_, Goal, _), !.
 
-once(Goal) :- (call(Goal) -> true ; false).
+once(Goal) :- call(Goal) -> () ; ().
 repeat(Times, Goal) :- for(_, 1, Times), once(Goal).
 forever(Goal) :- once(Goal) ; forever(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
     
-for(Int, Int, Upper) :- Int <= Upper.
-for(Int, Lower, Upper) :-
-    Lower < Upper, LL := Lower + 1,
-    for(Int, LL, Upper).

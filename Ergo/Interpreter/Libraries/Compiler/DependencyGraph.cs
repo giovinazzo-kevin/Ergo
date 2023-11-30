@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 public class DependencyGraphNode
 {
@@ -17,17 +17,14 @@ public class DependencyGraph
 {
     private readonly Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
     public readonly KnowledgeBase KnowledgeBase;
-    public readonly InterpreterScope Scope;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
     /// </summary>
     public readonly Unify UnifyInstance = new();
 
-    public DependencyGraph(InterpreterScope scope, KnowledgeBase knowledgeBase)
+    public DependencyGraph(KnowledgeBase knowledgeBase)
     {
         KnowledgeBase = knowledgeBase;
-        Scope = scope;
-        BuildGraph();
     }
 
     // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
@@ -40,13 +37,13 @@ public class DependencyGraph
         return sig;
     }
 
-    void BuildGraph()
+    public void Rebuild()
     {
+        _nodes.Clear();
         foreach (var pred in KnowledgeBase)
         {
             AddNode(pred);
         }
-
         foreach (var pred in KnowledgeBase)
         {
             CalculateDependencies(pred);
@@ -57,7 +54,7 @@ public class DependencyGraph
     {
         var sig = GetKey(pred);
         var node = _nodes[sig];
-        foreach (var calledSignature in ExtractCalledSignatures(pred, Scope, KnowledgeBase))
+        foreach (var calledSignature in ExtractCalledSignatures(pred, KnowledgeBase))
         {
             if (_nodes.TryGetValue(calledSignature, out var calledNode))
             {
@@ -89,9 +86,9 @@ public class DependencyGraph
         return node;
     }
 
-    public static IEnumerable<Signature> ExtractCalledSignatures(Predicate pred, InterpreterScope scope, KnowledgeBase kb)
+    public static IEnumerable<Signature> ExtractCalledSignatures(Predicate pred, KnowledgeBase kb)
     {
-        scope = scope.WithCurrentModule(pred.DeclaringModule);
+        var scope = kb.Scope.WithCurrentModule(pred.DeclaringModule);
         return Predicate.GetGoals(pred)
             .SelectMany(c => ExtractCalledSignatures(c, scope, kb));
     }

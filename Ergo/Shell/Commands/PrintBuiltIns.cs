@@ -1,4 +1,4 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.VM.BuiltIns;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
@@ -6,15 +6,14 @@ namespace Ergo.Shell.Commands;
 public sealed class PrintBuiltIns : ShellCommand
 {
     public PrintBuiltIns()
-        : base(new[] { ":b", "builtins" }, "Displays help about all built-ins that start with the given string", @"(?<term>[^\s].*)?", true, 80)
+        : base([":b", "builtins"], "Displays help about all built-ins that start with the given string", @"(?<term>[^\s].*)?", true, 80)
     {
     }
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
         var match = m.Groups["term"];
-        var builtins = new List<SolverBuiltIn>();
-        using var solver = shell.Facade.BuildSolver();
+        var builtins = new List<BuiltIn>();
         if (match?.Success ?? false)
         {
             var parsed = shell.Interpreter.Facade.Parse<ITerm>(scope.InterpreterScope, match.Value);
@@ -54,7 +53,7 @@ public sealed class PrintBuiltIns : ShellCommand
             yield break;
         }
 
-        shell.WriteTable(new[] { "Built-In", "Module", "Documentation" }, canonicals, ConsoleColor.DarkRed);
+        shell.WriteTable(["Built-In", "Module", "Documentation"], canonicals, ConsoleColor.DarkRed);
         yield return scope;
     }
 }

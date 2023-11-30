@@ -1,7 +1,19 @@
-﻿using Ergo.Solver;
+﻿using Ergo.Events.VM;
+using Ergo.VM;
 using System.Diagnostics;
+using System.IO;
 
 namespace Ergo.Lang.Compiler;
+
+[Flags]
+public enum VMFlags
+{
+    Default = EnableInlining | EnableCompiler | EnableOptimizations,
+    None = 0,
+    EnableInlining = 1,
+    EnableCompiler = 2,
+    EnableOptimizations = 4
+}
 
 public partial class ErgoVM
 {
@@ -20,18 +32,47 @@ public partial class ErgoVM
     /// </summary>
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     #endregion
-    // Temporary, these properties will be removed in due time.
-    public SolverContext Context { get; set; }
-    // Temporary, these properties will be removed in due time.
-    public SolverScope Scope { get; set; }
-    // Temporary, these properties will be removed in due time.
-    public KnowledgeBase KnowledgeBase { get; set; }
-    public readonly InstantiationContext InstCtx = new("VM");
+    public VMFlags Flags { get; set; }
+    public DecimalType DecimalType { get; set; }
+    public readonly KnowledgeBase KnowledgeBase;
+    public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
     protected int cutIndex;
     public Op @continue;
+    public ErgoVM(KnowledgeBase kb, VMFlags flags = VMFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
+    {
+        KnowledgeBase = kb;
+        Flags = flags;
+        DecimalType = decimalType;
+        In = Console.In;
+        Out = Console.Out;
+        Err = Console.Error;
+    }
+    #endregion
+    #region I/O
+    public TextReader In { get; private set; }
+    public TextWriter Out { get; private set; }
+    public TextWriter Err { get; private set; }
+
+    public void SetIn(TextReader newIn)
+    {
+        ArgumentNullException.ThrowIfNull(newIn);
+        In = TextReader.Synchronized(newIn);
+    }
+
+    public void SetOut(TextWriter newOut)
+    {
+        ArgumentNullException.ThrowIfNull(newOut);
+        Out = TextWriter.Synchronized(newOut);
+    }
+
+    public void SetErr(TextWriter newErr)
+    {
+        ArgumentNullException.ThrowIfNull(newErr);
+        Err = TextWriter.Synchronized(newErr);
+    }
     #endregion
     #region External VM API
     /// <summary>
@@ -45,7 +86,8 @@ public partial class ErgoVM
     /// <summary>
     /// The current computed set of solutions. See also <see cref="RunInteractive"/>, which yields them one at a time.
     /// </summary>
-    public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(Scope, x));
+    public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(x));
+    public int NumSolutions => solutions.Count;
     /// <summary>
     /// The number of choice points in the stack, which can be used to keep track of choice points created after a particular invocation.
     /// </summary>
@@ -59,6 +101,11 @@ public partial class ErgoVM
         get => _query;
         set => _query = value ?? Ops.NoOp;
     }
+    /// <summary>
+    /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
+    /// </summary>
+    public ErgoVM CreateChild() => new(KnowledgeBase, Flags, DecimalType)
+    { In = In, Err = Err, Out = Out };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
     /// </summary>
@@ -81,13 +128,13 @@ public partial class ErgoVM
         while (State != VMState.Ready)
         {
             while (solutions.TryPop(out var sol))
-                yield return new Solution(Scope, sol);
+                yield return new Solution(sol);
             if (!BacktrackOnce())
                 break;
         }
         CleanUp();
         while (solutions.TryPop(out var sol))
-            yield return new Solution(Scope, sol);
+            yield return new Solution(sol);
     }
     #endregion
     #region Goal API
@@ -154,7 +201,7 @@ public partial class ErgoVM
         if (cont == Ops.NoOp)
             choicePoints.Push(new ChoicePoint(choice, env));
         else
-            choicePoints.Push(new ChoicePoint(vm => Ops.And(choice, cont)(vm), env));
+            choicePoints.Push(new ChoicePoint(Ops.And2(choice, cont), env));
     }
     #endregion
 
@@ -163,10 +210,21 @@ public partial class ErgoVM
     {
         Trace.WriteLine($"{State} {{{Environment.Select(x => x.Explain()).Join(", ")}}} ({@continue.Method.Name}) @ {caller}");
     }
-    private void SuccessToSolution()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SuccessToSolution()
     {
         if (State == VMState.Success)
             Solution();
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryPopSolution(out SubstitutionMap subs)
+    {
+        subs = default;
+        if (solutions.Count == 0 || State != VMState.Solution)
+            return false;
+        subs = solutions.Pop();
+        State = solutions.Count > 0 ? VMState.Solution : VMState.Success;
+        return true;
     }
     public void MergeEnvironment()
     {
@@ -174,12 +232,9 @@ public partial class ErgoVM
         Ops.UpdateEnvironment(subs)(this);
         State = VMState.Success;
     }
-    protected SubstitutionMap CloneEnvironment()
-    {
-        var env = Substitution.Pool.Acquire();
-        env.AddRange(Environment);
-        return env;
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SubstitutionMap CloneEnvironment() => Environment.Clone();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Backtrack()
     {
         while (BacktrackOnce()) ;
@@ -210,5 +265,38 @@ public partial class ErgoVM
     {
         SuccessToSolution();
         Substitution.Pool.Release(Environment);
+    }
+    public Op CompileQuery(Query query)
+    {
+        var exps = GetQueryExpansions(query);
+        var ops = new Op[exps.Length];
+        for (int i = 0; i < exps.Length; i++)
+        {
+            var subs = exps[i].Substitutions; subs.Invert();
+            var newPred = exps[i].Predicate.Substitute(subs);
+            if (newPred.ExecutionGraph.TryGetValue(out var graph))
+            {
+                var goal = graph.Compile();
+                var op = goal(newPred.Head.GetArguments());
+                ops[i] = op;
+            }
+        }
+        return Ops.Or(ops);
+
+        KBMatch[] GetQueryExpansions(Query query)
+        {
+            var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
+            var topLevel = new Predicate(string.Empty, KnowledgeBase.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+            KnowledgeBase.AssertA(topLevel);
+            // Let libraries know that a query is being submitted, so they can expand or modify it.
+            KnowledgeBase.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, Flags));
+            var queryExpansions = KnowledgeBase
+                .GetMatches(InstantiationContext, topLevelHead, desugar: false)
+                .AsEnumerable()
+                .SelectMany(x => x)
+                .ToArray();
+            KnowledgeBase.RetractAll(topLevelHead);
+            return queryExpansions;
+        }
     }
 }

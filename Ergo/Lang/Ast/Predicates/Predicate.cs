@@ -1,5 +1,5 @@
 ﻿using Ergo.Lang.Compiler;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -17,7 +17,7 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsFactual;
     public readonly bool IsBuiltIn;
     public readonly bool IsVariadic;
-    public readonly Maybe<SolverBuiltIn> BuiltIn;
+    public readonly Maybe<BuiltIn> BuiltIn;
     public readonly Maybe<ExecutionGraph> ExecutionGraph;
     //public readonly bool IsDeterminate;
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
@@ -183,7 +183,7 @@ public readonly struct Predicate : IExplainable
     {
     }
 
-    public Predicate(SolverBuiltIn builtIn, Maybe<ITerm> head = default)
+    public Predicate(BuiltIn builtIn, Maybe<ITerm> head = default)
     {
         Documentation = $"<builtin> {builtIn.Documentation}";
         DeclaringModule = builtIn.Signature.Module.GetOr(WellKnown.Modules.Stdlib);

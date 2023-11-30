@@ -1,5 +1,5 @@
-﻿using Ergo.Interpreter.Libraries.Expansions;
-using Ergo.Solver;
+﻿using Ergo.Interpreter;
+using Ergo.Interpreter.Libraries.Expansions;
 
 namespace Ergo.Lang.Ast.Terms.Interfaces;
 
@@ -19,7 +19,7 @@ public abstract class AbstractTerm : ITerm
     /// <summary>
     /// Expands an abstract term by expanding its canonical form, then parsing the result.
     /// </summary>
-    public virtual IEnumerable<Either<ExpansionResult, ITerm>> Expand(Expansions lib, SolverScope scope)
+    public virtual IEnumerable<Either<ExpansionResult, ITerm>> Expand(Expansions lib, InterpreterScope scope)
     {
         /*
             Since expansions work by recursively expanding complex terms, and abstract terms are not complex terms,
@@ -38,7 +38,7 @@ public abstract class AbstractTerm : ITerm
                 continue;
             }
             var canon = result.Explain(canonical: true);
-            var parsed = Parsed.Abstract(scope.InterpreterScope.Facade, canon, scope.InterpreterScope.VisibleOperators, GetType());
+            var parsed = Parsed.Abstract(scope.Facade, canon, scope.VisibleOperators, GetType());
             if (parsed.TryGetValue(out var abs))
             {
                 if (termOrExp.TryGetA(out var exp))

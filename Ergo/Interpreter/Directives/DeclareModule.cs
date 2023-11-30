@@ -10,24 +10,24 @@ public class DeclareModule : InterpreterDirective
     {
         if (args[0] is not Atom moduleName)
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
         if (!scope.IsRuntime && scope.Entry == moduleName)
         {
-            throw new InterpreterException(InterpreterError.ModuleRedefinition, scope, scope.Entry.Explain(), moduleName.Explain());
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleRedefinition, scope, scope.Entry.Explain(), moduleName.Explain());
         }
 
         if (args[1] is not List exports)
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[1].Explain());
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[1].Explain());
         }
 
         if (scope.Modules.TryGetValue(moduleName, out var module))
         {
             if (!module.IsRuntime)
             {
-                throw new InterpreterException(InterpreterError.ModuleNameClash, scope, moduleName.Explain());
+                throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleNameClash, scope, moduleName.Explain());
             }
 
             module = module.WithExports(exports.Contents);
@@ -47,7 +47,7 @@ public class DeclareModule : InterpreterDirective
             // make sure that 'item' is in the form 'predicate/arity'
             if (!item.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
-                throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.Signature, item.Explain());
+                throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.Signature, item.Explain());
             }
         }
 

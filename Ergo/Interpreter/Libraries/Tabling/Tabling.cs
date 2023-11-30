@@ -1,9 +1,8 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
-using Ergo.Events.Solver;
 using Ergo.Interpreter.Directives;
-using Ergo.Solver;
-using Ergo.Solver.BuiltIns;
+using Ergo.Lang.Compiler;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Tabling;
 
@@ -12,41 +11,19 @@ public class Tabling : Library
     public override int LoadOrder => 10;
     public override Atom Module => WellKnown.Modules.Tabling;
 
-    protected readonly Dictionary<SolverContext, MemoizationContext> MemoizationContextTable = new();
+    protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = new();
     protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = new();
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new Tabled())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         .Append(new DeclareTabledPredicate())
         ;
-
-    public MemoizationContext GetMemoizationContext(SolverContext ctx)
-    {
-        if (!MemoizationContextTable.TryGetValue(ctx.GetRoot(), out var ret))
-            throw new ArgumentException(null, nameof(ctx));
-        return ret;
-    }
-
     public void AddTabledPredicate(Atom module, Signature sig)
     {
         if (!TabledPredicates.TryGetValue(module, out var sigs))
             TabledPredicates[module] = sigs = new();
         sigs.Add(sig);
-    }
-
-    public void DestroyMemoizationContext(SolverContext ctx)
-    {
-        var root = ctx.GetRoot();
-        if (ctx != root)
-            return;
-        if (!MemoizationContextTable.Remove(root))
-            throw new ArgumentException(null, nameof(ctx));
-    }
-
-    public void EnsureMemoizationContext(SolverContext ctx)
-    {
-        MemoizationContextTable.TryAdd(ctx.GetRoot(), new());
     }
     public override void OnErgoEvent(ErgoEvent e)
     {
@@ -55,15 +32,6 @@ public class Tabling : Library
             TransformTabledPredicates(ref scope, mle.ModuleName);
             mle.Scope = scope; // Update the scope
         }
-        else if (e is SolverContextCreatedEvent { Context: var mCtx1 })
-        {
-            EnsureMemoizationContext(mCtx1);
-        }
-        else if (e is SolverContextDisposedEvent { Context: var mCtx2 })
-        {
-            DestroyMemoizationContext(mCtx2);
-        }
-
         void TransformTabledPredicates(ref InterpreterScope scope, Atom moduleName)
         {
             var ctx = new InstantiationContext("L");
@@ -100,7 +68,7 @@ public class Tabling : Library
                     );
                     if (!kb.Retract(head))
                     {
-                        scope.Throw(InterpreterError.TransformationFailed, head);
+                        scope.Throw(ErgoInterpreter.ErrorType.TransformationFailed, head);
                         return;
                     }
                     kb.AssertZ(auxPred);

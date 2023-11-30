@@ -11,7 +11,7 @@ public class SetModule : InterpreterDirective
     {
         if (args[0] is not Atom moduleName)
         {
-            throw new InterpreterException(InterpreterError.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
         }
 
         if (!scope.IsRuntime)

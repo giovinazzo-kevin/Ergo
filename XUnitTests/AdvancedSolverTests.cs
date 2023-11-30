@@ -31,7 +31,7 @@ public class AdvancedSolverTests : ErgoTests
     [InlineData("(⊤ ; (⊤ ; (⊤ ; (⊤ ; !, ⊤))))", 5, "", "", "", "", "")]
     [InlineData("(⊤ ; !, ⊥ ; ⊤)", 1, "")]
     [InlineData("(⊤ ; ⊥, ! ; ⊤)", 2, "", "")]
-    [InlineData("range(0 < _X <= 10)", 10, "", "", "", "", "", "", "", "", "", "")]
+    [InlineData("range(0 < _ <= 10)", 10, "", "", "", "", "", "", "", "", "", "")]
     [InlineData("range(0 < X <= 1)", 1, "X/1")]
     [InlineData("range(0 < X <= 1), range(0 < Y <= 1)", 1, "X/1;Y/1")]
     [InlineData("range(0 < X <= 3)", 3, "X/1", "X/2", "X/3")]

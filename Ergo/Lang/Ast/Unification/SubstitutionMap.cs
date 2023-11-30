@@ -4,7 +4,7 @@ namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
-    private readonly BiMap<ITerm, ITerm> Map = new();
+    private Dictionary<ITerm, ITerm> Map = new();
 
     public ITerm this[ITerm key] => Map[key];
 
@@ -14,6 +14,13 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     public void Clear()
     {
         Map.Clear();
+    }
+
+    public SubstitutionMap Clone()
+    {
+        var e = Substitution.Pool.Acquire();
+        e.Map = Map.ToDictionary();
+        return e;
     }
 
     public static SubstitutionMap MergeCopy(SubstitutionMap A, SubstitutionMap B)
@@ -27,12 +34,13 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     {
         if (B != null)
             A.AddRange(B);
+        Substitution.Pool.Release(B);
         return A;
     }
 
     public void Remove(Substitution s)
     {
-        if (Map.TryGetLvalue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
+        if (Map.TryGetValue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
             Map.Remove(s.Lhs);
     }
     public void RemoveRange(IEnumerable<Substitution> source)
@@ -43,15 +51,21 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
-        if (s.Rhs is Variable { Ignored: true } && Map.TryGetLvalue(s.Rhs, out var prevRhs))
+        if (s.Lhs is Variable { Discarded: true })
+            return;
+        Map.Remove(s.Lhs);
+        if (s.Rhs is Variable v)
         {
-            Map.Remove(s.Rhs);
-            Map.Add(s.Lhs, prevRhs);
+            if (v.Discarded)
+                return;
+            if (v.Ignored && Map.TryGetValue(s.Rhs, out var prevRhs))
+            {
+                Map.Remove(s.Rhs);
+                Map.Add(s.Lhs, prevRhs);
+                return;
+            }
         }
-        else if (!s.Rhs.Equals(WellKnown.Literals.Discard))
-        {
-            Map.Add(s.Lhs, s.Rhs);
-        }
+        Map.Add(s.Lhs, s.Rhs);
     }
     public void AddRange(IEnumerable<Substitution> source)
     {

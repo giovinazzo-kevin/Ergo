@@ -17,8 +17,9 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         DependencyGraph = new(this);
     }
 
-    private KnowledgeBase(OrderedDictionary predicates, DependencyGraph dependencyGraph)
+    private KnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, DependencyGraph dependencyGraph)
     {
+        Scope = scope;
         Predicates = predicates;
         DependencyGraph = dependencyGraph;
     }
@@ -33,7 +34,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         {
             inner.Add(kv.Key, kv.Value);
         }
-        return new(inner, DependencyGraph);
+        return new(Scope, inner, DependencyGraph);
     }
 
     private List<Predicate> GetOrCreate(Signature key, bool append = false)

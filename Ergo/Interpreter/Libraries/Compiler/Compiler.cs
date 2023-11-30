@@ -45,6 +45,7 @@ public class Compiler : Library
             // This library reacts last to ErgoEvents (in a standard environment), so all predicates
             // that have been marked for inlining are known by now. It's time for some static analysis.
             var depGraph = kbc.KnowledgeBase.DependencyGraph;
+            depGraph.Rebuild();
             // The concept is similar to term expansions, but instead of recursively expanding each term,
             // inlining works at the goal level, allowing it to be qualified with a module and thus be more specific.
             foreach (var root in depGraph.GetRootNodes())

@@ -25,7 +25,6 @@ public class DependencyGraph
     public DependencyGraph(KnowledgeBase knowledgeBase)
     {
         KnowledgeBase = knowledgeBase;
-        BuildGraph();
     }
 
     // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
@@ -38,13 +37,13 @@ public class DependencyGraph
         return sig;
     }
 
-    void BuildGraph()
+    public void Rebuild()
     {
+        _nodes.Clear();
         foreach (var pred in KnowledgeBase)
         {
             AddNode(pred);
         }
-
         foreach (var pred in KnowledgeBase)
         {
             CalculateDependencies(pred);

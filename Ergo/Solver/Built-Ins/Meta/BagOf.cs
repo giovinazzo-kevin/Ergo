@@ -15,9 +15,9 @@ public sealed class BagOf : SolutionAggregationBuiltIn
         foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm, args))
         {
             var env = vm.CloneEnvironment();
-            ErgoVM.Goals.Unify(ArgVars.Contents)(vm);
+            ErgoVM.Goals.Unify([ListVars, ArgVars])(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
-            ErgoVM.Goals.Unify(ListTemplate.Contents)(vm);
+            ErgoVM.Goals.Unify([args[2], ListTemplate])(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
             vm.Solution();
             ReleaseAndRestore();

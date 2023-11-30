@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter.Directives;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Meta;
 
@@ -7,7 +7,7 @@ public class Meta : Library
 {
     public override Atom Module => WellKnown.Modules.Meta;
 
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new BagOf())
         .Append(new For())
         .Append(new Call())

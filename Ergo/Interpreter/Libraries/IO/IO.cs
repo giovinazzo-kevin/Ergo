@@ -1,12 +1,12 @@
 ﻿using Ergo.Interpreter.Directives;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.IO;
 
 public class IO : Library
 {
     public override Atom Module => WellKnown.Modules.IO;
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new Write())
         .Append(new WriteCanonical())
         .Append(new WriteQuoted())

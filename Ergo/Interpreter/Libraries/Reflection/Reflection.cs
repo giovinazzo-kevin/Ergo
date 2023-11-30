@@ -1,12 +1,12 @@
 ﻿using Ergo.Interpreter.Directives;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Reflection;
 
 public class Reflection : Library
 {
     public override Atom Module => WellKnown.Modules.Reflection;
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new AnonymousComplex())
         .Append(new CommaToList())
         .Append(new Compare())

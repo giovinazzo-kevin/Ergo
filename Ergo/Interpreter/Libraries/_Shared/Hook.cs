@@ -1,5 +1,5 @@
 ﻿using Ergo.Lang.Compiler;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries;
 

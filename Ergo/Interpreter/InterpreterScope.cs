@@ -5,7 +5,7 @@ using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter;
 
@@ -45,7 +45,7 @@ public readonly struct InterpreterScope
     public readonly ImmutableArray<Operator> VisibleOperators;
     public readonly ImmutableArray<Atom> VisibleModules;
     public readonly ImmutableHashSet<Library> VisibleLibraries;
-    public readonly ImmutableDictionary<Signature, SolverBuiltIn> VisibleBuiltIns;
+    public readonly ImmutableDictionary<Signature, BuiltIn> VisibleBuiltIns;
     /// <summary>
     /// List optimized for enumeration otherwise identical to VisibleBuiltIns.Keys
     /// </summary>
@@ -181,11 +181,11 @@ public readonly struct InterpreterScope
             .Where(d => visibleModules.Contains(d.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 
-    private static ImmutableDictionary<Signature, SolverBuiltIn> GetVisibleBuiltIns(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableDictionary<Signature, BuiltIn> GetVisibleBuiltIns(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedBuiltins())
-                .GetOr(Enumerable.Empty<SolverBuiltIn>()))
+                .GetOr(Enumerable.Empty<BuiltIn>()))
             .Where(b => visibleModules.Contains(b.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 

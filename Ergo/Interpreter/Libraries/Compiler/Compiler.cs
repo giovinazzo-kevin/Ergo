@@ -1,7 +1,7 @@
 ﻿using Ergo.Events;
 using Ergo.Events.VM;
 using Ergo.Interpreter.Directives;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Compiler;
 
@@ -20,7 +20,7 @@ public class Compiler : Library
 
     protected readonly HashSet<Signature> InlinedPredicates = new();
     public override Atom Module => WellKnown.Modules.Compiler;
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() { yield break; }
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() { yield break; }
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() { yield break; }
     public void AddInlinedPredicate(Signature sig)
     {

@@ -1,12 +1,12 @@
 ﻿using Ergo.Interpreter.Directives;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Prologue;
 
 public class Prologue : Library
 {
     public override Atom Module => WellKnown.Modules.Prologue;
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new AssertA())
         .Append(new AssertZ())
         .Append(new Cut())

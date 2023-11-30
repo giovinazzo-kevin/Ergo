@@ -1,5 +1,5 @@
 ﻿using Ergo.Events.VM;
-using Ergo.Solver;
+using Ergo.VM;
 using System.Diagnostics;
 using System.IO;
 

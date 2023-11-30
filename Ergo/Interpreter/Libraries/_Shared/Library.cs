@@ -1,6 +1,6 @@
 ﻿using Ergo.Events;
 using Ergo.Interpreter.Directives;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries;
 
@@ -10,7 +10,7 @@ public abstract class Library
     public virtual int LoadOrder => 0;
     public abstract Atom Module { get; }
     public abstract IEnumerable<InterpreterDirective> GetExportedDirectives();
-    public abstract IEnumerable<SolverBuiltIn> GetExportedBuiltins();
+    public abstract IEnumerable<BuiltIn> GetExportedBuiltins();
     public virtual void OnErgoEvent(ErgoEvent evt) { }
 
 }

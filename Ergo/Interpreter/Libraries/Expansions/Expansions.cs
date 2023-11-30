@@ -3,7 +3,7 @@ using Ergo.Events.Interpreter;
 using Ergo.Events.VM;
 using Ergo.Interpreter.Directives;
 using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Expansions;
 
@@ -16,7 +16,7 @@ public class Expansions : Library
     public override Atom Module => WellKnown.Modules.Expansions;
 
     protected readonly Dictionary<Signature, HashSet<Expansion>> Table = new();
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         .Append(new DefineExpansion())

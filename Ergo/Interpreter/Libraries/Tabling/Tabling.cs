@@ -2,7 +2,7 @@
 using Ergo.Events.Interpreter;
 using Ergo.Interpreter.Directives;
 using Ergo.Lang.Compiler;
-using Ergo.Solver.BuiltIns;
+using Ergo.VM.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Tabling;
 
@@ -13,7 +13,7 @@ public class Tabling : Library
 
     protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = new();
     protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = new();
-    public override IEnumerable<SolverBuiltIn> GetExportedBuiltins() => Enumerable.Empty<SolverBuiltIn>()
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new Tabled())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()

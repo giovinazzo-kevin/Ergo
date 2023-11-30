@@ -1,4 +1,4 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.VM.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
@@ -24,7 +24,7 @@ public partial class ErgoVM
         /// <summary>
         /// Creates a built-in goal call.
         /// </summary>
-        public static Goal BuiltIn(SolverBuiltIn builtIn)
+        public static Goal BuiltIn(BuiltIn builtIn)
         {
             return builtIn.Compile();
         }

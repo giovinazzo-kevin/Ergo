@@ -1,4 +1,4 @@
-﻿using Ergo.Solver.BuiltIns;
+﻿using Ergo.VM.BuiltIns;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
@@ -13,7 +13,7 @@ public sealed class PrintBuiltIns : ShellCommand
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
         var match = m.Groups["term"];
-        var builtins = new List<SolverBuiltIn>();
+        var builtins = new List<BuiltIn>();
         if (match?.Success ?? false)
         {
             var parsed = shell.Interpreter.Facade.Parse<ITerm>(scope.InterpreterScope, match.Value);

@@ -1,4 +1,11 @@
-﻿namespace Tests;
+﻿using Ergo.Interpreter;
+using Ergo.Lang;
+using Ergo.Lang.Ast;
+using Ergo.Lang.Compiler;
+using Ergo.Lang.Extensions;
+using Ergo.Solver;
+
+namespace Tests;
 
 public class ErgoTests : IClassFixture<ErgoTestFixture>
 {

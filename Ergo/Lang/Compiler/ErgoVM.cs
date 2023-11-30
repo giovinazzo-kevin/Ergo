@@ -279,6 +279,7 @@ public partial class ErgoVM
                 var op = goal(newPred.Head.GetArguments());
                 ops[i] = op;
             }
+            else ops[i] = Ops.NoOp;
         }
         return Ops.Or(ops);
 

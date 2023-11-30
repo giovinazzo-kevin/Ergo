@@ -19,7 +19,8 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     public SubstitutionMap Clone()
     {
         var e = Substitution.Pool.Acquire();
-        e.Map = Map.ToDictionary();
+        foreach (var item in Map)
+            e.Map.Add(item.Key, item.Value);
         return e;
     }
 

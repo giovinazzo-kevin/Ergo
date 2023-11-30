@@ -40,7 +40,7 @@ public partial class ErgoVM
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
     protected int cutIndex;
-    public Op @continue;
+    internal Op @continue;
     public ErgoVM(KnowledgeBase kb, VMFlags flags = VMFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
     {
         KnowledgeBase = kb;

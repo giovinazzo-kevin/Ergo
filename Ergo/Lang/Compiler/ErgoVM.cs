@@ -87,6 +87,7 @@ public partial class ErgoVM
     /// The current computed set of solutions. See also <see cref="RunInteractive"/>, which yields them one at a time.
     /// </summary>
     public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(x));
+    public int NumSolutions => solutions.Count;
     /// <summary>
     /// The number of choice points in the stack, which can be used to keep track of choice points created after a particular invocation.
     /// </summary>
@@ -219,9 +220,10 @@ public partial class ErgoVM
     public bool TryPopSolution(out SubstitutionMap subs)
     {
         subs = default;
-        if (solutions.Count == 0)
+        if (solutions.Count == 0 || State != VMState.Solution)
             return false;
         subs = solutions.Pop();
+        State = solutions.Count > 0 ? VMState.Solution : VMState.Success;
         return true;
     }
     public void MergeEnvironment()

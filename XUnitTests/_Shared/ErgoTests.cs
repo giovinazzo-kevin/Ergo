@@ -59,13 +59,13 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
 
         void Compiled()
         {
-            var vm = Interpreter.Facade.BuildVM(KnowledgeBase, (VMFlags.Default & ~VMFlags.EnableOptimizations), DecimalType.BigDecimal);
+            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), (VMFlags.Default & ~VMFlags.EnableOptimizations), DecimalType.BigDecimal);
             Solve(vm, parsed);
         }
 
         void Optimized()
         {
-            var vm = Interpreter.Facade.BuildVM(KnowledgeBase, (VMFlags.Default), DecimalType.BigDecimal);
+            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), (VMFlags.Default), DecimalType.BigDecimal);
             Solve(vm, parsed);
         }
 

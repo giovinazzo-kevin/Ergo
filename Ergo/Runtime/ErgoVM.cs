@@ -142,7 +142,8 @@ public partial class ErgoVM
     public void Throw(ErrorType error, params object[] args)
     {
         State = VMState.Fail;
-        throw new RuntimeException(error, args);
+        KnowledgeBase.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
+        choicePoints.Clear();
     }
     /// <summary>
     /// Sets the VM in a failure state, signalling backtracking.

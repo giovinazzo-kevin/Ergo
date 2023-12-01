@@ -1,6 +1,4 @@
-﻿
-using Ergo.Lang.Compiler;
-using PeterO.Numbers;
+﻿using PeterO.Numbers;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -75,35 +73,51 @@ public abstract class MathBuiltIn : BuiltIn
         EDecimal Divide(Complex c)
         {
             var a = Evaluate(c.Arguments[0]);
+            if (a is null)
+                return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
+            if (b is null)
+                return EDecimal.NaN;
             return a.Divide(b, context);
         }
 
         EDecimal Remainder(Complex c)
         {
             var a = Evaluate(c.Arguments[0]);
+            if (a is null)
+                return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
+            if (b is null)
+                return EDecimal.NaN;
             return a.Remainder(b, context);
         }
 
         EDecimal Add(Complex c)
         {
             var a = Evaluate(c.Arguments[0]);
+            if (a is null)
+                return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
+            if (b is null)
+                return EDecimal.NaN;
             return a.Add(b, context);
         }
 
         EDecimal Subtract(Complex c)
         {
             var a = Evaluate(c.Arguments[0]);
+            if (a is null) return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
+            if (b is null) return EDecimal.NaN;
             return a.Subtract(b, context);
         }
 
         EDecimal Multiply(Complex c)
         {
             var a = Evaluate(c.Arguments[0]);
+            if (a is null) return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
+            if (b is null) return EDecimal.NaN;
             return a.Multiply(b, context);
         }
 

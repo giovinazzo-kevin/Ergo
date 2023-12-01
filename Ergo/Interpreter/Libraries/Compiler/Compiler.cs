@@ -10,6 +10,7 @@ using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
 using Ergo.Runtime;
 using System.Collections.Generic;
+
 public class Compiler : Library
 {
     public override int LoadOrder => 100;
@@ -90,6 +91,8 @@ public class Compiler : Library
                 var topLevel = match.Predicate;
                 if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags).TryGetValue(out var newClause))
                     qse.VM.KnowledgeBase.Replace(topLevel, newClause);
+                else
+                    qse.VM.KnowledgeBase.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));
             }
         }
 

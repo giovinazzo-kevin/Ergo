@@ -275,9 +275,7 @@ public partial class ErgoVM
             var newPred = exps[i].Predicate.Substitute(subs);
             if (newPred.ExecutionGraph.TryGetValue(out var graph))
             {
-                var goal = graph.Compile();
-                var op = goal(newPred.Head.GetArguments());
-                ops[i] = op;
+                ops[i] = graph.Compile();
             }
             else ops[i] = Ops.NoOp;
         }

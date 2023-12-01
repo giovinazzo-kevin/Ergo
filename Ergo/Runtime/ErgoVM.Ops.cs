@@ -172,7 +172,7 @@ public partial class ErgoVM
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
                         {
                             matchEnum.Current.Goal.GetQualification(out var inst);
-                            runGoal = graph.Compile()(inst.GetArguments());
+                            runGoal = graph.Compile();
                         }
                         // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph

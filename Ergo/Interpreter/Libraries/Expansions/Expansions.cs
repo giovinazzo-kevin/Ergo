@@ -1,9 +1,9 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
-using Ergo.Events.VM;
+using Ergo.Events.Runtime;
 using Ergo.Interpreter.Directives;
 using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Expansions;
 

@@ -3,6 +3,7 @@ using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions.Handler;
+using Ergo.Runtime;
 
 namespace Tests;
 
@@ -35,7 +36,7 @@ public class ErgoTestFixture : IDisposable
             .GetOrThrow(new InvalidOperationException());
         InterpreterScope = scope
             .WithModule(scope.EntryModule.WithImport(module.Name));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(Ergo.Lang.Compiler.VMFlags.Default);
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(VMFlags.Default);
     }
 
     ~ErgoTestFixture()

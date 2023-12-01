@@ -5,7 +5,7 @@ using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter;
 

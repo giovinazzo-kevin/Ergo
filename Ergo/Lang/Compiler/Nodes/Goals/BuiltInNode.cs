@@ -1,4 +1,4 @@
-﻿using Ergo.VM.BuiltIns;
+﻿using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 

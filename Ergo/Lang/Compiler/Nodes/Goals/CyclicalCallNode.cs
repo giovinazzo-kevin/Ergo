@@ -1,6 +1,4 @@
-﻿
-
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 public class CyclicalCallNode : DynamicNode
 {
     public class NodeRef

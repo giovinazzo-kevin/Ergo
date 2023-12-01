@@ -35,7 +35,7 @@ public partial class ErgoShell
             .GetOrThrow(new InvalidOperationException())
             .WithExceptionHandler(LoggingExceptionHandler)
             .WithRuntime(true);
-        var vmFlags = Lang.Compiler.VMFlags.Default;
+        var vmFlags = VMFlags.Default;
         var kb = scope.BuildKnowledgeBase(vmFlags);
         return transformShell(new(scope, false, kb, vmFlags));
     }

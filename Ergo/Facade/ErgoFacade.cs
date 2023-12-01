@@ -6,7 +6,7 @@ using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 using Ergo.Shell;
 using Ergo.Shell.Commands;
-using Ergo.VM;
+using Ergo.Runtime;
 using System.IO;
 using System.Reflection;
 using System.Text;

@@ -3,6 +3,7 @@
 using Ergo.Interpreter;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
+using Ergo.Runtime;
 
 namespace Tests;
 
@@ -14,7 +15,7 @@ public class CompilerTests : ErgoTests
         Interpreter.Load(ref InterpreterScope, inlining);
         InterpreterScope = InterpreterScope.WithModule(InterpreterScope.EntryModule
             .WithImport(inlining));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(Ergo.Lang.Compiler.VMFlags.Default); // Triggers Compiler library
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(VMFlags.Default); // Triggers Compiler library
     }
     [Theory]
     [InlineData("inline_b", "inline_b.")] // instead of: inline_b :- inline_a.

@@ -3,7 +3,7 @@ using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Compiler;
 using Ergo.Lang.Extensions;
-using Ergo.VM;
+using Ergo.Runtime;
 
 namespace Tests;
 

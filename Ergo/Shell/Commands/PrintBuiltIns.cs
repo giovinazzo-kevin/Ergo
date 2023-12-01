@@ -1,4 +1,4 @@
-﻿using Ergo.VM.BuiltIns;
+﻿using Ergo.Runtime.BuiltIns;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;

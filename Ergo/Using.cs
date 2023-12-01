@@ -2,6 +2,7 @@
 global using Ergo.Lang.Ast;
 global using Ergo.Lang.Exceptions;
 global using Ergo.Lang.Extensions;
+global using Ergo.Runtime;
 global using System;
 global using System.Collections.Generic;
 global using System.Collections.Immutable;

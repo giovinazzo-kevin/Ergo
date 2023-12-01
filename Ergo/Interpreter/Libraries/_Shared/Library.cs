@@ -1,6 +1,6 @@
 ﻿using Ergo.Events;
 using Ergo.Interpreter.Directives;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries;
 

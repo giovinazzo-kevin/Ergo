@@ -1,13 +1,14 @@
 ﻿using Ergo.Events;
-using Ergo.Events.VM;
+using Ergo.Events.Runtime;
 using Ergo.Interpreter.Directives;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Compiler;
 
 using Ergo.Events.Interpreter;
 using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
+using Ergo.Runtime;
 using System.Collections.Generic;
 public class Compiler : Library
 {

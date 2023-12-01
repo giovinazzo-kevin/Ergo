@@ -1,7 +1,7 @@
 ﻿:- module(poke, [
 ]).
 
-:- table(score_matchup_/3).
+%:- table(score_matchup_/3).
 
 type(none).
 type(normal).

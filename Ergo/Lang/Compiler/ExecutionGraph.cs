@@ -1,12 +1,11 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Runtime.BuiltIns;
-using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
 public class ExecutionGraph
 {
-    private Maybe<ErgoVM.Goal> Compiled;
+    private Maybe<ErgoVM.Op> Compiled;
     public readonly ExecutionNode Root;
     public readonly ITerm Head;
 
@@ -17,27 +16,13 @@ public class ExecutionGraph
         Root = root;
         head.GetQualification(out Head);
     }
-    private ErgoVM.Goal CompileAndCache()
+    private ErgoVM.Op CompileAndCache()
     {
         var compiledRoot = Root.Compile();
-        var Args = Head.GetArguments();
-        ErgoVM.Goal op = args => vm =>
-        {
-            if (false)
-            {
-                Debug.Assert(args.Length == Args.Length);
-                ErgoVM.Goals.Unify(Unify.MakeArgs(args, Args))(vm);
-                if (vm.State == ErgoVM.VMState.Fail)
-                    return;
-            }
-            compiledRoot(vm);
-        };
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
-        // TODO: Pre-JIT everything that can be pre-JITted, as this doesn't work recursively.
         RuntimeHelpers.PrepareDelegate(compiledRoot);
-        RuntimeHelpers.PrepareDelegate(op);
-        Compiled = op;
-        return op;
+        Compiled = compiledRoot;
+        return compiledRoot;
     }
     public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
@@ -59,7 +44,7 @@ public class ExecutionGraph
     /// Compiles the current graph to a Goal that can run on the ErgoVM.
     /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
     /// </summary>
-    public ErgoVM.Goal Compile()
+    public ErgoVM.Op Compile()
     {
         return Compiled.GetOr(CompileAndCache());
     }

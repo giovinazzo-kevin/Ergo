@@ -160,7 +160,6 @@ public partial class ErgoVM
         subs.AddRange(Environment);
         solutions.Push(subs);
         State = VMState.Solution;
-        LogState();
     }
     /// <summary>
     /// Yields the current environment as a solution.
@@ -169,7 +168,6 @@ public partial class ErgoVM
     {
         solutions.Push(CloneEnvironment());
         State = VMState.Solution;
-        LogState();
     }
 
     public void Cut()
@@ -205,9 +203,9 @@ public partial class ErgoVM
     #endregion
 
     [Conditional("ERGO_VM_DIAGNOSTICS")]
-    protected void LogState([CallerMemberName] string caller = null)
+    protected void Trace(string text, [CallerMemberName] string caller = null)
     {
-        Trace.WriteLine($"{State} {{{Environment.Select(x => x.Explain()).Join(", ")}}} ({@continue.Method.Name}) @ {caller}");
+        System.Diagnostics.Trace.WriteLine($"{caller}: {text}");
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SuccessToSolution()
@@ -248,7 +246,6 @@ public partial class ErgoVM
             Environment = choicePoint.Environment;
             choicePoint.Continue(this);
             SuccessToSolution();
-            LogState();
             return true;
         }
         return false;
@@ -275,9 +272,7 @@ public partial class ErgoVM
             var newPred = exps[i].Predicate.Substitute(subs);
             if (newPred.ExecutionGraph.TryGetValue(out var graph))
             {
-                var goal = graph.Compile();
-                var op = goal(newPred.Head.GetArguments());
-                ops[i] = op;
+                ops[i] = graph.Compile();
             }
             else ops[i] = Ops.NoOp;
         }

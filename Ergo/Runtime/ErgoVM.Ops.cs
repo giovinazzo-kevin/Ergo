@@ -157,7 +157,8 @@ public partial class ErgoVM
                         // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);
                         // Update the environment by adding the current match's substitutions.
-                        vm.Environment.AddRange(matchEnum.Current.Substitutions);
+                        if (matchEnum.Current.Substitutions != null)
+                            vm.Environment.AddRange(matchEnum.Current.Substitutions);
                         // Decide how to execute this goal depending on whether:
                         Op runGoal = NoOp;
                         var pred = matchEnum.Current.Predicate;

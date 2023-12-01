@@ -137,6 +137,7 @@ public partial class ErgoShell
             WriteLine($"Loaded: '{fileName}'.\r\n\t{Math.Abs(delta)} {(delta >= 0 ? "new" : "")} predicates have been {(delta >= 0 ? "added" : "removed")}.", LogLevel.Inf);
         });
         scope = copy;
+        scope.KnowledgeBase.DependencyGraph.Rebuild();
     }
 
     public static void CancelConsoleInput()

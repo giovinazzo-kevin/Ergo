@@ -116,11 +116,15 @@ public static class ExecutionGraphExtensions
             }
         }
         // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
+        var found = false;
         var matches = new List<ExecutionNode>();
         var sig = goal.GetSignature();
         // Qualified match
         if (graph.GetNode(sig).TryGetValue(out var node))
+        {
             Node(goal);
+            found = true;
+        }
         // Qualified variadic match
         if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
             matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
@@ -132,7 +136,10 @@ public static class ExecutionGraphExtensions
                 sig = sig.WithModule(possibleQualif);
                 // Match
                 if (graph.GetNode(sig).TryGetValue(out node))
+                {
                     Node(goal.Qualified(possibleQualif));
+                    found = true;
+                }
                 // Variadic match
                 if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
                     matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
@@ -147,8 +154,10 @@ public static class ExecutionGraphExtensions
             if (scope.Modules[module].DynamicPredicates.Contains(sig))
                 matches.Add(new DynamicNode(goal));
         }
-        if (matches.Count == 0)
+        if (matches.Count == 0 && !found)
             throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
+        else if (matches.Count == 0 && found)
+            return FalseNode.Instance;
         if (matches.Count == 1)
             ret = matches[0];
         else ret = matches.Aggregate((a, b) => new BranchNode(a, b));

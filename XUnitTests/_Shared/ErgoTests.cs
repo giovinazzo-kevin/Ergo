@@ -1,7 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
-using Ergo.Lang.Compiler;
 using Ergo.Lang.Extensions;
 using Ergo.Runtime;
 
@@ -54,18 +53,10 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
             Assert.Equal(query, ((ITerm)parsed.Goals).StripTemporaryVariables().Explain(false));
-        //Compiled();
         Optimized();
-
-        //void Compiled()
-        //{
-        //    var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), (VMFlags.Default & ~VMFlags.EnableOptimizations), DecimalType.BigDecimal);
-        //    Solve(vm, parsed);
-        //}
-
         void Optimized()
         {
-            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), (VMFlags.Default), DecimalType.BigDecimal);
+            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), VMFlags.Default, DecimalType.BigDecimal);
             Solve(vm, parsed);
         }
 

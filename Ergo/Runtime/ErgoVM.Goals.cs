@@ -2,6 +2,9 @@
 
 public partial class ErgoVM
 {
+    /// <summary>
+    /// Utility goals.
+    /// </summary>
     public static class Goals
     {
         /// <summary>

@@ -26,9 +26,9 @@ public sealed class SetupCallCleanup : BuiltIn
         CallInst.Compile()(vm);
         if (vm.State != ErgoVM.VMState.Fail)
         {
-            var sols = vm.NumSolutions;
             vm.Arity = 1;
             vm.SetArg(0, args[2]);
+            var sols = vm.NumSolutions;
             CallInst.Compile()(vm);
             while (vm.NumSolutions > sols)
                 vm.TryPopSolution(out _);

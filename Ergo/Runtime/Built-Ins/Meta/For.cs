@@ -16,7 +16,9 @@ public sealed class For : BuiltIn
         ErgoVM.Op Inner()
         {
             var args = vm.Args;
-            var hash = args.GetHashCode();
+            var hash = 0;
+            for (int h = 0; h < args.Length; h++)
+                hash = HashCode.Combine(hash, args[h].GetHashCode());
             if (cache.TryGetValue(hash, out var op))
                 return op;
             if (args[1] is not Atom { Value: EDecimal from })

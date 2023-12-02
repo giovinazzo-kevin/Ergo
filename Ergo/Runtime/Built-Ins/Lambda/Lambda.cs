@@ -44,11 +44,15 @@ public sealed class Lambda : BuiltIn
             lambda = lambda.Substitute(newSubs);
             Substitution.Pool.Release(newSubs);
         }
-
+        /*
+        var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : ImmutableArray<ITerm>.Empty;
+        CallInst.Compile()([lambda, .. extraArgs])(vm);
+         */
         var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : [];
         vm.SetArg(0, lambda);
         for (int i = 0; i < extraArgs.Length; i++)
             vm.SetArg(i + 1, extraArgs[i]);
+        vm.Arity = 1 + extraArgs.Length;
         CallInst.Compile()(vm);
     };
 }

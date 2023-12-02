@@ -28,11 +28,12 @@ public sealed class Eval : MathBuiltIn
         return FalseNode.Instance;
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        var eval = new Atom(Evaluate(vm, args[1]));
+        var eval = new Atom(Evaluate(vm, vm.Arg(1)));
         if (vm.State == ErgoVM.VMState.Fail)
             return;
-        ErgoVM.Goals.Unify(args.SetItem(1, eval))(vm);
+        vm.SetArg(1, eval);
+        ErgoVM.Goals.Unify2(vm);
     };
 }

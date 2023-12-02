@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public abstract class NthBase : BuiltIn
 {
@@ -9,22 +7,27 @@ public abstract class NthBase : BuiltIn
     public NthBase(int offset)
         : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args[0].Matches<int>(out var index))
         {
             index -= Offset;
             if (args[1] is List list && index >= 0 && index < list.Contents.Length)
             {
                 var elem = list.Contents[index];
-                ErgoVM.Goals.Unify([args[2], elem])(vm);
+                vm.SetArg(0, args[2]);
+                vm.SetArg(1, elem);
+                ErgoVM.Goals.Unify2(vm);
             }
             else if (!args[1].IsGround)
             {
                 var contents = Enumerable.Range(0, index)
                     .Select(x => (ITerm)new Variable("_"))
                     .Append(args[2]);
-                ErgoVM.Goals.Unify([args[1], new List(contents, default, args[1].Scope)])(vm);
+                vm.SetArg(0, args[1]);
+                vm.SetArg(1, new List(contents, default, args[1].Scope));
+                ErgoVM.Goals.Unify2(vm);
             }
         }
         else if (!args[0].IsGround)

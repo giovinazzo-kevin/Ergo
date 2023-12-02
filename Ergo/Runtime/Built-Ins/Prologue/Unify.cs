@@ -103,5 +103,5 @@ public sealed class Unify : BuiltIn
         return TrueNode.Instance;
     }
 
-    public override ErgoVM.Goal Compile() => ErgoVM.Goals.Unify;
+    public override ErgoVM.Op Compile() => ErgoVM.Goals.Unify2;
 }

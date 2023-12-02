@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using System.Text;
+﻿using System.Text;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -10,7 +9,7 @@ public sealed class ReadLine : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
         int value;
         var builder = new StringBuilder();
@@ -19,6 +18,7 @@ public sealed class ReadLine : BuiltIn
             builder.Append((char)value);
         }
         ITerm lineTerm = value != -1 ? new Atom(builder.ToString()) : new Atom("end_of_file");
-        ErgoVM.Goals.Unify([args[0], lineTerm])(vm);
+        vm.SetArg(1, lineTerm);
+        ErgoVM.Goals.Unify2(vm);
     };
 }

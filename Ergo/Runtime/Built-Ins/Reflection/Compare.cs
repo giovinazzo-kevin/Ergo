@@ -1,8 +1,4 @@
-﻿
-
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Compare : BuiltIn
 {
@@ -11,8 +7,9 @@ public sealed class Compare : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         var cmp = args[1].CompareTo(args[2]);
         if (args[0].IsGround)
         {
@@ -26,6 +23,7 @@ public sealed class Compare : BuiltIn
                 vm.Fail();
             return;
         }
-        ErgoVM.Goals.Unify([args[0], new Atom(cmp)])(vm);
+        vm.SetArg(1, new Atom(cmp));
+        ErgoVM.Goals.Unify2(vm);
     };
 }

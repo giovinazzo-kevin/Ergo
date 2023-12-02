@@ -11,5 +11,12 @@ public sealed class Ground : BuiltIn
 
     public override ExecutionNode Optimize(BuiltInNode node) =>
         node.Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
-    public override ErgoVM.Goal Compile() => args => args[0].IsGround ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
+    public override ErgoVM.Op Compile()
+    {
+        return vm =>
+        {
+            if (!(vm.Arg(0).IsGround))
+                vm.Fail();
+        };
+    }
 }

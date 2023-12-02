@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Unifiable : BuiltIn
 {
@@ -9,15 +7,18 @@ public sealed class Unifiable : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args[0].Unify(args[1]).TryGetValue(out var subs))
         {
             var equations = subs.Select(s => (ITerm)new Complex(WellKnown.Operators.Unification.CanonicalFunctor, s.Lhs, s.Rhs)
                 .AsOperator(WellKnown.Operators.Unification));
             List list = new(ImmutableArray.CreateRange(equations), default, default);
-            return ErgoVM.Goals.Unify([args[2], list]);
+            vm.SetArg(0, args[2]);
+            vm.SetArg(1, list);
+            ErgoVM.Goals.Unify2(vm);
         }
-        return ErgoVM.Ops.Fail;
+        else vm.Fail();
     };
 }

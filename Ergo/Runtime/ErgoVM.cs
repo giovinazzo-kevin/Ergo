@@ -15,16 +15,13 @@ public enum VMFlags
 
 public partial class ErgoVM
 {
+    public const int MAX_ARGUMENTS = 255;
 
     #region Type Declarations
     /// <summary>
     /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
     /// </summary>
     public delegate void Op(ErgoVM vm);
-    /// <summary>
-    /// Represents a parametrizable operation that can be invoked against the VM. Creates a closure over the parameters and returns a parameterless Op.
-    /// </summary>
-    public delegate Op Goal(ImmutableArray<ITerm> args);
     /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
@@ -37,10 +34,25 @@ public partial class ErgoVM
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
+    /// <summary>
+    /// Register for the choice point cut index.
+    /// </summary>
     protected int cutIndex;
+    /// <summary>
+    /// Acts as a register for the current goal's arguments.
+    /// </summary>
+    protected ITerm[] args;
+    /// <summary>
+    /// Register for the number of arguments for the current call. Needed by variadics.
+    /// </summary>
+    public int Arity;
+    /// <summary>
+    /// Register for the current continuation.
+    /// </summary>
     internal Op @continue;
     public ErgoVM(KnowledgeBase kb, VMFlags flags = VMFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
     {
+        args = new ITerm[MAX_ARGUMENTS];
         KnowledgeBase = kb;
         Flags = flags;
         DecimalType = decimalType;
@@ -136,6 +148,11 @@ public partial class ErgoVM
     }
     #endregion
     #region Goal API
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetArg(int index, ITerm value) => args[index] = value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ITerm Arg(int index) => args[index];
+    public ReadOnlySpan<ITerm> Args => args[..Arity];
     /// <summary>
     /// Sets the VM in a failure state and raises an exception.
     /// </summary>

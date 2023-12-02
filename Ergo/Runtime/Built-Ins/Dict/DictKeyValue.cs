@@ -1,18 +1,17 @@
-﻿
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 
 public sealed class DictKeyValue : BuiltIn
 {
+    const int Arity = 3;
     public DictKeyValue()
-        : base("", new($"dict_key_value"), Maybe<int>.Some(3), WellKnown.Modules.Dict)
+        : base("", new($"dict_key_value"), Maybe<int>.Some(Arity), WellKnown.Modules.Dict)
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args[0] is Variable)
         {
             vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, args[0].Explain());

@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class CopyTerm : BuiltIn
 {
@@ -9,9 +7,10 @@ public sealed class CopyTerm : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        var copy = args[0].Instantiate(vm.InstantiationContext);
-        ErgoVM.Goals.Unify(args.SetItem(0, copy))(vm);
+        var copy = vm.Arg(0).Instantiate(vm.InstantiationContext);
+        vm.SetArg(0, copy);
+        ErgoVM.Goals.Unify2(vm);
     };
 }

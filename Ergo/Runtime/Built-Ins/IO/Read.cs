@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using System.Text;
+﻿using System.Text;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -10,7 +9,7 @@ public sealed class Read : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
         var sb = new StringBuilder();
         int ch;
@@ -32,6 +31,7 @@ public sealed class Read : BuiltIn
         }
         while ((ch = vm.In.Peek()) != -1 && ch != '\n')
             vm.In.Read();
-        ErgoVM.Goals.Unify([args[0], term])(vm);
+        vm.SetArg(1, term);
+        ErgoVM.Goals.Unify2(vm);
     };
 }

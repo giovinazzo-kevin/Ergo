@@ -1,7 +1,4 @@
-﻿
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Lambda : BuiltIn
 {
@@ -12,14 +9,16 @@ public sealed class Lambda : BuiltIn
     }
 
     private readonly Call CallInst = new();
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args.Length < 2)
         {
             vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(args.Length)).Explain());
             return;
         }
-        var (parameters, lambda, rest) = (args[0], args[1], args[2..]);
+        var (parameters, lambda) = (args[0], args[1]);
+        var rest = vm.Args[2..vm.Arity];
         if (parameters is Variable)
         {
             vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, parameters.Explain());
@@ -46,7 +45,10 @@ public sealed class Lambda : BuiltIn
             Substitution.Pool.Release(newSubs);
         }
 
-        var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : ImmutableArray<ITerm>.Empty;
-        CallInst.Compile()([lambda, .. extraArgs])(vm);
+        var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : [];
+        vm.SetArg(0, lambda);
+        for (int i = 0; i < extraArgs.Length; i++)
+            vm.SetArg(i + 1, extraArgs[i]);
+        CallInst.Compile()(vm);
     };
 }

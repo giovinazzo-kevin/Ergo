@@ -1,7 +1,4 @@
-﻿
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class ListSet : BuiltIn
 {
@@ -10,18 +7,23 @@ public sealed class ListSet : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args[0] is List list)
         {
             var set = new Set(list.Contents, list.Scope);
-            return ErgoVM.Goals.Unify([args[1], set]);
+            vm.SetArg(0, args[1]);
+            vm.SetArg(1, set);
+            ErgoVM.Goals.Unify2(vm);
         }
         else if (args[1] is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
-            return ErgoVM.Goals.Unify([args[1], lst]);
+            vm.SetArg(0, args[1]);
+            vm.SetArg(1, lst);
+            ErgoVM.Goals.Unify2(vm);
         }
-        return ErgoVM.Ops.Fail;
+        else ErgoVM.Ops.Fail(vm);
     };
 }

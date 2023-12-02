@@ -1,5 +1,4 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Lang.Compiler;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -15,9 +14,9 @@ public sealed class TermType : BuiltIn
     private static readonly Atom _C = new("complex");
     private static readonly Atom _B = new("abstract");
 
-    public override ErgoVM.Goal Compile() => args =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        var type = args[0] switch
+        var type = vm.Arg(0) switch
         {
             Atom => _A,
             Variable => _V,
@@ -25,6 +24,8 @@ public sealed class TermType : BuiltIn
             AbstractTerm => _B,
             _ => throw new NotSupportedException()
         };
-        return ErgoVM.Goals.Unify([args[1], type]);
+        vm.SetArg(0, vm.Arg(1));
+        vm.SetArg(1, type);
+        ErgoVM.Goals.Unify2(vm);
     };
 }

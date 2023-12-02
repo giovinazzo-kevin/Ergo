@@ -1,7 +1,4 @@
-﻿
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class SequenceType : BuiltIn
 {
@@ -14,28 +11,30 @@ public sealed class SequenceType : BuiltIn
     private static readonly Atom _T = new("tuple");
     private static readonly Atom _S = new("set");
 
-    public override ErgoVM.Goal Compile() => args =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         var (type, seq) = (args[1], args[0]);
-        return vm =>
+        if (seq is Variable)
         {
-            if (seq is Variable)
-            {
-                vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, seq.Explain());
-                return;
-            }
-            if (seq is List)
-            {
-                ErgoVM.Goals.Unify([type, _L])(vm);
-            }
-            else if (seq is NTuple)
-            {
-                ErgoVM.Goals.Unify([type, _T])(vm);
-            }
-            else if (seq is Set)
-            {
-                ErgoVM.Goals.Unify([type, _S])(vm);
-            }
-        };
+            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, seq.Explain());
+            return;
+        }
+        vm.SetArg(0, type);
+        if (seq is List)
+        {
+            vm.SetArg(1, _L);
+            ErgoVM.Goals.Unify2(vm);
+        }
+        else if (seq is NTuple)
+        {
+            vm.SetArg(1, _T);
+            ErgoVM.Goals.Unify2(vm);
+        }
+        else if (seq is Set)
+        {
+            vm.SetArg(1, _S);
+            ErgoVM.Goals.Unify2(vm);
+        }
     };
 }

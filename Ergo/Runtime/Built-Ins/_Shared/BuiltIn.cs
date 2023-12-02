@@ -18,5 +18,5 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
         var head = ((ITerm)new Complex(Signature.Functor, arguments)).Qualified(module);
         return new Predicate(Documentation, module, head, NTuple.Empty, dynamic: false, exported: true, default);
     }
-    public abstract ErgoVM.Goal Compile();
+    public abstract ErgoVM.Op Compile();
 }

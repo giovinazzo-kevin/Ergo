@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using PeterO.Numbers;
+﻿using PeterO.Numbers;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -10,8 +9,9 @@ public sealed class NumberVars : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         var allSubs = Substitution.Pool.Acquire();
         var (start, end) = (0, 0);
         if (LanguageExtensions.Unify(args[1], new Atom(start)).TryGetValue(out var subs1))

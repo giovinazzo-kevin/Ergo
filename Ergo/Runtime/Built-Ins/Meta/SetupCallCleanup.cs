@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class SetupCallCleanup : BuiltIn
 {
@@ -9,23 +7,28 @@ public sealed class SetupCallCleanup : BuiltIn
     {
     }
 
-    private readonly Call CallInst = new Call();
-    public override ErgoVM.Goal Compile() => args => vm =>
+    private readonly Call CallInst = new();
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         var newVm = vm.CreateChild();
-        var setup = CallInst.Compile()([args[0]]);
+        var setup = CallInst.Compile();
         newVm.Query = ErgoVM.Ops.And2(setup, ErgoVM.Ops.Cut);
+        newVm.Arity = vm.Arity = 1;
+        newVm.SetArg(0, args[0]);
         newVm.Run();
         if (!newVm.TryPopSolution(out var sol))
         {
             vm.Fail();
             return;
         }
-        CallInst.Compile()([args[1]])(vm);
+        vm.SetArg(0, args[1]);
+        CallInst.Compile()(vm);
         if (vm.State != ErgoVM.VMState.Fail)
         {
             var sols = vm.NumSolutions;
-            CallInst.Compile()([args[2]])(vm);
+            vm.SetArg(0, args[2]);
+            CallInst.Compile()(vm);
             while (vm.NumSolutions > sols)
                 vm.TryPopSolution(out _);
         }

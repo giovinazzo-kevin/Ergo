@@ -43,7 +43,7 @@ public sealed class Tabled : BuiltIn
         return nodes;
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
         /* tabled/1 overrides the regular SLD resolution with SLDT resolution.
          * Predicates tagged by the 'table' directive are rewritten as follows:
@@ -62,6 +62,7 @@ public sealed class Tabled : BuiltIn
          *     
          * Therefore args[0] is the rewritten goal that should be memoized.
          */
+        var args = vm.Args;
         if (!MemoContexts.TryGetValue(vm, out var memoContext))
             memoContext = MemoContexts[vm] = new MemoizationContext();
         // The first call for a given tabled goal is dubbed the 'pioneer'.
@@ -70,7 +71,7 @@ public sealed class Tabled : BuiltIn
         {
             memoContext.MemoizePioneer(pioneer = variant);
             var newVm = vm.CreateChild();
-            newVm.Query = newVm.CompileQuery(new(args));
+            newVm.Query = newVm.CompileQuery(new(args.ToImmutableArray()));
             newVm.Run();
             var any = false;
             foreach (var sol in newVm.Solutions)
@@ -88,7 +89,9 @@ public sealed class Tabled : BuiltIn
             var any = false;
             foreach (var sol in memoContext.GetSolutions(pioneer))
             {
-                ErgoVM.Goals.Unify([variant, pioneer.Substitute(sol.Substitutions)])(vm);
+                vm.SetArg(0, variant);
+                vm.SetArg(1, pioneer.Substitute(sol.Substitutions));
+                ErgoVM.Goals.Unify2(vm);
                 vm.Solution();
                 any = true;
             }

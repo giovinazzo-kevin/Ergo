@@ -166,7 +166,11 @@ public partial class ErgoVM
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
                         {
                             matchEnum.Current.Goal.GetQualification(out var inst);
-                            runGoal = ErgoVM.Goals.BuiltIn(builtIn)(inst.GetArguments());
+                            var args = inst.GetArguments();
+                            vm.Arity = args.Length;
+                            for (int i = 0; i < args.Length; i++)
+                                vm.SetArg(0, args[i]);
+                            runGoal = builtIn.Compile();
                         }
                         // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))

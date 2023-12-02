@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using PeterO.Numbers;
+﻿using PeterO.Numbers;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -10,9 +9,9 @@ public sealed class NumberString : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => arguments => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        var (str, num) = (arguments[1], arguments[0]);
+        var (str, num) = (vm.Arg(1), vm.Arg(0));
         if (!str.IsGround && !num.IsGround)
             return;
         else if (!str.IsGround && num.IsGround)
@@ -22,7 +21,9 @@ public sealed class NumberString : BuiltIn
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
                 return;
             }
-            ErgoVM.Goals.Unify([num, new Atom(d.ToString())])(vm);
+            vm.SetArg(0, num);
+            vm.SetArg(1, new Atom(d.ToString()));
+            ErgoVM.Goals.Unify2(vm);
         }
         else if (str.IsGround)
         {
@@ -42,7 +43,9 @@ public sealed class NumberString : BuiltIn
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
                 return;
             }
-            ErgoVM.Goals.Unify([num, new Atom(n)])(vm);
+            vm.SetArg(0, num);
+            vm.SetArg(1, new Atom(n));
+            ErgoVM.Goals.Unify2(vm);
         }
     };
 }

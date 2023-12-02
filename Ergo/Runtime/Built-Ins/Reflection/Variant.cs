@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Variant : BuiltIn
 {
@@ -9,5 +7,12 @@ public sealed class Variant : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => args[0].IsVariantOf(args[1]) ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
+    public override ErgoVM.Op Compile()
+    {
+        return vm =>
+        {
+            if (!(vm.Arg(0).IsVariantOf(vm.Arg(1))))
+                vm.Fail();
+        };
+    }
 }

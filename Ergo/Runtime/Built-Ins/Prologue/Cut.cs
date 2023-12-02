@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Cut : BuiltIn
 {
@@ -9,5 +7,5 @@ public sealed class Cut : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => ErgoVM.Ops.Cut;
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.Cut;
 }

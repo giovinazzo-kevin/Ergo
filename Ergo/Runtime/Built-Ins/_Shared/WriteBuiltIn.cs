@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public abstract class WriteBuiltIn : BuiltIn
 {
@@ -34,8 +32,9 @@ public abstract class WriteBuiltIn : BuiltIn
 
     protected virtual string Explain(ITerm arg) => AsQuoted(arg, Quoted).Explain(Canonical);
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         foreach (var arg in args)
         {
             // https://www.swi-prolog.org/pldoc/man?predicate=portray/1

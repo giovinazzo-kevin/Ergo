@@ -19,7 +19,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     ImmutableArray<ITerm> GetArguments() => this switch
     {
         Complex c => c.Arguments,
-        _ => ImmutableArray.Create<ITerm>()
+        _ => []
     };
     public ITerm GetVariant() => this switch
     {

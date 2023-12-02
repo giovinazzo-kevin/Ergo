@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class BagOf : SolutionAggregationBuiltIn
 {
@@ -9,15 +7,20 @@ public sealed class BagOf : SolutionAggregationBuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
         var any = false;
-        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm, args))
+        var args = vm.Args;
+        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm, args.ToImmutableArray()))
         {
             var env = vm.CloneEnvironment();
-            ErgoVM.Goals.Unify([ListVars, ArgVars])(vm);
+            vm.SetArg(0, ListVars);
+            vm.SetArg(1, ArgVars);
+            ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
-            ErgoVM.Goals.Unify([args[2], ListTemplate])(vm);
+            vm.SetArg(0, args[2]);
+            vm.SetArg(1, ListTemplate);
+            ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
             vm.Solution();
             ReleaseAndRestore();

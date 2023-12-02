@@ -1,7 +1,4 @@
-﻿
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Sort : BuiltIn
 {
@@ -10,17 +7,22 @@ public sealed class Sort : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args[0] is List list)
         {
             var sorted = new List(list.Contents.OrderBy(x => x), default, list.Scope);
-            ErgoVM.Goals.Unify([args[1], sorted])(vm);
+            vm.SetArg(0, args[1]);
+            vm.SetArg(1, sorted);
+            ErgoVM.Goals.Unify2(vm);
         }
         else if (args[1] is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
-            ErgoVM.Goals.Unify([args[0], lst])(vm);
+            vm.SetArg(0, args[0]);
+            vm.SetArg(1, lst);
+            ErgoVM.Goals.Unify2(vm);
         }
         else vm.Fail();
     };

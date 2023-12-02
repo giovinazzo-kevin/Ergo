@@ -1,7 +1,4 @@
-﻿
-using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class FindAll : BuiltIn
 {
@@ -10,8 +7,9 @@ public sealed class FindAll : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         if (args[1] is not NTuple comma)
         {
             comma = new([args[1]], default);
@@ -28,7 +26,9 @@ public sealed class FindAll : BuiltIn
             }
             else if (!args[2].IsGround)
             {
-                ErgoVM.Goals.Unify([args[2], WellKnown.Literals.EmptyList])(vm);
+                vm.SetArg(0, args[2]);
+                vm.SetArg(1, WellKnown.Literals.EmptyList);
+                ErgoVM.Goals.Unify2(vm);
             }
             else
             {
@@ -37,14 +37,17 @@ public sealed class FindAll : BuiltIn
         }
         else
         {
-            var list = new List(ImmutableArray.CreateRange(newVm.Solutions.Select(s => args[0].Substitute(s.Substitutions))), default, default);
+            var a0 = args[0];
+            var list = new List(ImmutableArray.CreateRange(newVm.Solutions.Select(s => a0.Substitute(s.Substitutions))), default, default);
             if (args[2].IsGround && args[2].Equals(list))
             {
                 // noop
             }
             else if (!args[2].IsGround)
             {
-                ErgoVM.Goals.Unify([args[2], list])(vm);
+                vm.SetArg(0, args[2]);
+                vm.SetArg(1, list);
+                ErgoVM.Goals.Unify2(vm);
             }
             else
             {

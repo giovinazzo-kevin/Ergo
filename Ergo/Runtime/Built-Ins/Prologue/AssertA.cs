@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class AssertA : DynamicPredicateBuiltIn
 {
@@ -9,9 +7,9 @@ public sealed class AssertA : DynamicPredicateBuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        if (!Assert(vm, args[0], z: false))
+        if (!Assert(vm, vm.Arg(0), z: false))
             vm.Fail();
     };
 }

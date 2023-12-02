@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Explain : BuiltIn
 {
@@ -9,9 +7,12 @@ public sealed class Explain : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args =>
+    public override ErgoVM.Op Compile() => vm =>
     {
+        var args = vm.Args;
         var expl = new Atom(args[0].AsQuoted(false).Explain(), false);
-        return ErgoVM.Goals.Unify([args[1], expl]);
+        vm.SetArg(0, args[1]);
+        vm.SetArg(1, expl);
+        ErgoVM.Goals.Unify2(vm);
     };
 }

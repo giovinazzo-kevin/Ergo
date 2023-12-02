@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class RetractAll : DynamicPredicateBuiltIn
 {
@@ -9,15 +7,12 @@ public sealed class RetractAll : DynamicPredicateBuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        return vm =>
+        if (Retract(vm, vm.Arg(0), all: true))
         {
-            if (Retract(vm, args[0], all: true))
-            {
-                vm.Solution();
-            }
-            else vm.Fail();
-        };
+            vm.Solution();
+        }
+        else vm.Fail();
     };
 }

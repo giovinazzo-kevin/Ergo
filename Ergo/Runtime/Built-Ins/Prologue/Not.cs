@@ -22,10 +22,10 @@ public sealed class Not : BuiltIn
         return node;
     }
 
-    public override ErgoVM.Goal Compile() => args => vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
         var newVm = vm.CreateChild();
-        newVm.Query = ErgoVM.Ops.Goal(args.Single());
+        newVm.Query = ErgoVM.Ops.Goal(vm.Arg(0));
         newVm.Run();
         if (newVm.Solutions.Any())
             vm.Fail();

@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Nonvar : BuiltIn
 {
@@ -9,5 +7,12 @@ public sealed class Nonvar : BuiltIn
     {
     }
 
-    public override ErgoVM.Goal Compile() => args => args[0] is not Variable ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
+    public override ErgoVM.Op Compile()
+    {
+        return vm =>
+        {
+            if (!(vm.Arg(0) is not Variable))
+                vm.Fail();
+        };
+    }
 }

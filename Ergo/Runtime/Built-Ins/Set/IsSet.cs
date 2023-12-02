@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public sealed class IsSet : BuiltIn
 {
@@ -10,5 +8,12 @@ public sealed class IsSet : BuiltIn
 
     }
 
-    public override ErgoVM.Goal Compile() => args => args[0] is Set ? ErgoVM.Ops.NoOp : ErgoVM.Ops.Fail;
+    public override ErgoVM.Op Compile()
+    {
+        return vm =>
+        {
+            if (!(vm.Arg(0) is Set))
+                vm.Fail();
+        };
+    }
 }

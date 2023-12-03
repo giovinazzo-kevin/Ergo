@@ -52,13 +52,9 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
-        if (s.Lhs is Variable { Discarded: true })
-            return;
         Map.Remove(s.Lhs);
         if (s.Rhs is Variable v)
         {
-            if (v.Discarded)
-                return;
             if (v.Ignored && Map.TryGetValue(s.Rhs, out var prevRhs))
             {
                 Map.Remove(s.Rhs);

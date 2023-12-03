@@ -39,10 +39,10 @@ public sealed class For : BuiltIn
             return cache[hash] = ChooseBacktrack;
             void Backtrack(ErgoVM vm)
             {
-                if (!var.Discarded)
-                {
-                    vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
-                }
+                //if (!var.Discarded)
+                //{
+                vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
+                //}
                 if (++i <= iTo)
                 {
                     vm.Solution();
@@ -57,10 +57,10 @@ public sealed class For : BuiltIn
             {
                 i = iTo;
             loop:
-                if (!var.Discarded)
-                {
-                    vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
-                }
+                //if (!var.Discarded)
+                //{
+                vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
+                //}
                 if (--i >= 0)
                 {
                     vm.Solution();

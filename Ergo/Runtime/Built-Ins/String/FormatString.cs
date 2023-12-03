@@ -41,7 +41,7 @@ public sealed class FormatString : BuiltIn
         var resultStrRaw = resultStr.AsQuoted(false).Explain(canonical: false);
         var formatStrRaw = formatStr;
         var matches = PositionalParamRegex.Matches(formatStrRaw).ToList();
-        var varSubs = Substitution.Pool.Acquire();
+        var varSubs = SubstitutionMap.Pool.Acquire();
         for (int i = 0; i < matches.Count; i++)
         {
             var match = matches[i];

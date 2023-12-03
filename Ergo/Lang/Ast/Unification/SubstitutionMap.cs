@@ -4,6 +4,10 @@ namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
+    private bool @readonly = false;
+    public static readonly SubstitutionMap Empty = new() { @readonly = true };
+    public static readonly Pool<SubstitutionMap> Pool = new(() => new(), q => q.Clear(), filter: q => !q.@readonly);
+
     private Dictionary<ITerm, ITerm> Map = new();
 
     public ITerm this[ITerm key] => Map[key];
@@ -13,12 +17,15 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Clear()
     {
+        if (@readonly)
+            throw new InvalidOperationException();
+
         Map.Clear();
     }
 
     public SubstitutionMap Clone()
     {
-        var e = Substitution.Pool.Acquire();
+        var e = Pool.Acquire();
         foreach (var item in Map)
             e.Map.Add(item.Key, item.Value);
         return e;
@@ -26,7 +33,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public static SubstitutionMap MergeCopy(SubstitutionMap A, SubstitutionMap B)
     {
-        var newMap = Substitution.Pool.Acquire();
+        var newMap = Pool.Acquire();
         newMap.AddRange(A);
         newMap.AddRange(B);
         return newMap;
@@ -35,12 +42,15 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     {
         if (B != null)
             A.AddRange(B);
-        Substitution.Pool.Release(B);
+        SubstitutionMap.Pool.Release(B);
         return A;
     }
 
     public void Remove(Substitution s)
     {
+        if (@readonly)
+            throw new InvalidOperationException();
+
         if (Map.TryGetValue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
             Map.Remove(s.Lhs);
     }
@@ -52,6 +62,9 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
+        if (@readonly)
+            throw new InvalidOperationException();
+
         Map.Remove(s.Lhs);
         if (s.Rhs is Variable v)
         {
@@ -75,6 +88,9 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
     /// </summary>
     public void Prune(IEnumerable<Variable> keep)
     {
+        if (@readonly)
+            throw new InvalidOperationException();
+
         foreach (var (lhs, rhs) in Map)
         {
             var vars = lhs.Variables.Concat(rhs.Variables);
@@ -86,6 +102,9 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Invert()
     {
+        if (@readonly)
+            throw new InvalidOperationException();
+
         var toAdd = Substitution.QueuePool.Acquire();
         foreach (var (lhs, rhs) in Map)
         {

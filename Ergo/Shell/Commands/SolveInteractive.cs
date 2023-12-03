@@ -2,5 +2,5 @@
 
 public sealed class SolveInteractive : SolveShellCommand
 {
-    public SolveInteractive() : base(Array.Empty<string>(), "Solves the query interactively.", 0, true, ConsoleColor.Black) { }
+    public SolveInteractive() : base([], "Solves the query interactively.", 0, SolveMode.Interactive, ConsoleColor.Black) { }
 }

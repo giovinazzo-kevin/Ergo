@@ -94,7 +94,7 @@ public sealed class Term : BuiltIn
                 ReleaseAndRestore();
                 return;
             }
-            Substitution.Pool.Release(vm.Environment);
+            SubstitutionMap.Pool.Release(vm.Environment);
             vm.Environment = env;
         }
         bool ReleaseAndRestoreEarlyReturn()

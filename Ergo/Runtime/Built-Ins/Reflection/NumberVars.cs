@@ -12,7 +12,7 @@ public sealed class NumberVars : BuiltIn
     public override ErgoVM.Op Compile() => vm =>
     {
         var args = vm.Args;
-        var allSubs = Substitution.Pool.Acquire();
+        var allSubs = SubstitutionMap.Pool.Acquire();
         var (start, end) = (0, 0);
         if (LanguageExtensions.Unify(args[1], new Atom(start)).TryGetValue(out var subs1))
         {
@@ -20,7 +20,7 @@ public sealed class NumberVars : BuiltIn
             {
                 allSubs.AddRange(subs1);
             }
-            Substitution.Pool.Release(subs1);
+            SubstitutionMap.Pool.Release(subs1);
         }
         else if (args[1].IsGround && args[1] is Atom { Value: EDecimal d })
         {
@@ -42,14 +42,14 @@ public sealed class NumberVars : BuiltIn
             vm.Fail();
         }
         allSubs.AddRange(subs0);
-        Substitution.Pool.Release(subs0);
+        SubstitutionMap.Pool.Release(subs0);
         if (LanguageExtensions.Unify(args[2], new Atom(end)).TryGetValue(out var subs2))
         {
             if (!args[2].IsGround)
             {
                 allSubs.AddRange(subs2);
             }
-            Substitution.Pool.Release(subs2);
+            SubstitutionMap.Pool.Release(subs2);
         }
         else if (args[2].IsGround && args[2] is Atom { Value: EDecimal d } && d.ToInt32IfExact() != end)
         {

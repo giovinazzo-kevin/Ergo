@@ -108,11 +108,11 @@ public partial class ErgoVM
         public static Op UpdateEnvironment(SubstitutionMap subsToAdd) => vm =>
             {
                 vm.Environment.AddRange(subsToAdd);
-                Substitution.Pool.Release(subsToAdd);
+                SubstitutionMap.Pool.Release(subsToAdd);
             };
         public static Op SetEnvironment(SubstitutionMap newEnv) => vm =>
         {
-            Substitution.Pool.Release(vm.Environment);
+            SubstitutionMap.Pool.Release(vm.Environment);
             vm.Environment = newEnv;
         };
         /// <summary>
@@ -197,7 +197,7 @@ public partial class ErgoVM
                             {
                                 var cp = vm.PopChoice().GetOr(default);
                                 // Set the environment to that of the oldest popped choice point.
-                                Substitution.Pool.Release(vm.Environment);
+                                SubstitutionMap.Pool.Release(vm.Environment);
                                 vm.Environment = cp.Environment;
                                 // If runGoal failed, set the vm back to success as we're retrying now.
                                 if (vm.State == VMState.Fail)

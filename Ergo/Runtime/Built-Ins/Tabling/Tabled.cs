@@ -25,7 +25,7 @@ public sealed class Tabled : BuiltIn
             .Where(g => g.Count() > 1)
             .Select(g => (Pioneer: g.First(), Followers: g.Skip(1).ToArray()))
             .ToArray();
-        var subs = Substitution.Pool.Acquire();
+        var subs = SubstitutionMap.Pool.Acquire();
         foreach (var (pioneer, followers) in tabledCalls)
         {
             foreach (var follower in followers)
@@ -39,7 +39,7 @@ public sealed class Tabled : BuiltIn
         {
             nodes[i] = nodes[i].Substitute(subs);
         }
-        Substitution.Pool.Release(subs);
+        SubstitutionMap.Pool.Release(subs);
         return nodes;
     }
 
@@ -70,7 +70,7 @@ public sealed class Tabled : BuiltIn
         if (!memoContext.GetPioneer(variant).TryGetValue(out var pioneer))
         {
             memoContext.MemoizePioneer(pioneer = variant);
-            var newVm = vm.CreateChild();
+            var newVm = vm.Clone();
             newVm.Query = newVm.CompileQuery(new(args.ToImmutableArray()));
             newVm.Run();
             var any = false;

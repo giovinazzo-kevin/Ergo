@@ -13,6 +13,24 @@ public enum VMFlags
     EnableOptimizations = 4
 }
 
+public sealed class RefCount
+{
+    private readonly Dictionary<Variable, int> dict = new();
+    public int Count(Variable variable)
+    {
+        if (!dict.TryGetValue(variable, out var count))
+            dict[variable] = count = 0;
+        return dict[variable] = count + 1;
+    }
+    public int GetCount(Variable variable)
+    {
+        if (!dict.TryGetValue(variable, out var count))
+            return 0;
+        return count;
+    }
+    public void Clear() => dict.Clear();
+}
+
 public partial class ErgoVM
 {
     public const int MAX_ARGUMENTS = 255;
@@ -34,6 +52,7 @@ public partial class ErgoVM
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Stack<SubstitutionMap> solutions = new();
+    protected RefCount refCounts = new();
     /// <summary>
     /// Register for the choice point cut index.
     /// </summary>
@@ -114,7 +133,7 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM CreateChild() => new(KnowledgeBase, Flags, DecimalType)
+    public ErgoVM Clone() => new(KnowledgeBase, Flags, DecimalType)
     { In = In, Err = Err, Out = Out };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
@@ -152,7 +171,7 @@ public partial class ErgoVM
     public void SetArg(int index, ITerm value) => args[index] = value;
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ITerm Arg(int index) => args[index];
-    public ReadOnlySpan<ITerm> Args => args[..Arity];
+    public ReadOnlySpan<ITerm> Args => args.AsSpan()[..Arity];
     /// <summary>
     /// Sets the VM in a failure state and raises an exception.
     /// </summary>
@@ -183,7 +202,7 @@ public partial class ErgoVM
     /// </summary>
     public void Solution()
     {
-        solutions.Push(CloneEnvironment());
+        solutions.Push(Environment.Count() == 0 ? SubstitutionMap.Empty : CloneEnvironment());
         State = VMState.Solution;
     }
 
@@ -204,7 +223,7 @@ public partial class ErgoVM
         while (numChoices-- > 0)
         {
             var cp = PopChoice().GetOrThrow(StackEmptyException);
-            Substitution.Pool.Release(cp.Environment);
+            SubstitutionMap.Pool.Release(cp.Environment);
         }
     }
 
@@ -249,6 +268,9 @@ public partial class ErgoVM
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SubstitutionMap CloneEnvironment() => Environment.Clone();
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsSingletonVariable(Variable v) => refCounts.GetCount(v) == 1;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Backtrack()
     {
         while (BacktrackOnce()) ;
@@ -259,7 +281,7 @@ public partial class ErgoVM
         {
             State = VMState.Success;
             var choicePoint = choicePoints.Pop();
-            Substitution.Pool.Release(Environment);
+            SubstitutionMap.Pool.Release(Environment);
             Environment = choicePoint.Environment;
             choicePoint.Continue(this);
             SuccessToSolution();
@@ -270,14 +292,17 @@ public partial class ErgoVM
     protected virtual void Initialize()
     {
         State = VMState.Ready;
-        Environment = new();
+        Environment = [];
         cutIndex = 0;
         @continue = Ops.NoOp;
+        refCounts.Clear();
+        solutions.Clear();
+        choicePoints.Clear();
     }
     protected virtual void CleanUp()
     {
         SuccessToSolution();
-        Substitution.Pool.Release(Environment);
+        SubstitutionMap.Pool.Release(Environment);
     }
     public Op CompileQuery(Query query)
     {
@@ -287,13 +312,17 @@ public partial class ErgoVM
         {
             var subs = exps[i].Substitutions; subs.Invert();
             var newPred = exps[i].Predicate.Substitute(subs);
-            if (newPred.ExecutionGraph.TryGetValue(out var graph))
-            {
-                ops[i] = graph.Compile();
-            }
-            else ops[i] = Ops.NoOp;
+            ops[i] = newPred.ExecutionGraph.TryGetValue(out var graph)
+                ? graph.Compile()
+                : Ops.NoOp;
         }
-        return Ops.Or(ops);
+        var branch = Ops.Or(ops);
+        return vm =>
+        {
+            foreach (var var in query.Goals.Variables)
+                vm.refCounts.Count(var);
+            branch(vm);
+        };
 
         KBMatch[] GetQueryExpansions(Query query)
         {

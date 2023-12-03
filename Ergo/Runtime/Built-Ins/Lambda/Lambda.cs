@@ -40,9 +40,9 @@ public sealed class Lambda : BuiltIn
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.FreeVariable, list.Contents[i].Explain());
                 return;
             }
-            var newSubs = LanguageExtensions.Unify(rest[i], list.Contents[i]).GetOr(Substitution.Pool.Acquire());
+            var newSubs = LanguageExtensions.Unify(rest[i], list.Contents[i]).GetOr(SubstitutionMap.Pool.Acquire());
             lambda = lambda.Substitute(newSubs);
-            Substitution.Pool.Release(newSubs);
+            SubstitutionMap.Pool.Release(newSubs);
         }
         /*
         var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : ImmutableArray<ITerm>.Empty;

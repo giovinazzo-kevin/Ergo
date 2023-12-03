@@ -1,14 +1,20 @@
-﻿using Ergo.Lang.Compiler;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
 public abstract class SolveShellCommand : ShellCommand
 {
-    public readonly bool Interactive;
     public readonly ConsoleColor DefaultAccentColor;
+    public readonly SolveMode Mode;
 
     private readonly Dictionary<int, ErgoVM> VMCache = new();
+
+    public enum SolveMode
+    {
+        Interactive,
+        Tabled,
+        Benchmark
+    }
 
     static string GetColorAlternatives()
     {
@@ -18,10 +24,10 @@ public abstract class SolveShellCommand : ShellCommand
         return colorMap.Join("|");
     }
 
-    protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor)
+    protected SolveShellCommand(string[] names, string desc, int priority, SolveMode mode, ConsoleColor accentColor)
         : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority, caseInsensitive: true)
     {
-        Interactive = interactive;
+        Mode = mode;
         DefaultAccentColor = accentColor;
     }
 
@@ -83,7 +89,6 @@ public abstract class SolveShellCommand : ShellCommand
             //};
         }
         vm.Query = vm.CompileQuery(query);
-        var solutions = vm.RunInteractive(); // Solution graph is walked lazily
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
@@ -94,9 +99,10 @@ public abstract class SolveShellCommand : ShellCommand
 
         var scope_ = scope;
 
-        if (Interactive)
+        if (Mode == SolveMode.Interactive)
         {
             var any = false;
+            var solutions = vm.RunInteractive(); // Solution graph is walked lazily
             foreach (var s in solutions)
             {
                 if (!any)
@@ -145,9 +151,10 @@ public abstract class SolveShellCommand : ShellCommand
             if (!any) shell.No(nl: false, LogLevel.Rpl);
             shell.WriteLine(".");
         }
-        else
+        else if (Mode == SolveMode.Tabled)
         {
-            var rowsDict = solutions
+            vm.Run();
+            var rowsDict = vm.Solutions
                 .Select(s => s
                     .Substitutions
                     .ToDictionary(r => r.Lhs.Explain(), r => r.Rhs.Explain()))
@@ -175,6 +182,14 @@ public abstract class SolveShellCommand : ShellCommand
             {
                 shell.No();
             }
+        }
+        else if (Mode == SolveMode.Benchmark)
+        {
+            vm.Run();
+            if (vm.State == ErgoVM.VMState.Fail)
+                shell.No();
+            else shell.Yes();
+            shell.WriteLine($"{vm.NumSolutions} solution{(vm.NumSolutions == 1 ? "" : "s")}.", LogLevel.Cmt);
         }
 
         if (requestCancel.IsCancellationRequested && executionAbortedCtrlC)

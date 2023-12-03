@@ -114,7 +114,7 @@ public class Dict : AbstractTerm
 
     public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
-        var map = Substitution.Pool.Acquire();
+        var map = SubstitutionMap.Pool.Acquire();
         if (other is Variable v)
         {
             map.Add(new Substitution(v, this));
@@ -141,7 +141,7 @@ public class Dict : AbstractTerm
             if (!dxFunctor.Unify(dyFunctor).TryGetValue(out var subs))
                 return default;
             map.AddRange(subs);
-            Substitution.Pool.Release(subs);
+            SubstitutionMap.Pool.Release(subs);
             if (Dictionary.Count == 0 || dict.Dictionary.Count == 0)
                 return map;
             var keys = new HashSet<Atom>(Dictionary.Keys);
@@ -153,7 +153,7 @@ public class Dict : AbstractTerm
                 if (!Dictionary[key].Unify(dict.Dictionary[key]).TryGetValue(out subs))
                     return default;
                 map.AddRange(subs);
-                Substitution.Pool.Release(subs);
+                SubstitutionMap.Pool.Release(subs);
             }
         }
         return Maybe.Some(map);

@@ -87,7 +87,7 @@ public readonly struct Substitution
             {
                 if (!cx.Matches(cy))
                     return false;
-                for (var i = 0; i < cx.Arguments.Length; i++)
+                for (var i = 0; i < cx.Arguments.Count; i++)
                     E.Enqueue(new Substitution(cx.Arguments[i], cy.Arguments[i]));
                 return true;
             }

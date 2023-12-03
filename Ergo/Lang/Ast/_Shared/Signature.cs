@@ -63,7 +63,7 @@ public readonly struct Signature
             && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
         {
             var module = c.Arguments[0].GetQualification(out var arg);
-            if (arg is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)
+            if (arg is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arity == 2)
             {
                 sig = new((Atom)arg, match.Arity, module, (Atom)d.Arguments[1]);
                 return true;

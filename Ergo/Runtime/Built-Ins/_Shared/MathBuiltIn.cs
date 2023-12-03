@@ -28,43 +28,43 @@ public abstract class MathBuiltIn : BuiltIn
 
             return c.Functor switch
             {
-                var f when c.Arguments.Length == 1 && f.Equals(Signature.Functor)
+                var f when c.Arguments.Count == 1 && f.Equals(Signature.Functor)
                 => Evaluate(c.Arguments[0]),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Gt.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Gt.Contains(f)
                 => Evaluate(c.Arguments[0]).CompareTo(Evaluate(c.Arguments[1])) > 0 ? DTrue : DFalse,
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Gte.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Gte.Contains(f)
                 => Evaluate(c.Arguments[0]).CompareTo(Evaluate(c.Arguments[1])) >= 0 ? DTrue : DFalse,
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Lt.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Lt.Contains(f)
                 => Evaluate(c.Arguments[0]).CompareTo(Evaluate(c.Arguments[1])) < 0 ? DTrue : DFalse,
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Lte.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Lte.Contains(f)
                 => Evaluate(c.Arguments[0]).CompareTo(Evaluate(c.Arguments[1])) <= 0 ? DTrue : DFalse,
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Modulo.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Modulo.Contains(f)
                 => Remainder(c),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Addition.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Addition.Contains(f)
                 => Add(c),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Subtraction.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Subtraction.Contains(f)
                 => Subtract(c),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Multiplication.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Multiplication.Contains(f)
                 => Multiply(c),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Division.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Division.Contains(f)
                 => Divide(c),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.IntDivision.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.IntDivision.Contains(f)
                 => (Evaluate(c.Arguments[0]).DivideToIntegerNaturalScale(Evaluate(c.Arguments[1]))),
-                var f when c.Arguments.Length == 2 && WellKnown.Functors.Power.Contains(f)
+                var f when c.Arguments.Count == 2 && WellKnown.Functors.Power.Contains(f)
                 => (Evaluate(c.Arguments[0])).Pow(Evaluate(c.Arguments[1])),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.SquareRoot.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.SquareRoot.Contains(f)
                 => (Evaluate(c.Arguments[0])).Sqrt(null),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.AbsoluteValue.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.AbsoluteValue.Contains(f)
                 => (Evaluate(c.Arguments[0])).Abs(),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.Minus.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.Minus.Contains(f)
                 => -Evaluate(c.Arguments[0]),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.Plus.Contains(f)
                 => Evaluate(c.Arguments[0]),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.Round.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.Round.Contains(f)
                 => (Evaluate(c.Arguments[0])).RoundToIntegerNoRoundedFlag(context),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.Floor.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.Floor.Contains(f)
                 => EDecimal.FromInt64((Evaluate(c.Arguments[0])).ToInt64Unchecked()),
-                var f when c.Arguments.Length == 1 && WellKnown.Functors.Ceiling.Contains(f)
+                var f when c.Arguments.Count == 1 && WellKnown.Functors.Ceiling.Contains(f)
                 => EDecimal.FromDecimal(Math.Ceiling((Evaluate(c.Arguments[0])).ToDecimal())),
                 _ => Throw(c)
             };

@@ -81,7 +81,8 @@ public sealed class Term : BuiltIn
         else
         {
             vm.SetArg(0, termArg);
-            vm.SetArg(1, new Complex(functor, argsList.Contents));
+            // TODO!!
+            vm.SetArg(1, new Complex(functor, [.. argsList.Contents]));
             ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
         }

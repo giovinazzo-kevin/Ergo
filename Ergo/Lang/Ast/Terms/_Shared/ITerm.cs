@@ -16,14 +16,14 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
         _ => Maybe<Atom>.None
     };
 
-    ImmutableArray<ITerm> GetArguments() => this switch
+    IReadOnlyList<ITerm> GetArguments() => this switch
     {
         Complex c => c.Arguments,
         _ => []
     };
     public ITerm GetVariant() => this switch
     {
-        Complex c => c.WithArguments(c.Arguments.Select(x => x.GetVariant()).ToImmutableArray()),
+        Complex c => c.WithArguments(c.Arguments.Select(x => x.GetVariant()).ToArray()),
         Variable v => v,
         Atom a => new Variable(a.Explain().ToUpper()),
         var x => x
@@ -70,7 +70,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     Maybe<Atom> GetQualification(out ITerm head)
     {
         head = this;
-        if (!IsQualified || this is not Complex cplx || cplx.Arguments.Length != 2 || cplx.Arguments[0] is not Atom module)
+        if (!IsQualified || this is not Complex cplx || cplx.Arity != 2 || cplx.Arguments[0] is not Atom module)
             return default;
         head = cplx.Arguments[1];
         return Maybe.Some(module);
@@ -80,7 +80,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     ITerm Concat(params ITerm[] next)
     {
         if (this is Complex cplx)
-            return cplx.WithArguments(cplx.Arguments.AddRange(next));
+            return cplx.WithArguments([.. cplx.Arguments, .. next]);
         if (this is Atom a)
             return new Complex(a, next);
         return this;

@@ -6,7 +6,7 @@ public class BuiltInNode : GoalNode
 {
     public BuiltIn BuiltIn { get; }
     public readonly ErgoVM.Op BuiltInGoal;
-    public readonly ImmutableArray<ITerm> Args;
+    public readonly IReadOnlyList<ITerm> Args;
     public BuiltInNode(DependencyGraphNode node, ITerm goal, BuiltIn builtIn) : base(node, goal)
     {
         BuiltIn = builtIn;
@@ -15,8 +15,8 @@ public class BuiltInNode : GoalNode
         var compiled = BuiltIn.Compile();
         BuiltInGoal = vm =>
         {
-            vm.Arity = Args.Length;
-            for (int i = 0; i < Args.Length; i++)
+            vm.Arity = Args.Count;
+            for (int i = 0; i < Args.Count; i++)
                 vm.SetArg(i, Args[i].Substitute(vm.Environment));
             compiled(vm);
         };

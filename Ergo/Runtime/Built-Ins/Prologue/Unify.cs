@@ -10,14 +10,6 @@ public sealed class Unify : BuiltIn
     }
 
     public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new Complex(WellKnown.Signatures.Unify.Functor, lhs, rhs);
-    public static ImmutableArray<ITerm> MakeArgs(ImmutableArray<ITerm> lhs, ImmutableArray<ITerm> rhs)
-    {
-        var builder = ImmutableArray<ITerm>.Empty.ToBuilder();
-        builder.Add(new Complex(_u, lhs));
-        builder.Add(new Complex(_u, rhs));
-        return builder.ToImmutable();
-    }
-
     public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
@@ -46,7 +38,7 @@ public sealed class Unify : BuiltIn
                 }
                 nodes[i] = current.Substitute(subs);
             }
-            bool IsConstUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true } && args[1].IsGround;
+            bool IsConstUnif(IReadOnlyList<ITerm> args) => args[0] is Variable { Ignored: true } && args[1].IsGround;
         }
 
         void RemoveDeadUnifications()
@@ -70,7 +62,7 @@ public sealed class Unify : BuiltIn
                     continue;
                 }
             }
-            bool IsDeadUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true, Name: var name } && refCounts[name] == 1;
+            bool IsDeadUnif(IReadOnlyList<ITerm> args) => args[0] is Variable { Ignored: true, Name: var name } && refCounts[name] == 1;
         }
     }
     // TODO: Maybe use a name that can't be typed by the user.

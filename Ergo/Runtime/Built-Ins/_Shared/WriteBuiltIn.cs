@@ -23,7 +23,7 @@ public abstract class WriteBuiltIn : BuiltIn
             v => v,
             c => c.WithFunctor(c.Functor.AsQuoted(false))
                   .WithArguments(c.Arguments
-                    .Select(a => AsQuoted(a, false)).ToImmutableArray()),
+                    .Select(a => AsQuoted(a, false)).ToArray()),
             abs => abs
         );
     }

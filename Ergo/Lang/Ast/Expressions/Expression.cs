@@ -26,10 +26,10 @@ public readonly partial struct Expression
                 .Distinct();
         }
         Operator = ops.Single(op => op.Synonyms.Contains(fromComplex.Functor) &&
-            (op.Fixity == Fixity.Infix && fromComplex.Arity == 2
-            || op.Fixity != Fixity.Infix && fromComplex.Arity == 1));
+            (op.Fixity == Fixity.Infix && fromComplex.Arguments.Length == 2
+            || op.Fixity != Fixity.Infix && fromComplex.Arguments.Length == 1));
         Left = fromComplex.Arguments[0];
-        Right = fromComplex.Arity > 1 ? Maybe.Some(fromComplex.Arguments[1]) : default;
+        Right = fromComplex.Arguments.Length > 1 ? Maybe.Some(fromComplex.Arguments[1]) : default;
         Term = fromComplex;
     }
 

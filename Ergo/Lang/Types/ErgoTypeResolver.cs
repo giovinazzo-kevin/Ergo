@@ -183,7 +183,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
 
             return t switch
             {
-                Ast.Complex cplx when cplx.Arguments.Count == 1 => ((Atom)cplx.Arguments[0]).Value,
+                Ast.Complex cplx when cplx.Arguments.Length == 1 => ((Atom)cplx.Arguments[0]).Value,
                 Atom a => a.Value switch
                 {
                     EDecimal d when Type.IsNumericType() => Convert.ChangeType(d.ToDecimal(), Type),

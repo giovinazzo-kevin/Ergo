@@ -167,8 +167,8 @@ public partial class ErgoVM
                         {
                             matchEnum.Current.Goal.GetQualification(out var inst);
                             var args = inst.GetArguments();
-                            vm.Arity = args.Count;
-                            for (int i = 0; i < args.Count; i++)
+                            vm.Arity = args.Length;
+                            for (int i = 0; i < args.Length; i++)
                                 vm.SetArg(0, args[i]);
                             runGoal = builtIn.Compile();
                         }

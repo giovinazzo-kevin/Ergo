@@ -368,13 +368,13 @@ public partial class ErgoParser : IDisposable
             if (ops_.Length == 0)
                 return false;
             var op = ops_[0];
-            if (cplx.Arity == 1)
+            if (cplx.Arguments.Length == 1)
             {
                 expr = BuildExpression(op, cplx.Arguments[0], exprParenthesized: exprParenthesized);
                 return true;
             }
 
-            if (cplx.Arity == 2)
+            if (cplx.Arguments.Length == 2)
             {
                 expr = BuildExpression(op, cplx.Arguments[0], Maybe.Some(cplx.Arguments[1]), exprParenthesized: exprParenthesized);
                 return true;
@@ -437,7 +437,7 @@ public partial class ErgoParser : IDisposable
 
             // Special case for unary expressions
             if (lhs is not Complex cplx
-                || cplx.Arity > 1
+                || cplx.Arguments.Length > 1
                 || !GetOperatorsFromFunctor(cplx.Functor).TryGetValue(out var ops))
             {
                 return MemoizeFailureAndFail<Expression>(scope.LexerState)
@@ -671,7 +671,7 @@ public partial class ErgoParser : IDisposable
         var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals(new Atom("module")))
             .Body.GetArguments();
 
-        if (moduleArgs.Count < 2 || moduleArgs[1] is not List exported)
+        if (moduleArgs.Length < 2 || moduleArgs[1] is not List exported)
         {
             exported = List.Empty;
         }

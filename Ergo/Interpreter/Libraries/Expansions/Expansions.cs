@@ -194,16 +194,11 @@ public class Expansions : Library
                     && cplx.Arguments[0] is Lang.Ast.List;
                 foreach (var argList in cartesian)
                 {
-                    var newArgs = argList
+                    var newCplx = cplx
+                        .WithArguments(argList
                         .Select(x => x.Reduce(exp => exp.Binding
                            .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
-                        .GetEnumerator();
-                    for (int i = 0; i < cplx.Arity; i++)
-                    {
-                        if (!newArgs.MoveNext())
-                            break;
-                        cplx.SetArgumentInPlace(i, newArgs.Current);
-                    }
+                           .ToImmutableArray());
                     var expClauses = new NTuple(
                         exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
                            .Concat(argList.SelectMany(x => x
@@ -212,14 +207,14 @@ public class Expansions : Library
                     if (isLambda)
                     {
                         // Stuff 'expClauses' inside the lambda instead of returning them to the parent predicate
-                        var body = cplx.Arguments[1];
+                        var body = newCplx.Arguments[1];
                         var closure = new NTuple(expClauses.Contents.Append(body), cplx.Scope);
-                        cplx.SetArgumentInPlace(1, closure);
-                        yield return Either<ExpansionResult, ITerm>.FromB(cplx);
+                        newCplx = newCplx.WithArguments(newCplx.Arguments.SetItem(1, closure));
+                        yield return Either<ExpansionResult, ITerm>.FromB(newCplx);
                     }
                     else
                     {
-                        yield return Either<ExpansionResult, ITerm>.FromA(new(cplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
+                        yield return Either<ExpansionResult, ITerm>.FromA(new(newCplx, expClauses, exp.Reduce(e => e.Binding, _ => default)));
                     }
                 }
             }

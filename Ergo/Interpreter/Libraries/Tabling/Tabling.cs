@@ -40,7 +40,7 @@ public class Tabling : Library
             {
                 var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");
                 var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));
-                var aux = anon.WithFunctor(auxFunctor).Qualified(moduleName);
+                var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(moduleName);
 
                 var tblPred = new Predicate(
                     "(auto-generated auxilliary predicate for tabling)",

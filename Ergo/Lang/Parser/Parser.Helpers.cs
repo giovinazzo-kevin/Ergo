@@ -100,7 +100,7 @@ public partial class ErgoParser
             return term
                 .Where(t => t is Complex { IsParenthesized: false })
                 .Select(t => (Complex)t)
-                .Where(c => separator.Synonyms.Contains(c.Functor) && c.Arity == 2)
+                .Where(c => separator.Synonyms.Contains(c.Functor) && c.Arguments.Length == 2)
                 .Map(c => Unfold(Maybe.Some(c.Arguments[1])).Select(u => u.Prepend(c.Arguments[0])))
                 .Or(() => term.Select(t => new[] { t }.AsEnumerable()))
                 ;

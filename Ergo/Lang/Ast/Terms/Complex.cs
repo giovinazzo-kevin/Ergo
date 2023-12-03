@@ -4,27 +4,25 @@ using System.Diagnostics;
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain() }")]
-public partial class Complex : ITerm
+public readonly partial struct Complex : ITerm
 {
     public Maybe<ParserScope> Scope { get; }
     public bool IsGround => Arguments.All(arg => arg.IsGround);
-    public bool IsQualified { get; }
+    public readonly bool IsQualified { get; }
 
     public readonly Maybe<Operator> Operator;
-    public bool IsParenthesized { get; }
+    public readonly bool IsParenthesized { get; }
 
     public readonly Atom Functor;
-
-    private readonly ITerm[] arguments;
-    public IReadOnlyList<ITerm> Arguments => arguments;
-    public int Arity => arguments.Length;
+    public readonly ImmutableArray<ITerm> Arguments;
+    public readonly int Arity => Arguments.Length;
 
     private readonly int HashCode;
 
-    public Complex(Atom functor, ITerm[] args, Maybe<ParserScope> scope = default)
+    public Complex(Atom functor, ImmutableArray<ITerm> args, Maybe<ParserScope> scope = default)
     {
         Functor = functor;
-        arguments = args;
+        Arguments = args;
         Scope = scope;
         HashCode = Arguments.Aggregate(Functor.GetHashCode(), (hash, a) => System.HashCode.Combine(hash, a));
         IsQualified = args.Length == 2 && WellKnown.Functors.Module.Contains(functor);
@@ -32,25 +30,20 @@ public partial class Complex : ITerm
         IsParenthesized = false;
     }
     public Complex(Atom functor, params ITerm[] args)
-        : this(functor, args, default) { }
+        : this(functor, args.ToImmutableArray()) { }
 
-    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, ITerm[] args, Maybe<ParserScope> scope)
+    private Complex(Maybe<Operator> op, bool parenthesized, Atom functor, ImmutableArray<ITerm> args, Maybe<ParserScope> scope)
         : this(functor, args, scope)
     {
         Operator = op;
         IsParenthesized = parenthesized;
     }
-    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, arguments, Scope);
-    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, arguments, Scope);
-    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, arguments, Scope);
-    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, arguments, Scope);
-    public Complex WithArguments(ITerm[] args) => new(Operator, IsParenthesized, Functor, args, Scope);
-    public Complex WithScope(Maybe<ParserScope> scope) => new(Operator, IsParenthesized, Functor, arguments, scope);
-
-    public void SetArgumentInPlace(int index, ITerm value)
-    {
-        arguments[index] = value;
-    }
+    public Complex AsOperator(Maybe<Operator> affix) => new(affix, IsParenthesized, Functor, Arguments, Scope);
+    public Complex AsOperator(Operator affix) => new(affix, IsParenthesized, Functor, Arguments, Scope);
+    public Complex AsParenthesized(bool parens) => new(Operator, parens, Functor, Arguments, Scope);
+    public Complex WithFunctor(Atom functor) => new(Operator, IsParenthesized, functor, Arguments, Scope);
+    public Complex WithArguments(ImmutableArray<ITerm> args) => new(Operator, IsParenthesized, Functor, args, Scope);
+    public Complex WithScope(Maybe<ParserScope> scope) => new(Operator, IsParenthesized, Functor, Arguments, scope);
 
     public string Explain(bool canonical = false)
     {
@@ -92,13 +85,13 @@ public partial class Complex : ITerm
             return this;
         if (Equals(s.Lhs))
             return s.Rhs;
-        var newArgs = new ITerm[arguments.Length];
+        var newArgs = new ITerm[Arguments.Length];
         for (var i = 0; i < newArgs.Length; i++)
         {
             newArgs[i] = Arguments[i].Substitute(s);
         }
 
-        var ret = WithArguments(newArgs);
+        var ret = WithArguments(newArgs.ToImmutableArray());
         return ret;
     }
 
@@ -142,12 +135,12 @@ public partial class Complex : ITerm
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         vars ??= new();
-        var builder = new ITerm[Arity];
+        var builder = Arguments.ToBuilder();
         for (int i = 0; i < Arity; i++)
         {
-            builder[i] = arguments[i].Instantiate(ctx, vars);
+            builder[i] = Arguments[i].Instantiate(ctx, vars);
         }
-        return new Complex(Operator, IsParenthesized, Functor, builder, Scope);
+        return new Complex(Operator, IsParenthesized, Functor, builder.ToImmutableArray(), Scope);
     }
 
     public static bool operator ==(Complex left, Complex right) => left.Equals(right);

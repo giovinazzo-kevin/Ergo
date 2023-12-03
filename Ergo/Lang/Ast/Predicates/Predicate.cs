@@ -100,7 +100,7 @@ public readonly struct Predicate : IExplainable
                         yield return tup;
                     continue;
                 }
-                else if (goal is Complex { Functor: var functor, Arguments: { Count: var len } args, Operator: var originalOp })
+                else if (goal is Complex { Functor: var functor, Arguments: { Length: var len } args, Operator: var originalOp })
                 {
                     if (len == 1)
                     {
@@ -233,7 +233,7 @@ public readonly struct Predicate : IExplainable
             return inst;
         var varArgs = cplx.Arguments
             .Select(x => x is Variable ? x : ctx.GetFreeVariable())
-            .ToArray();
+            .ToImmutableArray();
         var any = false;
         var preconditions = new List<ITerm>();
         for (int i = 0; i < cplx.Arity; i++)

@@ -202,7 +202,7 @@ public partial class ErgoVM
     /// </summary>
     public void Solution()
     {
-        solutions.Push(Environment.Count() == 0 ? SubstitutionMap.Empty : CloneEnvironment());
+        solutions.Push(!Environment.Any() ? SubstitutionMap.Empty : CloneEnvironment());
         State = VMState.Solution;
     }
 

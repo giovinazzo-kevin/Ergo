@@ -44,6 +44,7 @@ public class TailCallOptimizationTests : ErgoTests
     [InlineData("for(_,1,100000)", 100000)]
     [InlineData("for(I,1,1000), for(J,1,100)", 100000)]
     [InlineData("for(_,1,1000), for(_,1,100)", 100000)]
+    [InlineData("for(I,1,10000), J = I", 10000)]
 
     #endregion
 

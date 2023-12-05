@@ -66,16 +66,20 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
             throw new InvalidOperationException();
 
         Map.Remove(s.Lhs);
-        if (s.Rhs is Variable v)
+        var rhs = s.Rhs;
+        while (rhs is Variable v && FollowRef(v, out var prevRhs))
+            rhs = prevRhs;
+        Map.Add(s.Lhs, rhs);
+
+        bool FollowRef(Variable rhs, out ITerm prevRhs)
         {
-            if (v.Ignored && Map.TryGetValue(s.Rhs, out var prevRhs))
-            {
-                Map.Remove(s.Rhs);
-                Map.Add(s.Lhs, prevRhs);
-                return;
-            }
+            prevRhs = default;
+            if (rhs.Ignored && Map.Remove(rhs, out prevRhs))
+                return true;
+            if (!rhs.Ignored && Map.TryGetValue(rhs, out prevRhs))
+                return true;
+            return false;
         }
-        Map.Add(s.Lhs, s.Rhs);
     }
     public void AddRange(IEnumerable<Substitution> source)
     {

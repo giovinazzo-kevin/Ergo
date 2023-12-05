@@ -1,6 +1,9 @@
 ﻿using Ergo.Events.Runtime;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
+
+using GeneratorDef = (int NumSolutions, System.Collections.Generic.IEnumerable<Ergo.Runtime.Solution> Solutions);
 
 namespace Ergo.Runtime;
 
@@ -12,6 +15,75 @@ public enum VMFlags
     EnableInlining = 1,
     EnableOptimizations = 4
 }
+
+public sealed class Solutions : IEnumerable<Solution>
+{
+    public delegate IEnumerable<Solution> Generator(int num);
+
+    private readonly List<GeneratorDef> generators = new();
+    public int Count { get; private set; }
+
+    public void Clear()
+    {
+        generators.Clear();
+        Count = 0;
+    }
+
+    public void Push(Generator gen, int num)
+    {
+        if (num <= 0)
+            return;
+        Count += num;
+        generators.Add((num, gen(num)));
+    }
+
+    public void Push(SubstitutionMap subs)
+    {
+        Push(_ => Enumerable.Empty<Solution>().Append(new(subs)), 1);
+    }
+
+    public Maybe<Solution> Pop()
+    {
+        if (Count == 0)
+            return default;
+        Count--;
+        var gc = generators.Count - 1;
+        var ret = generators[gc];
+        generators.RemoveAt(gc);
+        if (ret.NumSolutions == 1)
+            return ret.Solutions.Single();
+        var sol = ret.Solutions.Last();
+        generators.Add((ret.NumSolutions - 1, ret.Solutions.SkipLast(1)));
+        return sol;
+    }
+
+    public void Discard(int num)
+    {
+    _Repeat:
+        if (Count == 0)
+            return;
+        var ret = generators[Count - 1];
+        var sols = ret.Solutions;
+        while (num-- > 0 && ret.NumSolutions > 0)
+        {
+            sols = sols.SkipLast(1);
+        }
+        if (num > 0)
+        {
+            generators.RemoveAt(--Count);
+            goto _Repeat;
+        }
+    }
+
+    public IEnumerator<Solution> GetEnumerator()
+    {
+        return generators
+            .SelectMany(gen => gen.Solutions)
+            .GetEnumerator();
+    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
 
 public sealed class RefCount
 {
@@ -51,7 +123,7 @@ public partial class ErgoVM
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
-    protected Stack<SubstitutionMap> solutions = new();
+    protected Solutions solutions = new();
     protected RefCount refCounts = new();
     /// <summary>
     /// Register for the choice point cut index.
@@ -115,7 +187,7 @@ public partial class ErgoVM
     /// <summary>
     /// The current computed set of solutions. See also <see cref="RunInteractive"/>, which yields them one at a time.
     /// </summary>
-    public IEnumerable<Solution> Solutions => solutions.Reverse().Select(x => new Solution(x));
+    public IEnumerable<Solution> Solutions => solutions;
     public int NumSolutions => solutions.Count;
     /// <summary>
     /// The number of choice points in the stack, which can be used to keep track of choice points created after a particular invocation.
@@ -156,14 +228,14 @@ public partial class ErgoVM
         Query(this);
         while (State != VMState.Ready)
         {
-            while (solutions.TryPop(out var sol))
-                yield return new Solution(sol);
+            while (solutions.Pop().TryGetValue(out var sol))
+                yield return sol;
             if (!BacktrackOnce())
                 break;
         }
         CleanUp();
-        while (solutions.TryPop(out var sol))
-            yield return new Solution(sol);
+        while (solutions.Pop().TryGetValue(out var sol))
+            yield return sol;
     }
     #endregion
     #region Goal API
@@ -195,6 +267,14 @@ public partial class ErgoVM
     {
         subs.AddRange(Environment);
         solutions.Push(subs);
+        State = VMState.Solution;
+    }
+    /// <summary>
+    /// Uses a solution generator to add a specified number of solutions that will be generated lazily.
+    /// </summary>
+    public void Solution(Solutions.Generator gen, int count)
+    {
+        solutions.Push(gen, count);
         State = VMState.Solution;
     }
     /// <summary>
@@ -255,13 +335,13 @@ public partial class ErgoVM
         subs = default;
         if (solutions.Count == 0 || State != VMState.Solution)
             return false;
-        subs = solutions.Pop();
+        subs = solutions.Pop().GetOrThrow(StackEmptyException).Substitutions;
         State = solutions.Count > 0 ? VMState.Solution : VMState.Success;
         return true;
     }
     public void MergeEnvironment()
     {
-        var subs = solutions.Pop();
+        var subs = solutions.Pop().GetOrThrow(StackEmptyException).Substitutions;
         Ops.UpdateEnvironment(subs)(this);
         State = VMState.Success;
     }

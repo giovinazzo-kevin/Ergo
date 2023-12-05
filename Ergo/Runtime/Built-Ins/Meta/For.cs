@@ -37,6 +37,7 @@ public sealed class For : BuiltIn
             }
             var discarded = (var.Ignored && vm.IsSingletonVariable(var));
             int i = iFrom;
+            var count = iTo - iFrom;
             return cache[hash] = ChooseBacktrack;
             void Backtrack(ErgoVM vm)
             {
@@ -56,20 +57,21 @@ public sealed class For : BuiltIn
             }
             void BacktrackUnrolled(ErgoVM vm)
             {
-                i = iTo;
-            loop:
-                if (!discarded)
+                var env = vm.CloneEnvironment();
+                vm.Solution(Gen, count);
+                IEnumerable<Solution> Gen(int count)
                 {
-                    vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
-                }
-                if (--i >= 0)
-                {
-                    vm.Solution();
-                    goto loop;
-                }
-                else
-                {
-                    i = iTo;
+                    for (int i = iFrom; i <= iTo; i++)
+                    {
+                        if (discarded)
+                        {
+                            yield return new Solution(env);
+                            continue;
+                        }
+                        var clone = env.Clone();
+                        clone.Add(new(var, new Atom(EDecimal.FromInt32(i))));
+                        yield return new Solution(clone);
+                    }
                 }
             }
             void ChooseBacktrack(ErgoVM vm)

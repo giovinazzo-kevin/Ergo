@@ -109,7 +109,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     }
 
     ITerm StripTemporaryVariables() => Substitute(Variables
-        .Where(v => v.Ignored)
+        .Where(v => v.Ignored && v.Name.StartsWith("__"))
         .Select(v => new Substitution(v, WellKnown.Literals.Discard)));
 
     /// <summary>

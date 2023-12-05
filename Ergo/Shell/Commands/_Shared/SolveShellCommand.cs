@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -185,11 +186,14 @@ public abstract class SolveShellCommand : ShellCommand
         }
         else if (Mode == SolveMode.Benchmark)
         {
+            var sw = new Stopwatch();
+            sw.Start();
             vm.Run();
+            sw.Stop();
             if (vm.State == ErgoVM.VMState.Fail)
                 shell.No();
             else shell.Yes();
-            shell.WriteLine($"{vm.NumSolutions} solution{(vm.NumSolutions == 1 ? "" : "s")}.", LogLevel.Cmt);
+            shell.WriteLine($"{vm.NumSolutions} solution{(vm.NumSolutions == 1 ? "" : "s")} ({(sw.Elapsed.TotalMilliseconds):0.000}ms).", LogLevel.Cmt);
         }
 
         if (requestCancel.IsCancellationRequested && executionAbortedCtrlC)

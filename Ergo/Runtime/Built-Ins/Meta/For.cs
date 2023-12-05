@@ -58,6 +58,9 @@ public sealed class For : BuiltIn
             void BacktrackUnrolled(ErgoVM vm)
             {
                 var env = vm.CloneEnvironment();
+                // In this case we can generate the solutions lazily since there's no continuation.
+                // This allows us to return crazy amounts of solutions in O(1) time and memory,
+                // with the catch that they're computed later when accessed.
                 vm.Solution(Gen, count);
                 IEnumerable<Solution> Gen(int count)
                 {

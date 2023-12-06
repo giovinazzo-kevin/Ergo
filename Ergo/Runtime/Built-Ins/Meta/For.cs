@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 
 public sealed class For : BuiltIn
 {
-    private readonly Dictionary<int, ErgoVM.Op> cache = new();
+    private readonly AsyncLocal<Dictionary<int, ErgoVM.Op>> opCache = new();
     public For()
         : base("", new("for"), 4, WellKnown.Modules.Meta)
     {
@@ -45,6 +45,7 @@ public sealed class For : BuiltIn
             var hash = 0;
             for (int h = 0; h < args.Length; h++)
                 hash = HashCode.Combine(hash, args[h].GetHashCode());
+            var cache = opCache.Value ??= new();
             if (cache.TryGetValue(hash, out var op))
                 return op;
             if (args[1] is not Atom { Value: EDecimal from })

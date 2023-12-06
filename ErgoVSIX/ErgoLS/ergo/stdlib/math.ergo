@@ -60,15 +60,10 @@
 
 % HELPERS
 
-between_(Min, Max, _, Min) :- Min <= Max.
-between_(Min, Max, Step, M) :-
-	Min <= Max,
-	between_(:=(Min + Step), Max, Step, M).
-
-between('[', Min, Max, ']', Step, M) :- between_(Min, Max, Step, M).
-between('(', Min, Max, ']', Step, M) :- between_(:=(Min + Step), Max, Step, M).
-between('[', Min, Max, ')', Step, M) :- between_(Min, :=(Max - Step), Step, M).
-between('(', Min, Max, ')', Step, M) :- between_(:=(Min + Step), :=(Max - Step), Step, M).
+between('[', Min, Max, ']', Step, M) :- for(M, Min, :=(Max + Step), Step).
+between('(', Min, Max, ']', Step, M) :- for(M, :=(Min + Step), :=(Max + Step), Step).
+between('[', Min, Max, ')', Step, M) :- for(M, Min, Max, Step).
+between('(', Min, Max, ')', Step, M) :- for(M, :=(Min + Step), Max, Step).
 
 between(Min, Max, M) :- between('(', Min, Max, ']', 1, M).
 

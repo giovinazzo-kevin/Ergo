@@ -51,6 +51,12 @@ public partial class ErgoVM
                         vm.@continue = @continue;
                         switch (vm.State)
                         {
+                            // Ready can be used as a non-failing way to halt with a solution.
+                            case VMState.Ready:
+                                {
+                                    vm.State = VMState.Solution;
+                                    return;
+                                }
                             case VMState.Fail: return;
                             case VMState.Solution: vm.MergeEnvironment(); break;
                         }

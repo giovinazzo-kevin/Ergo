@@ -17,7 +17,7 @@ public sealed class SetupCallCleanup : BuiltIn
         newVm.Arity = vm.Arity = 1;
         newVm.SetArg(0, args[0]);
         newVm.Run();
-        if (!newVm.TryPopSolution(out var sol))
+        if (!newVm.TryPopSolution(out _))
         {
             vm.Fail();
             return;

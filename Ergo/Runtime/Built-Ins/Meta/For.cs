@@ -1,4 +1,5 @@
 ﻿using PeterO.Numbers;
+using System.Collections;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -9,6 +10,31 @@ public sealed class For : BuiltIn
         : base("", new("for"), 4, WellKnown.Modules.Meta)
     {
     }
+
+    class ListEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var) : IReadOnlyList<Solution>
+    {
+        Solution Get(int i)
+        {
+            if (discarded)
+            {
+                return new Solution(env);
+            }
+            var clone = env.Clone();
+            clone.Add(new(var, new Atom(EDecimal.FromInt32(step * i + from))));
+            return new Solution(clone);
+        }
+        public IEnumerator<Solution> GetEnumerator()
+        {
+            for (int i = 0; i < Count; ++i)
+            {
+                yield return Get(i);
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public int Count { get; } = count;
+        public Solution this[int index] => Get(index);
+    }
+
 
     public override ErgoVM.Op Compile() => vm =>
     {
@@ -47,7 +73,7 @@ public sealed class For : BuiltIn
                 {
                     vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
                 }
-                if ((i += iStep) <= iTo)
+                if ((i += iStep) < iTo)
                 {
                     vm.Solution();
                     vm.PushChoice(Backtrack);
@@ -63,21 +89,11 @@ public sealed class For : BuiltIn
                 // In this case we can generate the solutions lazily since there's no continuation.
                 // This allows us to return crazy amounts of solutions in O(1) time and memory,
                 // with the catch that they're computed later when accessed.
-                vm.Solution(Gen, count);
-                IEnumerable<Solution> Gen(int count)
-                {
-                    for (int i = iFrom; i <= iTo; i += iStep)
-                    {
-                        if (discarded)
-                        {
-                            yield return new Solution(env);
-                            continue;
-                        }
-                        var clone = env.Clone();
-                        clone.Add(new(var, new Atom(EDecimal.FromInt32(i))));
-                        yield return new Solution(clone);
-                    }
-                }
+                var n = (int)Math.Ceiling(count / (float)iStep);
+                var enumerable = new ListEnumerable(iFrom, iStep, n, discarded, env, var);
+                vm.Solution(_ => enumerable, n);
+                // Signal the VM that we can break out of the current And (if any) and return these solutions.
+                vm.Ready();
             }
             void ChooseBacktrack(ErgoVM vm)
             {

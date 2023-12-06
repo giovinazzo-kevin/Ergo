@@ -1,9 +1,7 @@
 ﻿using Ergo.Events.Runtime;
-using System.Collections;
 using System.Diagnostics;
 using System.IO;
-
-using GeneratorDef = (int NumSolutions, System.Collections.Generic.IEnumerable<Ergo.Runtime.Solution> Solutions);
+using static Ergo.Runtime.Solutions;
 
 namespace Ergo.Runtime;
 
@@ -16,91 +14,10 @@ public enum VMFlags
     EnableOptimizations = 4
 }
 
-public sealed class Solutions : IEnumerable<Solution>
+public enum VMMode
 {
-    public delegate IEnumerable<Solution> Generator(int num);
-
-    private readonly List<GeneratorDef> generators = new();
-    public int Count { get; private set; }
-
-    public void Clear()
-    {
-        generators.Clear();
-        Count = 0;
-    }
-
-    public void Push(Generator gen, int num)
-    {
-        if (num <= 0)
-            return;
-        Count += num;
-        generators.Add((num, gen(num)));
-    }
-
-    public void Push(SubstitutionMap subs)
-    {
-        Push(_ => Enumerable.Empty<Solution>().Append(new(subs)), 1);
-    }
-
-    public Maybe<Solution> Pop()
-    {
-        if (Count == 0)
-            return default;
-        Count--;
-        var gc = generators.Count - 1;
-        var ret = generators[gc];
-        generators.RemoveAt(gc);
-        if (ret.NumSolutions == 1)
-            return ret.Solutions.Single();
-        var sol = ret.Solutions.Last();
-        generators.Add((ret.NumSolutions - 1, ret.Solutions.SkipLast(1)));
-        return sol;
-    }
-
-    public void Discard(int num)
-    {
-    _Repeat:
-        if (Count == 0)
-            return;
-        var ret = generators[Count - 1];
-        var sols = ret.Solutions;
-        while (num-- > 0 && ret.NumSolutions > 0)
-        {
-            sols = sols.SkipLast(1);
-        }
-        if (num > 0)
-        {
-            generators.RemoveAt(--Count);
-            goto _Repeat;
-        }
-    }
-
-    public IEnumerator<Solution> GetEnumerator()
-    {
-        return generators
-            .SelectMany(gen => gen.Solutions)
-            .GetEnumerator();
-    }
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-}
-
-
-public sealed class RefCount
-{
-    private readonly Dictionary<Variable, int> dict = new();
-    public int Count(Variable variable)
-    {
-        if (!dict.TryGetValue(variable, out var count))
-            dict[variable] = count = 0;
-        return dict[variable] = count + 1;
-    }
-    public int GetCount(Variable variable)
-    {
-        if (!dict.TryGetValue(variable, out var count))
-            return 0;
-        return count;
-    }
-    public void Clear() => dict.Clear();
+    Interactive,
+    Batch
 }
 
 public partial class ErgoVM
@@ -180,6 +97,7 @@ public partial class ErgoVM
     /// Represents the current execution state of the VM.
     /// </summary>
     public VMState State { get; private set; } = VMState.Ready;
+    public VMMode Mode { get; private set; } = VMMode.Batch;
     /// <summary>
     /// The active set of substitutions containing the state for the current execution branch.
     /// </summary>
@@ -213,6 +131,7 @@ public partial class ErgoVM
     public void Run()
     {
         Initialize();
+        Mode = VMMode.Batch;
         State = VMState.Success;
         Query(this);
         Backtrack();
@@ -224,17 +143,18 @@ public partial class ErgoVM
     public IEnumerable<Solution> RunInteractive()
     {
         Initialize();
+        Mode = VMMode.Interactive;
         State = VMState.Success;
         Query(this);
         while (State != VMState.Ready)
         {
-            while (solutions.Pop().TryGetValue(out var sol))
+            while (TryPopSolution(out var sol))
                 yield return sol;
             if (!BacktrackOnce())
                 break;
         }
         CleanUp();
-        while (solutions.Pop().TryGetValue(out var sol))
+        while (TryPopSolution(out var sol))
             yield return sol;
     }
     #endregion
@@ -261,6 +181,13 @@ public partial class ErgoVM
         State = VMState.Fail;
     }
     /// <summary>
+    /// Sets the VM in a non-failure state that also prevents SuccessToSolution and MergeEnvironment from being called.
+    /// </summary>
+    public void Ready()
+    {
+        State = VMState.Ready;
+    }
+    /// <summary>
     /// Yields an external substitution map as a solution.
     /// </summary>
     public void Solution(SubstitutionMap subs)
@@ -272,10 +199,10 @@ public partial class ErgoVM
     /// <summary>
     /// Uses a solution generator to add a specified number of solutions that will be generated lazily.
     /// </summary>
-    public void Solution(Solutions.Generator gen, int count)
+    public GeneratorDef Solution(Generator gen, int count)
     {
-        solutions.Push(gen, count);
         State = VMState.Solution;
+        return solutions.Push(gen, count);
     }
     /// <summary>
     /// Yields the current environment as a solution.
@@ -330,19 +257,20 @@ public partial class ErgoVM
             Solution();
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryPopSolution(out SubstitutionMap subs)
+    public bool TryPopSolution(out Solution sol)
     {
-        subs = default;
-        if (solutions.Count == 0 || State != VMState.Solution)
+        sol = default;
+        if (solutions.Count == 0)
             return false;
-        subs = solutions.Pop().GetOrThrow(StackEmptyException).Substitutions;
-        State = solutions.Count > 0 ? VMState.Solution : VMState.Success;
+        sol = solutions.Pop().GetOrThrow(StackEmptyException);
+        //State = solutions.Count > 0 ? VMState.Solution : VMState.Success;
         return true;
     }
     public void MergeEnvironment()
     {
-        var subs = solutions.Pop().GetOrThrow(StackEmptyException).Substitutions;
-        Ops.UpdateEnvironment(subs)(this);
+        if (!TryPopSolution(out var sol))
+            throw StackEmptyException;
+        Ops.UpdateEnvironment(sol.Substitutions)(this);
         State = VMState.Success;
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

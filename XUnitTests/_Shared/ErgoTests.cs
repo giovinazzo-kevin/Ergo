@@ -63,7 +63,6 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         void Solve(ErgoVM vm, Query parsed)
         {
             var numSolutions = 0;
-            var timeoutToken = new CancellationTokenSource(TimeSpan.FromMilliseconds(10000)).Token;
             vm.Query = vm.CompileQuery(parsed);
             vm.Run();
             foreach (var sol in vm.Solutions)

@@ -174,10 +174,7 @@ public partial class ErgoVM
                         }
                         // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
-                        {
-                            matchEnum.Current.Goal.GetQualification(out var inst);
                             runGoal = graph.Compile();
-                        }
                         // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
                             runGoal = Goals(pred.Body);

@@ -29,13 +29,15 @@ public class ExecutionGraph
         if (Root.IsGround)
             return this;
         vars ??= new();
-        return new(Head.Instantiate(ctx, vars), Root.Instantiate(ctx, vars));
+        return new(Head.Instantiate(ctx, vars), Root.Instantiate(ctx, vars))
+        { Compiled = Compiled };
     }
     public ExecutionGraph Substitute(IEnumerable<Substitution> s)
     {
         if (Root.IsGround)
             return this;
-        return new(Head.Substitute(s), Root.Substitute(s));
+        return new(Head.Substitute(s), Root.Substitute(s))
+        { Compiled = Compiled };
     }
 
     public ExecutionGraph Optimized() => new(Head, new SequenceNode(new() { Root }).Optimize());

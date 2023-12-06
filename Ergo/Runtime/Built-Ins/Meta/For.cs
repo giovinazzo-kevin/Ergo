@@ -6,7 +6,7 @@ public sealed class For : BuiltIn
 {
     private readonly Dictionary<int, ErgoVM.Op> cache = new();
     public For()
-        : base("", new("for"), 3, WellKnown.Modules.Meta)
+        : base("", new("for"), 4, WellKnown.Modules.Meta)
     {
     }
 
@@ -25,7 +25,9 @@ public sealed class For : BuiltIn
                 return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[1].Explain(false));
             if (args[2] is not Atom { Value: EDecimal to })
                 return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[2].Explain(false));
-            var (iFrom, iTo) = (from.ToInt32Checked(), to.ToInt32Checked());
+            if (args[3] is not Atom { Value: EDecimal step })
+                return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[3].Explain(false));
+            var (iFrom, iTo, iStep) = (from.ToInt32Checked(), to.ToInt32Checked(), step.ToInt32Checked());
             if (args[0] is not Variable { } var)
             {
                 if (args[0] is not Atom { Value: EDecimal d })
@@ -45,7 +47,7 @@ public sealed class For : BuiltIn
                 {
                     vm.Environment.Add(new(var, new Atom(EDecimal.FromInt32(i))));
                 }
-                if (++i <= iTo)
+                if ((i += iStep) <= iTo)
                 {
                     vm.Solution();
                     vm.PushChoice(Backtrack);
@@ -64,7 +66,7 @@ public sealed class For : BuiltIn
                 vm.Solution(Gen, count);
                 IEnumerable<Solution> Gen(int count)
                 {
-                    for (int i = iFrom; i <= iTo; i++)
+                    for (int i = iFrom; i <= iTo; i += iStep)
                     {
                         if (discarded)
                         {

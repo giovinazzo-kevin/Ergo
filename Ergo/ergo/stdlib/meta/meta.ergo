@@ -14,4 +14,5 @@ repeat(Times, Goal) :- for(_, 1, Times), once(Goal).
 forever(Goal) :- once(Goal) ; forever(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
-    
+
+for(I, From, To) :- for(I, From, To, 1).

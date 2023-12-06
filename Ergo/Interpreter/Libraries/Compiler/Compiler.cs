@@ -76,6 +76,7 @@ public class Compiler : Library
                     // TODO: figure out issue with compiler optimizations breaking math:range
                     if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, kbc.Flags & ~VMFlags.EnableOptimizations).TryGetValue(out var newClause))
                     {
+                        newClause.ExecutionGraph.Do(x => x.Compile());
                         kbc.KnowledgeBase.Replace(clause, newClause);
                         node.Clauses[i] = newClause;
                     }

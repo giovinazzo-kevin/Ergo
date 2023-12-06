@@ -114,19 +114,21 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         }
     }
 
-    public void AssertA(Predicate k)
+    List<Predicate> Assert_(Predicate k, bool append)
     {
         var sig = k.Head.GetSignature();
         if (k.IsVariadic)
             sig = sig.WithArity(default);
-        GetOrCreate(sig, append: false).Insert(0, k);
+        return GetOrCreate(sig, append: append);
+    }
+
+    public void AssertA(Predicate k)
+    {
+        Assert_(k, append: false).Insert(0, k);
     }
     public void AssertZ(Predicate k)
     {
-        var sig = k.Head.GetSignature();
-        if (k.IsVariadic)
-            sig = sig.WithArity(default);
-        GetOrCreate(sig, append: true).Add(k);
+        Assert_(k, append: true).Add(k);
     }
     public bool Retract(ITerm head)
     {

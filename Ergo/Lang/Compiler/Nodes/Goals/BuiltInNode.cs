@@ -5,26 +5,27 @@ namespace Ergo.Lang.Compiler;
 public class BuiltInNode : GoalNode
 {
     public BuiltIn BuiltIn { get; }
-    public readonly ErgoVM.Op BuiltInGoal;
+    protected ErgoVM.Op CompiledBuiltIn { get; private set; }
     public readonly ImmutableArray<ITerm> Args;
-    public BuiltInNode(DependencyGraphNode node, ITerm goal, BuiltIn builtIn) : base(node, goal)
+
+    public BuiltInNode(DependencyGraphNode node, ITerm goal, BuiltIn builtIn, bool compile = true) : base(node, goal)
     {
         BuiltIn = builtIn;
         Goal.GetQualification(out var head);
         Args = head.GetArguments();
-        var compiled = BuiltIn.Compile();
-        BuiltInGoal = vm =>
+        if (compile)
         {
-            vm.Arity = Args.Length;
-            for (int i = 0; i < Args.Length; i++)
-                vm.SetArg(i, Args[i].Substitute(vm.Environment));
-            compiled(vm);
-        };
-        RuntimeHelpers.PrepareDelegate(compiled);
-        RuntimeHelpers.PrepareDelegate(BuiltInGoal);
+            CompiledBuiltIn = BuiltIn.Compile();
+            RuntimeHelpers.PrepareDelegate(CompiledBuiltIn);
+        }
     }
-
-    public override ErgoVM.Op Compile() => BuiltInGoal;
+    public override ErgoVM.Op Compile() => vm =>
+    {
+        vm.Arity = Args.Length;
+        for (int i = 0; i < Args.Length; i++)
+            vm.SetArg(i, Args[i].Substitute(vm.Environment));
+        CompiledBuiltIn(vm);
+    };
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override ExecutionNode Optimize()
@@ -39,11 +40,17 @@ public class BuiltInNode : GoalNode
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         if (IsGround) return this;
-        return new BuiltInNode(Node, Goal.Instantiate(ctx, vars), BuiltIn);
+        return new BuiltInNode(Node, Goal.Instantiate(ctx, vars), BuiltIn, compile: false)
+        {
+            CompiledBuiltIn = CompiledBuiltIn
+        };
     }
     public override ExecutionNode Substitute(IEnumerable<Substitution> s)
     {
         if (IsGround) return this;
-        return new BuiltInNode(Node, Goal.Substitute(s), BuiltIn);
+        return new BuiltInNode(Node, Goal.Substitute(s), BuiltIn, compile: false)
+        {
+            CompiledBuiltIn = CompiledBuiltIn
+        };
     }
 }

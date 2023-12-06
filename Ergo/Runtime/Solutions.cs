@@ -6,14 +6,14 @@ public sealed class Solutions : IEnumerable<Solution>
 {
     public delegate IReadOnlyList<Solution> Generator(int num);
 
-    class SingleEnumerable(Solution sol) : IReadOnlyList<Solution>
+    readonly record struct SingleEnumerable(Solution Sol) : IReadOnlyList<Solution>
     {
-        public Solution this[int index] => index == 0 ? sol : throw new ArgumentOutOfRangeException(nameof(index));
+        public Solution this[int index] => index == 0 ? Sol : throw new ArgumentOutOfRangeException(nameof(index));
         public int Count => 1;
 
         public IEnumerator<Solution> GetEnumerator()
         {
-            yield return sol;
+            yield return Sol;
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

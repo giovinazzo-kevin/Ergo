@@ -5,7 +5,6 @@ namespace Ergo.Runtime.BuiltIns;
 
 public sealed class For : BuiltIn
 {
-    private readonly AsyncLocal<Dictionary<int, ErgoVM.Op>> opCache = new();
     public For()
         : base("", new("for"), 4, WellKnown.Modules.Meta)
     {
@@ -42,32 +41,26 @@ public sealed class For : BuiltIn
         ErgoVM.Op Inner()
         {
             var args = vm.Args;
-            var hash = 0;
-            for (int h = 0; h < args.Length; h++)
-                hash = HashCode.Combine(hash, args[h].GetHashCode());
-            var cache = opCache.Value ??= new();
-            if (cache.TryGetValue(hash, out var op))
-                return op;
             if (args[1] is not Atom { Value: EDecimal from })
-                return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[1].Explain(false));
+                return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[1].Explain(false));
             if (args[2] is not Atom { Value: EDecimal to })
-                return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[2].Explain(false));
+                return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[2].Explain(false));
             if (args[3] is not Atom { Value: EDecimal step })
-                return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[3].Explain(false));
+                return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[3].Explain(false));
             var (iFrom, iTo, iStep) = (from.ToInt32Checked(), to.ToInt32Checked(), step.ToInt32Checked());
             if (args[0] is not Variable { } var)
             {
                 if (args[0] is not Atom { Value: EDecimal d })
-                    return cache[hash] = ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[0].Explain(false));
+                    return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[0].Explain(false));
                 var i_ = d.ToInt32Checked();
                 if (i_ < iFrom || i_ >= iTo)
-                    return cache[hash] = ErgoVM.Ops.Fail;
-                return cache[hash] = ErgoVM.Ops.NoOp;
+                    return ErgoVM.Ops.Fail;
+                return ErgoVM.Ops.NoOp;
             }
             var discarded = (var.Ignored && vm.IsSingletonVariable(var));
             int i = iFrom;
             var count = iTo - iFrom;
-            return cache[hash] = ChooseBacktrack;
+            return ChooseBacktrack;
             void Backtrack(ErgoVM vm)
             {
                 if (!discarded)
@@ -76,7 +69,6 @@ public sealed class For : BuiltIn
                 }
                 if ((i += iStep) < iTo)
                 {
-                    vm.Solution();
                     vm.PushChoice(Backtrack);
                 }
                 else
@@ -100,7 +92,7 @@ public sealed class For : BuiltIn
             {
                 if (vm.@continue == ErgoVM.Ops.NoOp)
                     BacktrackUnrolled(vm);
-                else (cache[hash] = Backtrack)(vm);
+                else Backtrack(vm);
             }
         }
     };

@@ -17,7 +17,7 @@ public abstract class PredicatesShellCommand : ShellCommand
         var predicates = scope.KnowledgeBase.AsEnumerable();
         if (term?.Success ?? false)
         {
-            var parsed = shell.Interpreter.Facade.Parse<ITerm>(interpreterScope, $"{term.Value}, true");
+            var parsed = interpreterScope.Parse<ITerm>($"{term.Value}, true");
             if (!parsed.TryGetValue(out var t))
             {
                 shell.No();

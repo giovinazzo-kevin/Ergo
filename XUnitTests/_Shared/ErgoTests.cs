@@ -21,7 +21,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)
     {
-        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query)
+        var parsed = InterpreterScope.Parse<T>(query)
             .GetOrThrow(new InvalidOperationException());
         if (parsed is IExplainable expl && expected is IExplainable expExpl)
             Assert.Equal(expl.Explain(true), expExpl.Explain(true));
@@ -29,7 +29,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     }
     protected void ShouldParse<T>(string query, Func<T, bool> expected)
     {
-        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query)
+        var parsed = InterpreterScope.Parse<T>(query)
             .GetOrThrow(new InvalidOperationException());
         if (parsed is IExplainable expl && expected is IExplainable expExpl)
             Assert.Equal(expl.Explain(true), expExpl.Explain(true));
@@ -38,7 +38,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     // "⊤" : "⊥"
     protected void ShouldNotParse<T>(string query, T expected)
     {
-        var parsed = Interpreter.Facade.Parse<T>(InterpreterScope, query, onParseFail: _ => default);
+        var parsed = InterpreterScope.Parse<T>(query, onParseFail: _ => default);
         if (parsed.TryGetValue(out var value))
         {
             Assert.NotEqual(value, expected);
@@ -49,7 +49,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
     {
         if (expected.Length != 0)
             Assert.Equal(expectedSolutions, expected.Length);
-        var parsed = Interpreter.Facade.Parse<Query>(InterpreterScope, query)
+        var parsed = InterpreterScope.Parse<Query>(query)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
             Assert.Equal(query, ((ITerm)parsed.Goals).StripTemporaryVariables().Explain(false));

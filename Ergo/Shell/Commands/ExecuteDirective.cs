@@ -14,7 +14,7 @@ public sealed class ExecuteDirective : ShellCommand
         var dir = m.Groups["dir"].Value;
         var interpreterScope = scope.InterpreterScope;
         var currentModule = interpreterScope.EntryModule;
-        var directive = shell.Interpreter.Facade.Parse<Directive>(interpreterScope, $":- {(dir.EndsWith('.') ? dir : dir + '.')}")
+        var directive = interpreterScope.Parse<Directive>($":- {(dir.EndsWith('.') ? dir : dir + '.')}")
             .GetOrThrow(new InvalidOperationException());
         var ret = scope.InterpreterScope.ExceptionHandler.TryGet(() => shell.Interpreter.RunDirective(ref interpreterScope, directive));
         if (ret.GetOr(false))

@@ -16,7 +16,7 @@ public sealed class PrintBuiltIns : ShellCommand
         var builtins = new List<BuiltIn>();
         if (match?.Success ?? false)
         {
-            var parsed = shell.Interpreter.Facade.Parse<ITerm>(scope.InterpreterScope, match.Value);
+            var parsed = scope.InterpreterScope.Parse<ITerm>(match.Value);
             if (!parsed.TryGetValue(out var term))
             {
                 shell.No();

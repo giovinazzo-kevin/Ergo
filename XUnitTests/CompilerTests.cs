@@ -26,7 +26,7 @@ public class CompilerTests : ErgoTests
     [InlineData("inline_j(X)", "inline_j(X) ←\r\n\tX = 1 ; unify(X,2).")] // instead of: inline_h(X)
     public void ShouldInlineCorrectly(string head, string expectedExpl)
     {
-        var maybeHead = Interpreter.Facade.Parse<ITerm>(InterpreterScope, head);
+        var maybeHead = InterpreterScope.Parse<ITerm>(head);
         if (!maybeHead.TryGetValue(out var headTerm))
             Assert.True(false);
         if (!KnowledgeBase.Get(headTerm.GetSignature()).TryGetValue(out var matches))

@@ -56,7 +56,7 @@ public abstract class SolveShellCommand : ShellCommand
             VMCache.Clear();
             vm = VMCache[key] = shell.Facade.BuildVM(scope.KnowledgeBase, scope.VMFlags);
         }
-        var parsed = shell.Facade.Parse<Query>(scope.InterpreterScope, userQuery);
+        var parsed = scope.InterpreterScope.Parse<Query>(userQuery);
         if (!parsed.TryGetValue(out var query))
         {
             yield return scope;

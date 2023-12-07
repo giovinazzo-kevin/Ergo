@@ -9,6 +9,8 @@ public sealed class Unify : BuiltIn
     {
     }
 
+    public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
+
     public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new Complex(WellKnown.Signatures.Unify.Functor, lhs, rhs);
     public static ImmutableArray<ITerm> MakeArgs(ImmutableArray<ITerm> lhs, ImmutableArray<ITerm> rhs)
     {

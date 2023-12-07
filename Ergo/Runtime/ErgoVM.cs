@@ -17,7 +17,10 @@ public enum CompilerFlags
 public enum VMFlags
 {
     None = 0,
-    ContinuationIsDet = 0,
+    /// <summary>
+    /// If set, the rest of the current execution path (@continue) is known to be determinate.
+    /// </summary>
+    ContinuationIsDet = 1,
 }
 
 public enum VMMode
@@ -204,6 +207,10 @@ public partial class ErgoVM
     {
         State = VMState.Ready;
     }
+    public void Success()
+    {
+        State = VMState.Success;
+    }
     /// <summary>
     /// Yields an external substitution map as a solution.
     /// </summary>
@@ -329,7 +336,7 @@ public partial class ErgoVM
         SuccessToSolution();
         SubstitutionMap.Pool.Release(Environment);
     }
-    public Op CompileQuery(Query query, CompilerFlags flags)
+    public Op CompileQuery(Query query, CompilerFlags flags = CompilerFlags.Default)
     {
         var exps = GetQueryExpansions(query);
         var ops = new Op[exps.Length];

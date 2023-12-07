@@ -10,18 +10,33 @@ public sealed class For : BuiltIn
     {
     }
 
-    public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
+    public override bool IsDeterminate(ImmutableArray<ITerm> args)
+    {
+        if (args[1] is not Atom { Value: EDecimal from })
+            return false;
+        if (args[2] is not Atom { Value: EDecimal to })
+            return false;
+        if (args[3] is not Atom { Value: EDecimal step })
+            return false;
+        var (iFrom, iTo, iStep) = (from.ToInt32Checked(), to.ToInt32Checked(), step.ToInt32Checked());
+        var count = iTo - iFrom;
+        var n = (int)Math.Ceiling(count / (float)iStep);
+        return n <= 1;
+    }
 
-    class ListEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var) : IReadOnlyList<Solution>
+    class ListEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var, ErgoVM vm, ErgoVM.Op cnt) : IReadOnlyList<Solution>
     {
         Solution Get(int i)
         {
-            if (discarded)
+            if (discarded && cnt == ErgoVM.Ops.NoOp)
             {
                 return new Solution(env);
             }
             var clone = env.Clone();
+            vm.Environment = clone;
             clone.Add(new(var, new Atom(EDecimal.FromInt32(step * i + from))));
+            vm.Ready();
+            cnt(vm);
             return new Solution(clone);
         }
         public IEnumerator<Solution> GetEnumerator()
@@ -80,19 +95,20 @@ public sealed class For : BuiltIn
             }
             void BacktrackUnrolled(ErgoVM vm)
             {
+                var cnt = vm.@continue;
                 var env = vm.CloneEnvironment();
                 // In this case we can generate the solutions lazily since there's no continuation.
                 // This allows us to return crazy amounts of solutions in O(1) time and memory,
                 // with the catch that they're computed later when accessed.
                 var n = (int)Math.Ceiling(count / (float)iStep);
-                var enumerable = new ListEnumerable(iFrom, iStep, n, discarded, env, var);
+                var enumerable = new ListEnumerable(iFrom, iStep, n, discarded, env, var, vm, cnt);
                 vm.Solution(_ => enumerable, n);
                 // Signal the VM that we can break out of the current And (if any) and return these solutions.
                 vm.Ready();
             }
             void ChooseBacktrack(ErgoVM vm)
             {
-                if (vm.@continue == ErgoVM.Ops.NoOp)
+                if (vm.Flag(VMFlags.ContinuationIsDet))
                     BacktrackUnrolled(vm);
                 else Backtrack(vm);
             }

@@ -191,9 +191,9 @@ public partial class ErgoVM
                         // If the VM is in success state, promote that success to a solution by pushing the current environment.
                         vm.SuccessToSolution();
                         // If this is a tail call of pred, then we can recycle the current stack frame (hence the top-level 'while').
-                        if (pred.IsTailRecursive && Predicate.IsTailCall(goal, pred.Body))
+                        if (pred.IsTailRecursive && Predicate.IsTailCall(goal, pred.Body)
+                            /*&& vm.Flag(VMFlags.ContinuationIsDet)*/)
                         {
-                            // -- Assumes that pred is det; TODO: static analysis
                             // Pop all choice points that were created by this predicate.
                             // TODO: figure out if this is actually the correct thing to do.
                             while (vm.NumChoicePoints > numCp)

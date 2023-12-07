@@ -24,6 +24,9 @@ public sealed class Solutions : IEnumerable<Solution>
         public IReadOnlyList<Solution> Solutions { get; set; } = sol;
     }
 
+    private volatile bool _enumerating;
+    private Stack<Solution> fallback = new();
+
     private readonly List<GeneratorDef> generators = new();
     public int Count { get; private set; }
 
@@ -64,9 +67,16 @@ public sealed class Solutions : IEnumerable<Solution>
 
     public IEnumerator<Solution> GetEnumerator()
     {
-        return generators
-            .SelectMany(gen => gen.Solutions.Take(gen.NumSolutions))
+        return Inner()
             .GetEnumerator();
+        IEnumerable<Solution> Inner()
+        {
+            _enumerating = true;
+            foreach (var sol in generators
+            .SelectMany(gen => gen.Solutions.Take(gen.NumSolutions)))
+                yield return sol;
+            _enumerating = false;
+        }
     }
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

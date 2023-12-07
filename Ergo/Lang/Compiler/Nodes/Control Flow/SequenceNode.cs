@@ -112,10 +112,17 @@ public class SequenceNode : ExecutionNode
     }
     public override void Analyze()
     {
+        var cutIndex = -1;
         for (int i = Nodes.Count - 1; i >= 0; i--)
         {
-            Nodes[i].Analyze();
-            Nodes[i].IsContinuationDeterminate = Nodes.Skip(i + 1).All(x => x.IsContinuationDeterminate);
+            var node = Nodes[i];
+            if (cutIndex < 0 && node is CutNode)
+                cutIndex = i;
+            var cut = i < cutIndex;
+            node.Analyze();
+            node.IsContinuationDet = true;
+            if (!node.IsDeterminate && !cut)
+                break;
         }
     }
     public override ExecutionNode Optimize()

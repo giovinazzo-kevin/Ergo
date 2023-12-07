@@ -24,7 +24,7 @@ public class BuiltInNode : GoalNode
         vm.Arity = Args.Length;
         for (int i = 0; i < Args.Length; i++)
             vm.SetArg(i, Args[i].Substitute(vm.Environment));
-        vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDeterminate);
+        vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         CompiledBuiltIn(vm);
     };
 

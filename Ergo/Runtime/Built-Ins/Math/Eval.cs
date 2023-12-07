@@ -9,6 +9,7 @@ public sealed class Eval : MathBuiltIn
     {
     }
 
+    public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
     public override int OptimizationOrder => base.OptimizationOrder + 20;
     public override ExecutionNode Optimize(BuiltInNode node)
     {

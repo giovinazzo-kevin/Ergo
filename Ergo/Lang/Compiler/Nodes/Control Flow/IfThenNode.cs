@@ -31,4 +31,9 @@ public class IfThenNode : ExecutionNode
         return new IfThenNode(Condition.Substitute(s), TrueBranch.Substitute(s));
     }
     public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n{("-> " + TrueBranch.Explain(canonical)).Indent(1)}";
+    public override void Analyze()
+    {
+        Condition.Analyze();
+        TrueBranch.Analyze();
+    }
 }

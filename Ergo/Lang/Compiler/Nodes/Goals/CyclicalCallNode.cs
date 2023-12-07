@@ -13,6 +13,8 @@ public class CyclicalCallNode : DynamicNode
     public NodeRef Ref { get; set; } = new(default);
     public bool IsTailCall => Predicate.IsTailCall(Goal, Clause.Body);
     public readonly ITerm Head;
+    public override bool IsDeterminate => false;
+
     public CyclicalCallNode(ITerm goal) : base(goal)
     {
         Signature = goal.GetSignature();

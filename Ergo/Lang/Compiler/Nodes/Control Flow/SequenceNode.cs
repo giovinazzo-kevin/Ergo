@@ -110,6 +110,14 @@ public class SequenceNode : ExecutionNode
             return default;
         }
     }
+    public override void Analyze()
+    {
+        for (int i = Nodes.Count - 1; i >= 0; i--)
+        {
+            Nodes[i].Analyze();
+            Nodes[i].IsContinuationDeterminate = Nodes.Skip(i + 1).All(x => x.IsContinuationDeterminate);
+        }
+    }
     public override ExecutionNode Optimize()
     {
         var newList = OptimizeSequence(Nodes);

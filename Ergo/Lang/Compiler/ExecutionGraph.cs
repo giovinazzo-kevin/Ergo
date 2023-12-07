@@ -18,6 +18,7 @@ public class ExecutionGraph
     }
     private ErgoVM.Op CompileAndCache()
     {
+        Root.Analyze(); // Do static analysis on the optimized graph before compiling
         var compiledRoot = Root.Compile();
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
         RuntimeHelpers.PrepareDelegate(compiledRoot);

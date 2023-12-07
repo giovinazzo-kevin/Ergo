@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
@@ -12,13 +11,13 @@ public sealed class ToggleOptimizations : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
-        var flags = scope.VMFlags;
-        var hasFlag = flags.HasFlag(VMFlags.EnableOptimizations);
+        var flags = scope.CompilerFlags;
+        var hasFlag = flags.HasFlag(CompilerFlags.EnableOptimizations);
         if (hasFlag)
-            flags &= ~VMFlags.EnableOptimizations;
+            flags &= ~CompilerFlags.EnableOptimizations;
         else
-            flags |= VMFlags.EnableOptimizations;
+            flags |= CompilerFlags.EnableOptimizations;
         shell.WriteLine($"Compile-time optimizations {(!hasFlag ? "enabled" : "disabled")}.", LogLevel.Inf);
-        yield return scope.WithVMFlags(flags);
+        yield return scope.WithCompilerFlags(flags);
     }
 }

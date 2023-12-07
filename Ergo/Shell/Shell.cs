@@ -35,7 +35,7 @@ public partial class ErgoShell
             .GetOrThrow(new InvalidOperationException())
             .WithExceptionHandler(LoggingExceptionHandler)
             .WithRuntime(true);
-        var vmFlags = VMFlags.Default;
+        var vmFlags = CompilerFlags.Default;
         var kb = scope.BuildKnowledgeBase(vmFlags);
         return transformShell(new(scope, false, kb, vmFlags));
     }
@@ -127,7 +127,7 @@ public partial class ErgoShell
         var loaded = Interpreter.Load(ref interpreterScope, new Atom(fileName));
         loaded.Do(some =>
         {
-            var newKb = interpreterScope.BuildKnowledgeBase(copy.VMFlags);
+            var newKb = interpreterScope.BuildKnowledgeBase(copy.CompilerFlags);
             copy = copy
                 .WithInterpreterScope(interpreterScope)
                 .WithKnowledgeBase(newKb)

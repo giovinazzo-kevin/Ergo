@@ -6,12 +6,18 @@ using static Ergo.Runtime.Solutions;
 namespace Ergo.Runtime;
 
 [Flags]
-public enum VMFlags
+public enum CompilerFlags
 {
     Default = EnableInlining | EnableOptimizations,
     None = 0,
     EnableInlining = 1,
-    EnableOptimizations = 4
+    EnableOptimizations = 4,
+}
+[Flags]
+public enum VMFlags
+{
+    None = 0,
+    ContinuationIsDet = 0,
 }
 
 public enum VMMode
@@ -34,14 +40,17 @@ public partial class ErgoVM
     /// </summary>
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     #endregion
-    public VMFlags Flags { get; set; }
-    public DecimalType DecimalType { get; set; }
+    public readonly DecimalType DecimalType;
     public readonly KnowledgeBase KnowledgeBase;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
     protected Solutions solutions = new();
     protected RefCount refCounts = new();
+    /// <summary>
+    /// Register for all sorts of runtime flags.
+    /// </summary>
+    protected VMFlags flags;
     /// <summary>
     /// Register for the choice point cut index.
     /// </summary>
@@ -58,11 +67,10 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
-    public ErgoVM(KnowledgeBase kb, VMFlags flags = VMFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
+    public ErgoVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
     {
         args = new ITerm[MAX_ARGUMENTS];
         KnowledgeBase = kb;
-        Flags = flags;
         DecimalType = decimalType;
         In = Console.In;
         Out = Console.Out;
@@ -123,7 +131,7 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM Clone() => new(KnowledgeBase, Flags, DecimalType)
+    public ErgoVM Clone() => new(KnowledgeBase, DecimalType)
     { In = In, Err = Err, Out = Out };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
@@ -164,6 +172,15 @@ public partial class ErgoVM
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ITerm Arg(int index) => args[index];
     public ReadOnlySpan<ITerm> Args => args.AsSpan()[..Arity];
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Flag(VMFlags flag) => flags.HasFlag(flag);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetFlag(VMFlags flag, bool value)
+    {
+        flags = value ? flags | flag : flags & ~flag;
+    }
     /// <summary>
     /// Sets the VM in a failure state and raises an exception.
     /// </summary>
@@ -312,7 +329,7 @@ public partial class ErgoVM
         SuccessToSolution();
         SubstitutionMap.Pool.Release(Environment);
     }
-    public Op CompileQuery(Query query)
+    public Op CompileQuery(Query query, CompilerFlags flags)
     {
         var exps = GetQueryExpansions(query);
         var ops = new Op[exps.Length];
@@ -338,7 +355,7 @@ public partial class ErgoVM
             var topLevel = new Predicate(string.Empty, KnowledgeBase.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
             KnowledgeBase.AssertA(topLevel);
             // Let libraries know that a query is being submitted, so they can expand or modify it.
-            KnowledgeBase.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, Flags));
+            KnowledgeBase.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
             var queryExpansions = KnowledgeBase
                 .GetMatches(InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable()

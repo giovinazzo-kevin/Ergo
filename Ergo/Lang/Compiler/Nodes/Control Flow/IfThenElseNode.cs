@@ -40,4 +40,10 @@ public class IfThenElseNode : ExecutionNode
         return new IfThenElseNode(Condition.Substitute(s), TrueBranch.Substitute(s), FalseBranch.Substitute(s));
     }
     public override string Explain(bool canonical = false) => $"{Condition.Explain(canonical)}\r\n{("-> " + TrueBranch.Explain(canonical)).Indent(1)}\r\n{(" ; " + FalseBranch.Explain(canonical)).Indent(1)}";
+    public override void Analyze()
+    {
+        Condition.Analyze();
+        TrueBranch.Analyze();
+        FalseBranch.Analyze();
+    }
 }

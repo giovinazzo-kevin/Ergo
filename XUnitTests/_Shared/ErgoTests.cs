@@ -56,14 +56,14 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         Optimized();
         void Optimized()
         {
-            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), VMFlags.Default, DecimalType.BigDecimal);
+            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), DecimalType.BigDecimal);
             Solve(vm, parsed);
         }
 
         void Solve(ErgoVM vm, Query parsed)
         {
             var numSolutions = 0;
-            vm.Query = vm.CompileQuery(parsed);
+            vm.Query = vm.CompileQuery(parsed, CompilerFlags.Default);
             vm.Run();
             foreach (var sol in vm.Solutions)
             {

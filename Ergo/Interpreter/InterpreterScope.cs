@@ -96,7 +96,7 @@ public readonly struct InterpreterScope
         VisibleOperators = GetOperators().ToImmutableArray();
     }
 
-    public KnowledgeBase BuildKnowledgeBase(VMFlags vmFlags)
+    public KnowledgeBase BuildKnowledgeBase(CompilerFlags vmFlags)
     {
         var kb = new KnowledgeBase(this);
         foreach (var builtIn in VisibleBuiltIns.Values)

@@ -36,7 +36,7 @@ public class ErgoTestFixture : IDisposable
             .GetOrThrow(new InvalidOperationException());
         InterpreterScope = scope
             .WithModule(scope.EntryModule.WithImport(module.Name));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(VMFlags.Default);
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags.Default);
     }
 
     ~ErgoTestFixture()

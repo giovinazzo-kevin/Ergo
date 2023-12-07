@@ -15,7 +15,7 @@ public class CompilerTests : ErgoTests
         Interpreter.Load(ref InterpreterScope, inlining);
         InterpreterScope = InterpreterScope.WithModule(InterpreterScope.EntryModule
             .WithImport(inlining));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(VMFlags.Default); // Triggers Compiler library
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags.Default); // Triggers Compiler library
     }
     [Theory]
     [InlineData("inline_b", "inline_b.")] // instead of: inline_b :- inline_a.

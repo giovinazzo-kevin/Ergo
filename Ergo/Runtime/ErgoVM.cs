@@ -20,12 +20,18 @@ public enum VMFlags
     /// <summary>
     /// If set, the rest of the current execution path (@continue) is known to be determinate.
     /// </summary>
-    ContinuationIsDet = 1,
+    ContinuationIsDet = 1
 }
 
 public enum VMMode
 {
+    /// <summary>
+    /// Yields solutions interactively, one at a time. Ideal for a REPL environment.
+    /// </summary>
     Interactive,
+    /// <summary>
+    /// Computes all solutions.
+    /// </summary>
     Batch
 }
 
@@ -241,6 +247,7 @@ public partial class ErgoVM
     {
         cutIndex = choicePoints.Count;
     }
+
     public Maybe<ChoicePoint> PopChoice()
     {
         if (choicePoints.TryPop(out var ret))

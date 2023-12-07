@@ -31,9 +31,9 @@ public readonly struct Substitution
 
     public static Maybe<SubstitutionMap> Unify(Substitution s) => s.Unify();
 
-    public Maybe<SubstitutionMap> Unify()
+    public Maybe<SubstitutionMap> Unify(SubstitutionMap map = null)
     {
-        var map = SubstitutionMap.Pool.Acquire();
+        map ??= SubstitutionMap.Pool.Acquire();
         var E = QueuePool.Acquire();
         var S = QueuePool.Acquire();
         E.Enqueue(this);

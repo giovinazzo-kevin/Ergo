@@ -10,6 +10,8 @@ public sealed class For : BuiltIn
     {
     }
 
+    public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
+
     class ListEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var) : IReadOnlyList<Solution>
     {
         Solution Get(int i)

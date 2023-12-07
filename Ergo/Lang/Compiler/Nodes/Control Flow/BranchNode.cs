@@ -9,6 +9,7 @@ public class BranchNode : ExecutionNode
     public readonly ExecutionNode Right;
 
     public override bool IsGround => Left.IsGround && Right.IsGround;
+    public override bool IsDeterminate => false;
 
     public BranchNode(ExecutionNode left, ExecutionNode right)
     {

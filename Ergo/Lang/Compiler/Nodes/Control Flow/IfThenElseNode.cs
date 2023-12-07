@@ -5,6 +5,8 @@
 /// </summary>
 public class IfThenElseNode : ExecutionNode
 {
+    public override bool IsDeterminate => false;
+
     public IfThenElseNode(ExecutionNode condition, ExecutionNode trueBranch, ExecutionNode falseBranch)
     {
         Condition = condition;

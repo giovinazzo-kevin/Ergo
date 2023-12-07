@@ -8,6 +8,7 @@ public class SequenceNode : ExecutionNode
     public readonly bool IsRoot;
 
     public override bool IsGround => Nodes.All(n => n.IsGround);
+    public override bool IsDeterminate => Nodes.All(n => n.IsDeterminate);
 
     public SequenceNode(List<ExecutionNode> nodes, bool isRoot = false)
     {

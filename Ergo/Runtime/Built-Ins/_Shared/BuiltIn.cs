@@ -8,6 +8,7 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
     public readonly string Documentation = documentation;
 
     public virtual int OptimizationOrder => 0;
+    public virtual bool IsDeterminate(ImmutableArray<ITerm> args) => false;
 
     public virtual ExecutionNode Optimize(BuiltInNode node) => node;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;

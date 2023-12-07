@@ -6,6 +6,7 @@
 public class DynamicNode : ExecutionNode
 {
     public override bool IsGround => Goal.IsGround;
+    public override bool IsDeterminate => IsGround;
 
     public DynamicNode(ITerm goal)
     {

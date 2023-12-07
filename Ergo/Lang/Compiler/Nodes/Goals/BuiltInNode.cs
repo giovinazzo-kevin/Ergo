@@ -28,6 +28,7 @@ public class BuiltInNode : GoalNode
     };
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
+    public override bool IsDeterminate => BuiltIn.IsDeterminate(Args);
     public override ExecutionNode Optimize()
     {
         return BuiltIn.Optimize(this);

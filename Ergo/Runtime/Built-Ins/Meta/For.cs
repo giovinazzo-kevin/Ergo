@@ -24,7 +24,7 @@ public sealed class For : BuiltIn
         return n <= 1;
     }
 
-    class ListEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var, ErgoVM vm, ErgoVM.Op cnt) : IReadOnlyList<Solution>
+    class ForEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var, ErgoVM vm, ErgoVM.Op cnt) : ISolutionEnumerable
     {
         Solution Get(int i)
         {
@@ -97,11 +97,11 @@ public sealed class For : BuiltIn
             {
                 var cnt = vm.@continue;
                 var env = vm.CloneEnvironment();
-                // In this case we can generate the solutions lazily since there's no continuation.
-                // This allows us to return crazy amounts of solutions in O(1) time and memory,
-                // with the catch that they're computed later when accessed.
+                // We can generate the solutions lazily since the continuaiton will not create choice points.
+                // We can return crazy amounts of solutions in O(1) time and memory, with the catch that
+                // they're computed later when enumerated, spreading (and offloading) the computational cost.
                 var n = (int)Math.Ceiling(count / (float)iStep);
-                var enumerable = new ListEnumerable(iFrom, iStep, n, discarded, env, var, vm, cnt);
+                var enumerable = new ForEnumerable(iFrom, iStep, n, discarded, env, var, vm, cnt);
                 vm.Solution(_ => enumerable, n);
                 // Signal the VM that we can break out of the current And (if any) and return these solutions.
                 vm.Ready();

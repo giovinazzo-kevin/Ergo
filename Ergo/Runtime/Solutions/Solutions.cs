@@ -2,30 +2,18 @@
 
 namespace Ergo.Runtime;
 
+/// <summary>
+/// Specialized class that allows deferring the generation of solutions until they are enumerated.
+/// </summary>
 public sealed class Solutions : IEnumerable<Solution>
 {
-    public delegate IReadOnlyList<Solution> Generator(int num);
+    public delegate ISolutionEnumerable Generator(int num);
 
-    readonly record struct SingleEnumerable(Solution Sol) : IReadOnlyList<Solution>
-    {
-        public Solution this[int index] => index == 0 ? Sol : throw new ArgumentOutOfRangeException(nameof(index));
-        public int Count => 1;
-
-        public IEnumerator<Solution> GetEnumerator()
-        {
-            yield return Sol;
-        }
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
-
-    public class GeneratorDef(int num, IReadOnlyList<Solution> sol)
+    public class GeneratorDef(int num, ISolutionEnumerable sol)
     {
         public int NumSolutions { get; set; } = num;
-        public IReadOnlyList<Solution> Solutions { get; set; } = sol;
+        public ISolutionEnumerable Solutions { get; set; } = sol;
     }
-
-    private volatile bool _enumerating;
-    private Stack<Solution> fallback = new();
 
     private readonly List<GeneratorDef> generators = new();
     public int Count { get; private set; }
@@ -48,7 +36,7 @@ public sealed class Solutions : IEnumerable<Solution>
 
     public GeneratorDef Push(SubstitutionMap subs)
     {
-        return Push(_ => new SingleEnumerable(new(subs)), 1);
+        return Push(_ => new SingleSolutionEnumerable(new(subs)), 1);
     }
 
     public Maybe<Solution> Pop()
@@ -71,11 +59,9 @@ public sealed class Solutions : IEnumerable<Solution>
             .GetEnumerator();
         IEnumerable<Solution> Inner()
         {
-            _enumerating = true;
             foreach (var sol in generators
             .SelectMany(gen => gen.Solutions.Take(gen.NumSolutions)))
                 yield return sol;
-            _enumerating = false;
         }
     }
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

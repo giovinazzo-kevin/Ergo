@@ -207,7 +207,7 @@ public partial class ErgoVM
         State = VMState.Fail;
     }
     /// <summary>
-    /// Sets the VM in a non-failure state that also prevents SuccessToSolution and MergeEnvironment from being called.
+    /// Sets the VM in a non-failure state that halts early.
     /// </summary>
     public void Ready()
     {

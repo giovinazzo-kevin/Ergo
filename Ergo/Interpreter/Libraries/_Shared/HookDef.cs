@@ -5,13 +5,13 @@ public class Hook
 {
     private static readonly InstantiationContext ctx = new("_H");
     private readonly ITerm[] args;
-    public readonly HookDef Def;
+    public readonly Signature Signature;
     private Maybe<ErgoVM.Op> cached = default;
     private Complex head = default;
-    public Hook(HookDef def)
+    public Hook(Signature sig)
     {
-        Def = def;
-        args = new ITerm[def.Arity];
+        Signature = sig;
+        args = new ITerm[Signature.Arity.GetOr(ErgoVM.MAX_ARGUMENTS)];
         for (int i = 0; i < args.Length; i++)
             args[i] = ctx.GetFreeVariable();
     }
@@ -34,10 +34,10 @@ public class Hook
             }
             // Compile and cache the hook the first time it's called
             // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            if (!Def.IsDefined(vm.KnowledgeBase, out var preds))
+            if (!vm.KnowledgeBase.Get(Signature).TryGetValue(out var preds))
             {
                 if (throwIfNotDefined)
-                    vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Def.Signature.Explain());
+                    vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.Explain());
                 else
                     vm.Fail();
                 return;
@@ -60,17 +60,11 @@ public class Hook
             var branch = ErgoVM.Ops.Or(ops);
             cached = op = vm =>
             {
-                head = new Complex(Def.Signature.Functor, args);
+                head = new Complex(Signature.Functor, args);
                 branch(vm);
             };
             op(vm);
         };
     }
 
-}
-
-public readonly record struct HookDef(Signature Signature)
-{
-    public readonly int Arity = Signature.Arity.GetOr(ErgoVM.MAX_ARGUMENTS);
-    public bool IsDefined(KnowledgeBase kb, out IList<Predicate> predicates) => kb.Get(Signature).TryGetValue(out predicates);
 }

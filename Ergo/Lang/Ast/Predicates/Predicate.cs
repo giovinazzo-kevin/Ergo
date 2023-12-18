@@ -36,7 +36,8 @@ public readonly struct Predicate : IExplainable
         var calls = 0;
         var sign = head.GetSignature();
         var anon = sign.Functor.BuildAnonymousTerm(sign.Arity.GetOr(0));
-        foreach (var (goal, i) in body.Contents.Select((g, i) => (g, i)))
+        foreach (var (goal, i) in
+            body.Contents.Select((g, i) => (g, i)))
         {
             if (goal is not Variable && LanguageExtensions.Unify(anon, goal).TryGetValue(out _))
             {

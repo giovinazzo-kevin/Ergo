@@ -3,7 +3,6 @@ public class CyclicalCallNode : DynamicNode
 {
     public class NodeRef
     {
-        private bool busy = false;
         public ExecutionNode Node { get; set; }
         public NodeRef(ExecutionNode node) => Node = node;
     }
@@ -11,7 +10,7 @@ public class CyclicalCallNode : DynamicNode
     public readonly Signature Signature;
     public Predicate Clause { get; set; }
     public NodeRef Ref { get; set; } = new(default);
-    public bool IsTailCall => Predicate.IsTailCall(Goal, Clause.Body);
+    public bool IsTailCall => Clause.Body != null && Predicate.IsTailCall(Goal, Clause.Body);
     public readonly ITerm Head;
     public override bool IsDeterminate => false;
 

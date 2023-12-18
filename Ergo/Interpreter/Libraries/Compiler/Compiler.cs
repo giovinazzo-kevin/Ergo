@@ -86,14 +86,14 @@ public class Compiler : Library
         else if (evt is QuerySubmittedEvent qse)
         {
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.VM.KnowledgeBase.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
+            foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
-                if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags.HasFlag(CompilerFlags.EnableOptimizations)).TryGetValue(out var newClause))
-                    qse.VM.KnowledgeBase.Replace(topLevel, newClause);
+                if (TryCompile(topLevel, qse.VM.KB.Scope.ExceptionHandler, qse.VM.KB.DependencyGraph, qse.Flags.HasFlag(CompilerFlags.EnableOptimizations)).TryGetValue(out var newClause))
+                    qse.VM.KB.Replace(topLevel, newClause);
                 else
-                    qse.VM.KnowledgeBase.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));
+                    qse.VM.KB.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));
             }
         }
 

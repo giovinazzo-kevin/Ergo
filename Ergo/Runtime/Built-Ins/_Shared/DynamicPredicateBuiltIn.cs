@@ -12,17 +12,17 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
 
     protected static Maybe<Predicate> GetPredicate(ErgoVM vm, ITerm arg)
     {
-        if (!Predicate.FromCanonical(arg, vm.KnowledgeBase.Scope.Entry, out var pred))
+        if (!Predicate.FromCanonical(arg, vm.KB.Scope.Entry, out var pred))
         {
-            vm.KnowledgeBase.Scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
+            vm.KB.Scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
             return default;
         }
 
         pred = pred.Dynamic();
-        if (vm.KnowledgeBase.Scope.Modules.TryGetValue(pred.DeclaringModule, out var declaringModule) && declaringModule.ContainsExport(pred.Head.GetSignature()))
+        if (vm.KB.Scope.Modules.TryGetValue(pred.DeclaringModule, out var declaringModule) && declaringModule.ContainsExport(pred.Head.GetSignature()))
             pred = pred.Exported();
         return pred.Qualified()
-            .WithExecutionGraph(pred.ToExecutionGraph(vm.KnowledgeBase.DependencyGraph));
+            .WithExecutionGraph(pred.ToExecutionGraph(vm.KB.DependencyGraph));
     }
 
     protected static bool Assert(ErgoVM vm, ITerm arg, bool z)
@@ -31,11 +31,11 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
             return false;
         if (!z)
         {
-            vm.KnowledgeBase.AssertA(pred);
+            vm.KB.AssertA(pred);
         }
         else
         {
-            vm.KnowledgeBase.AssertZ(pred);
+            vm.KB.AssertZ(pred);
         }
         return true;
     }
@@ -44,9 +44,9 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
     {
         var sig = term.GetSignature();
         if (!term.IsQualified)
-            term = term.Qualified(vm.KnowledgeBase.Scope.Entry);
+            term = term.Qualified(vm.KB.Scope.Entry);
         var toRemove = new List<ITerm>();
-        foreach (var match in vm.KnowledgeBase.GetMatches(new("R"), term, desugar: true)
+        foreach (var match in vm.KB.GetMatches(new("R"), term, desugar: true)
             .AsEnumerable().SelectMany(x => x))
         {
             if (!match.Predicate.IsDynamic)
@@ -55,9 +55,9 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
                 return false;
             }
 
-            if (vm.KnowledgeBase.Scope.Entry != match.Predicate.DeclaringModule)
+            if (vm.KB.Scope.Entry != match.Predicate.DeclaringModule)
             {
-                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KnowledgeBase.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
+                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KB.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
                 return false;
             }
 
@@ -69,7 +69,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         }
 
         foreach (var item in toRemove)
-            vm.KnowledgeBase.Retract(item);
+            vm.KB.Retract(item);
 
         return toRemove.Count > 0;
     }

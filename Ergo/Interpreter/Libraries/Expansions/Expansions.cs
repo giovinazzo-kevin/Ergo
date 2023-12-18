@@ -52,11 +52,11 @@ public class Expansions : Library
         {
             var expansions = new Queue<Predicate>();
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.VM.KnowledgeBase.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
+            foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
                 var pred = match.Predicate.Substitute(match.Substitutions);
-                foreach (var exp in ExpandPredicate(pred, qse.VM.KnowledgeBase.Scope))
+                foreach (var exp in ExpandPredicate(pred, qse.VM.KB.Scope))
                 {
                     if (!exp.IsSameDefinitionAs(pred))
                         expansions.Enqueue(exp);
@@ -64,12 +64,12 @@ public class Expansions : Library
                 if (expansions.Count > 0)
                 {
                     // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
-                    if (!qse.VM.KnowledgeBase.Retract(pred))
+                    if (!qse.VM.KB.Retract(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
-                        qse.VM.KnowledgeBase.Retract(exp);
-                        qse.VM.KnowledgeBase.AssertZ(exp);
+                        qse.VM.KB.Retract(exp);
+                        qse.VM.KB.AssertZ(exp);
                     }
                     expansions.Clear();
                 }

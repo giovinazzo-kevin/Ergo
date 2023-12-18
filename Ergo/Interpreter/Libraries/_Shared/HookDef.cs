@@ -34,7 +34,7 @@ public class Hook
             }
             // Compile and cache the hook the first time it's called
             // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            if (!vm.KnowledgeBase.Get(Signature).TryGetValue(out var preds))
+            if (!vm.KB.Get(Signature).TryGetValue(out var preds))
             {
                 if (throwIfNotDefined)
                     vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.Explain());

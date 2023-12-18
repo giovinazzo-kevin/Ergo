@@ -51,7 +51,7 @@ public partial class ErgoVM
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     #endregion
     public readonly DecimalType DecimalType;
-    public readonly KnowledgeBase KnowledgeBase;
+    public readonly KnowledgeBase KB;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
@@ -80,7 +80,7 @@ public partial class ErgoVM
     public ErgoVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
     {
         args = new ITerm[MAX_ARGUMENTS];
-        KnowledgeBase = kb;
+        KB = kb;
         DecimalType = decimalType;
         In = Console.In;
         Out = Console.Out;
@@ -141,7 +141,7 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM Clone() => new(KnowledgeBase, DecimalType)
+    public ErgoVM Clone() => new(KB, DecimalType)
     { In = In, Err = Err, Out = Out };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
@@ -197,7 +197,7 @@ public partial class ErgoVM
     public void Throw(ErrorType error, params object[] args)
     {
         State = VMState.Fail;
-        KnowledgeBase.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
+        KB.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
         choicePoints.Clear();
     }
     /// <summary>
@@ -368,16 +368,16 @@ public partial class ErgoVM
     KBMatch[] GetQueryExpansions(Query query, CompilerFlags flags)
     {
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-        var topLevel = new Predicate(string.Empty, KnowledgeBase.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
-        KnowledgeBase.AssertA(topLevel);
+        var topLevel = new Predicate(string.Empty, KB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+        KB.AssertA(topLevel);
         // Let libraries know that a query is being submitted, so they can expand or modify it.
-        KnowledgeBase.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
-        var queryExpansions = KnowledgeBase
+        KB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
+        var queryExpansions = KB
             .GetMatches(InstantiationContext, topLevelHead, desugar: false)
             .AsEnumerable()
             .SelectMany(x => x)
             .ToArray();
-        KnowledgeBase.RetractAll(topLevelHead);
+        KB.RetractAll(topLevelHead);
         return queryExpansions;
     }
 }

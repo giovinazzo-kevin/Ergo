@@ -44,6 +44,7 @@ public partial class ErgoVM
     /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
     /// </summary>
     public delegate void Op(ErgoVM vm);
+    public delegate Op Call(ReadOnlySpan<ITerm> args);
     /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
@@ -345,7 +346,7 @@ public partial class ErgoVM
     }
     public Op CompileQuery(Query query, CompilerFlags flags = CompilerFlags.Default)
     {
-        var exps = GetQueryExpansions(query);
+        var exps = GetQueryExpansions(query, flags);
         var ops = new Op[exps.Length];
         for (int i = 0; i < exps.Length; i++)
         {
@@ -362,21 +363,21 @@ public partial class ErgoVM
                 vm.refCounts.Count(var);
             branch(vm);
         };
+    }
 
-        KBMatch[] GetQueryExpansions(Query query)
-        {
-            var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            var topLevel = new Predicate(string.Empty, KnowledgeBase.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
-            KnowledgeBase.AssertA(topLevel);
-            // Let libraries know that a query is being submitted, so they can expand or modify it.
-            KnowledgeBase.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
-            var queryExpansions = KnowledgeBase
-                .GetMatches(InstantiationContext, topLevelHead, desugar: false)
-                .AsEnumerable()
-                .SelectMany(x => x)
-                .ToArray();
-            KnowledgeBase.RetractAll(topLevelHead);
-            return queryExpansions;
-        }
+    KBMatch[] GetQueryExpansions(Query query, CompilerFlags flags)
+    {
+        var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
+        var topLevel = new Predicate(string.Empty, KnowledgeBase.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+        KnowledgeBase.AssertA(topLevel);
+        // Let libraries know that a query is being submitted, so they can expand or modify it.
+        KnowledgeBase.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
+        var queryExpansions = KnowledgeBase
+            .GetMatches(InstantiationContext, topLevelHead, desugar: false)
+            .AsEnumerable()
+            .SelectMany(x => x)
+            .ToArray();
+        KnowledgeBase.RetractAll(topLevelHead);
+        return queryExpansions;
     }
 }

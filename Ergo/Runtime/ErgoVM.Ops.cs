@@ -68,7 +68,7 @@ public partial class ErgoVM
         public static Op Or(params Op[] branches)
         {
             if (branches.Length == 0)
-                return NoOp;
+                return Fail;
             if (branches.Length == 1)
                 return branches[0];
             return vm =>

@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using Ergo.Lang.Utils;
+﻿using Ergo.Lang.Utils;
 
 namespace Ergo.Lang.Exceptions;
 

@@ -1,12 +1,11 @@
 ﻿using Ergo.Interpreter;
-using Ergo.VM.BuiltIns;
-using System.Diagnostics;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
 public class ExecutionGraph
 {
-    private Maybe<ErgoVM.Goal> Compiled;
+    private Maybe<ErgoVM.Op> Compiled;
     public readonly ExecutionNode Root;
     public readonly ITerm Head;
 
@@ -17,40 +16,31 @@ public class ExecutionGraph
         Root = root;
         head.GetQualification(out Head);
     }
-    private ErgoVM.Goal CompileAndCache()
+    private ErgoVM.Op CompileAndCache()
     {
+        Root.Analyze(); // Do static analysis on the optimized graph before compiling
+        if (Root is not SequenceNode)
+            Root.IsContinuationDet = true;
         var compiledRoot = Root.Compile();
-        var Args = Head.GetArguments();
-        ErgoVM.Goal op = args => vm =>
-        {
-            if (false)
-            {
-                Debug.Assert(args.Length == Args.Length);
-                ErgoVM.Goals.Unify(Unify.MakeArgs(args, Args))(vm);
-                if (vm.State == ErgoVM.VMState.Fail)
-                    return;
-            }
-            compiledRoot(vm);
-        };
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
-        // TODO: Pre-JIT everything that can be pre-JITted, as this doesn't work recursively.
         RuntimeHelpers.PrepareDelegate(compiledRoot);
-        RuntimeHelpers.PrepareDelegate(op);
-        Compiled = op;
-        return op;
+        Compiled = compiledRoot;
+        return compiledRoot;
     }
     public ExecutionGraph Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         if (Root.IsGround)
             return this;
         vars ??= new();
-        return new(Head.Instantiate(ctx, vars), Root.Instantiate(ctx, vars));
+        return new(Head.Instantiate(ctx, vars), Root.Instantiate(ctx, vars))
+        { Compiled = Compiled };
     }
     public ExecutionGraph Substitute(IEnumerable<Substitution> s)
     {
         if (Root.IsGround)
             return this;
-        return new(Head.Substitute(s), Root.Substitute(s));
+        return new(Head.Substitute(s), Root.Substitute(s))
+        { Compiled = Compiled };
     }
 
     public ExecutionGraph Optimized() => new(Head, new SequenceNode(new() { Root }).Optimize());
@@ -59,7 +49,7 @@ public class ExecutionGraph
     /// Compiles the current graph to a Goal that can run on the ErgoVM.
     /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
     /// </summary>
-    public ErgoVM.Goal Compile()
+    public ErgoVM.Op Compile()
     {
         return Compiled.GetOr(CompileAndCache());
     }
@@ -116,11 +106,15 @@ public static class ExecutionGraphExtensions
             }
         }
         // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
+        var found = false;
         var matches = new List<ExecutionNode>();
         var sig = goal.GetSignature();
         // Qualified match
         if (graph.GetNode(sig).TryGetValue(out var node))
+        {
             Node(goal);
+            found = true;
+        }
         // Qualified variadic match
         if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
             matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
@@ -132,7 +126,10 @@ public static class ExecutionGraphExtensions
                 sig = sig.WithModule(possibleQualif);
                 // Match
                 if (graph.GetNode(sig).TryGetValue(out node))
+                {
                     Node(goal.Qualified(possibleQualif));
+                    found = true;
+                }
                 // Variadic match
                 if (graph.GetNode(sig.WithArity(default)).TryGetValue(out node))
                     matches.Add(new BuiltInNode(node, goal, node.Clauses.Single().BuiltIn.GetOrThrow(new InvalidOperationException())));
@@ -147,8 +144,10 @@ public static class ExecutionGraphExtensions
             if (scope.Modules[module].DynamicPredicates.Contains(sig))
                 matches.Add(new DynamicNode(goal));
         }
-        if (matches.Count == 0)
+        if (matches.Count == 0 && !found)
             throw new CompilerException(ErgoCompiler.ErrorType.UnresolvedPredicate, goal.GetSignature().Explain());
+        else if (matches.Count == 0 && found)
+            return FalseNode.Instance;
         if (matches.Count == 1)
             ret = matches[0];
         else ret = matches.Aggregate((a, b) => new BranchNode(a, b));

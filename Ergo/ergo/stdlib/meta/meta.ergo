@@ -10,8 +10,9 @@ ignore(_).
 ignore_all(Goal) :- findall(_, Goal, _), !.
 
 once(Goal) :- call(Goal) -> () ; ().
-repeat(Times, Goal) :- for(_, 1, Times), once(Goal).
+repeat(Times, Goal) :- for(_, 0, Times), once(Goal).
 forever(Goal) :- once(Goal) ; forever(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
-    
+
+for(I, From, To) :- for(I, From, To, 1).

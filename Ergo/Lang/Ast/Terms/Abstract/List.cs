@@ -73,7 +73,7 @@ public sealed class List : AbstractList
         if (other is not List list)
             return base.Unify(other);
 
-        var subs = Substitution.Pool.Acquire();
+        var subs = SubstitutionMap.Pool.Acquire();
         var minLength = Math.Min(Contents.Length, list.Contents.Length);
 
         // Unify the common length parts of both lists
@@ -114,13 +114,13 @@ public sealed class List : AbstractList
         static SubstitutionMap Combine(SubstitutionMap main, SubstitutionMap release)
         {
             main.AddRange(release);
-            Substitution.Pool.Release(release);
+            SubstitutionMap.Pool.Release(release);
             return main;
         }
 
         static Maybe<SubstitutionMap> Fail(SubstitutionMap release)
         {
-            Substitution.Pool.Release(release);
+            SubstitutionMap.Pool.Release(release);
             return default;
         }
     }

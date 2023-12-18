@@ -9,6 +9,7 @@ public class BranchNode : ExecutionNode
     public readonly ExecutionNode Right;
 
     public override bool IsGround => Left.IsGround && Right.IsGround;
+    public override bool IsDeterminate => false;
 
     public BranchNode(ExecutionNode left, ExecutionNode right)
     {
@@ -56,4 +57,9 @@ public class BranchNode : ExecutionNode
         return new BranchNode(Left.Substitute(s), Right.Substitute(s));
     }
     public override string Explain(bool canonical = false) => $"( {Left.Explain(canonical)}\r\n; {Right.Explain(canonical)} )";
+    public override void Analyze()
+    {
+        Left.Analyze();
+        Right.Analyze();
+    }
 }

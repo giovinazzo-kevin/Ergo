@@ -52,7 +52,7 @@ public abstract class AbstractList : AbstractTerm
     {
         if (other is Variable v)
         {
-            var ret2 = Substitution.Pool.Acquire();
+            var ret2 = SubstitutionMap.Pool.Acquire();
             ret2.Add(new Substitution(v, this));
             return ret2;
         }

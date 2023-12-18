@@ -4,9 +4,11 @@ namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
-    private Dictionary<ITerm, ITerm> Map = new();
+    public static readonly Pool<SubstitutionMap> Pool = new(() => new(), q => q.Clear());
 
-    public ITerm this[ITerm key] => Map[key];
+    private Dictionary<Variable, ITerm> Map = new();
+
+    public ITerm this[Variable key] => Map[key];
 
     public SubstitutionMap() { }
     public SubstitutionMap(IEnumerable<Substitution> source) { AddRange(source); }
@@ -18,30 +20,23 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public SubstitutionMap Clone()
     {
-        var e = Substitution.Pool.Acquire();
-        e.Map = Map.ToDictionary();
+        var e = Pool.Acquire();
+        e.Map = new(Map);
         return e;
     }
 
-    public static SubstitutionMap MergeCopy(SubstitutionMap A, SubstitutionMap B)
-    {
-        var newMap = Substitution.Pool.Acquire();
-        newMap.AddRange(A);
-        newMap.AddRange(B);
-        return newMap;
-    }
     public static SubstitutionMap MergeRef(SubstitutionMap A, SubstitutionMap B)
     {
         if (B != null)
             A.AddRange(B);
-        Substitution.Pool.Release(B);
+        Pool.Release(B);
         return A;
     }
 
     public void Remove(Substitution s)
     {
-        if (Map.TryGetValue(s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
-            Map.Remove(s.Lhs);
+        if (Map.TryGetValue((Variable)s.Lhs, out var rhs) && s.Rhs.Equals(rhs))
+            Map.Remove((Variable)s.Lhs);
     }
     public void RemoveRange(IEnumerable<Substitution> source)
     {
@@ -51,21 +46,20 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
 
     public void Add(Substitution s)
     {
-        if (s.Lhs is Variable { Discarded: true })
-            return;
-        Map.Remove(s.Lhs);
-        if (s.Rhs is Variable v)
+        Map.Remove((Variable)s.Lhs);
+        var rhs = s.Rhs;
+        while (rhs is Variable v && FollowRef(v, out var prevRhs))
+            rhs = prevRhs;
+        Map.Add((Variable)s.Lhs, rhs);
+        bool FollowRef(Variable rhs, out ITerm prevRhs)
         {
-            if (v.Discarded)
-                return;
-            if (v.Ignored && Map.TryGetValue(s.Rhs, out var prevRhs))
-            {
-                Map.Remove(s.Rhs);
-                Map.Add(s.Lhs, prevRhs);
-                return;
-            }
+            prevRhs = default;
+            if (rhs.Ignored && Map.Remove(rhs, out prevRhs))
+                return true;
+            if (!rhs.Ignored && Map.TryGetValue(rhs, out prevRhs))
+                return true;
+            return false;
         }
-        Map.Add(s.Lhs, s.Rhs);
     }
     public void AddRange(IEnumerable<Substitution> source)
     {
@@ -92,7 +86,7 @@ public sealed class SubstitutionMap : IEnumerable<Substitution>
         var toAdd = Substitution.QueuePool.Acquire();
         foreach (var (lhs, rhs) in Map)
         {
-            if (lhs is not Variable || rhs is not Variable)
+            if (rhs is not Variable)
                 continue;
             Map.Remove(lhs);
             toAdd.Enqueue(new(rhs, lhs));

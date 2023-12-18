@@ -1,4 +1,4 @@
-﻿using Ergo.VM;
+﻿using Ergo.Runtime;
 
 namespace Ergo.Interpreter.Libraries.Tabling;
 

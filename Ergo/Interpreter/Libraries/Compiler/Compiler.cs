@@ -1,14 +1,16 @@
 ﻿using Ergo.Events;
-using Ergo.Events.VM;
+using Ergo.Events.Runtime;
 using Ergo.Interpreter.Directives;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Compiler;
 
 using Ergo.Events.Interpreter;
 using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
+using Ergo.Runtime;
 using System.Collections.Generic;
+
 public class Compiler : Library
 {
     public override int LoadOrder => 100;
@@ -27,12 +29,12 @@ public class Compiler : Library
         InlinedPredicates.Add(sig);
     }
 
-    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, VMFlags flags)
+    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, bool optimize)
     {
         return handler.TryGet(() =>
         {
             var graph = clause.ToExecutionGraph(depGraph);
-            if (flags.HasFlag(VMFlags.EnableOptimizations))
+            if (optimize)
                 graph = graph.Optimized();
             return clause.WithExecutionGraph(graph);
         });
@@ -52,7 +54,7 @@ public class Compiler : Library
             {
                 ProcessNode(root);
             }
-            if (kbc.Flags.HasFlag(VMFlags.EnableInlining))
+            if (kbc.Flags.HasFlag(CompilerFlags.EnableInlining))
             {
                 foreach (var inlined in InlineInContext(kbc.KnowledgeBase.Scope, depGraph))
                 {
@@ -64,21 +66,19 @@ public class Compiler : Library
                     inlined.Clauses.AddRange(inlined.InlinedClauses);
                 }
             }
-            if (kbc.Flags.HasFlag(VMFlags.EnableCompiler))
+            foreach (var node in depGraph.GetAllNodes())
             {
-                foreach (var node in depGraph.GetAllNodes())
+                for (int i = 0; i < node.Clauses.Count; i++)
                 {
-                    for (int i = 0; i < node.Clauses.Count; i++)
+                    var clause = node.Clauses[i];
+                    if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
+                        continue;
+                    // TODO: figure out issue with compiler optimizations breaking math:range
+                    if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: false).TryGetValue(out var newClause))
                     {
-                        var clause = node.Clauses[i];
-                        if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
-                            continue;
-                        // TODO: figure out issue with compiler optimizations
-                        if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, kbc.Flags & ~VMFlags.EnableOptimizations).TryGetValue(out var newClause))
-                        {
-                            kbc.KnowledgeBase.Replace(clause, newClause);
-                            node.Clauses[i] = newClause;
-                        }
+                        newClause.ExecutionGraph.Do(x => x.Compile());
+                        kbc.KnowledgeBase.Replace(clause, newClause);
+                        node.Clauses[i] = newClause;
                     }
                 }
             }
@@ -90,11 +90,10 @@ public class Compiler : Library
                 .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
-                if (qse.Flags.HasFlag(VMFlags.EnableCompiler))
-                {
-                    if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags).TryGetValue(out var newClause))
-                        qse.VM.KnowledgeBase.Replace(topLevel, newClause);
-                }
+                if (TryCompile(topLevel, qse.VM.KnowledgeBase.Scope.ExceptionHandler, qse.VM.KnowledgeBase.DependencyGraph, qse.Flags.HasFlag(CompilerFlags.EnableOptimizations)).TryGetValue(out var newClause))
+                    qse.VM.KnowledgeBase.Replace(topLevel, newClause);
+                else
+                    qse.VM.KnowledgeBase.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));
             }
         }
 

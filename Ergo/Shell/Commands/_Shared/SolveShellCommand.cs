@@ -1,14 +1,23 @@
-﻿using Ergo.Lang.Compiler;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
 public abstract class SolveShellCommand : ShellCommand
 {
-    public readonly bool Interactive;
     public readonly ConsoleColor DefaultAccentColor;
+    public readonly SolveMode Mode;
 
-    private readonly Dictionary<int, ErgoVM> VMCache = new();
+    private readonly Dictionary<int, CachedVM> VMCache = new();
+
+    record class CachedVM(ErgoVM VM, CompilerFlags Flags);
+
+    public enum SolveMode
+    {
+        Interactive,
+        Tabled,
+        Benchmark
+    }
 
     static string GetColorAlternatives()
     {
@@ -18,10 +27,10 @@ public abstract class SolveShellCommand : ShellCommand
         return colorMap.Join("|");
     }
 
-    protected SolveShellCommand(string[] names, string desc, int priority, bool interactive, ConsoleColor accentColor)
+    protected SolveShellCommand(string[] names, string desc, int priority, SolveMode mode, ConsoleColor accentColor)
         : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority, caseInsensitive: true)
     {
-        Interactive = interactive;
+        Mode = mode;
         DefaultAccentColor = accentColor;
     }
 
@@ -42,14 +51,14 @@ public abstract class SolveShellCommand : ShellCommand
         }
 
         var key = scope.KnowledgeBase.GetHashCode() + scope.KnowledgeBase.Count;
-        if (!VMCache.TryGetValue(key, out var vm) || vm.Flags != scope.VMFlags)
+        if (!VMCache.TryGetValue(key, out var cached) || cached.Flags != scope.CompilerFlags)
         {
             //foreach (var (k, s) in VMCache)
             //    s.Dispose();
             VMCache.Clear();
-            vm = VMCache[key] = shell.Facade.BuildVM(scope.KnowledgeBase, scope.VMFlags);
+            cached = VMCache[key] = new(shell.Facade.BuildVM(scope.KnowledgeBase), scope.CompilerFlags);
         }
-        var parsed = shell.Facade.Parse<Query>(scope.InterpreterScope, userQuery);
+        var parsed = scope.InterpreterScope.Parse<Query>(userQuery);
         if (!parsed.TryGetValue(out var query))
         {
             yield return scope;
@@ -82,8 +91,7 @@ public abstract class SolveShellCommand : ShellCommand
             //    shell.WriteLine();
             //};
         }
-        vm.Query = vm.CompileQuery(query);
-        var solutions = vm.RunInteractive(); // Solution graph is walked lazily
+        cached.VM.Query = cached.VM.CompileQuery(query, scope.CompilerFlags);
         if (query.Goals.Contents.Length == 1 && query.Goals.Contents.Single() is Variable)
         {
             shell.WriteLine("THERE IS AS YET INSUFFICIENT DATA FOR A MEANINGFUL ANSWER.", LogLevel.Cmt);
@@ -94,9 +102,10 @@ public abstract class SolveShellCommand : ShellCommand
 
         var scope_ = scope;
 
-        if (Interactive)
+        if (Mode == SolveMode.Interactive)
         {
             var any = false;
+            var solutions = cached.VM.RunInteractive(); // Solution graph is walked lazily
             foreach (var s in solutions)
             {
                 if (!any)
@@ -145,9 +154,10 @@ public abstract class SolveShellCommand : ShellCommand
             if (!any) shell.No(nl: false, LogLevel.Rpl);
             shell.WriteLine(".");
         }
-        else
+        else if (Mode == SolveMode.Tabled)
         {
-            var rowsDict = solutions
+            cached.VM.Run();
+            var rowsDict = cached.VM.Solutions
                 .Select(s => s
                     .Substitutions
                     .ToDictionary(r => r.Lhs.Explain(), r => r.Rhs.Explain()))
@@ -175,6 +185,17 @@ public abstract class SolveShellCommand : ShellCommand
             {
                 shell.No();
             }
+        }
+        else if (Mode == SolveMode.Benchmark)
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            cached.VM.Run();
+            sw.Stop();
+            if (cached.VM.State == ErgoVM.VMState.Fail)
+                shell.No();
+            else shell.Yes();
+            shell.WriteLine($"{cached.VM.NumSolutions} solution{(cached.VM.NumSolutions == 1 ? "" : "s")} ({(sw.Elapsed.TotalMilliseconds):0.000}ms).", LogLevel.Cmt);
         }
 
         if (requestCancel.IsCancellationRequested && executionAbortedCtrlC)

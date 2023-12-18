@@ -1,5 +1,5 @@
 ﻿using Ergo.Interpreter;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 public class DependencyGraphNode
 {

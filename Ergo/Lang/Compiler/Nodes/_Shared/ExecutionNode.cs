@@ -7,6 +7,9 @@ public abstract class ExecutionNode : IExplainable
 {
     public virtual bool IsGround => true;
     public virtual int OptimizationOrder => 0;
+    public virtual bool IsDeterminate => false;
+    public bool IsContinuationDet { get; internal set; } = false;
+    public virtual void Analyze() { }
     public virtual ExecutionNode Optimize() => this;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
     public abstract ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null);

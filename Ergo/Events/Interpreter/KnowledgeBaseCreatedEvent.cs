@@ -2,6 +2,6 @@
 
 namespace Ergo.Events.Interpreter;
 
-public sealed record class KnowledgeBaseCreatedEvent(KnowledgeBase KnowledgeBase, VMFlags Flags) : ErgoEvent
+public sealed record class KnowledgeBaseCreatedEvent(KnowledgeBase KnowledgeBase, CompilerFlags Flags) : ErgoEvent
 {
 }

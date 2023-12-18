@@ -1,5 +1,4 @@
-﻿
-namespace Ergo.Lang.Compiler;
+﻿namespace Ergo.Lang.Compiler;
 
 public class CutNode : StaticNode
 {

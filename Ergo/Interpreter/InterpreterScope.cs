@@ -3,9 +3,8 @@ using Ergo.Events.Interpreter;
 using Ergo.Facade;
 using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
-using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter;
 
@@ -97,7 +96,7 @@ public readonly struct InterpreterScope
         VisibleOperators = GetOperators().ToImmutableArray();
     }
 
-    public KnowledgeBase BuildKnowledgeBase(VMFlags vmFlags)
+    public KnowledgeBase BuildKnowledgeBase(CompilerFlags vmFlags)
     {
         var kb = new KnowledgeBase(this);
         foreach (var builtIn in VisibleBuiltIns.Values)
@@ -260,6 +259,19 @@ public readonly struct InterpreterScope
                 yield return import;
             }
         }
+    }
+
+    public Maybe<T> Parse<T>(string data, Func<string, Maybe<T>> onParseFail = null)
+    {
+        var self = this;
+        onParseFail ??= (str =>
+        {
+            self.Throw(ErgoInterpreter.ErrorType.CouldNotParseTerm, typeof(T), data);
+            return Maybe<T>.None;
+        });
+        var fac = Facade;
+        var userDefinedOps = VisibleOperators;
+        return ExceptionHandler.TryGet(() => new Parsed<T>(fac, data, userDefinedOps.ToArray(), onParseFail).Value).Map(x => x);
     }
 
     /// <summary>

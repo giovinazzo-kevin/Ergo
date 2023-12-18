@@ -1,8 +1,7 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
 using Ergo.Interpreter.Directives;
-using Ergo.Lang.Compiler;
-using Ergo.VM.BuiltIns;
+using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Interpreter.Libraries.Tabling;
 

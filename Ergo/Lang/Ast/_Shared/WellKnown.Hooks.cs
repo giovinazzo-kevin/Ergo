@@ -8,7 +8,7 @@ public static partial class WellKnown
     {
         public static class IO
         {
-            public static readonly Hook Portray_1 = new(new(new("portray"), Maybe.Some(1), Modules.IO, default));
+            public static readonly HookDef Portray_1 = new(new(new("portray"), Maybe.Some(1), Modules.IO, default));
         }
 
     }

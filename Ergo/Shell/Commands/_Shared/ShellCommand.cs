@@ -22,10 +22,7 @@ public abstract class ShellCommand
             Expression = new Regex(@$"^\s*(?:{names.Join(n => Regex.Escape(n), "|")}){(optionalRegex ? "\\s*" : "\\s+")}{regex}\s*$",
                 (caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.Compiled) | RegexOptions.Compiled);
 
-            if (optionalRegex)
-            {
-            }
-            else
+            if (!optionalRegex)
             {
                 Expression = new Regex(@$"^\s*(?:{names.Join(n => Regex.Escape(n), "|")})\s*$");
             }

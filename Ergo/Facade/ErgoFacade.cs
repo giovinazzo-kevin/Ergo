@@ -1,12 +1,10 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Ast.Terms.Interfaces;
-using Ergo.Lang.Compiler;
 using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 using Ergo.Shell;
 using Ergo.Shell.Commands;
-using Ergo.VM;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -163,20 +161,8 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(this, new(this, stream, operators ?? Enumerable.Empty<Operator>())));
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
-    public ErgoVM BuildVM(KnowledgeBase kb, VMFlags flags = VMFlags.Default, DecimalType decimalType = DecimalType.CliDecimal)
-        => ConfigureVM(new(kb, flags, decimalType));
+    public ErgoVM BuildVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
+        => ConfigureVM(new(kb, decimalType));
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));
-
-    public Maybe<T> Parse<T>(InterpreterScope scope, string data, Func<string, Maybe<T>> onParseFail = null)
-    {
-        onParseFail ??= (str =>
-        {
-            scope.Throw(ErgoInterpreter.ErrorType.CouldNotParseTerm, typeof(T), data);
-            return Maybe<T>.None;
-        });
-        var userDefinedOps = scope.VisibleOperators;
-        var self = this;
-        return scope.ExceptionHandler.TryGet(() => new Parsed<T>(self, data, userDefinedOps.ToArray(), onParseFail).Value).Map(x => x);
-    }
 }

@@ -10,7 +10,6 @@ public readonly struct Substitution
     public readonly ITerm Rhs;
 
     internal static readonly Pool<Queue<Substitution>> QueuePool = new(() => new(), q => q.Clear());
-    public static readonly Pool<SubstitutionMap> Pool = new(() => new(), q => q.Clear());
 
     public Substitution(ITerm lhs, ITerm rhs)
     {
@@ -32,9 +31,9 @@ public readonly struct Substitution
 
     public static Maybe<SubstitutionMap> Unify(Substitution s) => s.Unify();
 
-    public Maybe<SubstitutionMap> Unify()
+    public Maybe<SubstitutionMap> Unify(SubstitutionMap map = null)
     {
-        var map = Pool.Acquire();
+        map ??= SubstitutionMap.Pool.Acquire();
         var E = QueuePool.Acquire();
         var S = QueuePool.Acquire();
         E.Enqueue(this);

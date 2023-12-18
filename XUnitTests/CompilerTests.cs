@@ -3,6 +3,7 @@
 using Ergo.Interpreter;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
+using Ergo.Runtime;
 
 namespace Tests;
 
@@ -14,7 +15,7 @@ public class CompilerTests : ErgoTests
         Interpreter.Load(ref InterpreterScope, inlining);
         InterpreterScope = InterpreterScope.WithModule(InterpreterScope.EntryModule
             .WithImport(inlining));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(Ergo.Lang.Compiler.VMFlags.Default); // Triggers Compiler library
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags.Default); // Triggers Compiler library
     }
     [Theory]
     [InlineData("inline_b", "inline_b.")] // instead of: inline_b :- inline_a.
@@ -25,7 +26,7 @@ public class CompilerTests : ErgoTests
     [InlineData("inline_j(X)", "inline_j(X) ←\r\n\tX = 1 ; unify(X,2).")] // instead of: inline_h(X)
     public void ShouldInlineCorrectly(string head, string expectedExpl)
     {
-        var maybeHead = Interpreter.Facade.Parse<ITerm>(InterpreterScope, head);
+        var maybeHead = InterpreterScope.Parse<ITerm>(head);
         if (!maybeHead.TryGetValue(out var headTerm))
             Assert.True(false);
         if (!KnowledgeBase.Get(headTerm.GetSignature()).TryGetValue(out var matches))

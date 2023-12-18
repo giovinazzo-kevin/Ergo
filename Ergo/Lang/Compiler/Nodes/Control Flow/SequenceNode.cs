@@ -8,6 +8,7 @@ public class SequenceNode : ExecutionNode
     public readonly bool IsRoot;
 
     public override bool IsGround => Nodes.All(n => n.IsGround);
+    public override bool IsDeterminate => Nodes.All(n => n.IsDeterminate);
 
     public SequenceNode(List<ExecutionNode> nodes, bool isRoot = false)
     {
@@ -107,6 +108,21 @@ public class SequenceNode : ExecutionNode
             if (a is TrueNode && b is FalseNode || a is FalseNode && b is TrueNode)
                 return FalseNode.Instance;
             return default;
+        }
+    }
+    public override void Analyze()
+    {
+        var cutIndex = -1;
+        for (int i = Nodes.Count - 1; i >= 0; i--)
+        {
+            var node = Nodes[i];
+            if (cutIndex < 0 && node is CutNode)
+                cutIndex = i;
+            var cut = i < cutIndex;
+            node.Analyze();
+            node.IsContinuationDet = true;
+            if (!node.IsDeterminate && !cut)
+                break;
         }
     }
     public override ExecutionNode Optimize()

@@ -154,7 +154,7 @@ public readonly struct InterpreterScope
     public InterpreterScope WithoutModules() => new(Facade, BaseImport, Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithoutSearchDirectories() => new(Facade, BaseImport, Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
 
-    public T GetLibrary<T>(Atom module) where T : Library => Modules[module].LinkedLibrary
+    public T GetLibrary<T>(Maybe<Atom> module = default) where T : Library => Modules[module.GetOr(Entry)].LinkedLibrary
         .GetOrThrow(new ArgumentException(null, nameof(module)))
         as T;
 

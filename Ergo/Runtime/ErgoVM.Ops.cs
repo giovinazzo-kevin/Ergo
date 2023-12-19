@@ -175,7 +175,7 @@ public partial class ErgoVM
                             var args = inst.GetArguments();
                             vm.Arity = args.Length;
                             for (int i = 0; i < args.Length; i++)
-                                vm.SetArg(0, args[i]);
+                                vm.SetArg(i, args[i]);
                             runGoal = builtIn.Compile();
                         }
                         // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)

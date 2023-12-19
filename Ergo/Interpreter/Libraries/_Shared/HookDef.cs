@@ -23,6 +23,9 @@ public class Hook
         args[i] = arg;
     }
 
+    /// <summary>
+    /// Creates a wrapper that compiles the hook just in time when it is first called.
+    /// </summary>
     public ErgoVM.Op Compile(bool throwIfNotDefined = true)
     {
         return vm =>

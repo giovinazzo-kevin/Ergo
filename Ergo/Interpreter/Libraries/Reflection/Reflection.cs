@@ -12,6 +12,7 @@ public class Reflection : Library
         .Append(new Compare())
         .Append(new CopyTerm())
         .Append(new Ground())
+        .Append(new CurrentModule())
         .Append(new Nonvar())
         .Append(new Number())
         .Append(new NumberVars())

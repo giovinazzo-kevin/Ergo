@@ -7,7 +7,7 @@ public class Hook
     private readonly ITerm[] args;
     public readonly Signature Signature;
     private Maybe<ErgoVM.Op> cached = default;
-    private Complex head = default;
+    private ITerm head = default;
     public Hook(Signature sig)
     {
         Signature = sig;
@@ -60,7 +60,7 @@ public class Hook
             var branch = ErgoVM.Ops.Or(ops);
             cached = op = vm =>
             {
-                head = new Complex(Signature.Functor, args);
+                head = args.Length > 0 ? new Complex(Signature.Functor, args) : Signature.Functor;
                 branch(vm);
             };
             op(vm);

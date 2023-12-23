@@ -35,6 +35,8 @@ public readonly struct ErgoProgram : IExplainable
         IsPartial = partial;
     }
 
+    public ErgoProgram Clone() => new(Directives, KnowledgeBase.Clone(), IsPartial);
+
     public ErgoProgram AsPartial(bool partial) => new(Directives, KnowledgeBase, partial);
 
     public static ErgoProgram Empty(Atom module) => new ErgoProgram(

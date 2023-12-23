@@ -45,32 +45,25 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
         var sig = term.GetSignature();
         if (!term.IsQualified)
             term = term.Qualified(vm.KB.Scope.Entry);
-        var toRemove = new List<ITerm>();
-        foreach (var match in vm.KB.GetMatches(new("R"), term, desugar: true)
-            .AsEnumerable().SelectMany(x => x))
+        var any = false;
+        foreach (var match in vm.KB.Retract(term, isItRuntime: true))
         {
-            if (!match.Predicate.IsDynamic)
+            if (!match.IsDynamic)
             {
                 vm.Throw(ErgoVM.ErrorType.CannotRetractStaticPredicate, sig.Explain());
                 return false;
             }
 
-            if (vm.KB.Scope.Entry != match.Predicate.DeclaringModule)
+            if (vm.KB.Scope.Entry != match.DeclaringModule)
             {
-                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KB.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
+                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KB.Scope.Entry.Explain(), match.DeclaringModule.Explain());
                 return false;
             }
-
-            toRemove.Add(match.Predicate.Head);
-
+            any = true;
             if (!all)
                 break;
 
         }
-
-        foreach (var item in toRemove)
-            vm.KB.Retract(item);
-
-        return toRemove.Count > 0;
+        return any;
     }
 }

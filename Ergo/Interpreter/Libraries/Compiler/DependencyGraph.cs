@@ -6,6 +6,7 @@ public class DependencyGraphNode
     public DependencyGraph Graph { get; set; }
     public List<Predicate> Clauses { get; } = new();
     public Signature Signature { get; set; }
+    public HashSet<Signature> CalledSignatures { get; set; } = new();
     public HashSet<DependencyGraphNode> Dependencies { get; } = new();
     public HashSet<DependencyGraphNode> Dependents { get; } = new();
     public bool IsInlined { get; set; }
@@ -13,19 +14,14 @@ public class DependencyGraphNode
     public List<Predicate> InlinedClauses { get; set; } = null;
 }
 
-public class DependencyGraph
+public class DependencyGraph(KnowledgeBase knowledgeBase)
 {
-    private readonly Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
-    public readonly KnowledgeBase KnowledgeBase;
+    private Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
+    public readonly KnowledgeBase KnowledgeBase = knowledgeBase;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
     /// </summary>
     public readonly Unify UnifyInstance = new();
-
-    public DependencyGraph(KnowledgeBase knowledgeBase)
-    {
-        KnowledgeBase = knowledgeBase;
-    }
 
     // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
 
@@ -35,6 +31,13 @@ public class DependencyGraph
         if (pred.IsVariadic)
             sig = sig.WithArity(default);
         return sig;
+    }
+
+    public DependencyGraph Clone(KnowledgeBase newKb)
+    {
+        var dep = new DependencyGraph(newKb);
+        dep._nodes = _nodes.ToDictionary();
+        return dep;
     }
 
     public void Rebuild()
@@ -54,7 +57,7 @@ public class DependencyGraph
     {
         var sig = GetKey(pred);
         var node = _nodes[sig];
-        foreach (var calledSignature in ExtractCalledSignatures(pred, KnowledgeBase))
+        foreach (var calledSignature in node.CalledSignatures)
         {
             if (_nodes.TryGetValue(calledSignature, out var calledNode))
             {
@@ -75,6 +78,7 @@ public class DependencyGraph
             _nodes[sig] = node;
         }
         node.Clauses.Add(pred);
+        node.CalledSignatures.UnionWith(ExtractCalledSignatures(pred, KnowledgeBase));
         return node;
     }
 
@@ -106,7 +110,8 @@ public class DependencyGraph
             foreach (var m in scope.VisibleModules)
             {
                 var qualified = signature.WithModule(m);
-                if (kb.Get(qualified).TryGetValue(out _))
+                var variant = signature.Functor.BuildAnonymousTerm(signature.Arity.GetOr(0));
+                if (kb.Get(variant, out _).Any())
                 {
                     yield return qualified;
                 }
@@ -119,11 +124,11 @@ public class DependencyGraph
     public IEnumerable<DependencyGraphNode> GetRootNodes()
     {
         // Step 5: Identify Roots for Analysis
-        return _nodes.Values.Where(node => !node.Dependencies.Any());
+        return _nodes.Values.Where(node => node.Dependencies.Count == 0);
     }
     public IEnumerable<DependencyGraphNode> GetLeafNodes()
     {
-        return _nodes.Values.Where(node => !node.Dependents.Any());
+        return _nodes.Values.Where(node => node.Dependents.Count == 0);
     }
     public IEnumerable<DependencyGraphNode> GetAllNodes()
     {

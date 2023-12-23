@@ -373,11 +373,9 @@ public partial class ErgoVM
         // Let libraries know that a query is being submitted, so they can expand or modify it.
         KB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
         var queryExpansions = KB
-            .GetMatches(InstantiationContext, topLevelHead, desugar: false)
-            .AsEnumerable()
-            .SelectMany(x => x)
+            .Match(topLevelHead, InstantiationContext)
             .ToArray();
-        KB.RetractAll(topLevelHead);
+        KB.RetractAll(topLevelHead, isItRuntime: false);
         return queryExpansions;
     }
 }

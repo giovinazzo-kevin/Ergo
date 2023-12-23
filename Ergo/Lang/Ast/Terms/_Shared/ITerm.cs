@@ -119,5 +119,10 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     {
         return this.NumberVars().Equals(b.NumberVars());
     }
+
+    int GetVariantHashCode()
+    {
+        return this.NumberVars().GetHashCode();
+    }
 }
 

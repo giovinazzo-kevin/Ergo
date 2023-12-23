@@ -1,221 +1,179 @@
 ﻿using Ergo.Interpreter;
 using System.Collections;
-using System.Collections.Specialized;
 
 namespace Ergo.Lang;
 
-public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
+
+public partial class KnowledgeBase
 {
-    protected readonly OrderedDictionary Predicates = new();
+    public record struct Clause(Predicate Predicate, ulong AssertedOn, ulong DeletedOn = ulong.MaxValue)
+    {
+        public readonly Clause Retracted(ulong gen) => new(Predicate, AssertedOn, gen);
+    }
 
-    public readonly InterpreterScope Scope;
-    public readonly DependencyGraph DependencyGraph;
+    public class Record
+    {
+        public readonly List<Clause> Clauses = new();
+    }
 
+}
+
+public partial class KnowledgeBase(KnowledgeBase clone) : IEnumerable<Predicate>
+{
     public KnowledgeBase(InterpreterScope scope)
+        : this(null)
     {
         Scope = scope;
         DependencyGraph = new(this);
     }
 
-    private KnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, DependencyGraph dependencyGraph)
+    public readonly InterpreterScope Scope;
+    public readonly DependencyGraph DependencyGraph = clone?.DependencyGraph.Clone(clone);
+
+    protected readonly Dictionary<int, Record> Index = clone?.Index.ToDictionary() ?? new();
+    protected ulong CurrentGeneration = clone?.CurrentGeneration ?? 0;
+    public int Count { get; private set; }
+
+    public IEnumerable<Clause> Get(ITerm variant, out Record index)
     {
-        Scope = scope;
-        Predicates = predicates;
-        DependencyGraph = dependencyGraph;
+        var hashCode = variant.GetVariantHashCode();
+        if (Index.TryGetValue(hashCode, out index))
+            return index.Clauses
+                .Where(x => CurrentGeneration < x.DeletedOn);
+        return Enumerable.Empty<Clause>();
     }
 
-    public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
-    public void Clear() => Predicates.Clear();
-
-    public KnowledgeBase Clone()
+    public IEnumerable<KBMatch> Match(ITerm variant, InstantiationContext ctx)
     {
-        var inner = new OrderedDictionary();
-        foreach (DictionaryEntry kv in Predicates)
+        foreach (var clause in Get(variant, out _))
         {
-            inner.Add(kv.Key, kv.Value);
-        }
-        return new(Scope, inner, DependencyGraph);
-    }
-
-    private List<Predicate> GetOrCreate(Signature key, bool append = false)
-    {
-        if (!Predicates.Contains(key))
-        {
-            if (append)
+            var pred = clause.Predicate;
+            if (pred.BuiltIn.TryGetValue(out _))
             {
-                Predicates.Add(key, new List<Predicate>());
+                yield return new KBMatch(variant, pred, null);
+                yield break;
             }
+            else if (pred.Instantiate(ctx).Unify(variant).TryGetValue(out var subs))
+            {
+                yield return new KBMatch(variant, pred, subs);
+            }
+        }
+    }
+
+    void Assert_(Predicate clause, bool z)
+    {
+        Count++;
+        var gen = CurrentGeneration++;
+        if (clause.IsVariadic)
+        {
+            var sig = clause.Head.GetSignature();
+            // Hash the first N arguments (variadics can't be asserted at runtime, so the perf impact is minimal)
+            for (int arity = 0; arity < ErgoVM.MAX_ARGUMENTS; ++arity)
+            {
+                AssertNonVariadic(sig.Functor.BuildAnonymousTerm(arity, ignoredVars: false));
+            }
+        }
+        else AssertNonVariadic(clause.Head);
+        if (!clause.IsDynamic)
+        {
+            DependencyGraph.AddNode(clause);
+            DependencyGraph.CalculateDependencies(clause);
+        }
+        void AssertNonVariadic(ITerm head)
+        {
+            var hashCode = head.GetVariantHashCode();
+            if (!Index.TryGetValue(hashCode, out var index))
+                index = Index[hashCode] = new();
+            if (z)
+                index.Clauses.Add(new(clause, gen));
             else
-            {
-                Predicates.Insert(0, key, new List<Predicate>());
-            }
+                index.Clauses.Insert(0, new(clause, gen));
         }
-
-        return (List<Predicate>)Predicates[key];
     }
 
-    private Maybe<List<Predicate>> GetImpl(Signature key)
+    public void AssertA(Predicate clause)
     {
-        if (Predicates.Contains(key))
+        Assert_(clause, false);
+    }
+
+    public void AssertZ(Predicate clause)
+    {
+        Assert_(clause, true);
+    }
+    public IEnumerable<Predicate> Retract(ITerm variant, bool isItRuntime)
+    {
+        var currentGen = CurrentGeneration;
+        var hashCode = variant.GetVariantHashCode();
+        if (Index.TryGetValue(hashCode, out var index))
         {
-            return Maybe.Some((List<Predicate>)Predicates[key]);
-        }
-        return default;
-    }
-
-    public Maybe<IList<Predicate>> Get(Signature sig)
-    {
-        // Direct match
-        if (GetImpl(sig).TryGetValue(out var list))
-            return Maybe.Some<IList<Predicate>>(list);
-        // Variadic match (write/*, call/*)
-        if (GetImpl(sig.WithArity(default)).TryGetValue(out list))
-            return Maybe.Some<IList<Predicate>>(list);
-        // Matching exported predicates with qualification
-        if (sig.Module.TryGetValue(out var module) && Get(sig.WithModule(default)).TryGetValue(out var list_))
-            return Maybe.Some<IList<Predicate>>(list_.Where(p => p.IsExported && p.DeclaringModule.Equals(module)).ToArray());
-        return default;
-    }
-
-    public Maybe<IEnumerable<KBMatch>> GetMatches(InstantiationContext ctx, ITerm goal, bool desugar)
-    {
-        if (desugar)
-        {
-            // if head is in the form predicate/arity (or its built-in equivalent),
-            // do some syntactic de-sugaring and convert it into an actual anonymous complex
-            if (goal is Complex c
-                && WellKnown.Functors.Division.Contains(c.Functor))
+            for (int i = index.Clauses.Count - 1; i >= 0; i--)
             {
-                if (c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+                var k = index.Clauses[i];
+                if (!isItRuntime && !k.Predicate.IsDynamic)
                 {
-                    goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
-                }
-            }
-        }
-        // Return predicate matches
-        var sig = goal.GetSignature();
-        return Get(sig).Select(Inner);
-        IEnumerable<KBMatch> Inner(IList<Predicate> list)
-        {
-            var buf = list.ToArray();
-            foreach (var k in buf)
-            {
-                if (k.BuiltIn.TryGetValue(out _))
-                {
-                    yield return new KBMatch(goal, k, null);
-                    yield break;
-                }
-                var predicate = k.Instantiate(ctx);
-                if (predicate.Unify(goal).TryGetValue(out var matchSubs))
-                {
-                    yield return new KBMatch(goal, predicate, matchSubs);
-                }
-            }
-        }
-    }
-
-    List<Predicate> Assert_(Predicate k, bool append)
-    {
-        var sig = k.Head.GetSignature();
-        if (k.IsVariadic)
-            sig = sig.WithArity(default);
-        return GetOrCreate(sig, append: append);
-    }
-
-    public void AssertA(Predicate k)
-    {
-        Assert_(k, append: false).Insert(0, k);
-    }
-    public void AssertZ(Predicate k)
-    {
-        Assert_(k, append: true).Add(k);
-    }
-    public bool Retract(ITerm head)
-    {
-        if (Get(head.GetSignature()).TryGetValue(out var matches))
-        {
-            for (var i = matches.Count - 1; i >= 0; i--)
-            {
-                var predicate = matches[i];
-                if (predicate.IsBuiltIn)
+                    yield return k.Predicate; // Let the VM handle it
                     continue;
-                if (predicate.Unify(head).TryGetValue(out _))
+                }
+                if (currentGen < k.DeletedOn)
                 {
-                    matches.RemoveAt(i);
-                    return true;
+                    index.Clauses[i] = k.Retracted(CurrentGeneration++);
+                    if (DependencyGraph.GetNode(DependencyGraph.GetKey(k.Predicate)).TryGetValue(out var node))
+                        node.Clauses.Remove(k.Predicate);
+                    if (!isItRuntime)
+                        DependencyGraph.CalculateDependencies(k.Predicate);
+                    Count--;
+                    yield return k.Predicate;
                 }
             }
         }
+    }
+    public int RetractAll(ITerm variant, bool isItRuntime) => Retract(variant, isItRuntime).Count();
 
+
+    /// <summary>
+    /// NOTE: Do not call at runtime or it breaks the logical update view.
+    /// </summary>
+    public bool Replace(Predicate pred, Predicate other)
+    {
+        foreach (var match in Get(pred.Head, out var index))
+        {
+            if (match.Predicate.IsSameDefinitionAs(pred))
+            {
+                var i = index.Clauses.IndexOf(match);
+                index.Clauses.RemoveAt(i);
+                index.Clauses.Insert(i, new(other, CurrentGeneration++));
+                DependencyGraph.CalculateDependencies(match.Predicate);
+                return true;
+            }
+        }
         return false;
     }
     /// <summary>
-    /// NOTE: Unlike other flavors of retract, this one allows you to retract built-ins.
+    /// NOTE: Do not call at runtime or it breaks the logical update view.
     /// </summary>
-    public bool Retract(Predicate pred)
+    public bool Remove(Predicate pred)
     {
-        if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
+        foreach (var match in Get(pred.Head, out var index))
         {
-            for (var i = matches.Count - 1; i >= 0; i--)
+            if (match.Predicate.IsSameDefinitionAs(pred))
             {
-                var predicate = matches[i];
-                if (predicate.IsSameDefinitionAs(pred))
-                {
-                    matches.RemoveAt(i);
-                    return true;
-                }
+                index.Clauses.Remove(match);
+                DependencyGraph.CalculateDependencies(match.Predicate);
+                Count--;
+                return true;
             }
         }
-
         return false;
-    }
-    public bool Replace(Predicate pred, Predicate other)
-    {
-        if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
-        {
-            for (var i = matches.Count - 1; i >= 0; i--)
-            {
-                var predicate = matches[i];
-                if (predicate.IsSameDefinitionAs(pred))
-                {
-                    matches.RemoveAt(i);
-                    matches.Insert(i, other);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public int RetractAll(ITerm head)
-    {
-        var retracted = 0;
-        if (Get(head.GetSignature()).TryGetValue(out var matches))
-        {
-            for (var i = matches.Count - 1; i >= 0; i--)
-            {
-                var predicate = matches[i];
-                if (predicate.IsBuiltIn)
-                    continue;
-                if (predicate.Unify(head).TryGetValue(out _))
-                {
-                    retracted++;
-                    matches.RemoveAt(i);
-                }
-            }
-        }
-
-        return retracted;
     }
 
     public IEnumerator<Predicate> GetEnumerator()
     {
-        return Predicates.Values
-            .Cast<List<Predicate>>()
-            .SelectMany(l => l)
-            .GetEnumerator();
+        var gen = CurrentGeneration;
+        foreach (var k in Index.Values.SelectMany(x => x.Clauses)
+            .Where(k => gen < k.DeletedOn))
+        {
+            yield return k.Predicate;
+        }
     }
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
-

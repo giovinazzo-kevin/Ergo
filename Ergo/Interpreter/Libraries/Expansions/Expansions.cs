@@ -37,11 +37,11 @@ public class Expansions : Library
                 if (expansions.Count > 0)
                 {
                     // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
-                    if (!kce.KnowledgeBase.Retract(pred))
+                    if (!kce.KnowledgeBase.Remove(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
-                        kce.KnowledgeBase.Retract(exp);
+                        kce.KnowledgeBase.Remove(exp);
                         kce.KnowledgeBase.AssertZ(exp);
                     }
                     expansions.Clear();
@@ -52,8 +52,7 @@ public class Expansions : Library
         {
             var expansions = new Queue<Predicate>();
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
-                .AsEnumerable().SelectMany(x => x))
+            foreach (var match in qse.VM.KB.Match(topLevelHead, qse.VM.InstantiationContext))
             {
                 var pred = match.Predicate.Substitute(match.Substitutions);
                 foreach (var exp in ExpandPredicate(pred, qse.VM.KB.Scope))
@@ -64,11 +63,11 @@ public class Expansions : Library
                 if (expansions.Count > 0)
                 {
                     // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
-                    if (!qse.VM.KB.Retract(pred))
+                    if (!qse.VM.KB.Remove(pred))
                         throw new InvalidOperationException();
                     while (expansions.TryDequeue(out var exp))
                     {
-                        qse.VM.KB.Retract(exp);
+                        qse.VM.KB.Remove(exp);
                         qse.VM.KB.AssertZ(exp);
                     }
                     expansions.Clear();

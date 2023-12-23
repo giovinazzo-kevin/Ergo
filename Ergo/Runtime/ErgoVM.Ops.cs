@@ -235,15 +235,13 @@ public partial class ErgoVM
             }
             IEnumerator<KBMatch> GetEnumerator(ErgoVM vm)
             {
-                var any = false;
-                foreach (var match in vm.KB.Match(goal, vm.InstantiationContext))
+                if (!vm.KB.GetMatches(vm.InstantiationContext, goal, false).TryGetValue(out var matches))
                 {
-                    yield return match;
-                    any = true;
-                }
-                if (!any)
                     // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
                     vm.Throw(ErrorType.MatchFailed, goal.Explain(false));
+                    return Enumerable.Empty<KBMatch>().GetEnumerator();
+                }
+                return matches.GetEnumerator();
             }
         }
     }

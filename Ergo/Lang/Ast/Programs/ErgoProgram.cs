@@ -19,7 +19,7 @@ public readonly struct ErgoProgram : IExplainable
     public ErgoProgram(Directive[] directives, Predicate[] kb)
     {
         Directives = directives;
-        KnowledgeBase = new KnowledgeBase((Interpreter.InterpreterScope)default);
+        KnowledgeBase = new KnowledgeBase(default);
         foreach (var k in kb)
         {
             KnowledgeBase.AssertZ(k);

@@ -86,7 +86,8 @@ public class Compiler : Library
         else if (evt is QuerySubmittedEvent qse)
         {
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.VM.KB.Match(topLevelHead, qse.VM.InstantiationContext))
+            foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
+                .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
                 if (TryCompile(topLevel, qse.VM.KB.Scope.ExceptionHandler, qse.VM.KB.DependencyGraph, qse.Flags.HasFlag(CompilerFlags.EnableOptimizations)).TryGetValue(out var newClause))

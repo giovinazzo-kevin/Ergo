@@ -52,7 +52,8 @@ public class Tabling : Library
                     default
                 );
                 var kb = scope.Modules[moduleName].Program.KnowledgeBase;
-                foreach (var match in kb.Match(anon, ctx))
+                foreach (var match in kb.GetMatches(ctx, anon, desugar: false)
+                    .AsEnumerable().SelectMany(x => x))
                 {
                     match.Predicate.Head.GetQualification(out var head);
                     var auxPred = new Predicate(
@@ -64,7 +65,7 @@ public class Tabling : Library
                         false,
                         default
                     );
-                    if (!kb.Remove(match.Predicate))
+                    if (!kb.Retract(head))
                     {
                         scope.Throw(ErgoInterpreter.ErrorType.TransformationFailed, head);
                         return;

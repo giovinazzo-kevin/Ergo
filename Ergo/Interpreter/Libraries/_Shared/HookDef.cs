@@ -37,9 +37,7 @@ public class Hook
             }
             // Compile and cache the hook the first time it's called
             // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            var variant = Signature.Functor.BuildAnonymousTerm(Signature.Arity.GetOr(0));
-            var preds = vm.KB.Get(variant, out _).ToArray();
-            if (preds.Length == 0)
+            if (!vm.KB.Get(Signature).TryGetValue(out var preds))
             {
                 if (throwIfNotDefined)
                     vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.Explain());
@@ -47,11 +45,11 @@ public class Hook
                     vm.Fail();
                 return;
             }
-            var ops = new ErgoVM.Op[preds.Length];
-            for (int i = 0; i < preds.Length; i++)
+            var ops = new ErgoVM.Op[preds.Count];
+            for (int i = 0; i < preds.Count; i++)
             {
-                var predHead = preds[i].Predicate.Unqualified().Head;
-                var graph = preds[i].Predicate.ExecutionGraph.GetOr(default).Compile();
+                var predHead = preds[i].Unqualified().Head;
+                var graph = preds[i].ExecutionGraph.GetOr(default).Compile();
                 ops[i] = vm =>
                 {
                     vm.SetArg(0, head);

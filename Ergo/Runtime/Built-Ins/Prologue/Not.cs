@@ -24,7 +24,7 @@ public sealed class Not : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var newVm = vm.Clone();
+        var newVm = vm.ScopedInstance();
         newVm.Query = ErgoVM.Ops.Goal(vm.Arg(0));
         newVm.Run();
         if (newVm.Solutions.Any())

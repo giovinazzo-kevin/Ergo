@@ -32,9 +32,9 @@ public static class LanguageExtensions
 
     public static bool IsClr<T>(this ITerm t, out T match, Func<T, bool> filter = null)
     {
-        if (t is Atom a && a.Value is T value && (filter?.Invoke(value) ?? true))
+        if (t is Atom a && a.Value.GetType().IsAssignableTo(typeof(T)) && (filter?.Invoke((T)a.Value) ?? true))
         {
-            match = value;
+            match = (T)a.Value;
             return true;
         }
 

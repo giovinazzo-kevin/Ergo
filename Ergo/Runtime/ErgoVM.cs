@@ -141,7 +141,7 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM Clone() => new(KB, DecimalType)
+    public ErgoVM ScopedInstance() => new(KB, DecimalType)
     { In = In, Err = Err, Out = Out, /*args = [.. args], Arity = Arity*/ };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.

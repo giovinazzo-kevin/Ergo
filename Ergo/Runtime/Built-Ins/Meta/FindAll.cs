@@ -15,7 +15,7 @@ public sealed class FindAll : BuiltIn
             comma = new([args[1]], default);
         }
 
-        var newVm = vm.Clone();
+        var newVm = vm.ScopedInstance();
         newVm.Query = newVm.CompileQuery(new(comma));
         newVm.Run();
         if (!newVm.Solutions.Any())

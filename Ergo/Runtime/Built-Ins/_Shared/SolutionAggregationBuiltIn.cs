@@ -41,7 +41,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             .AsOperator(WellKnown.Operators.Unification)
         }, default);
         var query = new Query(goalClauses);
-        var newVm = vm.Clone();
+        var newVm = vm.ScopedInstance();
         newVm.Query = newVm.CompileQuery(query);
         newVm.Run();
         if (newVm.State == ErgoVM.VMState.Fail)

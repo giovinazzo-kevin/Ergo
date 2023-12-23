@@ -70,7 +70,7 @@ public sealed class Tabled : BuiltIn
         if (!memoContext.GetPioneer(variant).TryGetValue(out var pioneer))
         {
             memoContext.MemoizePioneer(pioneer = variant);
-            var newVm = vm.Clone();
+            var newVm = vm.ScopedInstance();
             newVm.Query = newVm.CompileQuery(new(args.ToImmutableArray()));
             newVm.Run();
             var any = false;

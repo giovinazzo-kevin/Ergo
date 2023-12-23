@@ -11,7 +11,7 @@ public sealed class SetupCallCleanup : BuiltIn
     public override ErgoVM.Op Compile() => vm =>
     {
         var args = vm.Args;
-        var newVm = vm.Clone();
+        var newVm = vm.ScopedInstance();
         var setup = CallInst.Compile();
         newVm.Query = ErgoVM.Ops.And2(setup, ErgoVM.Ops.Cut);
         newVm.Arity = vm.Arity = 1;

@@ -237,8 +237,6 @@ public partial class ErgoVM
             {
                 if (!vm.KB.GetMatches(vm.InstantiationContext, goal, false).TryGetValue(out var matches))
                 {
-                    // Static and dynamic predicates should have been resolved by now, so a failing match is an error.
-                    vm.Throw(ErrorType.MatchFailed, goal.Explain(false));
                     return Enumerable.Empty<KBMatch>().GetEnumerator();
                 }
                 return matches.GetEnumerator();

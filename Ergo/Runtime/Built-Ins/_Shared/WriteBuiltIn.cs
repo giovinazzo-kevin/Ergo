@@ -41,7 +41,7 @@ public abstract class WriteBuiltIn : BuiltIn
         var portray = PortrayHook.Compile(throwIfNotDefined: false);
         return vm =>
         {
-            var portrayVm = vm.Clone();
+            var portrayVm = vm.ScopedInstance();
             portrayVm.Query = portray;
 
             var args = vm.Args;

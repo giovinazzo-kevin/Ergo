@@ -25,10 +25,10 @@ public class DeclareModule : InterpreterDirective
 
         if (scope.Modules.TryGetValue(moduleName, out var module))
         {
-            if (!module.IsRuntime)
-            {
-                throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleNameClash, scope, moduleName.Explain());
-            }
+            //if (!module.IsRuntime)
+            //{
+            //    throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleNameClash, scope, moduleName.Explain());
+            //}
 
             module = module.WithExports(exports.Contents);
         }

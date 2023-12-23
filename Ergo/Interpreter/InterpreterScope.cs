@@ -107,11 +107,15 @@ public readonly struct InterpreterScope
         {
             foreach (var pred in Modules[module].Program.KnowledgeBase)
             {
-                var newPred = pred.WithModuleName(module);
-                if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
-                    newPred = newPred.WithModuleName(newModule).WithHead(newHead);
-                if (!pred.IsExported)
-                    newPred = newPred.Qualified();
+                var newPred = pred;
+                if (!pred.IsBuiltIn)
+                {
+                    newPred = pred.WithModuleName(module);
+                    if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
+                        newPred = newPred.WithModuleName(newModule).WithHead(newHead);
+                    if (!pred.IsExported)
+                        newPred = newPred.Qualified();
+                }
                 kb.AssertZ(newPred);
             }
         }

@@ -149,8 +149,8 @@ public partial class ErgoVM
 
             void Resolve(ErgoVM vm)
             {
-                goal = goal.Substitute(vm.Environment);
-                var matchEnum = GetEnumerator(vm);
+                var newGoal = goal.Substitute(vm.Environment);
+                var matchEnum = GetEnumerator(vm, newGoal);
                 NextMatch(vm);
                 void NextMatch(ErgoVM vm)
                 {
@@ -191,7 +191,7 @@ public partial class ErgoVM
                         // If the VM is in success state, promote that success to a solution by pushing the current environment.
                         vm.SuccessToSolution();
                         // If this is a tail call of pred, then we can recycle the current stack frame (hence the top-level 'while').
-                        if (pred.IsTailRecursive && Predicate.IsTailCall(goal, pred.Body)
+                        if (pred.IsTailRecursive && Predicate.IsTailCall(newGoal, pred.Body)
                             /*&& vm.Flag(VMFlags.ContinuationIsDet)*/)
                         {
                             // Pop all choice points that were created by this predicate.
@@ -214,12 +214,12 @@ public partial class ErgoVM
                             var tcoSubs = vm.Environment
                                 .Where(s => bodyVars.Contains((Variable)s.Lhs));
                             // Substitute the tail call with this list, creating the new head, and qualify it with the current module.
-                            goal = pred.Body.Contents.Last().Substitute(tcoSubs)
+                            newGoal = pred.Body.Contents.Last().Substitute(tcoSubs)
                                 .Qualified(pred.DeclaringModule);
                             // Remove all substitutions that are no longer relevant, including those we just used.
                             vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
                             vm.DiscardChoices(1); // We don't need the NextMatch choice point anymore.
-                            matchEnum = GetEnumerator(vm);
+                            matchEnum = GetEnumerator(vm, newGoal);
                             goto TCO;
                         }
                         // Non-tail recursive predicates don't benefit from the while loop and must backtrack as normal.
@@ -233,9 +233,9 @@ public partial class ErgoVM
                     }
                 }
             }
-            IEnumerator<KBMatch> GetEnumerator(ErgoVM vm)
+            IEnumerator<KBMatch> GetEnumerator(ErgoVM vm, ITerm newGoal)
             {
-                if (!vm.KB.GetMatches(vm.InstantiationContext, goal, false).TryGetValue(out var matches))
+                if (!vm.KB.GetMatches(vm.InstantiationContext, newGoal, false).TryGetValue(out var matches))
                 {
                     return Enumerable.Empty<KBMatch>().GetEnumerator();
                 }

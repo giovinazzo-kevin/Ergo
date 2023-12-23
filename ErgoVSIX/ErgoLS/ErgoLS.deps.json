@@ -32,7 +32,7 @@
         }
       },
       "Microsoft.CodeAnalysis.Analyzers/3.3.4": {},
-      "Microsoft.CodeAnalysis.Common/4.8.0-2.final": {
+      "Microsoft.CodeAnalysis.Common/4.9.0-2.final": {
         "dependencies": {
           "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
           "System.Collections.Immutable": "7.0.0",
@@ -41,8 +41,8 @@
         },
         "runtime": {
           "lib/net7.0/Microsoft.CodeAnalysis.dll": {
-            "assemblyVersion": "4.8.0.0",
-            "fileVersion": "4.800.23.42907"
+            "assemblyVersion": "4.9.0.0",
+            "fileVersion": "4.900.23.61305"
           }
         },
         "resources": {
@@ -87,14 +87,14 @@
           }
         }
       },
-      "Microsoft.CodeAnalysis.CSharp/4.8.0-2.final": {
+      "Microsoft.CodeAnalysis.CSharp/4.9.0-2.final": {
         "dependencies": {
-          "Microsoft.CodeAnalysis.Common": "4.8.0-2.final"
+          "Microsoft.CodeAnalysis.Common": "4.9.0-2.final"
         },
         "runtime": {
           "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll": {
-            "assemblyVersion": "4.8.0.0",
-            "fileVersion": "4.800.23.42907"
+            "assemblyVersion": "4.9.0.0",
+            "fileVersion": "4.900.23.61305"
           }
         },
         "resources": {
@@ -633,7 +633,22 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "System.Text.Encoding.CodePages/8.0.0-rc.1.23419.4": {},
+      "System.Text.Encoding.CodePages/8.0.0": {
+        "runtime": {
+          "lib/net8.0/System.Text.Encoding.CodePages.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net8.0/System.Text.Encoding.CodePages.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
       "System.Threading/4.3.0": {
         "dependencies": {
           "System.Runtime": "4.3.0",
@@ -651,14 +666,14 @@
       "System.Threading.Tasks.Extensions/4.5.4": {},
       "Ergo/1.0.0": {
         "dependencies": {
-          "Microsoft.CodeAnalysis.CSharp": "4.8.0-2.final",
+          "Microsoft.CodeAnalysis.CSharp": "4.9.0-2.final",
           "Newtonsoft.Json": "13.0.3",
           "PeterO.Numbers": "1.8.2",
           "System.Collections.Specialized": "4.3.0",
           "System.Linq.Async": "6.0.1",
           "System.Reactive": "6.0.1-preview.1",
           "System.Reactive.Linq": "6.0.1-preview.1",
-          "System.Text.Encoding.CodePages": "8.0.0-rc.1.23419.4"
+          "System.Text.Encoding.CodePages": "8.0.0"
         },
         "runtime": {
           "Ergo.dll": {}
@@ -693,19 +708,19 @@
       "path": "microsoft.codeanalysis.analyzers/3.3.4",
       "hashPath": "microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512"
     },
-    "Microsoft.CodeAnalysis.Common/4.8.0-2.final": {
+    "Microsoft.CodeAnalysis.Common/4.9.0-2.final": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-sH+5d3H18D8W13Kgusib4usJRWnDcZoJ3nU7MiIlytg7uiLA8DlAQKWEk+x8h8SJOD7CSeqqL9/D6c6ShqidLg==",
-      "path": "microsoft.codeanalysis.common/4.8.0-2.final",
-      "hashPath": "microsoft.codeanalysis.common.4.8.0-2.final.nupkg.sha512"
+      "sha512": "sha512-46JrndQoIZ4vIwd8PcWq40Ghqb3doylb5gEtJGgkSlzF3mVYB9dY+NslMNLRK5krmlzfQxqPygvaLFi8VZhSaQ==",
+      "path": "microsoft.codeanalysis.common/4.9.0-2.final",
+      "hashPath": "microsoft.codeanalysis.common.4.9.0-2.final.nupkg.sha512"
     },
-    "Microsoft.CodeAnalysis.CSharp/4.8.0-2.final": {
+    "Microsoft.CodeAnalysis.CSharp/4.9.0-2.final": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-2HS51hRSY7NbyiQAOW/0WQArfqkUhVWqmN+Z/KEeqnm+6fk46HmYesvN/BS5RKa1KswcjYYK92xdne+WdhebiQ==",
-      "path": "microsoft.codeanalysis.csharp/4.8.0-2.final",
-      "hashPath": "microsoft.codeanalysis.csharp.4.8.0-2.final.nupkg.sha512"
+      "sha512": "sha512-yUcJrTlM5mB0kN8t7RYAR7mh70tQ3BkD0zDIrThqRk+UW5+Dn85kIPnnV9uzBNgi6EymL2TC6lS0ePkdgv09ew==",
+      "path": "microsoft.codeanalysis.csharp/4.9.0-2.final",
+      "hashPath": "microsoft.codeanalysis.csharp.4.9.0-2.final.nupkg.sha512"
     },
     "Microsoft.Extensions.Configuration/6.0.1": {
       "type": "package",
@@ -1043,12 +1058,12 @@
       "path": "system.text.encoding/4.3.0",
       "hashPath": "system.text.encoding.4.3.0.nupkg.sha512"
     },
-    "System.Text.Encoding.CodePages/8.0.0-rc.1.23419.4": {
+    "System.Text.Encoding.CodePages/8.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-sfmFF9W5+IObbjcVNk3E5DSp4HWtk1R8j/UhYkfpyZN0u1/8O/U/uyMx8ywzjct2tcrYjDmDZtdstgegdJFC+g==",
-      "path": "system.text.encoding.codepages/8.0.0-rc.1.23419.4",
-      "hashPath": "system.text.encoding.codepages.8.0.0-rc.1.23419.4.nupkg.sha512"
+      "sha512": "sha512-OZIsVplFGaVY90G2SbpgU7EnCoOO5pw1t4ic21dBF3/1omrJFpAGoNAVpPyMVOC90/hvgkGG3VFqR13YgZMQfg==",
+      "path": "system.text.encoding.codepages/8.0.0",
+      "hashPath": "system.text.encoding.codepages.8.0.0.nupkg.sha512"
     },
     "System.Threading/4.3.0": {
       "type": "package",

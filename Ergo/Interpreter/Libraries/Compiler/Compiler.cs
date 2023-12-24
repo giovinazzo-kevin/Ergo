@@ -77,6 +77,8 @@ public class Compiler : Library
                     if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: false).TryGetValue(out var newClause))
                     {
                         newClause.ExecutionGraph.Do(x => x.Compile());
+                        kbc.KnowledgeBase.Scope.Modules[newClause.DeclaringModule].Program.KnowledgeBase
+                            .Replace(clause, newClause);
                         kbc.KnowledgeBase.Replace(clause, newClause);
                         node.Clauses[i] = newClause;
                     }

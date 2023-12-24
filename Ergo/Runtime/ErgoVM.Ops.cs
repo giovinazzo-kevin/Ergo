@@ -130,12 +130,12 @@ public partial class ErgoVM
                 return NoOp;
             if (goals.Contents.Length == 1)
                 return Goal(goals.Contents[0]);
-            return And(goals.Contents.Select(Goal).ToArray());
+            return And(goals.Contents.Select(x => Goal(x, dynamic: false)).ToArray());
         }
         /// <summary>
         /// Calls an individual goal.
         /// </summary>
-        public static Op Goal(ITerm goal)
+        public static Op Goal(ITerm goal, bool dynamic = false)
         {
             const string cutValue = "!";
             return goal switch
@@ -159,6 +159,8 @@ public partial class ErgoVM
                     // In the non-tail recursive case, you can imagine this 'while' as if it were an 'if'.
                     while (matchEnum.MoveNext())
                     {
+                        if (dynamic && !matchEnum.Current.Predicate.IsDynamic)
+                            continue;
                         anyMatch = true;
                         // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);

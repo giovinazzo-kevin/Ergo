@@ -52,7 +52,8 @@ public abstract class WriteBuiltIn : BuiltIn
                 {
                     PortrayHook.SetArg(0, arg);
                     portrayVm.Run();
-                    if (portrayVm.NumSolutions > 0) return; // Do nothing, the hook already took care of this term.
+                    if (portrayVm.NumSolutions > 0)
+                        break; // Do nothing, the hook already took care of this term by calling write_raw.
                 }
                 var text = TransformText(Explain(arg));
                 if (vm.Out.Encoding.IsSingleByte)

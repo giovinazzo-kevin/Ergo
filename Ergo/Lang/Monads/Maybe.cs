@@ -102,6 +102,13 @@ public readonly struct Maybe<T>
         return other().Map(_ => this_);
     }
 
+    private static readonly InvalidOperationException InvalidOp = new();
+    public T GetOrThrow()
+    {
+        if (HasValue)
+            return Value;
+        throw InvalidOp;
+    }
     public T GetOrThrow(Exception ex)
     {
         if (HasValue)

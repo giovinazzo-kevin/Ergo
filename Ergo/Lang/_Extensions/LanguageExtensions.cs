@@ -69,6 +69,25 @@ public static class LanguageExtensions
             return false;
         }
     }
+    public static bool MatchesUntyped(this ITerm t, out object match, Type type, Func<object, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
+    {
+        match = default;
+        try
+        {
+            match = TermMarshall.FromTerm(t, type, mode);
+            if (matchFunctor)
+            {
+                if (t is Complex cplx && !cplx.Functor.Equals(new Atom(type.Name.ToLower())))
+                    return false;
+            }
+
+            return filter?.Invoke(match) ?? true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b, SubstitutionMap map = null)
         => new Substitution(a, b).Unify(map);

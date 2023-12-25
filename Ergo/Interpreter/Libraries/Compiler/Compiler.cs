@@ -77,8 +77,10 @@ public class Compiler : Library
                     if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: false).TryGetValue(out var newClause))
                     {
                         newClause.ExecutionGraph.Do(x => x.Compile());
-                        kbc.KnowledgeBase.Scope.Modules[newClause.DeclaringModule].Program.KnowledgeBase
-                            .Replace(clause, newClause);
+                        // Hooks can be defined in non-existent modules, but otherwise we want to cache the compiled predicate.
+                        if (kbc.KnowledgeBase.Scope.Modules.TryGetValue(newClause.DeclaringModule, out var module))
+                            module.Program.KnowledgeBase
+                                 .Replace(clause, newClause);
                         kbc.KnowledgeBase.Replace(clause, newClause);
                         node.Clauses[i] = newClause;
                     }

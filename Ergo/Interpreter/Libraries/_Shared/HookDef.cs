@@ -49,7 +49,11 @@ public class Hook
             for (int i = 0; i < preds.Count; i++)
             {
                 var predHead = preds[i].Unqualified().Head;
-                var graph = preds[i].ExecutionGraph.GetOr(default).Compile();
+                if (!preds[i].ExecutionGraph.TryGetValue(out var graph))
+                {
+                    return;
+                }
+                var gOp = graph.Compile();
                 ops[i] = vm =>
                 {
                     vm.SetArg(0, head);
@@ -57,7 +61,7 @@ public class Hook
                     ErgoVM.Goals.Unify2(vm);
                     if (vm.State == ErgoVM.VMState.Fail)
                         return;
-                    graph(vm);
+                    gOp(vm);
                 };
             }
             var branch = ErgoVM.Ops.Or(ops);

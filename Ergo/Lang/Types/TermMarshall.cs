@@ -54,6 +54,8 @@ public sealed class TermMarshall
 
     public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
     {
+        if (typeof(T) == typeof(ITerm))
+            return (ITerm)value;
         ctx ??= new();
         if (value is IErgoMarshalling<T> marshalling)
             return marshalling.ToTerm();
@@ -67,6 +69,8 @@ public sealed class TermMarshall
     }
     public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
     {
+        if (type == typeof(ITerm))
+            return (ITerm)value;
         ctx ??= new();
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);
         if (type.GetInterfaces().Contains(interfaceType))
@@ -97,6 +101,8 @@ public sealed class TermMarshall
     }
     public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default)
     {
+        if (typeof(T) == typeof(ITerm))
+            return (T)value;
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(typeof(T));
         if (typeof(T).GetInterfaces().Contains(interfaceType))
             return (T)interfaceType.GetMethod(nameof(FromTerm))
@@ -110,6 +116,8 @@ public sealed class TermMarshall
     }
     public static object FromTerm(ITerm value, Type type, Maybe<TermMarshalling> mode = default)
     {
+        if (type == typeof(ITerm))
+            return value;
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);
         if (type.GetInterfaces().Contains(interfaceType))
             return interfaceType.GetMethod(nameof(FromTerm))

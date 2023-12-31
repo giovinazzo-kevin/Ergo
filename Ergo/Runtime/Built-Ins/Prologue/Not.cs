@@ -12,8 +12,10 @@ public sealed class Not : BuiltIn
 
     public override ExecutionNode Optimize(BuiltInNode node)
     {
-        var arg = node.Goal.GetArguments()[0].ToExecutionNode(node.Node.Graph, ctx: new("NOT")).Optimize();
-        var op = arg.Compile();
+        var op = node.Goal.GetArguments()[0]
+            .ToExecutionNode(node.Node.Graph, ctx: new("NOT"))
+            .Optimize()
+            .Compile();
         return new VirtualNode(vm =>
         {
             var newVm = vm.ScopedInstance();
@@ -26,8 +28,10 @@ public sealed class Not : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
+        // NOTE: This will never be called if optimizations are enabled.
+        // Which is good, because compiling the query on the fly is expensive.
         var newVm = vm.ScopedInstance();
-        newVm.Query = ErgoVM.Ops.Goal(vm.Arg(0));
+        newVm.Query = vm.CompileQuery(new(vm.Arg(0)));
         newVm.Run();
         if (newVm.Solutions.Any())
             vm.Fail();

@@ -16,8 +16,6 @@
 :- op(1000, xfy,  [':']).
 :- op(920, fx, ['*']).
 
-:- inline(['≠'/2, '¬'/1, '*'/1]).
-
 % OPERATOR IMPLEMENTATIONS
 
 If -> Then; _Else :- If, !, Then.

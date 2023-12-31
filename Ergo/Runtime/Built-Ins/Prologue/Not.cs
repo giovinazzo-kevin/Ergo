@@ -12,20 +12,22 @@ public sealed class Not : BuiltIn
 
     public override ExecutionNode Optimize(BuiltInNode node)
     {
-        if (!node.Goal.IsGround)
-            return node;
         var arg = node.Goal.GetArguments()[0].ToExecutionNode(node.Node.Graph, ctx: new("NOT")).Optimize();
-        if (arg is TrueNode)
-            return FalseNode.Instance;
-        if (arg is FalseNode)
-            return TrueNode.Instance;
-        return node;
+        var op = arg.Compile();
+        return new VirtualNode(vm =>
+        {
+            var newVm = vm.ScopedInstance();
+            newVm.Query = op;
+            newVm.Run();
+            if (newVm.Solutions.Any())
+                vm.Fail();
+        });
     }
 
     public override ErgoVM.Op Compile() => vm =>
     {
         var newVm = vm.ScopedInstance();
-        newVm.Query = vm.CompileQuery(new(vm.Arg(0)));
+        newVm.Query = ErgoVM.Ops.Goal(vm.Arg(0));
         newVm.Run();
         if (newVm.Solutions.Any())
             vm.Fail();

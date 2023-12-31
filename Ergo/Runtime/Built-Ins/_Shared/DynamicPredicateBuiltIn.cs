@@ -64,7 +64,10 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
             toRemove.Add(match.Predicate.Head);
 
             if (!all)
+            {
+                vm.Environment.AddRange(match.Substitutions);
                 break;
+            }
 
         }
 

@@ -166,7 +166,9 @@ public readonly struct Predicate : IExplainable
     public static Predicate Fact(Atom module, ITerm head, bool dynamic = false, bool exported = false)
         => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.True, TrueNode.Instance));
     public static Predicate Falsehood(Atom module, ITerm head, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.False, TrueNode.Instance));
+        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.False, FalseNode.Instance));
+    public static Predicate Virtual(Atom module, ITerm head, ErgoVM.Op op, bool dynamic = false, bool exported = false)
+        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.True, new VirtualNode(op)));
 
     public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<ExecutionGraph> graph)
     {

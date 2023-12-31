@@ -74,7 +74,7 @@ public class Compiler : Library
                     if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
                         continue;
                     // TODO: figure out issue with compiler optimizations breaking math:range
-                    if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: false).TryGetValue(out var newClause))
+                    if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: true).TryGetValue(out var newClause))
                     {
                         newClause.ExecutionGraph.Do(x => x.Compile());
                         // Hooks can be defined in non-existent modules, but otherwise we want to cache the compiled predicate.

@@ -1,3 +1,6 @@
+![example workflow](https://github.com/G3Kappa/Ergo/actions/workflows/dotnet.yml/badge.svg)
+[![license](https://img.shields.io/badge/License-AGPL-purple.svg)](LICENSE)
+
 ## Design Goals
 Ergo brings first-order logic to the .NET world through a lightweight and extensible Prolog implementation written entirely in C#. It is a relatively young project, so it's neither ISO-compliant nor stable, but it's been consistently improving over the past few years. 
 

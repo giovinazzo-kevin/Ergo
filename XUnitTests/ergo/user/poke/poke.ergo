@@ -1,0 +1,189 @@
+﻿:- module(poke, [
+]).
+
+%:- table(score_matchup_/3).
+
+type(none).
+type(normal).
+type(fire).
+type(water).
+type(electric).
+type(grass).
+type(ice).
+type(fighting).
+type(ghost).
+type(poison).
+type(ground).
+type(flying).
+type(psychic).
+type(bug).
+type(rock).
+type(dragon).
+type(dark).
+type(steel).
+type(fairy).
+
+dual_type(T1-T2) :- 
+	type(T1), T1 \== none,
+	type(T2), T2 \== T1.
+
+not_very_eff(normal, rock).
+not_very_eff(normal, steel).
+
+not_very_eff(fire, fire).
+not_very_eff(fire, water).
+not_very_eff(fire, rock).
+not_very_eff(fire, dragon).
+super_eff(fire, grass).
+super_eff(fire, ice).
+super_eff(fire, bug).
+super_eff(fire, steel).
+
+super_eff(water, fire).
+super_eff(water, ground).
+super_eff(water, rock).
+not_very_eff(water, water).
+not_very_eff(water, grass).
+not_very_eff(water, dragon).
+
+super_eff(electric, water).
+not_very_eff(electric, electric).
+not_very_eff(electric, grass).
+not_very_eff(electric, dragon).
+super_eff(electric, flying).
+
+super_eff(grass, water).
+super_eff(grass, ground).
+super_eff(grass, rock).
+not_very_eff(grass, fire).
+not_very_eff(grass, grass).
+not_very_eff(grass, poison).
+not_very_eff(grass, flying).
+not_very_eff(grass, bug).
+not_very_eff(grass, dragon).
+not_very_eff(grass, steel).
+
+super_eff(ice, grass).
+super_eff(ice, ground).
+super_eff(ice, flying).
+super_eff(ice, dragon).
+not_very_eff(ice, fire).
+not_very_eff(ice, water).
+not_very_eff(ice, ice).
+not_very_eff(ice, steel).
+
+super_eff(fighting, normal).
+super_eff(fighting, ice).
+super_eff(fighting, rock).
+super_eff(fighting, dark).
+super_eff(fighting, steel).
+not_very_eff(fighting, poison).
+not_very_eff(fighting, flying).
+not_very_eff(fighting, psychic).
+not_very_eff(fighting, bug).
+not_very_eff(fighting, fairy).
+
+super_eff(poison, grass).
+super_eff(poison, fairy).
+not_very_eff(poison, poison).
+not_very_eff(poison, ground).
+not_very_eff(poison, rock).
+not_very_eff(poison, ghost).
+
+super_eff(ground, fire).
+super_eff(ground, electric).
+super_eff(ground, poison).
+super_eff(ground, rock).
+super_eff(ground, steel).
+not_very_eff(ground, grass).
+not_very_eff(ground, bug).
+
+super_eff(flying, grass).
+super_eff(flying, fighting).
+super_eff(flying, bug).
+not_very_eff(flying, electric).
+not_very_eff(flying, rock).
+not_very_eff(flying, steel).
+
+super_eff(psychic, fighting).
+super_eff(psychic, poison).
+not_very_eff(psychic, psychic).
+not_very_eff(psychic, steel).
+
+super_eff(bug, grass).
+super_eff(bug, psychic).
+super_eff(bug, dark).
+not_very_eff(bug, fire).
+not_very_eff(bug, fighting).
+not_very_eff(bug, poison).
+not_very_eff(bug, flying).
+not_very_eff(bug, ghost).
+not_very_eff(bug, steel).
+not_very_eff(bug, fairy).
+
+super_eff(rock, fire).
+super_eff(rock, ice).
+super_eff(rock, flying).
+super_eff(rock, bug).
+not_very_eff(rock, fighting).
+not_very_eff(rock, ground).
+not_very_eff(rock, steel).
+
+super_eff(ghost, psychic).
+super_eff(ghost, ghost).
+not_very_eff(ghost, dark).
+
+super_eff(dragon, dragon).
+not_very_eff(dragon, steel).
+
+super_eff(dark, psychic).
+super_eff(dark, ghost).
+not_very_eff(dark, fighting).
+not_very_eff(dark, dark).
+not_very_eff(dark, fairy).
+
+super_eff(steel, ice).
+super_eff(steel, rock).
+super_eff(steel, fairy).
+not_very_eff(steel, fire).
+not_very_eff(steel, water).
+not_very_eff(steel, electric).
+not_very_eff(steel, steel).
+
+super_eff(fairy, fighting).
+super_eff(fairy, dragon).
+super_eff(fairy, dark).
+not_very_eff(fairy, fire).
+not_very_eff(fairy, poison).
+not_very_eff(fairy, steel).
+
+immune_to(normal, ghost).
+immune_to(ghost, normal).
+immune_to(ghost, fighting).
+immune_to(fighting, ghost).
+immune_to(dark, psychic).
+immune_to(flying, ground).
+immune_to(ground, electric).
+immune_to(steel, poison).
+immune_to(fairy, dragon).
+
+score_matchup_(T1, T2, 0.0) :- immune_to(T2, T1), !.
+score_matchup_(T1, T2, 0.5) :- not_very_eff(T1, T2), !.
+score_matchup_(T1, T2, 2.0) :- super_eff(T1, T2), !.
+score_matchup_(_, _, 1.0).
+
+score_matchup(T1, T2, S) :-
+	type(T1), type(T2),
+	score_matchup_(T1, T2, S).
+
+score_matchup_dual(T1-T2, T3, S) :-
+	dual_type(T1-T2),
+	type(T3), T3 \== none,
+	score_matchup_(T3, T1, S1),
+	score_matchup_(T3, T2, S2),
+	S := S1 * S2.
+
+score_matchup_total(T1-T2, S) :- 
+	dual_type(T1-T2),
+	findall(SubScore, score_matchup_dual(T1-T2, _, SubScore), Scores),
+	reduce([A,B,C]>>(C:=A+B), Scores, S).

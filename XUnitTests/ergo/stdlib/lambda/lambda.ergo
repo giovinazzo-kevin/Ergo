@@ -1,0 +1,7 @@
+﻿:- module(lambda, [
+    '>>'/2,
+    add_postfix/3
+]).
+
+add_postfix(Postfix, ListIn, ListOut) :-
+    map([In,Out]>>atom_concat(In,Postfix,Out), ListIn, ListOut).

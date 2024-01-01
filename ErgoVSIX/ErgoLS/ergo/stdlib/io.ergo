@@ -1,0 +1,5 @@
+﻿:- module(io, [
+	nl/0
+]).
+
+nl :- write('\n').

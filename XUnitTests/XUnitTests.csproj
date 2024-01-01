@@ -48,4 +48,8 @@
     </None>
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="xcopy /E /Y &quot;$(SolutionDir)\Ergo\ergo&quot; &quot;$(SolutionDir)XUnitTests\ergo&quot;" />
+  </Target>
+
 </Project>

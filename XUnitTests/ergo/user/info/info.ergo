@@ -1,0 +1,12 @@
+﻿:- module(info, [
+	case01/3
+]).
+test(1). test(2). test(3).
+test_tost(1, 1). test_tost(1, 2).
+test_tost(2, 3). 
+test_tost(3, 3). test_tost(3, 1). test_tost(3, 2).
+
+case01(X, N, L) :-
+	test(X),
+	bagof(Y, test_tost(X, Y), L),
+	length(L, N).

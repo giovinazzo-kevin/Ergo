@@ -1,0 +1,23 @@
+﻿:- module(func, [
+	map/3, reduce/3, filter/3, sum/2
+]).
+
+map(_, [], []) :- !.
+map(Lambda, [H1|T1], [H2|T2]) :-
+	call(Lambda, H1, H2),
+	map(Lambda, T1, T2).
+
+reduce(_, [], _) :- !.
+reduce(_, [Result], Result) :- !.
+reduce(Lambda, [A, B|T], Result) :-
+	call(Lambda, A, B, PartialA),
+	reduce(Lambda, [PartialA|T], Result).
+
+filter(_, [], []) :- !.
+filter(Lambda, [H|T], T2) :-
+	\+call(Lambda, H),
+	filter(Lambda, T, T2), !.
+filter(Lambda, [H|T], [H|T2]) :-
+	filter(Lambda, T, T2).
+	
+sum(List, Sum) :- reduce([A, B, C]>>(C:=A+B), List, Sum).

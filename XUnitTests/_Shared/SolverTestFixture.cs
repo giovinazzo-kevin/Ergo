@@ -18,7 +18,6 @@ public class ErgoTestFixture : IDisposable
     public ErgoTestFixture()
     {
         var basePath = Directory.GetCurrentDirectory();
-        var stdlibPath = Path.Combine(basePath, @"..\..\..\..\Ergo\ergo");
         var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
         var moduleName = new Atom("tests");
 
@@ -28,7 +27,6 @@ public class ErgoTestFixture : IDisposable
             .WithExceptionHandler(ThrowingExceptionHandler)
             .WithoutSearchDirectories()
             .WithSearchDirectory(testsPath)
-            .WithSearchDirectory(stdlibPath)
         );
         scope = scope.WithRuntime(true);
         var module = Interpreter

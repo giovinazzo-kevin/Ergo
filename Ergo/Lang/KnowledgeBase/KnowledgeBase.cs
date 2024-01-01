@@ -105,10 +105,18 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                     yield return new KBMatch(goal, k, null);
                     yield break;
                 }
-                var predicate = k.Instantiate(ctx);
-                if (predicate.Unify(goal).TryGetValue(out var matchSubs))
+                if (k.Head.IsGround && k.Body.IsGround)
                 {
-                    yield return new KBMatch(goal, predicate, matchSubs);
+                    // no need to instantiate
+                    yield return new KBMatch(goal, k, null);
+                }
+                else
+                {
+                    var predicate = k.Instantiate(ctx);
+                    if (predicate.Unify(goal).TryGetValue(out var matchSubs))
+                    {
+                        yield return new KBMatch(goal, predicate, matchSubs);
+                    }
                 }
             }
         }

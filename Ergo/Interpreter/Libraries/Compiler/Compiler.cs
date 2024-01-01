@@ -73,7 +73,6 @@ public class Compiler : Library
                     var clause = node.Clauses[i];
                     if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
                         continue;
-                    // TODO: figure out issue with compiler optimizations breaking math:range
                     if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: true).TryGetValue(out var newClause))
                     {
                         newClause.ExecutionGraph.Do(x => x.Compile());

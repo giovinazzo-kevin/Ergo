@@ -10,7 +10,7 @@ public sealed class Ground : BuiltIn
     }
 
     public override ExecutionNode Optimize(BuiltInNode node) =>
-        node.Goal.IsGround ? TrueNode.Instance : FalseNode.Instance;
+        node.Goal.IsGround ? TrueNode.Instance : node;
     public override ErgoVM.Op Compile()
     {
         return vm =>

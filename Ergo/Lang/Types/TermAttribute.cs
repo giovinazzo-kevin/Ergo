@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang;
 
-[AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+[AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 public class TermAttribute : Attribute
 {
     private Maybe<TermAttribute> _cachedProxyAttr;

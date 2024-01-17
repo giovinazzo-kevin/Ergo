@@ -214,16 +214,31 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            if (Type.IsArray && t is List list)
+            if (t is List list)
             {
-                var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
-                for (var i = 0; i < list.Contents.Length; i++)
+                if (Type.IsArray)
                 {
-                    var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Marshalling);
-                    instance.SetValue(obj, i);
-                }
+                    var instance = Array.CreateInstance(Type.GetElementType(), list.Contents.Length);
+                    for (var i = 0; i < list.Contents.Length; i++)
+                    {
+                        var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Marshalling);
+                        instance.SetValue(obj, i);
+                    }
 
-                return instance;
+                    return instance;
+                }
+                else if (Type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)) is { } iList)
+                {
+                    var instance = (IList)Activator.CreateInstance(Type);
+                    for (var i = 0; i < list.Contents.Length; i++)
+                    {
+                        var obj = TermMarshall.FromTerm(list.Contents[i], Type.GetElementType(), Marshalling);
+                        instance.Add(obj);
+                    }
+
+                    return instance;
+                }
+                else throw new NotSupportedException();
             }
             else
             {

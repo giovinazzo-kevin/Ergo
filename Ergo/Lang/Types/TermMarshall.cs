@@ -6,6 +6,8 @@ namespace Ergo.Lang;
 public sealed class TermMarshall
 {
 
+    public readonly record struct Unmarshalled(object Value);
+
     internal static readonly ConcurrentDictionary<Type, TermAttribute> AttributeCache = new();
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
     internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
@@ -54,6 +56,8 @@ public sealed class TermMarshall
 
     public static ITerm ToTerm<T>(T value, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
     {
+        if (value is Unmarshalled)
+            return new Atom(value);
         if (typeof(T) == typeof(ITerm))
             return (ITerm)value;
         ctx ??= new();
@@ -69,6 +73,8 @@ public sealed class TermMarshall
     }
     public static ITerm ToTerm(object value, Type type, Maybe<Atom> functor = default, Maybe<TermMarshalling> mode = default, TermMarshallingContext ctx = null)
     {
+        if (value is Unmarshalled)
+            return new Atom(value);
         if (type == typeof(ITerm))
             return (ITerm)value;
         ctx ??= new();
@@ -101,6 +107,8 @@ public sealed class TermMarshall
     }
     public static T FromTerm<T>(ITerm value, T _ = default, Maybe<TermMarshalling> mode = default)
     {
+        if (value is Atom { Value: Unmarshalled { Value: var v } })
+            return (T)v;
         if (typeof(T) == typeof(ITerm))
             return (T)value;
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(typeof(T));
@@ -116,6 +124,8 @@ public sealed class TermMarshall
     }
     public static object FromTerm(ITerm value, Type type, Maybe<TermMarshalling> mode = default)
     {
+        if (value is Atom { Value: Unmarshalled { Value: var v } })
+            return v;
         if (type == typeof(ITerm))
             return value;
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);

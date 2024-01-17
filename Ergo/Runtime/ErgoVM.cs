@@ -344,6 +344,14 @@ public partial class ErgoVM
         SuccessToSolution();
         SubstitutionMap.Pool.Release(Environment);
     }
+
+    public Op ParseAndCompileQuery(string query, CompilerFlags flags = CompilerFlags.Default)
+    {
+        if (KB.Scope.Parse<Query>(query).TryGetValue(out var q))
+            return CompileQuery(q, flags);
+        return Ops.Fail;
+    }
+
     public Op CompileQuery(Query query, CompilerFlags flags = CompilerFlags.Default)
     {
         var exps = GetQueryExpansions(query, flags);

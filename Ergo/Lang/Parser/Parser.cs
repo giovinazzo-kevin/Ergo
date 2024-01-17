@@ -584,7 +584,6 @@ public partial class ErgoParser : IDisposable
         return Expression()
             .Where(op => WellKnown.Operators.UnaryHorn.Equals(op.Operator))
             .Map(op => ExpectDelimiter(p => p.Equals("."))
-                .Do(none: () => Throw(scope.LexerState, ErrorType.UnterminatedClauseList))
                 .Select(_ => op))
             .Select(op => new Directive(op.Left, desc))
             .Or(() => MemoizeFailureAndFail<Directive>(scope.LexerState))

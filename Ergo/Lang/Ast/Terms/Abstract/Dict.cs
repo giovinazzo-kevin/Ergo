@@ -124,6 +124,9 @@ public class Dict : AbstractTerm
             return LanguageExtensions.Unify(CanonicalForm, other);
         var dxFunctor = Functor.Reduce(a => (ITerm)a, v => v);
         var dyFunctor = dict.Functor.Reduce(a => (ITerm)a, v => v);
+        if (!dxFunctor.Unify(dyFunctor).TryGetValue(out var subs))
+            return default;
+        map.AddRange(subs);
         // complication: the form dict(_, Variable) should be parsed, but
         // in that case Variable should unify with the whole set of KVPs
         if (Argument.TryGetA(out var av))
@@ -138,9 +141,6 @@ public class Dict : AbstractTerm
         {
             // Proper dictionaries unify if the intersection of their properties unifies.
             // This is different from equality, which is more strict and checks if all elements are equal.
-            if (!dxFunctor.Unify(dyFunctor).TryGetValue(out var subs))
-                return default;
-            map.AddRange(subs);
             SubstitutionMap.Pool.Release(subs);
             if (Dictionary.Count == 0 || dict.Dictionary.Count == 0)
                 return map;

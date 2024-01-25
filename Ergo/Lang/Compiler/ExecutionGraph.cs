@@ -165,7 +165,8 @@ public static class ExecutionGraphExtensions
                 cyclicalCallMap[sig] = new CyclicalCallNode(goal);
             }
             var newMatches = new List<ExecutionNode>();
-            foreach (var clause in node.Clauses)
+            foreach (var clause in node.Clauses
+                .OrderByDescending(x => scope.Modules.TryGetValue(x.DeclaringModule, out var m) ? m.LoadOrder : 0))
             {
                 if (Clause(clause).TryGetValue(out var match))
                     newMatches.Add(match);

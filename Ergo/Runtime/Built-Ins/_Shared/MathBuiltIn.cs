@@ -126,7 +126,7 @@ public abstract class MathBuiltIn : BuiltIn
             if (vm != null)
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, t.Explain());
             else throw new RuntimeException(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, t.Explain());
-            return default;
+            return EDecimal.NaN;
         }
     }
 }

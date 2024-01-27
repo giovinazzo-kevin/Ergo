@@ -47,15 +47,14 @@ public readonly struct Signature
 
         return Functor.Equals(other.Functor)
             && (!Arity.TryGetValue(out var a) || !other.Arity.TryGetValue(out var b) || a.Equals(b))
-            && Module.Equals(other.Module);
+            && (!Module.TryGetValue(out var m) || !other.Module.TryGetValue(out var n) || m.Equals(n));
     }
 
     public static bool operator ==(Signature left, Signature right) => left.Equals(right);
 
     public static bool operator !=(Signature left, Signature right) => !(left == right);
 
-    public override int GetHashCode() => HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode(),
-        1 - Arity.TryGetValue(out _).GetHashCode(), 1 - Module.TryGetValue(out _).GetHashCode());
+    public override int GetHashCode() => HashCode.Combine(Functor.GetHashCode(), Arity.GetHashCode(), Module.GetHashCode());
 
     public static bool FromCanonical(ITerm term, out Signature sig)
     {

@@ -1,5 +1,8 @@
 ﻿
 
+using Ergo.Lang.Ast;
+using Ergo.Lang.Extensions;
+
 namespace Tests;
 
 public class BasicSolverTests : ErgoTests
@@ -51,4 +54,21 @@ public class BasicSolverTests : ErgoTests
     #endregion
     public void ShouldSolveVariants(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, false, expected);
+
+    [Fact]
+    public void ShouldHashSignatures()
+    {
+        var s1 = new Complex(new Atom(":="), new Variable("A"), new Variable("B"))
+            .GetSignature();
+        var s2 = new Complex(new Atom(":="), new Variable("A"))
+            .GetSignature();
+        var s3 = new Complex(new Atom(":="), new Variable("X"), new Variable("Y"))
+            .GetSignature();
+        Assert.NotEqual(s1, s2);
+        Assert.NotEqual(s2, s3);
+        Assert.Equal(s1, s3);
+        Assert.NotEqual(s1.GetHashCode(), s2.GetHashCode());
+        Assert.NotEqual(s2.GetHashCode(), s3.GetHashCode());
+        Assert.Equal(s1.GetHashCode(), s3.GetHashCode());
+    }
 }

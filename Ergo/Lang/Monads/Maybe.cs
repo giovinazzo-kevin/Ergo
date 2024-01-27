@@ -149,4 +149,11 @@ public readonly struct Maybe<T>
     public static Maybe<T> Some(T value) => new(value);
 
     public static implicit operator Maybe<T>(T a) => Maybe.Some(a);
+
+    public override int GetHashCode()
+    {
+        if (!HasValue)
+            return 1658;
+        return Value.GetHashCode();
+    }
 }

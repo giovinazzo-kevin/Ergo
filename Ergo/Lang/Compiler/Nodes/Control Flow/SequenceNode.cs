@@ -67,10 +67,6 @@ public class SequenceNode : ExecutionNode
                 while (newList.Count > 0 && RedundantStart(newList[0]))
                     newList.RemoveAt(0);
             }
-            for (int i = 0; i < newList.Count; i++)
-            {
-                newList[i] = newList[i].Optimize();
-            }
             var optimizationPassesFromNodes = newList
                 .Select(n => (n.OptimizationOrder, Optimize: (Func<List<ExecutionNode>, List<ExecutionNode>>)n.OptimizeSequence))
                     .OrderBy(x => x.OptimizationOrder)
@@ -79,14 +75,16 @@ public class SequenceNode : ExecutionNode
             {
                 newList = opt(newList);
             }
+            for (int i = 0; i < newList.Count; i++)
+            {
+                newList[i] = newList[i].Optimize();
+            }
             if (newList.Count == count)
             {
-                if (!fixpoint) fixpoint = true;
-                else break;
+                break;
             }
-            else fixpoint = false;
         }
-        while (newList.Count <= count);
+        while (newList.Count < count);
         return newList;
 
         bool RedundantStart(ExecutionNode a)

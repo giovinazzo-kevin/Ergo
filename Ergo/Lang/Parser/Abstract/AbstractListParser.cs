@@ -39,9 +39,9 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
         Empty = Construct(ImmutableArray<ITerm>.Empty, default);
         var scope = parser.GetScope();
         // Canonical list: a [|] b [|] []
-        return ParseCanonical()
+        return ParseSugared()
         // Sugared list: [a, b]
-            .Or(ParseSugared);
+            .Or(ParseCanonical);
 
         Maybe<L> ParseCanonical() => parser.Complex()
             .Where(a => a.Arity == 2 && Empty.Operator.Synonyms.Contains(a.Functor))

@@ -8,8 +8,8 @@ public sealed class DictParser : IAbstractTermParser<Dict>
     public Maybe<Dict> Parse(ErgoParser parser)
     {
         var scope = parser.GetScope();
-        return ParseCanonical()
-            .Or(ParseSugared);
+        return ParseSugared()
+            .Or(ParseCanonical);
         Maybe<Dict> ParseCanonical()
         {
             return parser.Complex()

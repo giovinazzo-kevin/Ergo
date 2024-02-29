@@ -1,6 +1,5 @@
-﻿
+﻿namespace Tests;
 
-namespace Tests;
 
 public class AdvancedSolverTests : ErgoTests
 {

@@ -5,6 +5,10 @@ using Ergo.Lang.Extensions;
 
 namespace Tests;
 
+using A = Atom;
+using C = Complex;
+using V = Variable;
+
 public class BasicSolverTests : ErgoTests
 {
     public BasicSolverTests(ErgoTestFixture fixture) : base(fixture) { }
@@ -58,11 +62,11 @@ public class BasicSolverTests : ErgoTests
     [Fact]
     public void ShouldHashSignatures()
     {
-        var s1 = new Complex(new Atom(":="), new Variable("A"), new Variable("B"))
+        var s1 = new C(new A(":="), new V("A"), new V("B"))
             .GetSignature();
-        var s2 = new Complex(new Atom(":="), new Variable("A"))
+        var s2 = new C(new A(":="), new V("A"))
             .GetSignature();
-        var s3 = new Complex(new Atom(":="), new Variable("X"), new Variable("Y"))
+        var s3 = new C(new A(":="), new V("X"), new V("Y"))
             .GetSignature();
         Assert.NotEqual(s1, s2);
         Assert.NotEqual(s2, s3);

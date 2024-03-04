@@ -12,7 +12,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
 
     protected static Maybe<Predicate> GetPredicate(ErgoVM vm, ITerm arg)
     {
-        if (!Predicate.FromCanonical(arg, vm.KB.Scope.Entry, out var pred))
+        if (!Predicate.FromCanonical(arg, vm.CurrentModule, out var pred))
         {
             vm.KB.Scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
             return default;
@@ -44,7 +44,7 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
     {
         var sig = term.GetSignature();
         if (!term.IsQualified)
-            term = term.Qualified(vm.KB.Scope.Entry);
+            term = term.Qualified(vm.CurrentModule);
         var toRemove = new List<ITerm>();
         foreach (var match in vm.KB.GetMatches(new("R"), term, desugar: true)
             .AsEnumerable().SelectMany(x => x))
@@ -55,9 +55,9 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
                 return false;
             }
 
-            if (vm.KB.Scope.Entry != match.Predicate.DeclaringModule)
+            if (vm.CurrentModule != match.Predicate.DeclaringModule)
             {
-                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KB.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
+                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.CurrentModule.Explain(), match.Predicate.DeclaringModule.Explain());
                 return false;
             }
 

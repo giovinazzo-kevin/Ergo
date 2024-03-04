@@ -189,6 +189,7 @@ public partial class ErgoVM
                         // Track the number of choice points before executing the goal (up to the one we just pushed)
                         var numCp = vm.NumChoicePoints;
                         // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
+                        vm.CurrentModule = pred.DeclaringModule;
                         runGoal(vm);
                         // If the VM is in success state, promote that success to a solution by pushing the current environment.
                         vm.SuccessToSolution();

@@ -77,6 +77,10 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
+    /// <summary>
+    /// Register that stores the most recent module in which a predicate (excluding builtins) was called.
+    /// </summary>
+    public Atom CurrentModule;
     public ErgoVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
     {
         args = new ITerm[MAX_ARGUMENTS];
@@ -335,6 +339,7 @@ public partial class ErgoVM
         Environment = [];
         cutIndex = 0;
         @continue = Ops.NoOp;
+        CurrentModule = KB.Scope.Entry;
         refCounts.Clear();
         solutions.Clear();
         choicePoints.Clear();

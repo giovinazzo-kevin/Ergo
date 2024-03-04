@@ -18,7 +18,7 @@ public sealed class Retract : DynamicPredicateBuiltIn
                 vm.PushChoice(RetractOp);
                 vm.Solution();
             }
-            vm.Fail();
+            else vm.Fail();
         }
     }
 }

@@ -111,8 +111,8 @@ public readonly struct InterpreterScope
                 if (!pred.IsBuiltIn)
                 {
                     newPred = pred.WithModuleName(module);
-                    if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
-                        newPred = newPred.WithModuleName(newModule).WithHead(newHead);
+                    //if (newPred.Head.GetQualification(out var newHead).TryGetValue(out var newModule))
+                    //    newPred = newPred.WithModuleName(newModule).WithHead(newHead);
                     if (!pred.IsExported)
                         newPred = newPred.Qualified();
                 }

@@ -11,14 +11,14 @@ public sealed class Retract : DynamicPredicateBuiltIn
     public override ErgoVM.Op Compile()
     {
         return RetractOp;
-        void RetractOp(ErgoVM vm)
+        static void RetractOp(ErgoVM vm)
         {
             if (Retract(vm, vm.Arg(0), all: false))
             {
                 vm.PushChoice(RetractOp);
                 vm.Solution();
             }
-            else vm.Fail();
+            vm.Fail();
         }
     }
 }

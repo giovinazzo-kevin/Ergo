@@ -1,6 +1,5 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Runtime.BuiltIns;
-using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -62,12 +61,11 @@ public static class ExecutionGraphExtensions
 
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
-        var scope = graph.KnowledgeBase.Scope/*.WithCurrentModule(clause.DeclaringModule)*/;
-        var root = ToExecutionNode(clause.Body, graph, scope, cyclicalCallMap: cyclicalCallMap);
+        var root = ToExecutionNode(clause.Body, graph, graph.KnowledgeBase.Scope, clause.DeclaringModule, cyclicalCallMap: cyclicalCallMap);
         return new(clause.Head, root);
     }
 
-    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
+    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, Maybe<Atom> callerModule = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         ctx ??= CompilerContext;
         cyclicalCallMap ??= new();
@@ -76,7 +74,7 @@ public static class ExecutionGraphExtensions
         var scope = mbScope.GetOr(graph.KnowledgeBase.Scope);// Handle the cyclical call node if it's present
         if (goal is NTuple tup)
         {
-            var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, ctx, cyclicalCallMap)).ToList();
+            var list = tup.Contents.Select(x => ToExecutionNode(x, graph, scope, callerModule, ctx, cyclicalCallMap)).ToList();
             if (list.Count == 0)
                 return TrueNode.Instance;
             if (list.Count == 1)
@@ -95,15 +93,15 @@ public static class ExecutionGraphExtensions
         {
             if (arity == 2 && WellKnown.Operators.If.Synonyms.Contains(functor))
             {
-                return new IfThenNode(ToExecutionNode(args[0], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, ctx, cyclicalCallMap));
+                return new IfThenNode(ToExecutionNode(args[0], graph, scope, callerModule, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, callerModule, ctx, cyclicalCallMap));
             }
             if (arity == 2 && WellKnown.Operators.Disjunction.Synonyms.Contains(functor))
             {
                 if (args[0] is Complex { Functor: var functor1, Arity: var arity1, Arguments: var args1 } && arity1 == 2 && WellKnown.Operators.If.Synonyms.Contains(functor1))
                 {
-                    return new IfThenElseNode(ToExecutionNode(args1[0], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args1[1], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, ctx, cyclicalCallMap));
+                    return new IfThenElseNode(ToExecutionNode(args1[0], graph, scope, callerModule, ctx, cyclicalCallMap), ToExecutionNode(args1[1], graph, scope, callerModule, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, callerModule, ctx, cyclicalCallMap));
                 }
-                return new BranchNode(ToExecutionNode(args[0], graph, scope, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, ctx, cyclicalCallMap));
+                return new BranchNode(ToExecutionNode(args[0], graph, scope, callerModule, ctx, cyclicalCallMap), ToExecutionNode(args[1], graph, scope, callerModule, ctx, cyclicalCallMap));
             }
         }
         // If 'goal' isn't any other type of node, then it's a proper goal and we need to resolve it in the context of 'clause'.
@@ -169,7 +167,7 @@ public static class ExecutionGraphExtensions
             foreach (var clause in node.Clauses
                 .OrderByDescending(x => scope.Modules.TryGetValue(x.DeclaringModule, out var m) ? m.LoadOrder : 0))
             {
-                if (Clause(clause).TryGetValue(out var match))
+                if (Clause(clause, callerModule.GetOr(scope.Entry)).TryGetValue(out var match))
                     newMatches.Add(match);
             }
             matches.AddRange(newMatches);
@@ -179,11 +177,10 @@ public static class ExecutionGraphExtensions
                 c.Ref.Node = ret;
             }
         }
-        Maybe<ExecutionNode> Clause(Predicate clause)
+        Maybe<ExecutionNode> Clause(Predicate clause, Atom callerModule)
         {
             var facts = new List<Predicate>();
             goal.GetQualification(out var head);
-            Debug.WriteLine(clause.Head.GetSignature().Explain());
             if (scope.Modules.TryGetValue(clause.DeclaringModule, out var module))
             {
                 var sig = clause.Head.Qualified(clause.DeclaringModule).GetSignature();
@@ -194,7 +191,7 @@ public static class ExecutionGraphExtensions
                     {
                         args = args.SetItem(i, meta.Arguments[i] switch
                         {
-                            '+' when !args[i].GetQualification(out _).HasValue => args[i].Qualified(scope.Entry),
+                            '+' when !args[i].GetQualification(out _).HasValue => args[i].Qualified(callerModule),
                             _ => args[i],
                         });
                     }

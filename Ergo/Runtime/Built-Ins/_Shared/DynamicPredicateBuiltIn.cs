@@ -55,11 +55,11 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
                 return false;
             }
 
-            if (vm.KB.Scope.Entry != match.Predicate.DeclaringModule)
-            {
-                vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KB.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
-                return false;
-            }
+            //if (vm.KB.Scope.Entry != match.Predicate.DeclaringModule)
+            //{
+            //    vm.Throw(ErgoVM.ErrorType.CannotRetractImportedPredicate, sig.Explain(), vm.KB.Scope.Entry.Explain(), match.Predicate.DeclaringModule.Explain());
+            //    return false;
+            //}
 
             toRemove.Add(match.Predicate.Head);
 

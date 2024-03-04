@@ -13,6 +13,6 @@ public sealed class RetractAll : DynamicPredicateBuiltIn
         {
             vm.Solution();
         }
-        else vm.Fail();
+        else vm.Success();
     };
 }

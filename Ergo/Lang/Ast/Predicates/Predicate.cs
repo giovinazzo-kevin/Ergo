@@ -322,6 +322,7 @@ public readonly struct Predicate : IExplainable
 
     public static bool FromCanonical(ITerm term, Atom defaultModule, out Predicate pred)
     {
+        var module = term.GetQualification(out term).GetOr(defaultModule);
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))
         {
             var head = c.Arguments[0];
@@ -332,8 +333,6 @@ public readonly struct Predicate : IExplainable
             pred = new("(dynamic)", mod, head, body, true, false, default);
             return true;
         }
-
-        var module = term.GetQualification(out term).GetOr(defaultModule);
         pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True), term.Scope), true, false, default);
         return true;
     }

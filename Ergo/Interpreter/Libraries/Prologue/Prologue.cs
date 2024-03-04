@@ -17,5 +17,6 @@ public class Prologue : Library
         .Append(new Unify())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
+        .Append(new DeclareMetaPredicate())
         ;
 }

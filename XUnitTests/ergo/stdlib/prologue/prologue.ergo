@@ -5,6 +5,10 @@
 	'->'/2, '*'/1
 ]).
 
+:- meta_predicate(asserta('+')).
+:- meta_predicate(assertz('+')).
+:- meta_predicate(retract('+')).
+:- meta_predicate(retractall('+')).
 
 % OPERATOR DECLARATIONS
 :- op(5, xfy, ['::']).

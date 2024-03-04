@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Runtime.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -182,6 +183,25 @@ public static class ExecutionGraphExtensions
         {
             var facts = new List<Predicate>();
             goal.GetQualification(out var head);
+            Debug.WriteLine(clause.Head.GetSignature().Explain());
+            if (scope.Modules.TryGetValue(clause.DeclaringModule, out var module))
+            {
+                var sig = clause.Head.Qualified(clause.DeclaringModule).GetSignature();
+                if (module.MetaPredicates.TryGetValue(sig, out var meta))
+                {
+                    var args = head.GetArguments();
+                    for (int i = 0; i < meta.Arguments.Length; i++)
+                    {
+                        args = args.SetItem(i, meta.Arguments[i] switch
+                        {
+                            '+' when !args[i].GetQualification(out _).HasValue => args[i].Qualified(scope.Entry),
+                            _ => args[i],
+                        });
+                    }
+                    if (head is Complex cplxHead)
+                        head = cplxHead.WithArguments(args);
+                }
+            }
             if (clause.BuiltIn.TryGetValue(out var builtIn))
                 return new BuiltInNode(node, head, builtIn);
             var substitutedClause = clause.Instantiate(ctx);

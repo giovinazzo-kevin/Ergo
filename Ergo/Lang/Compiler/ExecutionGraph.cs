@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Runtime.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -61,6 +62,7 @@ public static class ExecutionGraphExtensions
 
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
+        Debug.WriteLine(clause.Explain(false));
         var root = ToExecutionNode(clause.Body, graph, graph.KnowledgeBase.Scope, clause.DeclaringModule, cyclicalCallMap: cyclicalCallMap);
         return new(clause.Head, root);
     }

@@ -16,17 +16,24 @@ public sealed class Eval : MathBuiltIn
         var args = node.Goal.GetArguments();
         if (!args[1].IsGround)
             return node;
-        var ret = new Eval().Evaluate(null, args[1]);
-        if (args[0].IsGround)
+        try
         {
-            if (args[0].Equals(new Atom(ret)))
-                return TrueNode.Instance;
+            var ret = new Eval().Evaluate(null, args[1]);
+            if (args[0].IsGround)
+            {
+                if (args[0].Equals(new Atom(ret)))
+                    return TrueNode.Instance;
+            }
+            else if (node.Node.Graph.GetNode(WellKnown.Signatures.Unify).TryGetValue(out var unifyNode))
+            {
+                return new BuiltInNode(unifyNode, Unify.MakeComplex(args[0], new Atom(ret)), node.Node.Graph.UnifyInstance);
+            }
+            return FalseNode.Instance;
         }
-        else if (node.Node.Graph.GetNode(WellKnown.Signatures.Unify).TryGetValue(out var unifyNode))
+        catch (ErgoException)
         {
-            return new BuiltInNode(unifyNode, Unify.MakeComplex(args[0], new Atom(ret)), node.Node.Graph.UnifyInstance);
+            return FalseNode.Instance;
         }
-        return FalseNode.Instance;
     }
 
     public override ErgoVM.Op Compile() => vm =>

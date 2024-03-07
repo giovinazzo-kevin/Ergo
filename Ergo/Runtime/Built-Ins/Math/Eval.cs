@@ -30,7 +30,7 @@ public sealed class Eval : MathBuiltIn
             }
             return FalseNode.Instance;
         }
-        catch (ErgoException)
+        catch (RuntimeException)
         {
             return FalseNode.Instance;
         }

@@ -311,11 +311,11 @@ public partial class ErgoVM
     public bool IsSingletonVariable(Variable v) => refCounts.GetCount(v) == 1;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void Backtrack()
+    internal void Backtrack()
     {
         while (BacktrackOnce()) ;
     }
-    protected virtual bool BacktrackOnce()
+    internal virtual bool BacktrackOnce()
     {
         if (cutIndex < choicePoints.Count)
         {

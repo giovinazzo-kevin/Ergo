@@ -5,6 +5,7 @@
 :- use_module(case02).
 :- use_module(case03).
 :- use_module(case04).
+:- use_module(case05).
 :- dynamic(t/0).
 :- dynamic(t/1).
 

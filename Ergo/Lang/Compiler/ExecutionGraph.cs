@@ -23,6 +23,9 @@ public class ExecutionGraph
         if (Root is not SequenceNode)
             Root.IsContinuationDet = true;
         var compiledRoot = Root.Compile();
+        Debug.WriteLine(Root.Explain(false));
+        Debug.WriteLine("");
+        Debug.WriteLine("");
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
         RuntimeHelpers.PrepareDelegate(compiledRoot);
         Compiled = compiledRoot;
@@ -62,7 +65,6 @@ public static class ExecutionGraphExtensions
 
     public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
-        Debug.WriteLine(clause.Explain(false));
         var root = ToExecutionNode(clause.Body, graph, graph.KnowledgeBase.Scope, clause.DeclaringModule, cyclicalCallMap: cyclicalCallMap);
         return new(clause.Head, root);
     }

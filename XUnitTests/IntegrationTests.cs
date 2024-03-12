@@ -23,6 +23,7 @@ public class IntegrationTests : ErgoTests
         "X/2.2;Y/2.1;Z/2.1", "X/2.2;Y/2.1;Z/2.2", "X/2.2;Y/2.2;Z/2.1", "X/2.2;Y/2.2;Z/2.2")]
     [InlineData("case04 : cyclic(X)", 2, "X/2", "X/2")]
     [InlineData("case04 : builtin_cyclic(X)", 2, "X/2", "X/2")]
+    [InlineData("case05 : test_geometry(p(2,2),p(1,1) + p(1,1))", 1, "")]
     //[InlineData("list_element_rest([a,b],E,Rest)", 2, "E/a;Rest/b", "E/b;Rest/a")]
     //[InlineData("list_element_rest(Ls,c,[a,b])", 3, "Ls/[c,a,b]", "Ls/[a,c,b]", "Ls/[a,b,c]")]
     #endregion

@@ -10,15 +10,7 @@ public sealed class Unify : BuiltIn
     }
 
     public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
-
     public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new Complex(WellKnown.Signatures.Unify.Functor, lhs, rhs);
-    public static ImmutableArray<ITerm> MakeArgs(ImmutableArray<ITerm> lhs, ImmutableArray<ITerm> rhs)
-    {
-        var builder = ImmutableArray<ITerm>.Empty.ToBuilder();
-        builder.Add(new Complex(_u, lhs));
-        builder.Add(new Complex(_u, rhs));
-        return builder.ToImmutable();
-    }
 
     public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
@@ -50,7 +42,6 @@ public sealed class Unify : BuiltIn
             }
             bool IsConstUnif(ImmutableArray<ITerm> args) => args[0] is Variable { Ignored: true } && args[1].IsGround;
         }
-
         void RemoveDeadUnifications()
         {
             // When compiling queries and hooks, unification stubs are generated for all arguments.
@@ -80,12 +71,12 @@ public sealed class Unify : BuiltIn
     public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();
-        // If this node was already optimized, nevermind.
-        if (args[0].GetFunctor().Select(x => x.Equals(_u)).GetOr(false))
-            return node;
         // If two terms don't unify they don't unify, regardless of whether they're ground or not.
         if (!args[1].Unify(args[0]).TryGetValue(out var subs))
             return FalseNode.Instance;
+        // If this node was already optimized, nevermind.
+        if (args[0].GetFunctor().Select(x => x.Equals(_u)).GetOr(false))
+            return node;
         // However, if the unification produced substitutions then we can't just ignore them. We can actually use them.
         if (!node.Goal.IsGround && subs.Any())
         {

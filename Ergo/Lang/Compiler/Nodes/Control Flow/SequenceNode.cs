@@ -32,10 +32,10 @@ public class SequenceNode : ExecutionNode
         }).ToList();
         // Remove duplicates such as consecutive truths or cuts.
         // Then, applies all available optimizations from the child nodes until a fixed point is reached.
-        var count = newList.Count;
+        int checkSum;
         do
         {
-            count = newList.Count;
+            checkSum = newList.Sum(x => x.GetType().GetHashCode());
             for (int i = newList.Count - 1; i >= 0; i--)
             {
                 var current = newList[i];
@@ -57,6 +57,7 @@ public class SequenceNode : ExecutionNode
                 var current = newList[i];
                 if (current is FalseNode)
                 {
+                    // Remove everything after this false node
                     newList.RemoveRange(i + 1, newList.Count - i - 1);
                     break;
                 }
@@ -79,12 +80,12 @@ public class SequenceNode : ExecutionNode
             {
                 newList[i] = newList[i].Optimize();
             }
-            if (newList.Count == count)
+            if (newList.Count == checkSum)
             {
                 break;
             }
         }
-        while (newList.Count < count);
+        while (newList.Sum(x => x.GetType().GetHashCode()) != checkSum);
         return newList;
 
         bool RedundantStart(ExecutionNode a)

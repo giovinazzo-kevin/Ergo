@@ -26,6 +26,18 @@ public sealed class Call : BuiltIn
         if (goal is not NTuple comma)
             comma = new([goal], goal.Scope);
         var query = new Query(comma);
-        vm.CompileQuery(query)(vm);
+        var scope = vm.ScopedInstance();
+        scope.Query = scope.CompileQuery(query);
+        var any = false;
+        foreach (var sol in scope.RunInteractive())
+        {
+            any = true;
+            vm.Solution(sol.Substitutions);
+        }
+        if (!any && scope.State == ErgoVM.VMState.Fail)
+        {
+            vm.Fail();
+            return;
+        }
     };
 }

@@ -1,4 +1,5 @@
-﻿using PeterO.Numbers;
+﻿using Ergo.Lang.Compiler;
+using PeterO.Numbers;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -8,6 +9,18 @@ public sealed class Number : BuiltIn
         : base("", new("number"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
     {
     }
+
+    public override ExecutionNode Optimize(BuiltInNode node)
+    {
+        var args = node.Goal.GetArguments();
+        if (args[0] is not Variable)
+        {
+            if (args[0] is not Atom { Value: EDecimal _ })
+                return FalseNode.Instance; // this is probably a complex term, but definitely not a number
+        }
+        return node; // we don't know yet
+    }
+
     public override ErgoVM.Op Compile()
     {
         return vm =>

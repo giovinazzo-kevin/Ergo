@@ -5,6 +5,9 @@
     for/3
 ]).
 
+:- meta_predicate(call('+')).
+:- meta_predicate(forall('+', '+')).
+
 ignore(Goal) :- Goal, !.
 ignore(_).
 ignore_all(Goal) :- findall(_, Goal, _), !.

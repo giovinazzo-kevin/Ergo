@@ -70,7 +70,7 @@
     <None Update="ergo\stdlib\string\string.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\user\fiero\geometry.ergo">
+    <None Update="ergo\user\fiero\geometry_test.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ergo\user\info\info.ergo">

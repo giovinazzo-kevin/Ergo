@@ -49,7 +49,7 @@
     <None Update="ergo\tests.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="ergo\user\fiero\geometry.ergo">
+    <None Update="ergo\user\fiero\geometry_test.ergo">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

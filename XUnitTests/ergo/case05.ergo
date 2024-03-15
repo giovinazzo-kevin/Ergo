@@ -1,7 +1,7 @@
 ﻿:- module(case05, [
 	test_geometry/2
 ]).
-:- use_module(geometry).
+:- use_module(geometry_test).
 
 test_geometry(P, Exp) :-
 	P := Exp.

@@ -205,6 +205,7 @@ public partial class ErgoVM
     /// </summary>
     public void Fail()
     {
+        Debug.WriteLine(":: fail");
         State = VMState.Fail;
     }
     /// <summary>
@@ -216,6 +217,7 @@ public partial class ErgoVM
     }
     public void Success()
     {
+        Debug.WriteLine(":: success");
         State = VMState.Success;
     }
     /// <summary>
@@ -223,6 +225,7 @@ public partial class ErgoVM
     /// </summary>
     public void Solution(SubstitutionMap subs)
     {
+        Debug.WriteLine(":: solution");
         subs.AddRange(Environment);
         solutions.Push(subs);
         State = VMState.Solution;
@@ -232,6 +235,7 @@ public partial class ErgoVM
     /// </summary>
     public GeneratorDef Solution(Generator gen, int count)
     {
+        Debug.WriteLine($":: solution generator ({count})");
         State = VMState.Solution;
         return solutions.Push(gen, count);
     }
@@ -240,12 +244,14 @@ public partial class ErgoVM
     /// </summary>
     public void Solution()
     {
+        Debug.WriteLine($":: solution from env");
         solutions.Push(CloneEnvironment());
         State = VMState.Solution;
     }
 
     public void Cut()
     {
+        Debug.WriteLine($":: cut");
         cutIndex = choicePoints.Count;
     }
 
@@ -319,6 +325,7 @@ public partial class ErgoVM
     {
         if (cutIndex < choicePoints.Count)
         {
+            Debug.WriteLine(":: backtrack");
             State = VMState.Success;
             var choicePoint = choicePoints.Pop();
             SubstitutionMap.Pool.Release(Environment);
@@ -341,6 +348,7 @@ public partial class ErgoVM
     }
     protected virtual void CleanUp()
     {
+        Debug.WriteLine($":: cleanup");
         SuccessToSolution();
         SubstitutionMap.Pool.Release(Environment);
     }

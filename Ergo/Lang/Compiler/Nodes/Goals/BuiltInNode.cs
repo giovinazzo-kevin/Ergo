@@ -1,4 +1,5 @@
 ﻿using Ergo.Runtime.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -25,6 +26,7 @@ public class BuiltInNode : GoalNode
         for (int i = 0; i < Args.Length; i++)
             vm.SetArg(i, Args[i].Substitute(vm.Environment));
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
+        Debug.WriteLine(Explain(false));
         CompiledBuiltIn(vm);
     };
 

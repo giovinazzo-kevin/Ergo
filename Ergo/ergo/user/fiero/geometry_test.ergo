@@ -1,7 +1,7 @@
 % This module is imported implicitly by all game scripts.
 % Do not modify unless you know what you are doing.
 
-:- module(geometry, [':='/2, clamp/4]).
+:- module(geometry_test, [':='/2, clamp/4]).
 
 %: Base case: Evaluate a single point
 eval_point(p(X, Y), p(X, Y)) :- !.
@@ -36,9 +36,8 @@ eval_point(Op1 / Op2, p(X3, Y3)) :-
     math:eval(X3, X1 / X2),
     math:eval(Y3, Y1 / Y2).
 
-operands(Op1, Op2) :-
-    ground(Op1), ground(Op2), 
-    (Op1 = p(_, _) ; Op2 = p(_, _)).
+operands(p(_, _), _) :- !.
+operands(_, p(_, _)) :- !.
 
 %: Add points or scalars
 p(X3,Y3) := Op1 + Op2 :-

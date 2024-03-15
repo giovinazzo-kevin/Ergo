@@ -27,5 +27,5 @@ public class DynamicNode : ExecutionNode
         return new DynamicNode(Goal.Substitute(s));
     }
 
-    public override string Explain(bool canonical = false) => $"{GetType().Name} ({Goal.Explain(canonical)})";
+    public override string Explain(bool canonical = false) => $"{Goal.Explain(canonical)}";
 }

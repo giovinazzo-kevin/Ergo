@@ -143,5 +143,5 @@ public class SequenceNode : ExecutionNode
         if (IsGround) return this;
         return new SequenceNode(Nodes.Select(n => n.Substitute(s)).ToList(), IsRoot);
     }
-    public override string Explain(bool canonical = false) => Nodes.Select((n, i) => ((i == 0 ? "" : ",  ") + n.Explain(canonical))).Join("\r\n");
+    public override string Explain(bool canonical = false) => Nodes.Select((n, i) => ((i == 0 ? "" : ", ") + n.Explain(canonical))).Join("\r\n");
 }

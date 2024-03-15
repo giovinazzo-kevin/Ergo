@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Ergo.Runtime;
+﻿namespace Ergo.Runtime;
 
 public partial class ErgoVM
 {
@@ -139,7 +137,7 @@ public partial class ErgoVM
         /// </summary>
         public static Op Goal(ITerm goal, bool dynamic = false)
         {
-            Debug.WriteLine(goal.Explain(false));
+            // Debug.WriteLine(goal.Explain(false));
             const string cutValue = "!";
             return goal switch
             {

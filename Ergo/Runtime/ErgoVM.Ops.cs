@@ -137,7 +137,6 @@ public partial class ErgoVM
         /// </summary>
         public static Op Goal(ITerm goal, bool dynamic = false)
         {
-            // Debug.WriteLine(goal.Explain(false));
             const string cutValue = "!";
             return goal switch
             {
@@ -151,6 +150,7 @@ public partial class ErgoVM
             void Resolve(ErgoVM vm)
             {
                 var newGoal = goal.Substitute(vm.Environment);
+                vm.LogState(newGoal.Explain(false));
                 var matchEnum = GetEnumerator(vm, newGoal);
                 NextMatch(vm);
                 void NextMatch(ErgoVM vm)

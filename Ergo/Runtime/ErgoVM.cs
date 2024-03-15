@@ -37,6 +37,7 @@ public enum VMMode
 
 public partial class ErgoVM
 {
+    private static int NUM_VMS = 0;
     public const int MAX_ARGUMENTS = 255;
 
     #region Type Declarations
@@ -111,6 +112,7 @@ public partial class ErgoVM
     }
     #endregion
     #region External VM API
+    public int Id { get; private set; } = NUM_VMS++;
     /// <summary>
     /// Represents the current execution state of the VM.
     /// </summary>
@@ -149,6 +151,7 @@ public partial class ErgoVM
     public void Run()
     {
         Initialize();
+        LogState();
         Mode = VMMode.Batch;
         State = VMState.Success;
         Query(this);
@@ -161,6 +164,7 @@ public partial class ErgoVM
     public IEnumerable<Solution> RunInteractive()
     {
         Initialize();
+        LogState();
         Mode = VMMode.Interactive;
         State = VMState.Success;
         Query(this);
@@ -196,6 +200,7 @@ public partial class ErgoVM
     /// </summary>
     public void Throw(ErrorType error, params object[] args)
     {
+        LogState();
         State = VMState.Fail;
         KB.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
         choicePoints.Clear();
@@ -205,7 +210,7 @@ public partial class ErgoVM
     /// </summary>
     public void Fail()
     {
-        // Debug.WriteLine(":: fail");
+        LogState();
         State = VMState.Fail;
     }
     /// <summary>
@@ -213,11 +218,12 @@ public partial class ErgoVM
     /// </summary>
     public void Ready()
     {
+        LogState();
         State = VMState.Ready;
     }
     public void Success()
     {
-        // Debug.WriteLine(":: success");
+        LogState();
         State = VMState.Success;
     }
     /// <summary>
@@ -225,7 +231,7 @@ public partial class ErgoVM
     /// </summary>
     public void Solution(SubstitutionMap subs)
     {
-        // Debug.WriteLine(":: solution");
+        LogState($"Solution (map, {subs.Select(s => s.Explain()).Join("; ")})");
         subs.AddRange(Environment);
         solutions.Push(subs);
         State = VMState.Solution;
@@ -235,7 +241,7 @@ public partial class ErgoVM
     /// </summary>
     public GeneratorDef Solution(Generator gen, int count)
     {
-        // Debug.WriteLine($":: solution generator ({count})");
+        LogState($"Solution (gen, {count})");
         State = VMState.Solution;
         return solutions.Push(gen, count);
     }
@@ -244,14 +250,14 @@ public partial class ErgoVM
     /// </summary>
     public void Solution()
     {
-        // Debug.WriteLine($":: solution from env");
+        LogState("Solution (env)");
         solutions.Push(CloneEnvironment());
         State = VMState.Solution;
     }
 
     public void Cut()
     {
-        // Debug.WriteLine($":: cut");
+        LogState();
         if (State != VMState.Fail)
             cutIndex = choicePoints.Count;
     }
@@ -276,7 +282,7 @@ public partial class ErgoVM
     public void PushChoice(Op choice)
     {
         var env = CloneEnvironment();
-        var cont = @continue;
+        var cont = State == VMState.Fail ? Ops.NoOp : @continue;
         if (cont == Ops.NoOp)
             choicePoints.Push(new ChoicePoint(choice, env));
         else
@@ -307,6 +313,7 @@ public partial class ErgoVM
     }
     public void MergeEnvironment()
     {
+        LogState();
         if (!TryPopSolution(out var sol))
             throw StackEmptyException;
         Ops.UpdateEnvironment(sol.Substitutions)(this);
@@ -326,7 +333,7 @@ public partial class ErgoVM
     {
         if (cutIndex < choicePoints.Count)
         {
-            // Debug.WriteLine(":: backtrack");
+            LogState();
             State = VMState.Success;
             var choicePoint = choicePoints.Pop();
             SubstitutionMap.Pool.Release(Environment);
@@ -339,6 +346,7 @@ public partial class ErgoVM
     }
     protected virtual void Initialize()
     {
+        LogState();
         State = VMState.Ready;
         Environment = [];
         cutIndex = 0;
@@ -349,9 +357,15 @@ public partial class ErgoVM
     }
     protected virtual void CleanUp()
     {
-        // Debug.WriteLine($":: cleanup");
+        LogState();
         SuccessToSolution();
         SubstitutionMap.Pool.Release(Environment);
+    }
+
+    [Conditional("DEBUG")]
+    internal void LogState([CallerMemberName] string state = null)
+    {
+        Debug.WriteLine($"vm{Id:000}:: {state}".Indent(NumChoicePoints, tabWidth: 1));
     }
 
     public Op ParseAndCompileQuery(string query, CompilerFlags flags = CompilerFlags.Default)
@@ -363,6 +377,7 @@ public partial class ErgoVM
 
     public Op CompileQuery(Query query, CompilerFlags flags = CompilerFlags.Default)
     {
+        LogState();
         var exps = GetQueryExpansions(query, flags);
         var ops = new Op[exps.Length];
         for (int i = 0; i < exps.Length; i++)

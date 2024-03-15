@@ -282,7 +282,7 @@ public partial class ErgoVM
     public void PushChoice(Op choice)
     {
         var env = CloneEnvironment();
-        var cont = State == VMState.Fail ? Ops.NoOp : @continue;
+        var cont = @continue;
         if (cont == Ops.NoOp)
             choicePoints.Push(new ChoicePoint(choice, env));
         else

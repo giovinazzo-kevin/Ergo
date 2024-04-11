@@ -105,6 +105,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
                     yield return new KBMatch(goal, k, null);
                     yield break;
                 }
+                // TODO: replace with compiled version of a predicate call
                 var predicate = k.Instantiate(ctx);
                 if (predicate.Unify(goal).TryGetValue(out var matchSubs))
                 {

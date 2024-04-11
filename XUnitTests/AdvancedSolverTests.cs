@@ -48,6 +48,12 @@ public class AdvancedSolverTests : ErgoTests
     [InlineData("map([X,Y] >> (Y := X * 2),[1,2,3],[A,B,C])", 1, "A/2;B/4;C/6")]
     public void ShouldSolveHigherOrderPredicates(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
+    [Theory]
+    [InlineData("P := p(1,1) * 2", 1, "P/p(2,2)")]
+    [InlineData("_X = 2, P := p(1,1) * _X", 1, "P/p(2,2)")]
+    [InlineData("_X = 2, _Y = p(2,2), P := _X * _Y", 1, "P/p(4,4)")]
+    public void ShouldSolveProblematicQueries(string query, int numSolutions, params string[] expected)
+        => ShouldSolve(query, numSolutions, true, expected);
     #region Rows
     [Theory]
     [InlineData("assertz(t:-⊥)", "tests:t", "retractall(t)", 0)]

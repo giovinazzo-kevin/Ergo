@@ -174,16 +174,15 @@ public partial class ErgoVM
                         // - It's a builtin (we can run it directly with low overhead)
                         if (pred.BuiltIn.TryGetValue(out var builtIn))
                         {
-                            matchEnum.Current.Goal.GetQualification(out var inst);
-                            var args = inst.GetArguments();
-                            vm.Arity = args.Length;
-                            for (int i = 0; i < args.Length; i++)
-                                vm.SetArg(i, args[i]);
                             runGoal = builtIn.Compile();
                         }
                         // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
                         else if (pred.ExecutionGraph.TryGetValue(out var graph))
+                        {
                             runGoal = graph.Compile();
+                            if (runGoal != NoOp)
+                                SetArgs();
+                        }
                         // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
                             runGoal = Goals(pred.Body);
@@ -234,6 +233,15 @@ public partial class ErgoVM
                         // Essentially, when we exhaust the list of matches for 'goal', we set the VM in a failure state to signal backtracking.
                         vm.Fail();
                     }
+                }
+
+                void SetArgs()
+                {
+                    matchEnum.Current.Goal.GetQualification(out var inst);
+                    var args = inst.GetArguments();
+                    vm.Arity = args.Length;
+                    for (int i = 0; i < args.Length; i++)
+                        vm.SetArg(i, args[i]);
                 }
             }
             IEnumerator<KBMatch> GetEnumerator(ErgoVM vm, ITerm newGoal)

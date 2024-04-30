@@ -46,6 +46,8 @@ public sealed class TermMarshall
 
     private static TermAttribute GetAttribute(Type type)
     {
+        if (type.IsArray)
+            type = type.GetElementType();
         if (AttributeCache.TryGetValue(type, out var attribute)) return attribute;
         return AttributeCache[type] = type.GetCustomAttribute<TermAttribute>();
     }

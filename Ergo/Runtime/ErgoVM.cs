@@ -362,7 +362,7 @@ public partial class ErgoVM
         SubstitutionMap.Pool.Release(Environment);
     }
 
-    [Conditional("DEBUG")]
+    [Conditional("ERGO_VM_DIAGNOSTICS")]
     internal void LogState([CallerMemberName] string state = null)
     {
         Debug.WriteLine($"vm{Id:000}:: {state}".Indent(NumChoicePoints, tabWidth: 1));

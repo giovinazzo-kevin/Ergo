@@ -50,8 +50,6 @@ public readonly struct Substitution
         {
             if (x.Equals(y))
                 return true;
-            if (x.IsGround && y.IsGround)
-                return false;
             if (y is AbstractTerm ay && ay.Unify(x).TryGetValue(out var ayWithX))
             {
                 foreach (var s in ayWithX)
@@ -72,6 +70,8 @@ public readonly struct Substitution
                 }
                 return true;
             }
+            else if (x.IsGround && y.IsGround)
+                return false;
             else if (y is Variable)
             {
                 ApplySubstitution(new Substitution(y, x));

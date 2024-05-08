@@ -59,19 +59,9 @@ public class SequenceNode : ExecutionNode
                 var current = newList[i];
                 if (current is FalseNode)
                 {
-                    if (newList.All(x => x.IsDeterminate))
-                    {
-                        newList.Clear();
-                        newList.Add(current);
-                        break;
-                    }
                     // Remove everything after this false node
                     newList.RemoveRange(i + 1, newList.Count - i - 1);
                     break;
-                }
-                if (current is TrueNode)
-                {
-                    newList.RemoveRange(i, 1);
                 }
             }
             if (IsRoot)

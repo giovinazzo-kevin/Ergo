@@ -1,5 +1,6 @@
 ﻿using Ergo.Events.Interpreter;
 using Ergo.Facade;
+using Ergo.Interpreter.Directives;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Utils;
 using System.Collections.Concurrent;
@@ -122,27 +123,41 @@ public partial class ErgoInterpreter
                 visibleDirectives = visibleDirectives.Add(dir.Signature, dir);
             }
         }
-        foreach (var (Ast, Builtin, _) in directives.Where(x => !x.Defined))
-        {
-            stream.Dispose();
-            scope.Throw(ErrorType.UndefinedDirective, Ast.Explain(false));
-            Probe.Leave(watch);
-            return default;
-        }
         foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.Priority))
         {
-            var sig = Builtin.Signature.Explain();
-            var builtinWatch = Probe.Enter(sig);
-            Builtin.Execute(this, ref scope, ((Complex)Ast.Body).Arguments.ToArray());
-            // NOTE: It's only after module/2 has been called that the module actually gets its name!
-            Probe.Leave(builtinWatch, sig);
+            Execute(Ast, Builtin, ref scope);
+        }
+        var newVisibleDirectives = scope.VisibleDirectives.Concat(visibleDirectives)
+            .DistinctBy(x => x.Key)
+            .ToImmutableDictionary();
+        foreach (var (Ast, _, _) in directives.Where(x => !x.Defined))
+        {
+            if (newVisibleDirectives.TryGetValue(Ast.Body.GetSignature(), out var directive))
+            {
+                Execute(Ast, directive, ref scope);
+            }
+            else
+            {
+                stream.Dispose();
+                scope.Throw(ErrorType.UndefinedDirective, Ast.Explain(false));
+                Probe.Leave(watch);
+                return default;
+            }
         }
         module = scope.Modules[moduleName]
             .WithImport(scope.BaseImport)
             .WithProgram(program.AsPartial(true));
-
         Probe.Leave(watch);
         return module;
+
+        void Execute(Directive Ast, InterpreterDirective BuiltIn, ref InterpreterScope scope)
+        {
+            var sig = BuiltIn.Signature.Explain();
+            var builtinWatch = Probe.Enter(sig);
+            BuiltIn.Execute(this, ref scope, ((Complex)Ast.Body).Arguments.ToArray());
+            // NOTE: It's only after module/2 has been called that the module actually gets its name!
+            Probe.Leave(builtinWatch, sig);
+        }
     }
 
     public Maybe<Module> Load(ref InterpreterScope scope, Atom module, int loadOrder = 0)

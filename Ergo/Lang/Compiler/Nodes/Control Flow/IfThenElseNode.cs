@@ -18,6 +18,7 @@ public class IfThenElseNode : ExecutionNode
     public ExecutionNode TrueBranch { get; }
     public ExecutionNode FalseBranch { get; }
     public override bool IsGround => Condition.IsGround && TrueBranch.IsGround && FalseBranch.IsGround;
+    public override int CheckSum => HashCode.Combine(Condition.CheckSum, FalseBranch.CheckSum, TrueBranch.CheckSum);
 
     public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThenElse(Condition.Compile(), TrueBranch.Compile(), FalseBranch.Compile());
     public override ExecutionNode Optimize()

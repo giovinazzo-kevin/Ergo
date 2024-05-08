@@ -32,6 +32,8 @@ public class BranchNode : ExecutionNode
         }
         else yield return Right;
     }
+    public override int CheckSum => HashCode.Combine(Left.CheckSum, Right.CheckSum);
+
     //public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Unfold().Select(x => x.Compile()).ToArray());
     public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Left.Compile(), Right.Compile());
     public override ExecutionNode Optimize()

@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Runtime.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -22,7 +23,7 @@ public class ExecutionGraph
         if (Root is not SequenceNode)
             Root.IsContinuationDet = true;
         var compiledRoot = Root.Compile();
-        //Debug.WriteLine(Root.Explain(false));
+        Debug.WriteLine(Root.Explain(false));
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
         RuntimeHelpers.PrepareDelegate(compiledRoot);
         Compiled = compiledRoot;

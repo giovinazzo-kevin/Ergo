@@ -17,6 +17,7 @@ public class SequenceNode : ExecutionNode
     }
 
     public List<ExecutionNode> Nodes { get; }
+    public override int CheckSum => Nodes.Aggregate(0, (a, b) => HashCode.Combine(a, b.CheckSum));
 
     public SequenceNode AsRoot() => new(Nodes, true);
 
@@ -32,10 +33,11 @@ public class SequenceNode : ExecutionNode
         }).ToList();
         // Remove duplicates such as consecutive truths or cuts.
         // Then, applies all available optimizations from the child nodes until a fixed point is reached.
-        int checkSum;
+        int checkSum, newCheckSum = 0;
         do
         {
-            checkSum = newList.Sum(x => x.GetType().GetHashCode());
+            checkSum = newCheckSum;
+            newCheckSum = newList.Aggregate(0, (a, b) => HashCode.Combine(a, b.CheckSum));
             for (int i = newList.Count - 1; i >= 0; i--)
             {
                 var current = newList[i];
@@ -57,9 +59,19 @@ public class SequenceNode : ExecutionNode
                 var current = newList[i];
                 if (current is FalseNode)
                 {
+                    if (newList.All(x => x.IsDeterminate))
+                    {
+                        newList.Clear();
+                        newList.Add(current);
+                        break;
+                    }
                     // Remove everything after this false node
                     newList.RemoveRange(i + 1, newList.Count - i - 1);
                     break;
+                }
+                if (current is TrueNode)
+                {
+                    newList.RemoveRange(i, 1);
                 }
             }
             if (IsRoot)
@@ -80,13 +92,10 @@ public class SequenceNode : ExecutionNode
             {
                 newList[i] = newList[i].Optimize();
             }
-            if (newList.Count == checkSum)
-            {
-                break;
-            }
         }
-        while (newList.Sum(x => x.GetType().GetHashCode()) != checkSum);
+        while (newCheckSum != checkSum);
         return newList;
+
 
         bool RedundantStart(ExecutionNode a)
         {

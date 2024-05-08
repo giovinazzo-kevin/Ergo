@@ -31,6 +31,8 @@ public class BuiltInNode : GoalNode
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override bool IsDeterminate => BuiltIn.IsDeterminate(Args);
+    public override int CheckSum => HashCode.Combine(BuiltIn.GetType(),
+        Args.Aggregate(0, (a, b) => HashCode.Combine(b, a.GetHashCode())));
     public override ExecutionNode Optimize()
     {
         return BuiltIn.Optimize(this);

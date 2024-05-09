@@ -164,6 +164,12 @@ public class Expansions : Library
     {
         if (term is Variable)
             yield break;
+        // Special case: don't expand huge terms
+        if (term is Lang.Ast.List { Contents: { Length: var len } }
+            && len > 50)
+        {
+            yield break;
+        }
         // If this is an abstract term we expand it through its canonical form, then we parse the result again
         // through its owner parser.
         if (term is AbstractTerm abs)

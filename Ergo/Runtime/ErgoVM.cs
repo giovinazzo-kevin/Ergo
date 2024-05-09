@@ -262,6 +262,11 @@ public partial class ErgoVM
             cutIndex = choicePoints.Count;
     }
 
+    public void SetCutIndex(int index)
+    {
+        cutIndex = index;
+    }
+
     public Maybe<ChoicePoint> PopChoice()
     {
         if (choicePoints.TryPop(out var ret))

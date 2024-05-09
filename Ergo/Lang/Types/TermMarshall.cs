@@ -111,7 +111,7 @@ public sealed class TermMarshall
     {
         if (value is Atom { Value: Unmarshalled { Value: var v } })
             return (T)v;
-        if (typeof(T) == typeof(ITerm))
+        if (typeof(T).IsAssignableFrom(typeof(ITerm)))
             return (T)value;
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(typeof(T));
         if (typeof(T).GetInterfaces().Contains(interfaceType))

@@ -20,7 +20,7 @@ public sealed class ListSet : BuiltIn
         else if (args[1] is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
-            vm.SetArg(0, args[1]);
+            vm.SetArg(0, args[0]);
             vm.SetArg(1, lst);
             ErgoVM.Goals.Unify2(vm);
         }

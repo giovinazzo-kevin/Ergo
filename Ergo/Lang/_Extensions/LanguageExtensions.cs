@@ -49,7 +49,6 @@ public static class LanguageExtensions
             return abs;
         return default;
     }
-
     public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
     {
         match = default;

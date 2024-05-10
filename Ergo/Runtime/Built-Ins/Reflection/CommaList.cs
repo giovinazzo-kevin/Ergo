@@ -28,10 +28,7 @@ public sealed class CommaToList : BuiltIn
         if (commaArg is not Variable)
         {
             if (commaArg is not NTuple comma)
-            {
-                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.CommaList, commaArg.Explain());
-                return;
-            }
+                comma = new NTuple([commaArg]);
             var list = new List(comma.Contents, default, default);
             vm.SetArg(0, listArg);
             vm.SetArg(1, list);

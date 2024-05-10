@@ -14,6 +14,7 @@ public class Meta : Library
         .Append(new FindAll())
         .Append(new SetOf())
         .Append(new SetupCallCleanup())
+        .Append(new Choose())
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
         ;

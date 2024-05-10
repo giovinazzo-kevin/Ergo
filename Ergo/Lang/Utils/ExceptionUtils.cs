@@ -9,6 +9,7 @@ public static class ExceptionUtils
     {
         var msg = error switch
         {
+            ErgoVM.ErrorType.Custom => string.Format("{0}", args),
             ErgoVM.ErrorType.MatchFailed => string.Format("Could not resolve predicate: {0}, and it is not marked as dynamic.", args),
             ErgoVM.ErrorType.CannotRetractImportedPredicate => string.Format("Can't retract {0} from module {1} because it was declared in module {2}", args),
             ErgoVM.ErrorType.CannotRetractStaticPredicate => string.Format("Can't retract {0} because it is not a dynamic predicate", args),

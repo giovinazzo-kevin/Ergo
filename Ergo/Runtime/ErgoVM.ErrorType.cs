@@ -4,6 +4,7 @@ public partial class ErgoVM
 {
     public enum ErrorType
     {
+        Custom,
         MatchFailed,
         StackEmpty,
         StackOverflow,

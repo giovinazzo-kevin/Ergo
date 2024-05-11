@@ -214,7 +214,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            if (t is List list)
+            if (t is AbstractList list)
             {
                 if (Type.IsArray)
                 {

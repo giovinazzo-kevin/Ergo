@@ -174,6 +174,8 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
     {
         if (t is Variable)
             return null;
+        if (Type == typeof(ITerm))
+            return t;
         if (IsAtomic.Value)
         {
             if (Type.IsEnum)
@@ -255,7 +257,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                         continue;
                     if (value is EDecimal dec)
                         value = Convert.ChangeType(dec.ToDecimal(), type);
-                    else
+                    else if (type != typeof(ITerm))
                         value = Convert.ChangeType(value, type);
                     SetMemberValue(name, instance, value);
                 }

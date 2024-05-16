@@ -23,6 +23,19 @@ public class Hook
         args[i] = arg;
     }
 
+    public IEnumerable<Solution> Call(ErgoVM vm, params object[] args)
+    {
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] is ITerm term)
+                SetArg(i, term);
+            else if (args[i] is { } obj)
+                SetArg(i, TermMarshall.ToTerm(obj, obj.GetType()));
+        }
+        vm.Query = Compile();
+        return vm.RunInteractive();
+    }
+
     /// <summary>
     /// Creates a wrapper that compiles the hook just in time when it is first called.
     /// </summary>

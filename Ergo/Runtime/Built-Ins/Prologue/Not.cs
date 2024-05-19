@@ -12,6 +12,7 @@ public sealed class Not : BuiltIn
 
     public override ExecutionNode Optimize(BuiltInNode node)
     {
+        return node; // TODO: fix bug with \+(a </> _)
         var op = node.Goal.GetArguments()[0]
             .ToExecutionNode(node.Node.Graph, ctx: new("NOT"))
             .Optimize()

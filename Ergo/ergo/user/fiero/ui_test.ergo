@@ -1,0 +1,8 @@
+% This module is imported implicitly by all game scripts.
+% Do not modify unless you know what you are doing.
+
+:- module(ui_test, []).
+
+:- op(51, xf, ['>']).
+:- op(49, fx, ['<']).
+

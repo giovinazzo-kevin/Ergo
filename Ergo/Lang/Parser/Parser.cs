@@ -394,7 +394,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return ExpectOperator(op => op.Fixity == Fixity.Prefix)
-            .Map(op => Term()
+            .Map(op => Postfix().Select(x => x.Term).Or(Term)
                 .Select(arg => BuildExpression(op, arg, exprParenthesized: arg.IsParenthesized)))
             .Or(() => MemoizeFailureAndFail<Expression>(scope.LexerState))
             .Do(() => Probe.Leave(watch))

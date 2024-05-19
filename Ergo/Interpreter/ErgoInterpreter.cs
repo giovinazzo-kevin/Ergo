@@ -144,9 +144,17 @@ public partial class ErgoInterpreter
                 return default;
             }
         }
+        if (!scope.Modules.ContainsKey(moduleName))
+        {
+            stream.Dispose();
+            scope.Throw(ErrorType.ModuleNameDoesNotMatchFileName, moduleName.Explain(false), stream.FileName);
+            Probe.Leave(watch);
+            return default;
+        }
         module = scope.Modules[moduleName]
             .WithImport(scope.BaseImport)
             .WithProgram(program.AsPartial(true));
+        stream.Dispose();
         Probe.Leave(watch);
         return module;
 

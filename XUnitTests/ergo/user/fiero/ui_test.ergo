@@ -3,6 +3,18 @@
 
 :- module(ui_test, []).
 
-:- op(51, xf, ['>']).
-:- op(49, fx, ['<']).
+% COMPONENTS
 
+row: (
+	row: (
+		cell: label { text: 'we' }
+	),
+	row: (
+		col: (
+			cell: label { text: 'we' }
+		),
+		col: (
+			cell: layout {}
+		)
+	)
+).

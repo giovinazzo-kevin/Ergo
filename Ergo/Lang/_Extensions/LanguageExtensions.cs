@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Reflection;
 using System.Text;
 
 namespace Ergo.Lang.Extensions;
@@ -49,7 +50,7 @@ public static class LanguageExtensions
             return abs;
         return default;
     }
-    public static bool Matches<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
+    public static bool Match<T>(this ITerm t, out T match, T shape = default, Func<T, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
     {
         match = default;
         try
@@ -57,7 +58,9 @@ public static class LanguageExtensions
             match = TermMarshall.FromTerm(t, shape, mode);
             if (matchFunctor)
             {
-                if (t is Complex cplx && !cplx.Functor.Equals(new Atom(typeof(T).Name.ToLower())))
+                var functor = typeof(T).GetCustomAttributes<TermAttribute>(true).FirstOrDefault()
+                    ?.ComputedFunctor ?? typeof(T).Name.ToErgoCase();
+                if (t is Complex cplx && !cplx.Functor.Equals(new Atom(functor)))
                     return false;
             }
 

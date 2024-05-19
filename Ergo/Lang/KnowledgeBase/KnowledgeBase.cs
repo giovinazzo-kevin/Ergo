@@ -86,7 +86,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
             if (goal is Complex c
                 && WellKnown.Functors.Division.Contains(c.Functor))
             {
-                if (c.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+                if (c.Match(out var match, new { Predicate = default(string), Arity = default(int) }))
                 {
                     goal = new Atom(match.Predicate).BuildAnonymousTerm(match.Arity);
                 }

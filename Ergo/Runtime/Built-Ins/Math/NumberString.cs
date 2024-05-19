@@ -16,7 +16,7 @@ public sealed class NumberString : BuiltIn
             return;
         else if (!str.IsGround && num.IsGround)
         {
-            if (!str.Matches(out EDecimal d))
+            if (!str.Match(out EDecimal d))
             {
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, num);
                 return;
@@ -27,7 +27,7 @@ public sealed class NumberString : BuiltIn
         }
         else if (str.IsGround)
         {
-            if (!str.Matches(out string s))
+            if (!str.Match(out string s))
             {
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.String, num);
                 return;

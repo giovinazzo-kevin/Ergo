@@ -15,7 +15,7 @@ public sealed class FormatString : BuiltIn
         var arguments = vm.Args;
         var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
 
-        if (!format.Matches<string>(out var formatStr))
+        if (!format.Match<string>(out var formatStr))
         {
             vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.String, format.Explain());
             return;

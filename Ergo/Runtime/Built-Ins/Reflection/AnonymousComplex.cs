@@ -10,7 +10,7 @@ public sealed class AnonymousComplex : BuiltIn
     public override ErgoVM.Op Compile() => vm =>
     {
         var args = vm.Args;
-        if (!args[1].Matches<int>(out var arity))
+        if (!args[1].Match<int>(out var arity))
         {
             vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1].Explain());
             return;

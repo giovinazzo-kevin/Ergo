@@ -10,17 +10,17 @@ public class DeclareOperator : InterpreterDirective
 
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
-        if (!args[0].Matches<int>(out var precedence))
+        if (!args[0].Match<int>(out var precedence))
         {
             throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.Integer, args[0].Explain());
         }
 
-        if (!args[1].Matches<OperatorType>(out var type))
+        if (!args[1].Match<OperatorType>(out var type))
         {
             throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, "OperatorType", args[1].Explain());
         }
 
-        if (!args[2].Matches<string[]>(out var synonyms))
+        if (!args[2].Match<string[]>(out var synonyms))
         {
             throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[2].Explain());
         }

@@ -2,7 +2,13 @@
 % Do not modify unless you know what you are doing.
 
 :- module(ui_test, []).
+:- op(35, xfy,  ['</>']).
 
-:- op(51, xf, ['>']).
-:- op(49, fx, ['<']).
+% COMPONENTS
 
+my_component </>
+	(row </> label{}),
+	(row </> 
+		(col </> label{}),
+		(col </> layout{}))
+.

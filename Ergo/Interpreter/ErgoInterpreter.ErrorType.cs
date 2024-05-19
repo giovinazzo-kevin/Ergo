@@ -19,6 +19,7 @@ public partial class ErgoInterpreter
         , CyclicLiteralDefinition
         , ModuleRedefinition
         , UndefinedDirective
+        , ModuleNameDoesNotMatchFileName
         , TransformationFailed
         , CantInlineCyclicalGoal
         , CantInlineForeignGoal

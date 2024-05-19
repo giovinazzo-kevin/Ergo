@@ -59,7 +59,7 @@ public readonly struct Signature
     public static bool FromCanonical(ITerm term, out Signature sig)
     {
         if (term is Complex c && WellKnown.Functors.Division.Contains(c.Functor)
-            && term.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            && term.Match(out var match, new { Predicate = default(string), Arity = default(int) }))
         {
             var module = c.Arguments[0].GetQualification(out var arg);
             if (arg is Complex d && WellKnown.Functors.SignatureTag.Contains(d.Functor) && d.Arguments.Length == 2)

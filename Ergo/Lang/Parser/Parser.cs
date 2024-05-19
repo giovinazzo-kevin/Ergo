@@ -707,9 +707,9 @@ public partial class ErgoParser : IDisposable
 
                 if (cplx.Functor.Equals(new Atom("op")))
                 {
-                    if (!cplx.Arguments[0].Matches<int>(out var precedence))
+                    if (!cplx.Arguments[0].Match<int>(out var precedence))
                         continue;
-                    if (!cplx.Arguments[1].Matches<OperatorType>(out var type))
+                    if (!cplx.Arguments[1].Match<OperatorType>(out var type))
                         continue;
                     if (cplx.Arguments[2] is not List syns)
                         continue;

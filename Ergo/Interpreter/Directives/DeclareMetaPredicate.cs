@@ -15,7 +15,7 @@ public class DeclareMetaPredicate : InterpreterDirective
         var metaArgs = new char[termArgs.Length];
         for (int i = 0; i < termArgs.Length; i++)
         {
-            if (!termArgs[i].Matches<string>(out var str) || str.Length > 1)
+            if (!termArgs[i].Match<string>(out var str) || str.Length > 1)
             {
                 scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, typeof(Char).Name, termArgs[i].Explain());
                 return false;

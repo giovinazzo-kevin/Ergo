@@ -63,6 +63,8 @@ public readonly struct Solution
         return output;
     }
 
+    public ITerm this[Variable key] => Substitutions[key];
+
     public Solution Simplify()
     {
         return new(new(Simplify(Substitutions)

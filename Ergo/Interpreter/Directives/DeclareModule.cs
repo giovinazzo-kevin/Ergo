@@ -45,7 +45,7 @@ public class DeclareModule : InterpreterDirective
         foreach (var item in exports.Contents)
         {
             // make sure that 'item' is in the form 'predicate/arity'
-            if (!item.Matches(out var match, new { Predicate = default(string), Arity = default(int) }))
+            if (!item.Match(out var match, new { Predicate = default(string), Arity = default(int) }))
             {
                 throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.Signature, item.Explain());
             }

@@ -10,7 +10,7 @@ public abstract class NthBase : BuiltIn
     public override ErgoVM.Op Compile() => vm =>
     {
         var args = vm.Args;
-        if (args[0].Matches<int>(out var index))
+        if (args[0].Match<int>(out var index))
         {
             index -= Offset;
             if (args[1] is List list && index >= 0 && index < list.Contents.Length)

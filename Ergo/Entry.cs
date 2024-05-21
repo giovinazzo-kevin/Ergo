@@ -85,12 +85,13 @@ sealed class EventTest
 {
     // When this event fires, a hook will call message_sent_event/1 automatically,
     // by marshalling the string argument into a term, in this case an Atom(string).
-    public event Func<string, bool> MessageSent = msg => msg.Contains("this");
+    public event Action<string> MessageSent = _ => { };
     // When the combined delegate `sendMessage` is called, a hook will call message_sent_delegate/1 automatically,
     // same as for MessageSent, except that in the case of delegates it works via composition instead of subscription.
     public bool SendMessage(string msg)
     {
-        return MessageSent.Invoke(msg);
+        MessageSent.Invoke(msg);
+        return msg.Contains("this");
     }
     // When either (virtual) predicate is called, the control will pass to its execution graph, which we implemented as a custom Op.
     // This Op will need to handle the VM's arguments and it is at that point that it can marshall them back into CLR objects.

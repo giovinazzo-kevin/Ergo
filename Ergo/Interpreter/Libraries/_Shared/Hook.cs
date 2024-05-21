@@ -87,7 +87,7 @@ public class Hook
             )
         );
 
-        if (returnType == typeof(void))
+        if (returnType != typeof(void))
             throw new NotSupportedException("Marshalling of Events where the return type is not void is not supported.");
 
         var lambda = Expression.Lambda(handlerType, hookInvokeCall, parms);

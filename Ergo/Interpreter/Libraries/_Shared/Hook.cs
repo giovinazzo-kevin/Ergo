@@ -3,9 +3,11 @@ using Expression = System.Linq.Expressions.Expression;
 namespace Ergo.Interpreter.Libraries;
 
 
-public class DisposableHook(Signature sig, Action<DisposableHook> dispose) : Hook(sig), IDisposable
+public class DisposableHook(Signature sig) : Hook(sig), IDisposable
 {
-    public void Dispose() => dispose(this);
+    internal Action<DisposableHook> DisposeAction { get; set; }
+
+    public void Dispose() => DisposeAction(this);
 }
 
 public class Hook
@@ -72,8 +74,7 @@ public class Hook
             .Select(p => Expression.Parameter(p.ParameterType, p.Name))
             .ToArray();
 
-        Action<DisposableHook> dispose = _ => { };
-        var hook = new DisposableHook(new(functor, parms.Length, module, default), dispose);
+        var hook = new DisposableHook(new(functor, parms.Length, module, default));
         var hookInvokeMethod = typeof(DisposableHook).GetMethod(nameof(Hook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
         var hookInvokeCall = Expression.Call(
             Expression.Constant(hook),
@@ -90,7 +91,7 @@ public class Hook
         Delegate handler = lambda.Compile();
 
         evt.AddEventHandler(target, handler);
-        dispose += _ => evt.RemoveEventHandler(target, handler);
+        hook.DisposeAction = _ => evt.RemoveEventHandler(target, handler);
         return hook;
     };
 

@@ -19,11 +19,16 @@ public class BuiltInNode : GoalNode
             RuntimeHelpers.PrepareDelegate(CompiledBuiltIn);
         }
     }
+    public static ErgoVM.Op SetArgs(ImmutableArray<ITerm> args) => vm =>
+    {
+        vm.Arity = args.Length;
+        for (int i = 0; i < args.Length; i++)
+            vm.SetArg(i, args[i].Substitute(vm.Environment));
+    };
+
     public override ErgoVM.Op Compile() => vm =>
     {
-        vm.Arity = Args.Length;
-        for (int i = 0; i < Args.Length; i++)
-            vm.SetArg(i, Args[i].Substitute(vm.Environment));
+        SetArgs(Args);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         vm.LogState(Explain(false));
         CompiledBuiltIn(vm);

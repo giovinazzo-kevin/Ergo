@@ -112,6 +112,18 @@ public class Dict : AbstractTerm
         return $"{functor}{{{joinedArgs}}}";
     }
 
+    public Dict Merge(Dict other)
+    {
+        Either<Atom, Variable> functor = Functor.TryGetA(out var a)
+            ? a
+            : other.Functor.TryGetA(out a)
+            ? a
+            : WellKnown.Literals.Discard;
+        var kvps = Dictionary.Concat(other.Dictionary)
+            .DistinctBy(x => x.Key);
+        return new Dict(functor, kvps);
+    }
+
     public override Maybe<SubstitutionMap> Unify(ITerm other)
     {
         var map = SubstitutionMap.Pool.Acquire();

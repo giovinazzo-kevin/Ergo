@@ -1,5 +1,12 @@
-﻿namespace Ergo.Interpreter.Libraries;
+﻿using System.Reflection;
+using Expression = System.Linq.Expressions.Expression;
+namespace Ergo.Interpreter.Libraries;
 
+
+public class DisposableHook(Signature sig, Action<DisposableHook> dispose) : Hook(sig), IDisposable
+{
+    public void Dispose() => dispose(this);
+}
 
 public class Hook
 {
@@ -23,7 +30,7 @@ public class Hook
         args[i] = arg;
     }
 
-    public IEnumerable<Solution> Call(ErgoVM vm, params object[] args)
+    public IEnumerable<Solution> CallInteractive(ErgoVM vm, params object[] args)
     {
         for (int i = 0; i < args.Length; i++)
         {
@@ -35,6 +42,57 @@ public class Hook
         vm.Query = Compile();
         return vm.RunInteractive();
     }
+    public void Call(ErgoVM vm, params object[] args)
+    {
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] is ITerm term)
+                SetArg(i, term);
+            else if (args[i] is { } obj)
+                SetArg(i, TermMarshall.ToTerm(obj, obj.GetType()));
+        }
+        vm.Query = Compile();
+        vm.Run();
+    }
+
+
+    /// <summary>
+    /// Creates a hook that automagically binds to a C# event until it is disposed.
+    /// </summary>
+    /// <param name="evt">The Event to marshall. It can be any C# event as long as its parameters can be marshalled and as long as it doesn't return anything.</param>
+    /// <param name="target">The target of the event handler.</param>
+    /// <param name="functor">The functor to use for this hook.</param>
+    /// <param name="module">The module in which this hook is defined.</param>
+    /// <returns></returns>
+    public static Func<ErgoVM, DisposableHook> MarshallEvent(EventInfo evt, object target, Atom functor, Maybe<Atom> module = default) => vm =>
+    {
+        var handlerType = evt.EventHandlerType;
+        var invokeMethod = handlerType.GetMethod("Invoke");
+        var parms = invokeMethod.GetParameters()
+            .Select(p => Expression.Parameter(p.ParameterType, p.Name))
+            .ToArray();
+
+        Action<DisposableHook> dispose = _ => { };
+        var hook = new DisposableHook(new(functor, parms.Length, module, default), dispose);
+        var hookInvokeMethod = typeof(DisposableHook).GetMethod(nameof(Hook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
+        var hookInvokeCall = Expression.Call(
+            Expression.Constant(hook),
+            hookInvokeMethod,
+            Expression.Constant(vm),
+            Expression.NewArrayInit(
+                typeof(object),
+                parms.Select(p => Expression.Convert(p, typeof(object)))
+            )
+        );
+
+        // Create the lambda expression
+        var lambda = Expression.Lambda(handlerType, hookInvokeCall, parms);
+        Delegate handler = lambda.Compile();
+
+        evt.AddEventHandler(target, handler);
+        dispose += _ => evt.RemoveEventHandler(target, handler);
+        return hook;
+    };
 
     /// <summary>
     /// Creates a wrapper that compiles the hook just in time when it is first called.

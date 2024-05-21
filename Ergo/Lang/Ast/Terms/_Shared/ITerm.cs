@@ -85,28 +85,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
             return new Complex(a, next);
         return this;
     }
-
-    ITerm Substitute(IEnumerable<Substitution> subs)
-    {
-        if (IsGround)
-            return this;
-        var steps = subs.ToDictionary(s => s.Lhs, s => s.Rhs);
-        var variables = Variables.Where(var => steps.ContainsKey(var));
-        var @base = this;
-        while (variables.Any())
-        {
-            foreach (var var in variables)
-            {
-                @base = @base.Substitute(new Substitution(var, steps[var]));
-            }
-
-            var newVariables = @base.Variables.Where(var => steps.ContainsKey(var));
-            if (variables.SequenceEqual(newVariables))
-                break;
-            variables = newVariables;
-        }
-        return @base;
-    }
+    public ITerm Substitute(IEnumerable<Substitution> s) => s.Aggregate(this, (a, b) => a.Substitute(b));
 
     ITerm StripTemporaryVariables() => Substitute(Variables
         .Where(v => v.Ignored && v.Name.StartsWith("__"))

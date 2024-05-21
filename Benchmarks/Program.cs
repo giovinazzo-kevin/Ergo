@@ -1,25 +1,30 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
 using Ergo.Lang;
+using Ergo.Lang.Ast;
 using Ergo.Runtime;
 using System.Diagnostics;
 
 var facade = ErgoFacade.Standard;
 
-int N_BENCHMARKS = 100;
+int N_BENCHMARKS = 10;
 var times = new List<string[]>();
+var interpreter = ErgoBenchmarks.MeasureInterpreterCreation(facade);
+var scope = ErgoBenchmarks.MeasureInterpreterScopeCreation(interpreter.Value);
+var kb = ErgoBenchmarks.MeasureKnowledgeBaseCreation(scope.Value);
+var vm = ErgoBenchmarks.MeasureSpinUpTime(facade, kb.Value);
 
 for (int i = 0; i < N_BENCHMARKS; i++)
 {
-    var interpreter = ErgoBenchmarks.MeasureInterpreterCreation(facade);
-    var scope = ErgoBenchmarks.MeasureInterpreterScopeCreation(interpreter.Value);
-    var kb = ErgoBenchmarks.MeasureKnowledgeBaseCreation(scope.Value);
-    var vm = ErgoBenchmarks.MeasureSpinUpTime(facade, kb.Value);
-    times.Add([interpreter.Str, scope.Str, kb.Str, vm.Str]);
+    var query_1 = ErgoBenchmarks.MeasureQueryParseTime(scope.Value, "range(0 <= X < 1000000), Y := X * 10");
+    var query_1_value = query_1.Value.GetOrThrow();
+    var query_1_comp = ErgoBenchmarks.MeasureQueryCompileTime(vm.Value, query_1_value);
+    var query_1_exec = ErgoBenchmarks.MeasureQueryExecutionTime(vm.Value, query_1_comp.Value);
+    times.Add([query_1.Str, query_1_comp.Str, query_1_exec.Str, query_1_exec.Value.ToString()]);
 }
 
 var shell = facade.BuildShell();
-shell.WriteTable(["Interpreter", "Int. Scope", "KnowledgeBase", "VM"], times.ToArray());
+shell.WriteTable(["Query Parse", "Query Compile", "Query Execute", "Num Solutions"], times.ToArray());
 
 
 public sealed class ErgoBenchmarks
@@ -50,6 +55,29 @@ public sealed class ErgoBenchmarks
         return Measured.Measure(() =>
         {
             return facade.BuildVM(kb);
+        });
+    }
+    public static Measured<Maybe<Query>> MeasureQueryParseTime(InterpreterScope scope, string str)
+    {
+        return Measured.Measure(() =>
+        {
+            return scope.Parse<Query>(str);
+        });
+    }
+    public static Measured<ErgoVM.Op> MeasureQueryCompileTime(ErgoVM vm, Query query)
+    {
+        return Measured.Measure(() =>
+        {
+            return vm.CompileQuery(query);
+        });
+    }
+    public static Measured<int> MeasureQueryExecutionTime(ErgoVM vm, ErgoVM.Op op)
+    {
+        return Measured.Measure(() =>
+        {
+            vm.Query = op;
+            vm.Run();
+            return vm.Solutions.Count();
         });
     }
 }

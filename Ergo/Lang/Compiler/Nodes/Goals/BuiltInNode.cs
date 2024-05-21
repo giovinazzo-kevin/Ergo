@@ -28,7 +28,7 @@ public class BuiltInNode : GoalNode
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        SetArgs(Args);
+        SetArgs(Args)(vm);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         vm.LogState(Explain(false));
         CompiledBuiltIn(vm);

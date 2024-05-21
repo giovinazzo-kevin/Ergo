@@ -2,19 +2,13 @@
 % Do not modify unless you know what you are doing.
 
 :- module(ui_test, []).
+:- op(35, xfy,  ['</>']).
 
 % COMPONENTS
 
-row: (
-	row: (
-		cell: label { text: 'we' }
-	),
-	row: (
-		col: (
-			cell: label { text: 'we' }
-		),
-		col: (
-			cell: layout {}
-		)
-	)
-).
+my_component </>
+	(row </> label{}),
+	(row </> 
+		(col </> label{}),
+		(col </> layout{}))
+.

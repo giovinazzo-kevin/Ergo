@@ -57,7 +57,12 @@ using (var hook = Hook.MarshallEvent(messageEvent, eventTest, new Atom("message_
     sendMessage("world!");
 }
 // this will only call message_sent_delegate/1
-sendMessage("don't read this!");
+if (sendMessage("don't read this!"))
+{
+    // Marshalling works transparently on both on Actions and Funcs, as well as instance and static methods.
+    // Ergo code can not change the return value of the patched delegates directly, but it can call C# in response to an event. 
+    Console.WriteLine("I read this");
+}
 // Expected output:
 // E: hello,
 // D: hello,
@@ -80,12 +85,12 @@ sealed class EventTest
 {
     // When this event fires, a hook will call message_sent_event/1 automatically,
     // by marshalling the string argument into a term, in this case an Atom(string).
-    public event Action<string> MessageSent = _ => { };
+    public event Func<string, bool> MessageSent = msg => msg.Contains("this");
     // When the combined delegate `sendMessage` is called, a hook will call message_sent_delegate/1 automatically,
     // same as for MessageSent, except that in the case of delegates it works via composition instead of subscription.
-    public void SendMessage(string msg)
+    public bool SendMessage(string msg)
     {
-        MessageSent?.Invoke(msg);
+        return MessageSent.Invoke(msg);
     }
     // When either (virtual) predicate is called, the control will pass to its execution graph, which we implemented as a custom Op.
     // This Op will need to handle the VM's arguments and it is at that point that it can marshall them back into CLR objects.

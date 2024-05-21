@@ -63,7 +63,7 @@ public class Hook
     /// <param name="target">The target of the event handler.</param>
     /// <param name="functor">The functor to use for this hook.</param>
     /// <param name="module">The module in which this hook is defined.</param>
-    /// <returns></returns>
+    /// <returns>A wrapper function that produces a disposable hook that binds to the given vm and unbinds once disposed.</returns>
     public static Func<ErgoVM, DisposableHook> MarshallEvent(EventInfo evt, object target, Atom functor, Maybe<Atom> module = default) => vm =>
     {
         var handlerType = evt.EventHandlerType;
@@ -92,6 +92,44 @@ public class Hook
         evt.AddEventHandler(target, handler);
         dispose += _ => evt.RemoveEventHandler(target, handler);
         return hook;
+    };
+
+    /// <summary>
+    /// Creates a patched delegate that calls a hook automatically whenever it is invoked.
+    /// </summary>
+    /// <param name="del">The delegate to marshall. It can be any C# delegate as long as its parameters can be marshalled and as long as it doesn't return anything.</param>
+    /// <param name="functor">The functor to use for this hook.</param>
+    /// <param name="module">The module in which this hook is defined.</param>
+    /// <returns>A wrapper function that produces a delegate calls the specified hook when it is invoked.</returns>
+    public static Func<ErgoVM, T> MarshallDelegate<T>(T del, Atom functor, Maybe<Atom> module = default, bool insertAfterCall = true)
+    where T : Delegate
+        => vm =>
+    {
+        var handlerType = del.GetType();
+        var invokeMethod = handlerType.GetMethod("Invoke");
+        var parms = invokeMethod.GetParameters()
+            .Select(p => Expression.Parameter(p.ParameterType, p.Name))
+            .ToArray();
+
+        var hook = new Hook(new(functor, parms.Length, module, default));
+        var hookInvokeMethod = typeof(DisposableHook).GetMethod(nameof(Hook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
+        var hookInvokeCall = Expression.Call(
+            Expression.Constant(hook),
+            hookInvokeMethod,
+            Expression.Constant(vm),
+            Expression.NewArrayInit(
+                typeof(object),
+                parms.Select(p => Expression.Convert(p, typeof(object)))
+            )
+        );
+        var delegateInvokeCall = Expression.Invoke(Expression.Constant(del), parms);
+        var combinedBody = insertAfterCall
+            ? Expression.Block(delegateInvokeCall, hookInvokeCall)
+            : Expression.Block(hookInvokeCall, delegateInvokeCall);
+        // Create the lambda expression
+        var lambda = Expression.Lambda(handlerType, combinedBody, parms);
+        Delegate combinedHandler = lambda.Compile();
+        return (T)combinedHandler;
     };
 
     /// <summary>

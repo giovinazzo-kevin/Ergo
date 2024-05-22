@@ -1,4 +1,5 @@
 ﻿using Ergo.Events.Runtime;
+using Ergo.Lang.Compiler;
 using System.Diagnostics;
 using System.IO;
 using static Ergo.Runtime.Solutions;
@@ -49,7 +50,7 @@ public partial class ErgoVM
     /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
-    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
+    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment, TermMemory.State State);
     #endregion
     public readonly DecimalType DecimalType;
     public readonly KnowledgeBase KB;
@@ -78,9 +79,16 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
-    public ErgoVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
+
+    public readonly TermMemory Memory;
+    protected ITermAddress[] args2;
+    protected HashSet<VariableAddress> trackedVars;
+
+    public ErgoVM(KnowledgeBase kb, TermMemory memory = default, DecimalType decimalType = DecimalType.CliDecimal)
     {
+        Memory = memory ?? new();
         args = new ITerm[MAX_ARGUMENTS];
+        args2 = new ITermAddress[MAX_ARGUMENTS];
         KB = kb;
         DecimalType = decimalType;
         In = Console.In;
@@ -119,10 +127,6 @@ public partial class ErgoVM
     public VMState State { get; private set; } = VMState.Ready;
     public VMMode Mode { get; private set; } = VMMode.Batch;
     /// <summary>
-    /// The active set of substitutions containing the state for the current execution branch.
-    /// </summary>
-    public SubstitutionMap Environment { get; set; }
-    /// <summary>
     /// The current computed set of solutions. See also <see cref="RunInteractive"/>, which yields them one at a time.
     /// </summary>
     public IEnumerable<Solution> Solutions => solutions;
@@ -143,8 +147,14 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM ScopedInstance() => new(KB, DecimalType)
+    public ErgoVM ScopedInstance() => new(KB, Memory, DecimalType)
     { In = In, Err = Err, Out = Out, /*args = [.. args], Arity = Arity*/ };
+
+    public void TrackVariable(VariableAddress arg)
+    {
+        trackedVars.Add(arg);
+    }
+
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
     /// </summary>
@@ -182,10 +192,24 @@ public partial class ErgoVM
     #endregion
     #region Goal API
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [Obsolete]
     public void SetArg(int index, ITerm value) => args[index] = value;
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ITerm Arg(int index) => args[index];
+    public void SetArg2(int index, ITermAddress value) => args2[index] = value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetArgs2(ITermAddress[] value)
+    {
+        args2 = value;
+        Arity = value.Length;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [Obsolete]
+    public ITerm Arg(int index) => Memory.Dereference(args2[index + 1]);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ITermAddress Arg2(int index) => args2[index];
+    [Obsolete]
     public ReadOnlySpan<ITerm> Args => args.AsSpan()[..Arity];
+    public ReadOnlySpan<ITermAddress> Args2 => args2.AsSpan()[..Arity];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Flag(VMFlags flag) => flags.HasFlag(flag);
@@ -226,13 +250,20 @@ public partial class ErgoVM
         LogState();
         State = VMState.Success;
     }
+
+    public IEnumerable<Substitution> Env => trackedVars
+        .Select(x => new Substitution(
+            new Variable(Memory.InverseVariableLookup[x]),
+            Memory.Dereference(x)))
+        .Where(x => !x.Lhs.Equals(x.Rhs));
+
     /// <summary>
     /// Yields an external substitution map as a solution.
     /// </summary>
     public void Solution(SubstitutionMap subs)
     {
         LogState($"Solution (map, {subs.Select(s => s.Explain()).Join("; ")})");
-        subs.AddRange(Environment);
+        subs.AddRange(Env);
         solutions.Push(subs);
         State = VMState.Solution;
     }
@@ -251,7 +282,7 @@ public partial class ErgoVM
     public void Solution()
     {
         LogState("Solution (env)");
-        solutions.Push(CloneEnvironment());
+        solutions.Push(new SubstitutionMap(Env));
         State = VMState.Solution;
     }
 
@@ -280,18 +311,18 @@ public partial class ErgoVM
         while (numChoices-- > 0)
         {
             var cp = PopChoice().GetOrThrow(StackEmptyException);
-            SubstitutionMap.Pool.Release(cp.Environment);
+            //SubstitutionMap.Pool.Release(cp.Environment);
         }
     }
 
     public void PushChoice(Op choice)
     {
-        var env = CloneEnvironment();
         var cont = @continue;
+        var state = Memory.SaveState();
         if (cont == Ops.NoOp)
-            choicePoints.Push(new ChoicePoint(choice, env));
+            choicePoints.Push(new ChoicePoint(choice, null, state));
         else
-            choicePoints.Push(new ChoicePoint(Ops.And2(choice, cont), env));
+            choicePoints.Push(new ChoicePoint(Ops.And2(choice, cont), null, state));
     }
     #endregion
 
@@ -321,11 +352,8 @@ public partial class ErgoVM
         LogState();
         if (!TryPopSolution(out var sol))
             throw StackEmptyException;
-        Ops.UpdateEnvironment(sol.Substitutions)(this);
         State = VMState.Success;
     }
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SubstitutionMap CloneEnvironment() => Environment.Clone();
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsSingletonVariable(Variable v) => refCounts.GetCount(v) == 1;
 
@@ -341,8 +369,7 @@ public partial class ErgoVM
             LogState();
             State = VMState.Success;
             var choicePoint = choicePoints.Pop();
-            SubstitutionMap.Pool.Release(Environment);
-            Environment = choicePoint.Environment;
+            Memory.LoadState(choicePoint.State);
             choicePoint.Continue(this);
             SuccessToSolution();
             return true;
@@ -353,7 +380,7 @@ public partial class ErgoVM
     {
         LogState();
         State = VMState.Ready;
-        Environment = [];
+        trackedVars = [];
         cutIndex = 0;
         @continue = Ops.NoOp;
         refCounts.Clear();
@@ -364,7 +391,6 @@ public partial class ErgoVM
     {
         LogState();
         SuccessToSolution();
-        SubstitutionMap.Pool.Release(Environment);
     }
 
     [Conditional("ERGO_VM_DIAGNOSTICS")]
@@ -393,12 +419,15 @@ public partial class ErgoVM
                 ? graph.Compile()
                 : Ops.NoOp;
         }
-        var branch = Ops.Or(ops);
+        var variables = query.Goals.Variables.ToArray();
         return vm =>
         {
-            foreach (var var in query.Goals.Variables)
+            foreach (var var in variables)
+            {
                 vm.refCounts.Count(var);
-            branch(vm);
+                vm.TrackVariable(vm.Memory.StoreVariable(var.Name));
+            }
+            Ops.Or(ops)(vm);
         };
     }
 

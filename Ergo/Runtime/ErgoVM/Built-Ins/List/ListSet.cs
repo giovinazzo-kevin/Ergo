@@ -9,19 +9,18 @@ public sealed class ListSet : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        if (args[0] is List list)
+        if (vm.Memory.Dereference(vm.Args2[1]) is List list)
         {
             var set = new Set(list.Contents, list.Scope);
-            vm.SetArg(0, args[1]);
-            vm.SetArg(1, set);
+            vm.SetArg2(1, vm.Args2[2]);
+            vm.SetArg2(2, vm.Memory.StoreTerm(set));
             ErgoVM.Goals.Unify2(vm);
         }
-        else if (args[1] is Set set)
+        else if (vm.Memory.Dereference(vm.Args2[2]) is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
-            vm.SetArg(0, args[0]);
-            vm.SetArg(1, lst);
+            vm.SetArg2(1, vm.Args2[1]);
+            vm.SetArg2(2, vm.Memory.StoreTerm(lst));
             ErgoVM.Goals.Unify2(vm);
         }
         else ErgoVM.Ops.Fail(vm);

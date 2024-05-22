@@ -11,7 +11,7 @@ public sealed class Term : BuiltIn
     {
         var arguments = vm.Args;
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
-        var env = vm.CloneEnvironment();
+        var state = vm.Memory.SaveState();
         if (termArg is not Variable)
         {
             if (termArg is Dict dict)
@@ -89,13 +89,7 @@ public sealed class Term : BuiltIn
         ReleaseAndRestore();
         void ReleaseAndRestore()
         {
-            if (vm.State == ErgoVM.VMState.Fail)
-            {
-                ReleaseAndRestore();
-                return;
-            }
-            SubstitutionMap.Pool.Release(vm.Environment);
-            vm.Environment = env;
+            vm.Memory.LoadState(state);
         }
         bool ReleaseAndRestoreEarlyReturn()
         {

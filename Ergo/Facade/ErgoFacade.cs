@@ -1,6 +1,7 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 using Ergo.Shell;
@@ -161,8 +162,8 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(this, new(this, stream, operators ?? Enumerable.Empty<Operator>())));
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
-    public ErgoVM BuildVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
-        => ConfigureVM(new(kb, decimalType));
+    public ErgoVM BuildVM(KnowledgeBase kb, TermMemory memory = null, DecimalType decimalType = DecimalType.CliDecimal)
+        => ConfigureVM(new(kb, memory, decimalType));
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));
 }

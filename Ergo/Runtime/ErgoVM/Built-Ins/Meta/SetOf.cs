@@ -9,20 +9,19 @@ public sealed class SetOf : SolutionAggregationBuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
         var any = false;
-        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm, args.ToImmutableArray()))
+        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm))
         {
-            var env = vm.CloneEnvironment();
+            var state = vm.Memory.SaveState();
             var argSet = new Set(ArgVars.Contents, ArgVars.Scope);
             var setVars = new Set(ListVars.Contents, ArgVars.Scope);
             var setTemplate = new Set(ListTemplate.Contents, ArgVars.Scope);
-            vm.SetArg(0, setVars);
-            vm.SetArg(1, argSet);
+            vm.SetArg2(1, vm.Memory.StoreTerm(setVars));
+            vm.SetArg2(2, vm.Memory.StoreTerm(argSet));
             ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
-            vm.SetArg(0, args[2]);
-            vm.SetArg(1, setTemplate);
+            vm.SetArg2(1, vm.Args2[3]);
+            vm.SetArg2(2, vm.Memory.StoreTerm(setTemplate));
             ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
             vm.Solution();
@@ -31,8 +30,7 @@ public sealed class SetOf : SolutionAggregationBuiltIn
 
             void ReleaseAndRestore()
             {
-                SubstitutionMap.Pool.Release(vm.Environment);
-                vm.Environment = env;
+                vm.Memory.LoadState(state);
             }
             bool ReleaseAndRestoreEarlyReturn()
             {

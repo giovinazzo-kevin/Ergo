@@ -35,7 +35,7 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
         if (term.Functor.TryGetB(out var varFunctor))
             args.Add(vm.StoreVariable(varFunctor.Name));
         else if (term.Functor.TryGetA(out var atomFunctor))
-            args.Add(vm.StoreAtom(atomFunctor.Value));
+            args.Add(vm.StoreAtom(atomFunctor));
         else throw new NotSupportedException();
         if (term.Argument.TryGetA(out var varArg))
             args.Add(vm.StoreVariable(varArg.Name));

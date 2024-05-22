@@ -6,33 +6,30 @@ public class BuiltInNode : GoalNode
 {
     public BuiltIn BuiltIn { get; }
     protected ErgoVM.Op CompiledBuiltIn { get; private set; }
+    public readonly ITerm Head;
     public readonly ImmutableArray<ITerm> Args;
 
     public BuiltInNode(DependencyGraphNode node, ITerm goal, BuiltIn builtIn, bool compile = true) : base(node, goal)
     {
         BuiltIn = builtIn;
-        Goal.GetQualification(out var head);
-        Args = head.GetArguments();
+        Goal.GetQualification(out Head);
+        Args = Head.GetArguments();
         if (compile)
         {
             CompiledBuiltIn = BuiltIn.Compile();
             RuntimeHelpers.PrepareDelegate(CompiledBuiltIn);
         }
     }
-    public static ErgoVM.Op SetArgs(ImmutableArray<ITerm> args) => vm =>
+    public override ErgoVM.Op Compile() => ErgoVM.Ops.Setup(vm =>
     {
-        vm.Arity = args.Length;
-        for (int i = 0; i < args.Length; i++)
-            vm.SetArg(i, args[i].Substitute(vm.Environment));
-    };
-
-    public override ErgoVM.Op Compile() => vm =>
+        return (StructureAddress)vm.Memory.StoreTerm(Head);
+    }, head => vm =>
     {
-        SetArgs(Args)(vm);
+        vm.SetArgs2(vm.Memory[head]);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         vm.LogState(Explain(false));
         CompiledBuiltIn(vm);
-    };
+    });
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override bool IsDeterminate => BuiltIn.IsDeterminate(Args);

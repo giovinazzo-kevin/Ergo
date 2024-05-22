@@ -9,7 +9,7 @@ public class VariableNode : ExecutionNode
         Binding = v;
     }
 
-    public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(((ITerm)Binding).Substitute(vm.Environment));
+    public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(vm.Memory.StoreVariable(Binding.Name));
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         return new VariableNode((Variable)Binding.Instantiate(ctx, vars));

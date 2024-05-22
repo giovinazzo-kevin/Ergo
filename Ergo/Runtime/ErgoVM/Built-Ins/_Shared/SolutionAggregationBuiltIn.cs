@@ -1,6 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-
-namespace Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Runtime.BuiltIns;
 
 public abstract class SolutionAggregationBuiltIn : BuiltIn
 {
@@ -9,9 +7,12 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
     {
     }
 
-    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoVM vm, ImmutableArray<ITerm> args)
+    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoVM vm)
     {
-        var (template, goal, instances) = (args[0], args[1], args[2]);
+        var (template, goal, instances) = (
+            vm.Memory.Dereference(vm.Args2[1]),
+            vm.Memory.Dereference(vm.Args2[2]),
+            vm.Memory.Dereference(vm.Args2[3]));
         if (goal is Variable)
         {
             vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, goal.Explain());

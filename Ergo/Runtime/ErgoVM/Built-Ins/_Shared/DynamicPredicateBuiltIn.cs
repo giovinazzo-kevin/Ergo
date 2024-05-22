@@ -65,7 +65,14 @@ public abstract class DynamicPredicateBuiltIn : BuiltIn
 
             if (!all)
             {
-                vm.Environment.AddRange(match.Substitutions);
+                // TODO: Use TermMemory in KnowledgeBase!!
+                foreach (var sub in match.Substitutions)
+                {
+                    var rhs = vm.Memory.StoreTerm(sub.Rhs);
+                    var lhs = vm.Memory.StoreVariable(((Variable)sub.Lhs).Name);
+                    vm.Memory[lhs] = rhs;
+                }
+
                 break;
             }
 

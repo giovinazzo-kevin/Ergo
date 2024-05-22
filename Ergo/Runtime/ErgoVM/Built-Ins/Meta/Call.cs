@@ -9,15 +9,15 @@ public sealed class Call : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
+        var args = vm.Args2;
         if (args.Length == 0)
         {
             vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(0)).Explain());
             return;
         }
-        var goal = args[0];
-        for (int i = 1; i < args.Length; i++)
-            goal = goal.Concat(args[i]);
+        var goal = vm.Memory.Dereference(args[1]);
+        for (int i = 2; i < args.Length; i++)
+            goal = goal.Concat(vm.Memory.Dereference(args[i]));
         if (goal is Variable)
         {
             vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, goal.Explain());

@@ -56,7 +56,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
         Optimized();
         void Optimized()
         {
-            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), DecimalType.BigDecimal);
+            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), default, DecimalType.BigDecimal);
             Solve(vm, parsed);
         }
 

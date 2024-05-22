@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Ergo.Lang.Compiler;
+using System.Text.RegularExpressions;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -12,8 +13,11 @@ public sealed class FormatString : BuiltIn
     }
     public override ErgoVM.Op Compile() => vm =>
     {
-        var arguments = vm.Args;
-        var (format, args, result) = (arguments[0], arguments[1], arguments[2]);
+        var arguments = vm.Args2;
+        var (format, args, result) = (
+            vm.Memory.Dereference(arguments[0]),
+            vm.Memory.Dereference(arguments[1]),
+            vm.Memory.Dereference(arguments[2]));
 
         if (!format.Match<string>(out var formatStr))
         {
@@ -76,7 +80,7 @@ public sealed class FormatString : BuiltIn
         }
         else if (!result.IsGround)
         {
-            vm.Environment.Add(new Substitution(result, new Atom(formatStr)));
+            vm.Memory[(VariableAddress)arguments[2]] = vm.Memory.StoreAtom(new Atom(formatStr));
             vm.Solution();
         }
         else

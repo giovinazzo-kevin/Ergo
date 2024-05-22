@@ -1,4 +1,6 @@
-﻿namespace Ergo.Runtime;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Runtime;
 
 public partial class ErgoVM
 {
@@ -17,6 +19,19 @@ public partial class ErgoVM
                 if (!instance.TryGetValue(out var inst))
                     instance = inst = runOnce(vm);
                 runAlways(inst)(vm);
+            };
+        }
+        public static Op Setup(Action<ErgoVM> runOnce, Op runAlways)
+        {
+            var ran = false;
+            return vm =>
+            {
+                if (!ran)
+                {
+                    runOnce(vm);
+                    ran = true;
+                }
+                runAlways(vm);
             };
         }
         public static Op And2(Op a, Op b) => vm =>
@@ -98,7 +113,7 @@ public partial class ErgoVM
         }
         public static Op IfThenElse(Op condition, Op consequence, Op alternative) => vm =>
         {
-            var backupEnvironment = vm.CloneEnvironment();
+            var backupEnvironment = vm.Memory.SaveState();
             var numCp = vm.NumChoicePoints;
             condition(vm);
             if (vm.State != VMState.Fail)
@@ -112,54 +127,44 @@ public partial class ErgoVM
             else
             {
                 vm.State = VMState.Success;
-                vm.Environment = backupEnvironment;
+                vm.Memory.LoadState(backupEnvironment);
                 alternative(vm);
                 vm.SuccessToSolution();
             }
         };
         public static Op IfThen(Op condition, Op consequence) => IfThenElse(condition, consequence, NoOp);
         /// <summary>
-        /// Adds the current set of substitutions to te VM's environment, and then releases it back into the substitution map pool.
-        /// </summary>
-        public static Op UpdateEnvironment(SubstitutionMap subsToAdd) => vm =>
-            {
-                vm.Environment.AddRange(subsToAdd);
-                SubstitutionMap.Pool.Release(subsToAdd);
-            };
-        public static Op SetEnvironment(SubstitutionMap newEnv) => vm =>
-        {
-            SubstitutionMap.Pool.Release(vm.Environment);
-            vm.Environment = newEnv;
-        };
-        /// <summary>
         /// Converts a query into the corresponding Op.
         /// </summary>
-        public static Op Goals(NTuple goals)
+        public static Op Goals(ITermAddress[] goals)
         {
-            if (goals.Contents.Length == 0)
+            if (goals.Length == 0)
                 return NoOp;
-            if (goals.Contents.Length == 1)
-                return Goal(goals.Contents[0]);
-            return And(goals.Contents.Select(x => Goal(x, dynamic: false)).ToArray());
+            if (goals.Length == 1)
+                return Goal(goals[0]);
+            return And(goals.Select(x => Goal(x, dynamic: false)).ToArray());
         }
+
         /// <summary>
         /// Calls an individual goal.
         /// </summary>
-        public static Op Goal(ITerm goal, bool dynamic = false)
+        public static Op Goal(ITermAddress goal, bool dynamic = false) => vm =>
         {
             const string cutValue = "!";
-            return goal switch
+            var op = goal switch
             {
-                NTuple tup => Goals(tup),
-                Atom { Value: true } => NoOp,
-                Atom { Value: false } => Fail,
-                Atom { Value: cutValue, IsQuoted: false } => Cut,
+                AbstractAddress a when vm.Memory[a].Type == typeof(NTuple)
+                    && vm.Memory[(StructureAddress)vm.Memory[a].Address] is var goals => Goals(goals),
+                ConstAddress a when vm.Memory[a] is Atom { Value: true } => NoOp,
+                ConstAddress a when vm.Memory[a] is Atom { Value: false } => Fail,
+                ConstAddress a when vm.Memory[a] is Atom { Value: cutValue, IsQuoted: false } => Cut,
                 _ => Resolve
             };
+            op(vm);
 
             void Resolve(ErgoVM vm)
             {
-                var newGoal = goal.Substitute(vm.Environment);
+                var newGoal = vm.Memory.Dereference(goal);
                 vm.LogState(newGoal.Explain(false));
                 var matchEnum = GetEnumerator(vm, newGoal);
                 NextMatch(vm);
@@ -176,8 +181,13 @@ public partial class ErgoVM
                         // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);
                         // Update the environment by adding the current match's substitutions.
-                        if (matchEnum.Current.Substitutions != null)
-                            vm.Environment.AddRange(matchEnum.Current.Substitutions);
+                        // TODO: Let KB use TermMemory
+                        foreach (var sub in matchEnum.Current.Substitutions)
+                        {
+                            var lhs = vm.Memory.StoreVariable(((Variable)sub.Lhs).Name);
+                            var rhs = vm.Memory.StoreTerm(sub.Rhs);
+                            vm.Memory[lhs] = rhs;
+                        }
                         // Decide how to execute this goal depending on whether:
                         Op runGoal = NoOp;
                         var pred = matchEnum.Current.Predicate;
@@ -195,7 +205,7 @@ public partial class ErgoVM
                         }
                         // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
-                            runGoal = Goals(pred.Body);
+                            runGoal = Setup(vm => vm.Memory.StoreTerm(pred.Body), addr => Goal(addr));
                         // Track the number of choice points before executing the goal (up to the one we just pushed)
                         var numCp = vm.NumChoicePoints;
                         // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
@@ -211,25 +221,27 @@ public partial class ErgoVM
                             while (vm.NumChoicePoints > numCp)
                             {
                                 var cp = vm.PopChoice().GetOr(default);
-                                // Set the environment to that of the oldest popped choice point.
-                                SubstitutionMap.Pool.Release(vm.Environment);
-                                vm.Environment = cp.Environment;
-                                // If runGoal failed, set the vm back to success as we're retrying now.
-                                if (vm.State == VMState.Fail)
-                                    vm.State = VMState.Success;
+                                if (vm.NumChoicePoints == numCp)
+                                {
+                                    // Set the environment to that of the oldest popped choice point.
+                                    vm.Memory.LoadState(cp.State);
+                                    // If runGoal failed, set the vm back to success as we're retrying now.
+                                    if (vm.State == VMState.Fail)
+                                        vm.State = VMState.Success;
+                                }
                             }
                             // If the above loop didn't run and runGoal failed, then we can't retry so we exit the outer loop.
                             if (vm.State == VMState.Fail)
                                 break;
                             // Keep the list of substitutions that contributed to this iteration.
                             var bodyVars = pred.Body.Variables.ToHashSet();
-                            var tcoSubs = vm.Environment
-                                .Where(s => bodyVars.Contains((Variable)s.Lhs));
+                            //var tcoSubs = vm.Environment
+                            //    .Where(s => bodyVars.Contains((Variable)s.Lhs));
                             // Substitute the tail call with this list, creating the new head, and qualify it with the current module.
-                            newGoal = pred.Body.Contents.Last().Substitute(tcoSubs)
+                            newGoal = pred.Body.Contents.Last().Substitute(vm.Env)
                                 .Qualified(pred.DeclaringModule);
                             // Remove all substitutions that are no longer relevant, including those we just used.
-                            vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
+                            //vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
                             vm.DiscardChoices(1); // We don't need the NextMatch choice point anymore.
                             matchEnum = GetEnumerator(vm, newGoal);
                             goto TCO;
@@ -262,6 +274,6 @@ public partial class ErgoVM
                 }
                 return matches.GetEnumerator();
             }
-        }
+        };
     }
 }

@@ -10,24 +10,24 @@ public sealed class SetupCallCleanup : BuiltIn
     private readonly Call CallInst = new();
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
+        var args = vm.Args2;
         var newVm = vm.ScopedInstance();
         var setup = CallInst.Compile();
         newVm.Query = ErgoVM.Ops.And2(setup, ErgoVM.Ops.Cut);
-        newVm.Arity = vm.Arity = 1;
-        newVm.SetArg(0, args[0]);
+        newVm.Arity = vm.Arity = 2;
+        newVm.SetArg2(1, args[1]);
         newVm.Run();
         if (!newVm.TryPopSolution(out _))
         {
             vm.Fail();
             return;
         }
-        vm.SetArg(0, args[1]);
+        vm.SetArg2(1, args[2]);
         CallInst.Compile()(vm);
         if (vm.State != ErgoVM.VMState.Fail)
         {
-            vm.Arity = 1;
-            vm.SetArg(0, args[2]);
+            vm.Arity = 2;
+            vm.SetArg2(1, args[3]);
             var sols = vm.NumSolutions;
             CallInst.Compile()(vm);
             while (vm.NumSolutions > sols)

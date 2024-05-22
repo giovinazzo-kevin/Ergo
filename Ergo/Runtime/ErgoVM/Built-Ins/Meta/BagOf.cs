@@ -10,16 +10,15 @@ public sealed class BagOf : SolutionAggregationBuiltIn
     public override ErgoVM.Op Compile() => vm =>
     {
         var any = false;
-        var args = vm.Args;
-        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm, args.ToImmutableArray()))
+        foreach (var (ArgVars, ListTemplate, ListVars) in AggregateSolutions(vm))
         {
-            var env = vm.CloneEnvironment();
-            vm.SetArg(0, ListVars);
-            vm.SetArg(1, ArgVars);
+            var state = vm.Memory.SaveState();
+            vm.SetArg2(1, vm.Memory.StoreTerm(ListVars));
+            vm.SetArg2(2, vm.Memory.StoreTerm(ArgVars));
             ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
-            vm.SetArg(0, args[2]);
-            vm.SetArg(1, ListTemplate);
+            vm.SetArg2(1, vm.Args2[3]);
+            vm.SetArg2(2, vm.Memory.StoreTerm(ListTemplate));
             ErgoVM.Goals.Unify2(vm);
             if (ReleaseAndRestoreEarlyReturn()) return;
             vm.Solution();
@@ -28,8 +27,7 @@ public sealed class BagOf : SolutionAggregationBuiltIn
 
             void ReleaseAndRestore()
             {
-                SubstitutionMap.Pool.Release(vm.Environment);
-                vm.Environment = env;
+                vm.Memory.LoadState(state);
             }
             bool ReleaseAndRestoreEarlyReturn()
             {

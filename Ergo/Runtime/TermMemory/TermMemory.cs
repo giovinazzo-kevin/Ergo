@@ -2,15 +2,15 @@
 
 namespace Ergo.Lang.Compiler;
 
-public sealed class TermMemory(int cS = 256, int vS = 256, int sS = 256, int aS = 256)
+public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int aS = 1024)
 {
     public readonly record struct State(
         ITermAddress[] Variables,
         ITermAddress[][] Structures,
         AbstractCell[] Abstracts
     );
-    public readonly record struct AbstractCell(IAbstractTermCompiler Compiler, ITermAddress Address);
-    private readonly object[] Atoms = new object[cS];
+    public readonly record struct AbstractCell(IAbstractTermCompiler Compiler, ITermAddress Address, Type Type);
+    private readonly Atom[] Atoms = new Atom[cS];
     private readonly ITermAddress[] Variables = new ITermAddress[vS];
     private readonly ITermAddress[][] Structures = new ITermAddress[sS][];
     private readonly AbstractCell[] Abstracts = new AbstractCell[aS];
@@ -46,7 +46,7 @@ public sealed class TermMemory(int cS = 256, int vS = 256, int sS = 256, int aS 
         Array.Copy(state.Abstracts, Abstracts, AP);
     }
 
-    public ConstAddress StoreAtom(object value)
+    public ConstAddress StoreAtom(Atom value)
     {
         var hash = value.GetHashCode();
         if (ConstLookup.TryGetValue(hash, out var c))
@@ -74,10 +74,10 @@ public sealed class TermMemory(int cS = 256, int vS = 256, int sS = 256, int aS 
     public AbstractAddress StoreAbstract(AbstractTerm term)
     {
         var addr = new AbstractAddress(AP++);
-        this[addr] = new(term.Compiler, term.Compiler.Store(this, term));
+        this[addr] = new(term.Compiler, term.Compiler.Store(this, term), term.GetType());
         return addr;
     }
-    public object this[ConstAddress c]
+    public Atom this[ConstAddress c]
     {
         get => Atoms[c.Index];
         internal set => Atoms[c.Index] = value;

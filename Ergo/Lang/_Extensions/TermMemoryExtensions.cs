@@ -9,7 +9,7 @@ public static class TermMemoryExtensions
     {
         return addr switch
         {
-            ConstAddress c => new Atom(vm[c]),
+            ConstAddress c => vm[c],
             VariableAddress v => DereferenceVariable(vm, v),
             StructureAddress s => DereferenceStruct(vm, s),
             AbstractAddress a when vm[a] is { } cell => cell.Compiler.Dereference(vm, cell.Address),
@@ -36,7 +36,7 @@ public static class TermMemoryExtensions
             var addr_functor = args[0];
             if (addr_functor is not ConstAddress const_functor)
                 throw new InvalidOperationException();
-            var functor = new Atom(vm[const_functor]);
+            var functor = vm[const_functor];
             var rest = args[1..]
                 .Select(a => Dereference(vm, a))
                 .ToArray();
@@ -49,7 +49,7 @@ public static class TermMemoryExtensions
         if (term.GetFunctor().TryGetValue(out var functor))
         {
             var args = term.GetArguments();
-            var addr_functor = vm.StoreAtom(functor.Value);
+            var addr_functor = vm.StoreAtom(functor);
             if (args.Length > 0)
             {
                 var addr_args = args.Select(vm.StoreTerm)
@@ -66,8 +66,10 @@ public static class TermMemoryExtensions
         throw new NotSupportedException();
     }
 
-    public static bool Unify(this TermMemory mem, ITermAddress a, ITermAddress b)
+    public static bool Unify(this TermMemory mem, ITermAddress a, ITermAddress b, bool transaction = true)
     {
+        if (!transaction)
+            return UnifyTerm(mem, a, b);
         var state = mem.SaveState();
         var ret = UnifyTerm(mem, a, b);
         if (!ret)

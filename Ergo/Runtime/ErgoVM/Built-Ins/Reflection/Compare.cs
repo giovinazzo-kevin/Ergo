@@ -9,13 +9,15 @@ public sealed class Compare : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        var cmp = args[1].CompareTo(args[2]);
-        if (args[0].IsGround)
+        var args = vm.Args2;
+        var cmp = vm.Memory.Dereference(args[2])
+            .CompareTo(vm.Memory.Dereference(args[3]));
+        var a0 = vm.Memory.Dereference(args[1]);
+        if (a0.IsGround)
         {
-            if (!args[0].Match<int>(out var result))
+            if (!a0.Match<int>(out var result))
             {
-                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[0].Explain());
+                vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, a0.Explain());
                 return;
             }
 

@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Interpreter.Libraries.Expansions;
+using Ergo.Lang.Compiler;
 
 namespace Ergo.Lang.Ast.Terms.Interfaces;
 
@@ -15,6 +16,8 @@ public abstract class AbstractTerm : ITerm
     {
         Scope = scope;
     }
+
+    public abstract IAbstractTermCompiler Compiler { get; }
 
     /// <summary>
     /// Expands an abstract term by expanding its canonical form, then parsing the result.

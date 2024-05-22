@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Lang.Ast;
 
 public sealed class UntypedSequence : AbstractList
 {
@@ -6,7 +8,7 @@ public sealed class UntypedSequence : AbstractList
     public override Atom EmptyElement { get; }
     public override (string Open, string Close) Braces { get; }
     public override ITerm CanonicalForm { get; set; }
-
+    public override IAbstractTermCompiler Compiler => throw new NotImplementedException();
     public UntypedSequence(Operator op, Atom emptyElem, (string Open, string Close) braces, ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parens)
         : base(head, scope, parens)
     {

@@ -200,7 +200,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Atom()
-            .Map(functor => TupleParser.ParseArgList(this) // Regular tuples can't be 1 item long, but arg lists can.
+            .Map(functor => NTupleParser.ParseArgList(this) // Regular tuples can't be 1 item long, but arg lists can.
                 .Select(args => new Complex(functor, args.Contents.ToArray())))
             .Or(() => MemoizeFailureAndFail<Complex>(scope.LexerState))
             .Do(() => Probe.Leave(watch))

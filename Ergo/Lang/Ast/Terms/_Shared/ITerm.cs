@@ -2,6 +2,32 @@
 
 namespace Ergo.Lang.Ast;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
     Maybe<ParserScope> Scope { get; }

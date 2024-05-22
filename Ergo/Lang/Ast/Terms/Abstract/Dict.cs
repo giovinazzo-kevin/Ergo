@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Parser;
 using System.Diagnostics;
 
@@ -7,6 +8,8 @@ namespace Ergo.Lang.Ast;
 [DebuggerDisplay("{ Explain(false) }")]
 public class Dict : AbstractTerm
 {
+    private static readonly DictCompiler DictCompiler = new();
+    public override IAbstractTermCompiler Compiler => DictCompiler;
     public override ITerm CanonicalForm { get; set; }
     public Signature Signature { get; }
     public override bool IsQualified => CanonicalForm.IsQualified;

@@ -9,6 +9,16 @@ public partial class ErgoVM
         public static Op Throw(ErrorType ex, params object[] args) => vm => vm.Throw(ex, args);
         public static Op Cut => vm => vm.Cut();
         public static Op Solution => vm => vm.Solution();
+        public static Op Setup<T>(Func<ErgoVM, T> runOnce, Func<T, Op> runAlways)
+        {
+            var instance = Maybe<T>.None;
+            return vm =>
+            {
+                if (!instance.TryGetValue(out var inst))
+                    instance = inst = runOnce(vm);
+                runAlways(inst)(vm);
+            };
+        }
         public static Op And2(Op a, Op b) => vm =>
         {
             // Cache continuation so that goals calling PushChoice know where to continue from.

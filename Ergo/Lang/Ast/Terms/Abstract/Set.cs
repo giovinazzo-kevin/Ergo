@@ -1,7 +1,12 @@
-﻿namespace Ergo.Lang.Ast;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Lang.Ast;
 
 public sealed class Set : AbstractList
 {
+    private static readonly SetCompiler SetCompiler = new();
+    public override IAbstractTermCompiler Compiler => SetCompiler;
+
     public static readonly Set Empty = new(ImmutableArray<ITerm>.Empty, default, false);
     public Set(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized)
         : base(Sort(head), scope, parenthesized)

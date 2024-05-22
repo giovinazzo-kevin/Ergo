@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang.Parser;
 
-public sealed class TupleParser : AbstractListParser<NTuple>
+public sealed class NTupleParser : AbstractListParser<NTuple>
 {
     private Maybe<NTuple> _ParseArgList(ErgoParser parser) => base.Parse(parser)
         ;
@@ -8,7 +8,7 @@ public sealed class TupleParser : AbstractListParser<NTuple>
         .Where(x => x.Contents.Length != 1)
         ;
     public static Maybe<NTuple> ParseArgList(ErgoParser parser) =>
-        new TupleParser()
+        new NTupleParser()
             ._ParseArgList(parser)
         ;
 

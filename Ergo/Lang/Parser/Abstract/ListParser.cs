@@ -13,8 +13,10 @@ public sealed class ListParser : AbstractListParser<List>
 
     protected override Maybe<List> ParseTail(Complex c)
     {
+        var isCanonicalList = c.Arguments[1].GetFunctor().TryGetValue(out var f)
+            && Empty.Operator.Synonyms.Contains(f);
         if (!c.Arguments[1].Equals(WellKnown.Literals.EmptyList)
-            && c.Arguments[1] is not List)
+            && c.Arguments[1] is not List && !isCanonicalList)
         {
             return new List(ImmutableArray.Create(c.Arguments[0]), Maybe.Some(c.Arguments[1]));
         }

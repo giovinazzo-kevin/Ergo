@@ -62,7 +62,7 @@ public sealed class Tabled : BuiltIn
          *     
          * Therefore args[0] is the rewritten goal that should be memoized.
          */
-        var args = vm.Args;
+        var args = vm.Args2[1..].ToArray().Select(x => vm.Memory.Dereference(x)).ToArray();
         if (!MemoContexts.TryGetValue(vm, out var memoContext))
             memoContext = MemoContexts[vm] = new MemoizationContext();
         // The first call for a given tabled goal is dubbed the 'pioneer'.

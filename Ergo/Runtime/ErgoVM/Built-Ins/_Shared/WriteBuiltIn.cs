@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter.Libraries;
+using Ergo.Lang.Compiler;
 
 namespace Ergo.Runtime.BuiltIns;
 
@@ -44,18 +45,18 @@ public abstract class WriteBuiltIn : BuiltIn
             var portrayVm = vm.ScopedInstance();
             portrayVm.Query = portray;
 
-            var args = vm.Args;
-            foreach (var arg in args)
+            foreach (var arg in vm.Args2[1..])
             {
+                var tArg = vm.Memory.Dereference(arg);
                 // https://www.swi-prolog.org/pldoc/man?predicate=portray/1
-                if (Portrayed && arg is not Variable)
+                if (Portrayed && arg is not VariableAddress)
                 {
-                    PortrayHook.SetArg(0, arg);
+                    PortrayHook.SetArg(0, tArg);
                     portrayVm.Run();
                     if (portrayVm.NumSolutions > 0)
                         break; // Do nothing, the hook already took care of this term by calling write_raw.
                 }
-                var text = TransformText(Explain(arg));
+                var text = TransformText(Explain(tArg));
                 if (vm.Out.Encoding.IsSingleByte)
                 {
                     text = text.Replace("⊤", "true");

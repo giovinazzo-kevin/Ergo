@@ -9,8 +9,7 @@ public sealed class CommaToList : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        var (commaArg, listArg) = (args[0], args[1]);
+        var (commaArg, listArg) = (vm.Arg(0), vm.Arg(1));
         if (listArg is not Variable)
         {
             if (listArg is not List list)

@@ -12,9 +12,9 @@ public sealed class Choose : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var arg = vm.Args[Rng.Next(vm.Arity)];
+        var arg = vm.Args2[Rng.Next(1, vm.Arity)];
         vm.Arity = 1;
-        vm.SetArg(0, arg);
+        vm.SetArg2(1, arg);
         CallInst.Compile()(vm);
     };
 }

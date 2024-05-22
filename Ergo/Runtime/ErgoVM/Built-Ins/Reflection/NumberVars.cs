@@ -11,51 +11,46 @@ public sealed class NumberVars : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
+        var args = vm.Args2;
         var allSubs = SubstitutionMap.Pool.Acquire();
         var (start, end) = (0, 0);
-        if (LanguageExtensions.Unify(args[1], new Atom(start)).TryGetValue(out var subs1))
+        var arg0 = vm.Arg(0);
+        var arg1 = vm.Arg(1);
+        if (vm.Memory.Unify(args[2], vm.Memory.StoreAtom(new Atom(start))))
         {
-            if (!args[1].IsGround)
-            {
-                allSubs.AddRange(subs1);
-            }
-            SubstitutionMap.Pool.Release(subs1);
+
         }
-        else if (args[1].IsGround && args[1] is Atom { Value: EDecimal d })
+        else if (arg1 is Atom { Value: EDecimal d })
         {
             start = d.ToInt32IfExact();
         }
-        else if (args[1] is not Atom)
+        else if (arg1 is not Atom)
         {
             vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1]);
             return;
         }
         var newVars = new Dictionary<string, Variable>();
-        foreach (var (v, i) in args[0].Variables.Select((v, i) => (v, i)))
+        foreach (var (v, i) in arg0.Variables.Select((v, i) => (v, i)))
         {
             newVars[v.Name] = new Variable($"$VAR({i})");
             ++end;
         }
-        if (!LanguageExtensions.Unify(args[0].Instantiate(vm.InstantiationContext, newVars), args[0]).TryGetValue(out var subs0))
+        if (!vm.Memory.Unify(vm.Memory.StoreTerm(arg0.Instantiate(vm.InstantiationContext, newVars)), args[1]))
         {
             vm.Fail();
+            return;
         }
-        allSubs.AddRange(subs0);
-        SubstitutionMap.Pool.Release(subs0);
-        if (LanguageExtensions.Unify(args[2], new Atom(end)).TryGetValue(out var subs2))
+        var arg2 = vm.Arg(2);
+        if (vm.Memory.Unify(args[3], vm.Memory.StoreAtom(new Atom(end))))
         {
-            if (!args[2].IsGround)
-            {
-                allSubs.AddRange(subs2);
-            }
-            SubstitutionMap.Pool.Release(subs2);
+
         }
-        else if (args[2].IsGround && args[2] is Atom { Value: EDecimal d } && d.ToInt32IfExact() != end)
+        else if (arg2 is Atom { Value: EDecimal d } && d.ToInt32IfExact() != end)
         {
             vm.Fail();
+            return;
         }
-        else if (args[1] is not Atom)
+        else if (arg1 is not Atom)
         {
             vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Number, args[1]);
             return;

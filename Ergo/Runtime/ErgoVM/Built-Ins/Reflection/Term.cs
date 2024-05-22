@@ -9,8 +9,7 @@ public sealed class Term : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var arguments = vm.Args;
-        var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);
+        var (functorArg, args, termArg) = (vm.Arg(0), vm.Arg(1), vm.Arg(2));
         var state = vm.Memory.SaveState();
         if (termArg is not Variable)
         {

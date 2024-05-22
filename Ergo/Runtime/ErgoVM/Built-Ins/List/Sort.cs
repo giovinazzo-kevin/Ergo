@@ -9,19 +9,17 @@ public sealed class Sort : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        if (args[0] is List list)
+        var args = vm.Args2;
+        if (vm.Memory.Dereference(args[1]) is List list)
         {
             var sorted = new List(list.Contents.OrderBy(x => x), default, list.Scope);
-            vm.SetArg(0, args[1]);
-            vm.SetArg(1, sorted);
+            vm.SetArg2(2, vm.Memory.StoreTerm(sorted));
             ErgoVM.Goals.Unify2(vm);
         }
-        else if (args[1] is Set set)
+        else if (vm.Memory.Dereference(args[2]) is Set set)
         {
             var lst = new List(set.Contents, default, set.Scope);
-            vm.SetArg(0, args[0]);
-            vm.SetArg(1, lst);
+            vm.SetArg2(2, vm.Memory.StoreTerm(lst));
             ErgoVM.Goals.Unify2(vm);
         }
         else vm.Fail();

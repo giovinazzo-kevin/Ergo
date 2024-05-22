@@ -5,6 +5,9 @@ namespace Ergo.Lang.Extensions;
 
 public static class TermMemoryExtensions
 {
+    public static ITerm Deref(this ITermAddress a, ErgoVM vm)
+        => vm.Memory.Dereference(a);
+
     public static ITerm Dereference(this TermMemory vm, ITermAddress addr)
     {
         return addr switch
@@ -46,6 +49,9 @@ public static class TermMemoryExtensions
 
     public static ITermAddress StoreTerm(this TermMemory vm, ITerm term)
     {
+        var hash = term.GetHashCode();
+        if (vm.TermLookup.TryGetValue(hash, out var c))
+            return c;
         if (term.GetFunctor().TryGetValue(out var functor))
         {
             var args = term.GetArguments();

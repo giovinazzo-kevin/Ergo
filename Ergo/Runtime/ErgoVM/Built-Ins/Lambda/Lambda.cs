@@ -11,14 +11,13 @@ public sealed class Lambda : BuiltIn
     private readonly Call CallInst = new();
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        if (args.Length < 2)
+        if (vm.Args2.Length < 3)
         {
-            vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(args.Length)).Explain());
+            vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.WithArity(Maybe<int>.Some(vm.Args2.Length - 1)).Explain());
             return;
         }
-        var (parameters, lambda) = (args[0], args[1]);
-        var rest = vm.Args[2..vm.Arity];
+        var (parameters, lambda) = (vm.Memory.Dereference(vm.Arg2(1)), vm.Memory.Dereference(vm.Arg2(2)));
+        var rest = vm.Args2[3..vm.Arity];
         if (parameters is Variable)
         {
             vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, parameters.Explain());
@@ -40,19 +39,23 @@ public sealed class Lambda : BuiltIn
                 vm.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.FreeVariable, list.Contents[i].Explain());
                 return;
             }
-            var newSubs = LanguageExtensions.Unify(rest[i], list.Contents[i]).GetOr(SubstitutionMap.Pool.Acquire());
-            lambda = lambda.Substitute(newSubs);
-            SubstitutionMap.Pool.Release(newSubs);
+            var todoRemove = vm.Memory.StoreTerm(list.Contents[i]);
+            if (!vm.Memory.Unify(rest[i], todoRemove))
+            {
+                vm.Fail();
+                return;
+            }
+            lambda = lambda.Substitute(vm.Env);
         }
         /*
         var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : ImmutableArray<ITerm>.Empty;
         CallInst.Compile()([lambda, .. extraArgs])(vm);
          */
         var extraArgs = rest.Length > list.Contents.Length ? rest[list.Contents.Length..] : [];
-        vm.SetArg(0, lambda);
+        vm.SetArg2(1, vm.Memory.StoreTerm(lambda));
         for (int i = 0; i < extraArgs.Length; i++)
-            vm.SetArg(i + 1, extraArgs[i]);
-        vm.Arity = 1 + extraArgs.Length;
+            vm.SetArg2(i + 1, extraArgs[i]);
+        vm.Arity = 2 + extraArgs.Length;
         CallInst.Compile()(vm);
     };
 }

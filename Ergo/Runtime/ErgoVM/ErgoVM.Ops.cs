@@ -11,29 +11,6 @@ public partial class ErgoVM
         public static Op Throw(ErrorType ex, params object[] args) => vm => vm.Throw(ex, args);
         public static Op Cut => vm => vm.Cut();
         public static Op Solution => vm => vm.Solution();
-        public static Op Setup<T>(Func<ErgoVM, T> runOnce, Func<T, Op> runAlways)
-        {
-            var instance = Maybe<T>.None;
-            return vm =>
-            {
-                if (!instance.TryGetValue(out var inst))
-                    instance = inst = runOnce(vm);
-                runAlways(inst)(vm);
-            };
-        }
-        public static Op Setup(Action<ErgoVM> runOnce, Op runAlways)
-        {
-            var ran = false;
-            return vm =>
-            {
-                if (!ran)
-                {
-                    runOnce(vm);
-                    ran = true;
-                }
-                runAlways(vm);
-            };
-        }
         public static Op And2(Op a, Op b) => vm =>
         {
             // Cache continuation so that goals calling PushChoice know where to continue from.
@@ -171,6 +148,7 @@ public partial class ErgoVM
                 void NextMatch(ErgoVM vm)
                 {
                     var anyMatch = false;
+                    var state = vm.Memory.SaveState();
                 TCO:
                     // In the non-tail recursive case, you can imagine this 'while' as if it were an 'if'.
                     while (matchEnum.MoveNext())
@@ -205,7 +183,10 @@ public partial class ErgoVM
                         }
                         // - It has to be interpreted (we have to run it traditionally)
                         else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
-                            runGoal = Setup(vm => vm.Memory.StoreTerm(pred.Body), addr => Goal(addr));
+                        {
+                            var addr = vm.Memory.StoreTerm(pred.Body);
+                            runGoal = Goal(addr);
+                        }
                         // Track the number of choice points before executing the goal (up to the one we just pushed)
                         var numCp = vm.NumChoicePoints;
                         // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
@@ -244,6 +225,7 @@ public partial class ErgoVM
                             //vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
                             vm.DiscardChoices(1); // We don't need the NextMatch choice point anymore.
                             matchEnum = GetEnumerator(vm, newGoal);
+                            vm.Memory.LoadState(state);
                             goto TCO;
                         }
                         // Non-tail recursive predicates don't benefit from the while loop and must backtrack as normal.
@@ -261,7 +243,7 @@ public partial class ErgoVM
                 {
                     matchEnum.Current.Goal.GetQualification(out var inst);
                     var args = inst.GetArguments();
-                    vm.Arity = args.Length;
+                    vm.Arity = args.Length + 1;
                     for (int i = 0; i < args.Length; i++)
                         vm.SetArg(i, args[i]);
                 }

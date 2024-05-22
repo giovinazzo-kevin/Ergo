@@ -11,18 +11,17 @@ public sealed class With : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        if (args[0] is Dict a)
+        if (vm.Arg(0) is Dict a)
         {
-            if (args[1] is Set b
+            if (vm.Arg(1) is Set b
                 && GetPairs(b).TryGetValue(out var kvps))
             {
                 var merged = Update(a, kvps);
-                vm.SetArg(0, args[2]);
+                vm.SetArg(0, vm.Arg(2));
                 vm.SetArg(1, merged);
                 ErgoVM.Goals.Unify2(vm);
             }
-            else if (args[2] is Dict d)
+            else if (vm.Arg(2) is Dict d)
             {
                 if (a.Dictionary.Keys.Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], a.Dictionary[k]).TryGetValue(out _)))
                 {
@@ -31,15 +30,15 @@ public sealed class With : BuiltIn
                 var diff = d.Dictionary.Keys.Except(a.Dictionary.Keys).ToHashSet();
                 var merged = new Set(d.Dictionary.Where(kvp => diff.Contains(kvp.Key))
                     .Select(x => (ITerm)WellKnown.Operators.NamedArgument.ToComplex(x.Key, Maybe.Some(x.Value))), default);
-                vm.SetArg(0, args[1]);
+                vm.SetArg(0, vm.Arg(1));
                 vm.SetArg(1, merged);
                 ErgoVM.Goals.Unify2(vm);
             }
         }
-        else if (args[0] is Variable
-            && args[1] is Set b
+        else if (vm.Arg(0) is Variable
+            && vm.Arg(1) is Set b
             && GetPairs(b).TryGetValue(out var kvps)
-            && args[2] is Dict d)
+            && vm.Arg(2) is Dict d)
         {
             if (kvps.Select(k => k.Key).Any(k => d.Dictionary.ContainsKey(k) && !LanguageExtensions.Unify(d.Dictionary[k], kvps[k]).TryGetValue(out _)))
             {

@@ -77,12 +77,18 @@ public sealed class For : BuiltIn
             var discarded = (var.Ignored && vm.IsSingletonVariable(var));
             int i = iFrom;
             var count = iTo - iFrom;
+            var env = vm.Memory.SaveState();
             return ChooseBacktrack;
             void Backtrack(ErgoVM vm)
             {
                 if (!discarded)
                 {
+                    // HACK; TODO: use stack
+                    var cp = vm.Memory.CP;
+                    vm.Memory.CP = vm.Memory.NumAtoms - 2;
                     vm.Memory[varAddr] = vm.Memory.StoreAtom(new Atom(EDecimal.FromInt32(i)));
+                    var test = vm.Memory.Dereference(vm.Memory[varAddr]);
+                    vm.Memory.CP = cp;
                 }
                 if ((i += iStep) < iTo)
                 {
@@ -96,7 +102,6 @@ public sealed class For : BuiltIn
             void BacktrackUnrolled(ErgoVM vm)
             {
                 var cnt = vm.@continue;
-                var env = vm.Memory.SaveState();
                 // We can generate the solutions lazily since the continuaiton will not create choice points.
                 // We can return crazy amounts of solutions in O(1) time and memory, with the catch that
                 // they're computed later when enumerated, spreading (and offloading) the computational cost.

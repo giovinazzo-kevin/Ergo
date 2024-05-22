@@ -5,6 +5,7 @@ namespace Ergo.Lang.Compiler;
 public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int aS = 1024)
 {
     public readonly record struct State(
+        uint CP,
         ITermAddress[] Variables,
         ITermAddress[][] Structures,
         AbstractCell[] Abstracts
@@ -14,10 +15,40 @@ public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int 
     private readonly ITermAddress[] Variables = new ITermAddress[vS];
     private readonly ITermAddress[][] Structures = new ITermAddress[sS][];
     private readonly AbstractCell[] Abstracts = new AbstractCell[aS];
-    private uint CP = 0, VP = 0, SP = 0, AP = 0;
+    public uint CP = 0, VP = 0, SP = 0, AP = 0;
+    public uint NumAtoms => (uint)Atoms.Length;
+
     internal Dictionary<string, VariableAddress> VariableLookup = new();
     internal Dictionary<VariableAddress, string> InverseVariableLookup = new();
-    internal Dictionary<int, ConstAddress> ConstLookup = new();
+    internal Dictionary<int, ITermAddress> TermLookup = new();
+
+    public void Clear()
+    {
+        CP = 0;
+        VP = 0;
+        SP = 0;
+        AP = 0;
+        Array.Clear(Atoms);
+        Array.Clear(Variables);
+        Array.Clear(Structures);
+        Array.Clear(Abstracts);
+        TermLookup.Clear();
+        VariableLookup.Clear();
+        InverseVariableLookup.Clear();
+    }
+
+    public TermMemory Clone()
+    {
+        var state = SaveState();
+        var mem = new TermMemory(cS, vS, sS, aS)
+        {
+            TermLookup = TermLookup,
+            VariableLookup = VariableLookup,
+            InverseVariableLookup = InverseVariableLookup
+        };
+        mem.LoadState(state);
+        return mem;
+    }
 
     public State SaveState()
     {
@@ -31,12 +62,13 @@ public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int 
             structures[i] = new ITermAddress[Structures[i].Length];
             Array.Copy(Structures[i], structures[i], Structures[i].Length);
         }
-        return new State(variables, structures, abstracts);
+        return new State(CP, variables, structures, abstracts);
     }
 
     public void LoadState(State state)
     {
-        (VP, SP, AP) = (
+        (CP, VP, SP, AP) = (
+            state.CP,
             (uint)state.Variables.Length,
             (uint)state.Structures.Length,
             (uint)state.Abstracts.Length
@@ -49,11 +81,11 @@ public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int 
     public ConstAddress StoreAtom(Atom value)
     {
         var hash = value.GetHashCode();
-        if (ConstLookup.TryGetValue(hash, out var c))
-            return c;
+        if (TermLookup.TryGetValue(hash, out var c))
+            return (ConstAddress)c;
         var addr = new ConstAddress(CP++);
         this[addr] = value;
-        ConstLookup[hash] = addr;
+        TermLookup[hash] = addr;
         return addr;
     }
     public VariableAddress StoreVariable(string name = null)

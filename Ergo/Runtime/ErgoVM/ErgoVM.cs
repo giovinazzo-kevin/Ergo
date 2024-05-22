@@ -50,7 +50,7 @@ public partial class ErgoVM
     /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
-    public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment, TermMemory.State State);
+    public readonly record struct ChoicePoint(Op Continue, TermMemory.State State);
     #endregion
     public readonly DecimalType DecimalType;
     public readonly KnowledgeBase KB;
@@ -68,10 +68,6 @@ public partial class ErgoVM
     /// </summary>
     protected int cutIndex;
     /// <summary>
-    /// Acts as a register for the current goal's arguments.
-    /// </summary>
-    protected ITerm[] args;
-    /// <summary>
     /// Register for the number of arguments for the current call. Needed by variadics.
     /// </summary>
     public int Arity;
@@ -81,14 +77,13 @@ public partial class ErgoVM
     internal Op @continue;
 
     public readonly TermMemory Memory;
-    protected ITermAddress[] args2;
+    protected ITermAddress[] args;
     protected HashSet<VariableAddress> trackedVars;
 
     public ErgoVM(KnowledgeBase kb, TermMemory memory = default, DecimalType decimalType = DecimalType.CliDecimal)
     {
         Memory = memory ?? new();
-        args = new ITerm[MAX_ARGUMENTS];
-        args2 = new ITermAddress[MAX_ARGUMENTS];
+        args = new ITermAddress[MAX_ARGUMENTS];
         KB = kb;
         DecimalType = decimalType;
         In = Console.In;
@@ -147,7 +142,7 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM ScopedInstance() => new(KB, Memory, DecimalType)
+    public ErgoVM ScopedInstance() => new(KB, Memory.Clone(), DecimalType)
     { In = In, Err = Err, Out = Out, /*args = [.. args], Arity = Arity*/ };
 
     public void TrackVariable(VariableAddress arg)
@@ -191,25 +186,22 @@ public partial class ErgoVM
     }
     #endregion
     #region Goal API
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Obsolete]
-    public void SetArg(int index, ITerm value) => args[index] = value;
+    public void SetArg(int index, ITerm value) => args[index + 1] = Memory.StoreTerm(value);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SetArg2(int index, ITermAddress value) => args2[index] = value;
+    public void SetArg2(int index, ITermAddress value) => args[index] = value;
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetArgs2(ITermAddress[] value)
     {
-        args2 = value;
         Arity = value.Length;
+        Array.Copy(value, 0, args, 0, Arity);
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Obsolete]
-    public ITerm Arg(int index) => Memory.Dereference(args2[index + 1]);
+    public ITerm Arg(int index) => Memory.Dereference(args[index + 1]);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ITermAddress Arg2(int index) => args2[index];
-    [Obsolete]
-    public ReadOnlySpan<ITerm> Args => args.AsSpan()[..Arity];
-    public ReadOnlySpan<ITermAddress> Args2 => args2.AsSpan()[..Arity];
+    public ITermAddress Arg2(int index) => args[index];
+    public ReadOnlySpan<ITermAddress> Args2 => args.AsSpan()[..Arity];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Flag(VMFlags flag) => flags.HasFlag(flag);
@@ -320,9 +312,9 @@ public partial class ErgoVM
         var cont = @continue;
         var state = Memory.SaveState();
         if (cont == Ops.NoOp)
-            choicePoints.Push(new ChoicePoint(choice, null, state));
+            choicePoints.Push(new ChoicePoint(choice, state));
         else
-            choicePoints.Push(new ChoicePoint(Ops.And2(choice, cont), null, state));
+            choicePoints.Push(new ChoicePoint(Ops.And2(choice, cont), state));
     }
     #endregion
 

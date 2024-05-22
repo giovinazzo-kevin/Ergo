@@ -20,16 +20,13 @@ public class BuiltInNode : GoalNode
             RuntimeHelpers.PrepareDelegate(CompiledBuiltIn);
         }
     }
-    public override ErgoVM.Op Compile() => ErgoVM.Ops.Setup(vm =>
+    public override ErgoVM.Op Compile() => vm =>
     {
-        return (StructureAddress)vm.Memory.StoreTerm(Head);
-    }, head => vm =>
-    {
-        vm.SetArgs2(vm.Memory[head]);
+        vm.SetArgs2(vm.Memory[(StructureAddress)vm.Memory.StoreTerm(Head)]);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         vm.LogState(Explain(false));
         CompiledBuiltIn(vm);
-    });
+    };
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override bool IsDeterminate => BuiltIn.IsDeterminate(Args);

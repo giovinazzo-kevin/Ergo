@@ -11,14 +11,13 @@ public sealed class DictKeyValue : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        if (args[0] is Variable)
+        if (vm.Arg(0) is Variable)
         {
-            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, args[0].Explain());
+            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, vm.Arg(0).Explain());
             return;
         }
 
-        if (args[0] is Dict dict)
+        if (vm.Arg(0) is Dict dict)
         {
             if (!dict.Dictionary.Keys.Any())
             {
@@ -29,11 +28,11 @@ public sealed class DictKeyValue : BuiltIn
             var anyValue = false;
             foreach (var key in dict.Dictionary.Keys)
             {
-                var s1 = LanguageExtensions.Unify(args[1], key).TryGetValue(out var subs);
+                var s1 = LanguageExtensions.Unify(vm.Arg(1), key).TryGetValue(out var subs);
                 if (s1)
                 {
                     anyKey = true;
-                    var s2 = LanguageExtensions.Unify(args[2], dict.Dictionary[key]).TryGetValue(out var vSubs);
+                    var s2 = LanguageExtensions.Unify(vm.Arg(2), dict.Dictionary[key]).TryGetValue(out var vSubs);
                     if (s2)
                     {
                         anyValue = true;
@@ -49,7 +48,7 @@ public sealed class DictKeyValue : BuiltIn
 
             if (!anyKey)
             {
-                vm.Throw(ErgoVM.ErrorType.KeyNotFound, args[0].Explain(), args[1].Explain());
+                vm.Throw(ErgoVM.ErrorType.KeyNotFound, vm.Arg(0).Explain(), vm.Arg(1).Explain());
                 return;
             }
 

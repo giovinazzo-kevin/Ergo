@@ -39,7 +39,8 @@ public sealed class Eval : MathBuiltIn
     public override ErgoVM.Op Compile() => vm =>
     {
         var arg = vm.Arg2(2);
-        var eval = vm.Memory.StoreAtom(new Atom(Evaluate(vm, vm.Memory.Dereference(arg))));
+        var argDeref = vm.Memory.Dereference(arg);
+        var eval = vm.Memory.StoreAtom(new Atom(Evaluate(vm, argDeref)));
         if (vm.State == ErgoVM.VMState.Fail)
             return;
         vm.SetArg2(2, eval);

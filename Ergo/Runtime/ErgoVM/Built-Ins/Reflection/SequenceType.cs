@@ -1,4 +1,6 @@
-﻿namespace Ergo.Runtime.BuiltIns;
+﻿using Ergo.Lang.Compiler;
+
+namespace Ergo.Runtime.BuiltIns;
 
 public sealed class SequenceType : BuiltIn
 {
@@ -13,28 +15,34 @@ public sealed class SequenceType : BuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        var args = vm.Args;
-        var (type, seq) = (args[1], args[0]);
-        if (seq is Variable)
+        var (L, T, S) = (vm.Memory.StoreAtom(_L), vm.Memory.StoreAtom(_T), vm.Memory.StoreAtom(_S));
+        var (type, seq) = (vm.Arg2(2), vm.Arg2(1));
+        if (seq is VariableAddress)
         {
-            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, seq.Explain());
+            vm.Throw(ErgoVM.ErrorType.TermNotSufficientlyInstantiated, seq.Deref(vm).Explain());
             return;
         }
-        vm.SetArg(0, type);
-        if (seq is List)
+        vm.SetArg2(1, type);
+        if (seq is AbstractAddress a)
         {
-            vm.SetArg(1, _L);
-            ErgoVM.Goals.Unify2(vm);
+            var t = vm.Memory[a].Type;
+            if (t == typeof(List))
+                vm.SetArg2(2, L);
+            else if (t == typeof(NTuple))
+                vm.SetArg2(2, T);
+            else if (t == typeof(Set))
+                vm.SetArg2(2, S);
         }
-        else if (seq is NTuple)
+        else if (seq is ConstAddress c)
         {
-            vm.SetArg(1, _T);
-            ErgoVM.Goals.Unify2(vm);
+            var f = vm.Memory[c];
+            if (f.Equals(WellKnown.Literals.EmptyList))
+                vm.SetArg2(2, L);
+            else if (f.Equals(WellKnown.Literals.EmptyCommaList))
+                vm.SetArg2(2, T);
+            else if (f.Equals(WellKnown.Literals.EmptySet))
+                vm.SetArg2(2, S);
         }
-        else if (seq is Set)
-        {
-            vm.SetArg(1, _S);
-            ErgoVM.Goals.Unify2(vm);
-        }
+        ErgoVM.Goals.Unify2(vm);
     };
 }

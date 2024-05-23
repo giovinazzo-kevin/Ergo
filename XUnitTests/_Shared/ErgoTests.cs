@@ -76,6 +76,7 @@ public class ErgoTests : IClassFixture<ErgoTestFixture>
             }
 
             Assert.Equal(expectedSolutions, numSolutions);
+            vm.Memory.Clear();
         }
     }
 }

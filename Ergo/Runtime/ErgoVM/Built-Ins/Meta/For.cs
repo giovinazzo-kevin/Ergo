@@ -33,8 +33,9 @@ public sealed class For : BuiltIn
             {
                 return new Solution(new(vm.Env));
             }
+            var k = new Atom(EDecimal.FromInt32(step * i + from));
             vm.Memory.LoadState(env);
-            vm.Memory[var] = vm.Memory.StoreAtom(new Atom(EDecimal.FromInt32(step * i + from)));
+            vm.Memory[var] = vm.Memory.StoreAtom(k);
             vm.Ready();
             cnt(vm);
             return new Solution(new(vm.Env));
@@ -84,11 +85,7 @@ public sealed class For : BuiltIn
                 if (!discarded)
                 {
                     // HACK; TODO: use stack
-                    var cp = vm.Memory.CP;
-                    vm.Memory.CP = vm.Memory.NumAtoms - 2;
                     vm.Memory[varAddr] = vm.Memory.StoreAtom(new Atom(EDecimal.FromInt32(i)));
-                    var test = vm.Memory.Dereference(vm.Memory[varAddr]);
-                    vm.Memory.CP = cp;
                 }
                 if ((i += iStep) < iTo)
                 {

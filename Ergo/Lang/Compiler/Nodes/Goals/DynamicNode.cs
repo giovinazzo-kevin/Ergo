@@ -14,7 +14,7 @@ public class DynamicNode : ExecutionNode
     }
 
     public ITerm Goal { get; }
-    public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(vm.Memory.StoreTerm(Goal));
+    public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(vm.Memory.StoreTerm(Goal))(vm);
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

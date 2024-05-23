@@ -19,4 +19,8 @@ public class SetCompiler : IAbstractTermCompiler<Set>
     {
         return vm.StoreTerm(term.CanonicalForm);
     }
+    public bool Unify(TermMemory mem, AbstractAddress a1, ITermAddress other)
+    {
+        return mem.Unify(mem[a1].Address, other, transaction: false);
+    }
 }

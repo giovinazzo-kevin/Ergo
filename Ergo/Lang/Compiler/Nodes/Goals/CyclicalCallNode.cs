@@ -21,7 +21,8 @@ public class CyclicalCallNode : DynamicNode
     }
     public override ErgoVM.Op Compile()
     {
-        return vm => ErgoVM.Ops.Goal(vm.Memory.StoreTerm(Goal))(vm);
+        return vm
+            => ErgoVM.Ops.Goal(vm.Memory.StoreTerm(Goal))(vm);
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

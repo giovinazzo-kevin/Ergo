@@ -142,6 +142,7 @@ public partial class ErgoVM
             void Resolve(ErgoVM vm)
             {
                 var newGoal = vm.Memory.Dereference(goal);
+                var module = newGoal.GetQualification(out _).GetOr(vm.KB.Scope.Entry);
                 vm.LogState(newGoal.Explain(false));
                 var matchEnum = GetEnumerator(vm, newGoal);
                 NextMatch(vm);
@@ -155,6 +156,7 @@ public partial class ErgoVM
                     {
                         if (dynamic && !matchEnum.Current.Predicate.IsDynamic)
                             continue;
+                        Console.WriteLine(matchEnum.Current.Goal.Explain(false));
                         anyMatch = true;
                         // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);
@@ -215,12 +217,11 @@ public partial class ErgoVM
                             if (vm.State == VMState.Fail)
                                 break;
                             // Keep the list of substitutions that contributed to this iteration.
-                            var bodyVars = pred.Body.Variables.ToHashSet();
-                            //var tcoSubs = vm.Environment
-                            //    .Where(s => bodyVars.Contains((Variable)s.Lhs));
+                            var body = (StructureAddress)vm.Memory.StoreTerm(pred.Body.Contents.Last().Qualified(module));
+                            vm.Memory[(StructureAddress)goal] = vm.Memory[body];
+                            vm.SetArgs2(vm.Memory[body]);
                             // Substitute the tail call with this list, creating the new head, and qualify it with the current module.
-                            newGoal = pred.Body.Contents.Last().Substitute(vm.Env)
-                                .Qualified(pred.DeclaringModule);
+                            newGoal = vm.Memory.Dereference(goal);
                             // Remove all substitutions that are no longer relevant, including those we just used.
                             //vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
                             vm.DiscardChoices(1); // We don't need the NextMatch choice point anymore.

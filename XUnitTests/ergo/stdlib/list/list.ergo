@@ -5,7 +5,8 @@
 :- op(15, xfy, ['|']).
 
 member(_, []) :- false.
-member(X, [Y|T]) :- (X = Y; member(X, T)).
+member(X, [X|_]).
+member(X, [_|T]) :- member(X, T).
 
 length([], N, N).
 length([_|List], N, N0) :-

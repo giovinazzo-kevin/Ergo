@@ -5,6 +5,8 @@ namespace Ergo.Lang.Extensions;
 
 public static class TermMemoryExtensions
 {
+    public static ITerm Deref(this ITermAddress a, TermMemory memory)
+        => memory.Dereference(a);
     public static ITerm Deref(this ITermAddress a, ErgoVM vm)
         => vm.Memory.Dereference(a);
 
@@ -113,9 +115,9 @@ public static class TermMemoryExtensions
             return mem[ca].Equals(mem[cb]);
         }
 
-        static bool UnifyAbstract(TermMemory mem, AbstractAddress aa, ITermAddress b)
+        static bool UnifyAbstract(TermMemory mem, AbstractAddress a, ITermAddress b)
         {
-            return true;
+            return mem[a].Compiler.Unify(mem, a, b);
         }
 
         static bool UnifyStruct(TermMemory mem, StructureAddress va, StructureAddress vb)

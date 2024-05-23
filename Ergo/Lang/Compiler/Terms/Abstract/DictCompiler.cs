@@ -7,10 +7,10 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
         if (address is not StructureAddress sAddr)
             throw new NotSupportedException();
         var args = vm[sAddr];
-        if (args.Length != 2)
+        if (args.Length != 3)
             throw new NotSupportedException();
-        var functor = vm.Dereference(args[0]);
-        var arg = vm.Dereference(args[1]);
+        var functor = vm.Dereference(args[1]);
+        var arg = vm.Dereference(args[2]);
         return (functor, arg) switch
         {
             (Atom a, Variable v) => new Dict(a, v),
@@ -29,6 +29,7 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
             }
         }
     }
+    private static readonly Atom functor_dict = new Atom("dict");
     public ITermAddress Store(TermMemory vm, Dict term)
     {
         var args = new List<ITermAddress>();
@@ -42,6 +43,10 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
         else if (term.Argument.TryGetB(out var varSet))
             args.Add(vm.StoreAbstract(varSet));
         else throw new NotSupportedException();
-        return vm.StoreStructure(args.ToArray());
+        return vm.StoreStructure(args.Prepend(vm.StoreAtom(functor_dict)).ToArray());
+    }
+    public bool Unify(TermMemory mem, AbstractAddress a1, ITermAddress other)
+    {
+        return mem.Unify(mem[a1].Address, other, transaction: false);
     }
 }

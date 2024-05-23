@@ -38,6 +38,8 @@ public sealed class Call : BuiltIn
         newVm.Query = newVm.CompileQuery(query);
         newVm.Run();
         foreach (var sol in newVm.Solutions)
+        {
             vm.Solution(sol.Substitutions);
+        }
     };
 }

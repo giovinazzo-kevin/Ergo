@@ -6,6 +6,7 @@ public interface IAbstractTermCompiler
 {
     ITermAddress Store(TermMemory vm, AbstractTerm term);
     AbstractTerm Dereference(TermMemory vm, ITermAddress address);
+    bool Unify(TermMemory mem, AbstractAddress address, ITermAddress other);
 }
 
 public interface IAbstractTermCompiler<T> : IAbstractTermCompiler

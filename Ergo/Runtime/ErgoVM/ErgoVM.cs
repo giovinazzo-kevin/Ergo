@@ -252,6 +252,7 @@ public partial class ErgoVM
     /// <summary>
     /// Yields an external substitution map as a solution.
     /// </summary>
+    [Obsolete]
     public void Solution(SubstitutionMap subs)
     {
         LogState($"Solution (map, {subs.Select(s => s.Explain()).Join("; ")})");

@@ -143,7 +143,7 @@ public static class TermMemoryExtensions
                 mem[va1] = b;
                 return true;
             }
-            return derefA.Equals(b);
+            return Unify(mem, derefA, b, transaction: false);
         }
 
         static bool UnifyVar(TermMemory mem, VariableAddress va, VariableAddress vb)

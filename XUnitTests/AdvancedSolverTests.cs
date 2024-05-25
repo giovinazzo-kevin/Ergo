@@ -43,6 +43,16 @@ public class AdvancedSolverTests : ErgoTests
     #endregion
     public void ShouldSolveCuts(string query, int numSolutions, params string[] expected)
         => ShouldSolve(query, numSolutions, true, expected);
+    #region Rows
+    [Theory]
+    [InlineData("length('[]',L)", 1, "L/0")]
+    [InlineData("length([_],L)", 1, "L/1")]
+    [InlineData("length([_,_],L)", 1, "L/2")]
+    [InlineData("length([_,_,_,_,_,_],L)", 1, "L/6")]
+
+    #endregion
+    public void ShouldSolveRecursive(string query, int numSolutions, params string[] expected)
+        => ShouldSolve(query, numSolutions, true, expected);
     [Theory]
     [InlineData("repeat(10,⊤)", 10, "", "", "", "", "", "", "", "", "", "")]
     [InlineData("map([X,Y] >> (Y := X * 2),[1,2,3],[A,B,C])", 1, "A/2;B/4;C/6")]

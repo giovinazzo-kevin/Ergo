@@ -23,6 +23,10 @@ public sealed class TermMemory(int vS = 1024, int sS = 1024, int aS = 1024)
     internal Dictionary<VariableAddress, string> InverseVariableLookup = new();
     internal Dictionary<int, ITermAddress> TermLookup = new();
 
+    public IEnumerable<ITerm> StructuresDebug => Enumerable.Range(0, (int)SP)
+        .Select(i => new StructureAddress((uint)i))
+        .Select(x => x.Deref(this));
+
     public void Free(VariableAddress var)
     {
         this[var] = var;
@@ -105,6 +109,12 @@ public sealed class TermMemory(int vS = 1024, int sS = 1024, int aS = 1024)
     {
         var addr = new AbstractAddress(AP++);
         this[addr] = new(term.Compiler, term.Compiler.Store(this, term), term.GetType());
+        return addr;
+    }
+    public AbstractAddress StoreAbstract(ITermAddress address, IAbstractTermCompiler compiler)
+    {
+        var addr = new AbstractAddress(AP++);
+        this[addr] = new(compiler, address, compiler.ElementType);
         return addr;
     }
     public Atom this[ConstAddress c]

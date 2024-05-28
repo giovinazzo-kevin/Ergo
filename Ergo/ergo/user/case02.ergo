@@ -1,0 +1,10 @@
+﻿:- module(case02, [
+	case02/2
+]).
+
+my_select([], []).
+my_select([H1|T1], [H2|T2]) :-
+	H2 := H1 * 2,
+	my_select(T1, T2).
+
+case02(A, B) :- my_select(A, B).

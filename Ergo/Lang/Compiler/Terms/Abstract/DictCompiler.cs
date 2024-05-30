@@ -29,7 +29,7 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
             }
         }
     }
-    private static readonly Atom functor_dict = new Atom("dict");
+    private static readonly Atom functor_dict = "dict";
     public ITermAddress Store(TermMemory vm, Dict term)
     {
         var args = new List<ITermAddress>();

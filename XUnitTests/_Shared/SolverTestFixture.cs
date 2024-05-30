@@ -19,7 +19,7 @@ public class ErgoTestFixture : IDisposable
     {
         var basePath = Directory.GetCurrentDirectory();
         var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
-        var moduleName = new Atom("tests");
+        var moduleName = "tests";
 
         Interpreter = ErgoFacade.Standard
             .BuildInterpreter(InterpreterFlags.Default);

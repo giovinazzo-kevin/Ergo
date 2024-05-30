@@ -3,7 +3,7 @@
 public sealed class Variant : BuiltIn
 {
     public Variant()
-        : base("", new("variant"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
+        : base("", "variant", Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 

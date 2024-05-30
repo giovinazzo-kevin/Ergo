@@ -187,7 +187,7 @@ public class Compiler : Library
                     .Select(g => (ITerm)g.Body)
                      .Aggregate((a, b) => WellKnown.Operators.Disjunction.ToComplex(a, Maybe.Some(b)));
                 // We can pick any one normalized head to act as the "most general"
-                var inlined = normalized[0].WithBody(new NTuple(new[] { newBody }));
+                var inlined = normalized[0].WithBody(new NTuple([newBody]));
                 foreach (var ret in InlineInner(inlined, dependent))
                     yield return ret;
             }

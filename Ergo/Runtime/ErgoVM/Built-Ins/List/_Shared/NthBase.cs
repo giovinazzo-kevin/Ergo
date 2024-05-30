@@ -22,7 +22,7 @@ public abstract class NthBase : BuiltIn
             else if (!vm.Arg(1).IsGround)
             {
                 var contents = Enumerable.Range(0, index)
-                    .Select(x => (ITerm)new Variable("_"))
+                    .Select(x => (ITerm)(Variable)"_")
                     .Append(vm.Arg(2));
                 vm.SetArg(0, vm.Arg(1));
                 vm.SetArg(1, new List(contents, default, vm.Arg(1).Scope));
@@ -40,7 +40,7 @@ public abstract class NthBase : BuiltIn
                     if (LanguageExtensions.Unify(vm.Arg(2), elem).TryGetValue(out var subs))
                     {
                         any = true;
-                        subs.Add(new(vm.Arg(0), new Atom(i + Offset)));
+                        subs.Add(new(vm.Arg(0), (Atom)(i + Offset)));
                         vm.Solution(subs);
                     }
                 }

@@ -51,7 +51,7 @@ public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
     {
         Complex c => c.WithArguments(c.Arguments.Select(x => x.GetVariant()).ToImmutableArray()),
         Variable v => v,
-        Atom a => new Variable(a.Explain().ToUpper()),
+        Atom a => (Variable)a.Explain().ToUpper(),
         var x => x
     };
 

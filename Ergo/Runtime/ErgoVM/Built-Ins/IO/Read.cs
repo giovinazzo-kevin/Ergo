@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class Read : BuiltIn
 {
     public Read()
-        : base("", new("read"), 1, WellKnown.Modules.IO)
+        : base("", "read", 1, WellKnown.Modules.IO)
     {
     }
 

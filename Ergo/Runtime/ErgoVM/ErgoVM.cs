@@ -245,7 +245,7 @@ public partial class ErgoVM
 
     public IEnumerable<Substitution> Env => trackedVars
         .Select(x => new Substitution(
-            new Variable(Memory.InverseVariableLookup[x]),
+            (Variable)Memory.InverseVariableLookup[x],
             Memory.Dereference(x)))
         .Where(x => !x.Lhs.Equals(x.Rhs));
 

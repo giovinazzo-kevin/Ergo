@@ -5,13 +5,13 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class SequenceType : BuiltIn
 {
     public SequenceType()
-        : base("", new("seq_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
+        : base("", "seq_type", Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
-    private static readonly Atom _L = new("list");
-    private static readonly Atom _T = new("tuple");
-    private static readonly Atom _S = new("set");
+    private static readonly Atom _L = "list";
+    private static readonly Atom _T = "tuple";
+    private static readonly Atom _S = "set";
 
     public override ErgoVM.Op Compile() => vm =>
     {

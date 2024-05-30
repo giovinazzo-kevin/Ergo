@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class NumberString : BuiltIn
 {
     public NumberString()
-        : base("", new("number_string"), Maybe<int>.Some(2), WellKnown.Modules.Math)
+        : base("", "number_string", Maybe<int>.Some(2), WellKnown.Modules.Math)
     {
     }
 
@@ -22,7 +22,7 @@ public sealed class NumberString : BuiltIn
                 return;
             }
             vm.SetArg(0, num);
-            vm.SetArg(1, new Atom(d.ToString()));
+            vm.SetArg(1, (Atom)d.ToString());
             ErgoVM.Goals.Unify2(vm);
         }
         else if (str.IsGround)
@@ -44,7 +44,7 @@ public sealed class NumberString : BuiltIn
                 return;
             }
             vm.SetArg(0, num);
-            vm.SetArg(1, new Atom(n));
+            vm.SetArg(1, (Atom)n);
             ErgoVM.Goals.Unify2(vm);
         }
     };

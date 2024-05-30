@@ -3,7 +3,7 @@
 public sealed class WriteDict : WriteBuiltIn
 {
     public WriteDict()
-        : base("", new("write_dict"), default, canon: false, quoted: false, portray: false)
+        : base("", "write_dict", default, canon: false, quoted: false, portray: false)
     {
     }
 

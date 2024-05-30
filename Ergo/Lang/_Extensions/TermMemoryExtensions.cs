@@ -27,8 +27,8 @@ public static class TermMemoryExtensions
             if (addr.Equals(v))
             {
                 if (mem.InverseVariableLookup.TryGetValue(v, out var name))
-                    return new Variable(name);
-                return new Variable($"__V{v.Index}");
+                    return (Variable)name;
+                return (Variable)$"__V{v.Index}";
             }
             return Dereference(mem, addr);
         }

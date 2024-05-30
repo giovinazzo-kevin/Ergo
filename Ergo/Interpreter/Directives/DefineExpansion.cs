@@ -5,7 +5,7 @@ namespace Ergo.Interpreter.Directives;
 public class DefineExpansion : InterpreterDirective
 {
     public DefineExpansion()
-        : base("", new("expand"), 1, 20)
+        : base("", "expand", 1, 20)
     {
     }
 

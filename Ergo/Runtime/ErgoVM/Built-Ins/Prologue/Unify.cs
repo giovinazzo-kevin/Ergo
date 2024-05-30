@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class Unify : BuiltIn
 {
     public Unify()
-        : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)
+        : base("", "unify", Maybe<int>.Some(2), WellKnown.Modules.Prologue)
     {
     }
 
@@ -67,7 +67,7 @@ public sealed class Unify : BuiltIn
         }
     }
     // TODO: Maybe use a name that can't be typed by the user.
-    private static readonly Atom _u = new Atom("_u").AsQuoted(false);
+    private static readonly Atom _u = ((Atom)"_u").AsQuoted(false);
     public override ExecutionNode Optimize(BuiltInNode node)
     {
         var args = node.Goal.GetArguments();

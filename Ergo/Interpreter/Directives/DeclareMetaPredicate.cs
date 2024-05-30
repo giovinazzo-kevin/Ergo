@@ -5,7 +5,7 @@
 public class DeclareMetaPredicate : InterpreterDirective
 {
     public DeclareMetaPredicate()
-        : base("", new("meta_predicate"), 1, 50)
+        : base("", "meta_predicate", 1, 50)
     {
     }
 

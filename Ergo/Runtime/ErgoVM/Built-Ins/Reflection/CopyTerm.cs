@@ -3,7 +3,7 @@
 public sealed class CopyTerm : BuiltIn
 {
     public CopyTerm()
-        : base("", new("copy_term"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
+        : base("", "copy_term", Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 

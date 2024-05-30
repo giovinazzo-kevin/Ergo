@@ -3,7 +3,7 @@
 public sealed class SetOf : SolutionAggregationBuiltIn
 {
     public SetOf()
-           : base("", new("setof"), 3, WellKnown.Modules.Meta)
+           : base("", "setof", 3, WellKnown.Modules.Meta)
     {
     }
 

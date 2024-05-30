@@ -3,7 +3,7 @@
 public sealed class AssertA : DynamicPredicateBuiltIn
 {
     public AssertA()
-        : base("", new("asserta"), 1)
+        : base("", "asserta", 1)
     {
     }
 

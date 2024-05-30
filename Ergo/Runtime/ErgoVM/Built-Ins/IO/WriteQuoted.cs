@@ -3,7 +3,7 @@
 public sealed class WriteQuoted : WriteBuiltIn
 {
     public WriteQuoted()
-        : base("", new("write_quoted"), default, canon: false, quoted: true, portray: true)
+        : base("", "write_quoted", default, canon: false, quoted: true, portray: true)
     {
     }
 }

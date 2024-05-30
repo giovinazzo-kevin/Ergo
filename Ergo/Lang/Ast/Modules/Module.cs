@@ -82,7 +82,7 @@ public readonly struct Module
 
     public bool ContainsExport(Signature sign)
     {
-        var form = new Complex(WellKnown.Operators.ArityIndicator.CanonicalFunctor, sign.Functor, new Atom((decimal)sign.Arity.GetOr(default)))
+        var form = new Complex(WellKnown.Operators.ArityIndicator.CanonicalFunctor, sign.Functor, (Atom)(decimal)sign.Arity.GetOr(default))
             .AsOperator(WellKnown.Operators.ArityIndicator);
         return Exports.Contents.Any(t => t.Equals(form));
     }

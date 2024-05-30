@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class FormatString : BuiltIn
+public sealed partial class FormatString : BuiltIn
 {
-    private readonly Regex PositionalParamRegex = new(@"(?<!{){(\d+)}(?!})");
+    private readonly Regex PositionalParamRegex = PositionalParam();
 
     public FormatString()
-        : base("", new("str_fmt"), Maybe<int>.Some(3), WellKnown.Modules.String)
+        : base("", "str_fmt", Maybe<int>.Some(3), WellKnown.Modules.String)
     {
     }
     public override ErgoVM.Op Compile() => vm =>
@@ -63,7 +63,7 @@ public sealed class FormatString : BuiltIn
                 var capturePattern = $"{(startIndex == 0 ? "^" : "")}{matchStart}{before}(.+?){after}{(endIndex == formatStrRaw.Length ? "$" : "")}";
                 if (Regex.Match(resultStrRaw, capturePattern) is { Success: true } capture)
                 {
-                    var atom = new Atom(capture.Groups[1].Value);
+                    Atom atom = capture.Groups[1].Value;
                     LanguageExtensions.Unify(v, atom).TryGetValue(out var subs);
                     varSubs.AddRange(subs);
                     ret = atom.AsQuoted(false).Explain(canonical: false);
@@ -80,7 +80,7 @@ public sealed class FormatString : BuiltIn
         }
         else if (!result.IsGround)
         {
-            vm.Memory[(VariableAddress)arguments[2]] = vm.Memory.StoreAtom(new Atom(formatStr));
+            vm.Memory[(VariableAddress)arguments[2]] = vm.Memory.StoreAtom((Atom)formatStr);
             vm.Solution();
         }
         else
@@ -88,4 +88,6 @@ public sealed class FormatString : BuiltIn
             vm.Fail();
         }
     };
+    [GeneratedRegex(@"(?<!{){(\d+)}(?!})")]
+    private static partial Regex PositionalParam();
 }

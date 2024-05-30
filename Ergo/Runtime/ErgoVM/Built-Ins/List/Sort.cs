@@ -3,7 +3,7 @@
 public sealed class Sort : BuiltIn
 {
     public Sort()
-        : base("", new("sort"), 2, WellKnown.Modules.List)
+        : base("", "sort", 2, WellKnown.Modules.List)
     {
     }
 

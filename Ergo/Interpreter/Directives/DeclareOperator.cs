@@ -4,7 +4,7 @@ public class DeclareOperator : InterpreterDirective
 {
 
     public DeclareOperator()
-        : base("", new("op"), 3, 10)
+        : base("", "op", 3, 10)
     {
     }
 
@@ -40,7 +40,7 @@ public class DeclareOperator : InterpreterDirective
             }
         }
 
-        var synonymAtoms = synonyms.Select(x => new Atom(x)).ToHashSet();
+        var synonymAtoms = synonyms.Select(x => (Atom)x).ToHashSet();
         scope = scope.WithModule(scope.EntryModule
             .WithOperator(new(scope.Entry, affix, assoc, precedence, synonymAtoms)));
         return true;

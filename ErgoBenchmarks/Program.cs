@@ -18,11 +18,11 @@ public class ImmutableTermsVsTermMemory
     [ParamsSource(nameof(ValuesForAB))]
     public (ITerm A, ITerm B) Params { get; set; }
     public IEnumerable<(ITerm, ITerm)> ValuesForAB => [
-        (new Atom("test"), new Atom("test")),
-        (new Variable("X"), new Variable("X")),
-        (new Complex(new Atom("f"), new Variable("X")), new Complex(new Atom("f"), new Variable("Y"))),
-        (new Dict(new Atom("f"), args: (KeyValuePair<Atom, ITerm>[])[new(new("a"), new Variable("X"))]),
-         new Dict(new Atom("f"), args: (KeyValuePair<Atom, ITerm>[])[new(new("a"), new Variable("Y"))])),
+        ((Atom)"test", (Atom)"test"),
+        ((Variable)"X", (Variable)"X"),
+        (new Complex("f", (Variable)"X"), new Complex("f", (Variable)"Y")),
+        (new Dict((Atom)"f", args: (KeyValuePair<Atom, ITerm>[])[new("a", (Variable)"X")]),
+         new Dict((Atom)"f", args: (KeyValuePair<Atom, ITerm>[])[new("a", (Variable)"Y")])),
     ];
 
     [Benchmark]

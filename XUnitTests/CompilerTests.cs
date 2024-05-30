@@ -11,7 +11,7 @@ public class CompilerTests : ErgoTests
 {
     public CompilerTests(ErgoTestFixture fixture) : base(fixture)
     {
-        var inlining = new Atom("inlining");
+        var inlining = "inlining";
         Interpreter.Load(ref InterpreterScope, inlining);
         InterpreterScope = InterpreterScope.WithModule(InterpreterScope.EntryModule
             .WithImport(inlining));

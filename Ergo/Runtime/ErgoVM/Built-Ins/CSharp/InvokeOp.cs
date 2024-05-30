@@ -3,7 +3,7 @@
 public sealed class InvokeOp : BuiltIn
 {
     public InvokeOp()
-        : base("", new("invoke"), Maybe<int>.Some(1), WellKnown.Modules.CSharp)
+        : base("", "invoke", Maybe<int>.Some(1), WellKnown.Modules.CSharp)
     {
     }
 

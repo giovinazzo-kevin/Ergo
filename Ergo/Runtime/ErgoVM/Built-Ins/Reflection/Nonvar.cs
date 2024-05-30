@@ -3,7 +3,7 @@
 public sealed class Nonvar : BuiltIn
 {
     public Nonvar()
-        : base("", new("nonvar"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
+        : base("", "nonvar", Maybe<int>.Some(1), WellKnown.Modules.Reflection)
     {
     }
 

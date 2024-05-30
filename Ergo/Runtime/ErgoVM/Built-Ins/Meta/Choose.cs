@@ -6,7 +6,7 @@ public sealed class Choose : BuiltIn
     private readonly Call CallInst = new();
 
     public Choose()
-        : base("", new("choose"), default, WellKnown.Modules.Meta)
+        : base("", "choose", default, WellKnown.Modules.Meta)
     {
     }
 

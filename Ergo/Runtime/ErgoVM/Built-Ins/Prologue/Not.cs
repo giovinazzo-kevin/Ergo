@@ -6,7 +6,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class Not : BuiltIn
 {
     public Not()
-        : base("", new("not"), Maybe<int>.Some(1), WellKnown.Modules.Prologue)
+        : base("", "not", Maybe<int>.Some(1), WellKnown.Modules.Prologue)
     {
     }
 

@@ -95,7 +95,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         var attr = Attribute;
         var functor = overrideFunctor.Map(
             some => !IsCollectionType(Type) ? Maybe.Some(some) : default,
-            () => !IsCollectionType(Type) && attr?.ComputedFunctor is { } f ? Maybe.Some(new Atom(f)) : default
+            () => !IsCollectionType(Type) && attr?.ComputedFunctor is { } f ? Maybe.Some((Atom)f) : default
         );
         var marshalling = overrideMarshalling.GetOr(attr?.Marshalling ?? Marshalling);
 
@@ -130,7 +130,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 m =>
                 {
                     var attr = GetMemberAttribute(m);
-                    var overrideMemberFunctor = attr?.ComputedFunctor is null ? Maybe<Atom>.None : new Atom(attr.ComputedFunctor);
+                    var overrideMemberFunctor = attr?.ComputedFunctor is null ? Maybe<Atom>.None : (Atom)attr.ComputedFunctor;
                     var overrideMemberMarshalling = attr?.Marshalling is null ? marshalling : attr.Marshalling;
                     var ovrrideMemberKey = attr is null ? Maybe<string>.None : attr.ComputedKey ?? m;
                     var memberValue = o == null ? null : GetMemberValue(m, o);

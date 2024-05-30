@@ -88,5 +88,6 @@ public readonly struct Variable : ITerm
     public static bool operator ==(Variable left, Variable right) => left.Equals(right);
 
     public static bool operator !=(Variable left, Variable right) => !(left == right);
+    public static implicit operator Variable(string s) => new(s);
 }
 

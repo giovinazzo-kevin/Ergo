@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class NumberVars : BuiltIn
 {
     public NumberVars()
-        : base("", new("numbervars"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
+        : base("", "numbervars", Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
@@ -16,7 +16,7 @@ public sealed class NumberVars : BuiltIn
         var (start, end) = (0, 0);
         var arg0 = vm.Arg(0);
         var arg1 = vm.Arg(1);
-        if (vm.Memory.Unify(args[2], vm.Memory.StoreAtom(new Atom(start))))
+        if (vm.Memory.Unify(args[2], vm.Memory.StoreAtom((Atom)start)))
         {
 
         }
@@ -32,7 +32,7 @@ public sealed class NumberVars : BuiltIn
         var newVars = new Dictionary<string, Variable>();
         foreach (var (v, i) in arg0.Variables.Select((v, i) => (v, i)))
         {
-            newVars[v.Name] = new Variable($"$VAR({i})");
+            newVars[v.Name] = (Variable)$"$VAR({i})";
             ++end;
         }
         if (!vm.Memory.Unify(vm.Memory.StoreTerm(arg0.Instantiate(vm.InstantiationContext, newVars)), args[1]))
@@ -41,7 +41,7 @@ public sealed class NumberVars : BuiltIn
             return;
         }
         var arg2 = vm.Arg(2);
-        if (vm.Memory.Unify(args[3], vm.Memory.StoreAtom(new Atom(end))))
+        if (vm.Memory.Unify(args[3], vm.Memory.StoreAtom((Atom)end)))
         {
 
         }

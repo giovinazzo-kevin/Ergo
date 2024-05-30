@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class Ground : BuiltIn
 {
     public Ground()
-        : base("", new("ground"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
+        : base("", "ground", Maybe<int>.Some(1), WellKnown.Modules.Reflection)
     {
     }
 

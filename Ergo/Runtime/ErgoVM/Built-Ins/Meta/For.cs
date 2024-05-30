@@ -7,7 +7,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class For : BuiltIn
 {
     public For()
-        : base("", new("for"), 4, WellKnown.Modules.Meta)
+        : base("", "for", 4, WellKnown.Modules.Meta)
     {
     }
 
@@ -33,7 +33,7 @@ public sealed class For : BuiltIn
             {
                 return new Solution(new(vm.Env));
             }
-            var k = new Atom(EDecimal.FromInt32(step * i + from));
+            Atom k = EDecimal.FromInt32(step * i + from);
             vm.Memory.LoadState(env);
             vm.Memory[var] = vm.Memory.StoreAtom(k);
             vm.Ready();
@@ -85,7 +85,7 @@ public sealed class For : BuiltIn
                 if (!discarded)
                 {
                     // HACK; TODO: use stack
-                    vm.Memory[varAddr] = vm.Memory.StoreAtom(new Atom(EDecimal.FromInt32(i)));
+                    vm.Memory[varAddr] = vm.Memory.StoreAtom((Atom)EDecimal.FromInt32(i));
                 }
                 if ((i += iStep) < iTo)
                 {

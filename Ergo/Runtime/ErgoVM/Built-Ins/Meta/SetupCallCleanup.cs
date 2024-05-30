@@ -3,7 +3,7 @@
 public sealed class SetupCallCleanup : BuiltIn
 {
     public SetupCallCleanup()
-        : base("", new("setup_call_cleanup"), 3, WellKnown.Modules.Meta)
+        : base("", "setup_call_cleanup", 3, WellKnown.Modules.Meta)
     {
     }
 

@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class Eval : MathBuiltIn
 {
     public Eval()
-        : base("", new("eval"), Maybe<int>.Some(2))
+        : base("", "eval", Maybe<int>.Some(2))
     {
     }
 
@@ -21,12 +21,12 @@ public sealed class Eval : MathBuiltIn
             var ret = new Eval().Evaluate(null, args[1]);
             if (args[0].IsGround)
             {
-                if (args[0].Equals(new Atom(ret)))
+                if (args[0].Equals((Atom)ret))
                     return TrueNode.Instance;
             }
             else if (node.Node.Graph.GetNode(WellKnown.Signatures.Unify).TryGetValue(out var unifyNode))
             {
-                return new BuiltInNode(unifyNode, Unify.MakeComplex(args[0], new Atom(ret)), node.Node.Graph.UnifyInstance);
+                return new BuiltInNode(unifyNode, Unify.MakeComplex(args[0], (Atom)ret), node.Node.Graph.UnifyInstance);
             }
             return FalseNode.Instance;
         }
@@ -40,7 +40,7 @@ public sealed class Eval : MathBuiltIn
     {
         var arg = vm.Arg2(2);
         var argDeref = vm.Memory.Dereference(arg);
-        var eval = vm.Memory.StoreAtom(new Atom(Evaluate(vm, argDeref)));
+        var eval = vm.Memory.StoreAtom((Atom)Evaluate(vm, argDeref));
         if (vm.State == ErgoVM.VMState.Fail)
             return;
         vm.SetArg2(2, eval);

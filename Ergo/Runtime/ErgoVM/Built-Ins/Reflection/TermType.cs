@@ -5,14 +5,14 @@ namespace Ergo.Runtime.BuiltIns;
 public sealed class TermType : BuiltIn
 {
     public TermType()
-        : base("", new("term_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
+        : base("", "term_type", Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
-    private static readonly Atom _A = new("atom");
-    private static readonly Atom _V = new("variable");
-    private static readonly Atom _C = new("complex");
-    private static readonly Atom _B = new("abstract");
+    private static readonly Atom _A = "atom";
+    private static readonly Atom _V = "variable";
+    private static readonly Atom _C = "complex";
+    private static readonly Atom _B = "abstract";
 
     public override ErgoVM.Op Compile() => vm =>
     {

@@ -3,7 +3,7 @@
 public sealed class FindAll : BuiltIn
 {
     public FindAll()
-        : base("", new("findall"), 3, WellKnown.Modules.Meta)
+        : base("", "findall", 3, WellKnown.Modules.Meta)
     {
     }
 

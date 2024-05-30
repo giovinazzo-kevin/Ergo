@@ -38,7 +38,7 @@ public class Tabling : Library
                 return;
             foreach (var sig in signatures)
             {
-                var auxFunctor = new Atom(sig.Functor.Explain() + "__aux_");
+                var auxFunctor = (Atom)sig.Functor.Explain() + "__aux_";
                 var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));
                 var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(moduleName);
 
@@ -46,7 +46,7 @@ public class Tabling : Library
                     "(auto-generated auxilliary predicate for tabling)",
                     moduleName,
                     anon,
-                    new NTuple(new ITerm[] { new Complex(new Atom("tabled"), aux) }, moduleName.Scope),
+                    new NTuple(new ITerm[] { new Complex("tabled", aux) }, moduleName.Scope),
                     true,
                     true,
                     default

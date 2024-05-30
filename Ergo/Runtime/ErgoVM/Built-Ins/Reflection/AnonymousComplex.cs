@@ -3,7 +3,7 @@
 public sealed class AnonymousComplex : BuiltIn
 {
     public AnonymousComplex()
-        : base("", new("anon"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
+        : base("", "anon", Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 

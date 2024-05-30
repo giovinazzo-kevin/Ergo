@@ -3,7 +3,7 @@
 public sealed class CommaToList : BuiltIn
 {
     public CommaToList()
-        : base("", new("comma_list"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
+        : base("", "comma_list", Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 

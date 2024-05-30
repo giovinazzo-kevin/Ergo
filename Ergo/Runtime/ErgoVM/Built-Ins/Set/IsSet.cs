@@ -3,7 +3,7 @@
 public sealed class IsSet : BuiltIn
 {
     public IsSet()
-        : base("", new("is_set"), 1, WellKnown.Modules.Set)
+        : base("", "is_set", 1, WellKnown.Modules.Set)
     {
 
     }

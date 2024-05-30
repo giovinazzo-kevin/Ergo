@@ -3,7 +3,7 @@
 public sealed class ListSet : BuiltIn
 {
     public ListSet()
-        : base("", new("list_set"), 2, WellKnown.Modules.List)
+        : base("", "list_set", 2, WellKnown.Modules.List)
     {
     }
 

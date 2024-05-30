@@ -121,5 +121,14 @@ public readonly struct Atom : ITerm
     public static bool operator ==(Atom left, Atom right) => left.Equals(right);
 
     public static bool operator !=(Atom left, Atom right) => !(left == right);
+
+    public static implicit operator Atom(string s) => new(s);
+    public static implicit operator Atom(int i) => new(i);
+    public static implicit operator Atom(float f) => new(f);
+    public static implicit operator Atom(double d) => new(d);
+    public static implicit operator Atom(decimal d) => new(d);
+    public static implicit operator Atom(EDecimal d) => new(d);
+    public static implicit operator Atom(bool b) => new(b);
+    public static implicit operator Atom(char c) => new(c);
 }
 

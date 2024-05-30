@@ -183,7 +183,7 @@ public partial class ErgoParser : IDisposable
             .Do(none: () => Throw(scope.LexerState, ErrorType.TermHasIllegalName, term))
             .Where(term => !term.Equals(WellKnown.Literals.Discard.Explain()))
             .Or(() => _discardContext.GetFreeVariable().Name))
-        .Select(t => new Variable(t))
+        .Select(t => (Variable)t)
         .Or(() => MemoizeFailureAndFail<Variable>(scope.LexerState))
         .Do(() => Probe.Leave(watch))
         .Select(x => x.WithScope(scope))
@@ -565,10 +565,10 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var desc))
+        if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(':')).TryGetValue(out var desc))
         {
             desc = desc[1..].TrimStart();
-            while (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var newDesc))
+            while (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(':')).TryGetValue(out var newDesc))
             {
                 if (!string.IsNullOrEmpty(newDesc))
                 {
@@ -600,10 +600,10 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var desc))
+        if (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(':')).TryGetValue(out var desc))
         {
             desc = desc[1..].TrimStart();
-            while (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(":")).TryGetValue(out var newDesc))
+            while (Expect<string>(ErgoLexer.TokenType.Comment, p => p.StartsWith(':')).TryGetValue(out var newDesc))
             {
                 if (!string.IsNullOrEmpty(newDesc))
                 {
@@ -667,7 +667,7 @@ public partial class ErgoParser : IDisposable
             predicates.Add(predicate);
         }
 
-        var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals(new Atom("module")))
+        var moduleArgs = directives.Single(x => x.Body.GetFunctor().GetOr(default).Equals((Atom)"module"))
             .Body.GetArguments();
 
         if (moduleArgs.Length < 2 || moduleArgs[1] is not List exported)
@@ -678,7 +678,7 @@ public partial class ErgoParser : IDisposable
         var exportedPredicates = predicates.Select(p =>
         {
             var sign = p.Head.GetSignature();
-            var form = new Complex(WellKnown.Operators.ArityIndicator.CanonicalFunctor, sign.Functor, new Atom((decimal)sign.Arity.GetOrThrow(new NotSupportedException())))
+            var form = new Complex(WellKnown.Operators.ArityIndicator.CanonicalFunctor, sign.Functor, (Atom)(decimal)sign.Arity.GetOrThrow(new NotSupportedException()))
                 .AsOperator(WellKnown.Operators.ArityIndicator);
             if (exported.Contents.Any(x => x.Equals(form)))
                 return p.Exported();
@@ -702,10 +702,10 @@ public partial class ErgoParser : IDisposable
             {
                 if (directive.Body is not Complex cplx)
                     continue;
-                if (cplx.Functor.Equals(new Atom("module")))
+                if (cplx.Functor.Equals((Atom)"module"))
                     moduleName = (Atom)cplx.Arguments[0];
 
-                if (cplx.Functor.Equals(new Atom("op")))
+                if (cplx.Functor.Equals((Atom)"op"))
                 {
                     if (!cplx.Arguments[0].Match<int>(out var precedence))
                         continue;

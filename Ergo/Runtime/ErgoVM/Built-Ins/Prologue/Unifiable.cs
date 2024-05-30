@@ -3,7 +3,7 @@
 public sealed class Unifiable : BuiltIn
 {
     public Unifiable()
-        : base("", new("unifiable"), Maybe<int>.Some(3), WellKnown.Modules.Prologue)
+        : base("", "unifiable", Maybe<int>.Some(3), WellKnown.Modules.Prologue)
     {
     }
 

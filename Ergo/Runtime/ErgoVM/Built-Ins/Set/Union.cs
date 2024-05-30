@@ -3,7 +3,7 @@
 public sealed class Union : BuiltIn
 {
     public Union()
-        : base("", new("union"), 3, WellKnown.Modules.Set)
+        : base("", "union", 3, WellKnown.Modules.Set)
     {
 
     }

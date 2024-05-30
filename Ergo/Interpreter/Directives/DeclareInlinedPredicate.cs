@@ -6,7 +6,7 @@ namespace Ergo.Interpreter.Directives;
 public class DeclareInlinedPredicate : InterpreterDirective
 {
     public DeclareInlinedPredicate()
-        : base("Marks a predicate to be inlined.", new("inline"), 1, 11)
+        : base("Marks a predicate to be inlined.", "inline", 1, 11)
     {
     }
 

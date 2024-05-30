@@ -3,7 +3,7 @@
 public class DeclareDynamicPredicate : InterpreterDirective
 {
     public DeclareDynamicPredicate()
-        : base("", new("dynamic"), 1, 30)
+        : base("", "dynamic", 1, 30)
     {
     }
 

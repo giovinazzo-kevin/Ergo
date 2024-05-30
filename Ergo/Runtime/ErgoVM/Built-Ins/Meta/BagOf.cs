@@ -3,7 +3,7 @@
 public sealed class BagOf : SolutionAggregationBuiltIn
 {
     public BagOf()
-        : base("", new("bagof"), 3, WellKnown.Modules.Meta)
+        : base("", "bagof", 3, WellKnown.Modules.Meta)
     {
     }
 

@@ -5,7 +5,7 @@ namespace Ergo.Interpreter.Directives;
 public class DeclareTabledPredicate : InterpreterDirective
 {
     public DeclareTabledPredicate()
-        : base("", new("table"), 1, 35)
+        : base("", "table", 1, 35)
     {
     }
 

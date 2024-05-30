@@ -8,7 +8,7 @@ public sealed class Number : BuiltIn
     public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
 
     public Number()
-        : base("", new("number"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
+        : base("", "number", Maybe<int>.Some(1), WellKnown.Modules.Reflection)
     {
     }
 

@@ -3,7 +3,7 @@
 public sealed class Term : BuiltIn
 {
     public Term()
-        : base("", new("term"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
+        : base("", "term", Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
@@ -17,7 +17,7 @@ public sealed class Term : BuiltIn
             {
                 var tag = dict.Functor.Reduce<ITerm>(a => a, v => v);
                 vm.SetArg(0, functorArg);
-                vm.SetArg(1, new Atom("dict"));
+                vm.SetArg(1, (Atom)"dict");
                 ErgoVM.Goals.Unify2(vm);
                 if (ReleaseAndRestoreEarlyReturn()) return;
                 var newList = new List((new[] { tag }).Append(new List(dict.KeyValuePairs, default, dict.Scope)));

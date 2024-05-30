@@ -33,6 +33,6 @@ internal class NamedPropertyTypeResolver<T> : ErgoPropertyResolver<T>
         .Select((a) => new KeyValuePair<Atom, ITerm>((Atom)((Complex)a).Arguments[0], ((Complex)a).Arguments[1])), functor.Scope);
     public override ITerm CycleDetectedLiteral(Atom functor)
         => new Dict(functor, [
-            new(new Atom("_error").AsQuoted(false), new Atom("<cycle detected>")) ], functor.Scope);
+            new(((Atom)"_error").AsQuoted(false), (Atom)"<cycle detected>") ], functor.Scope);
     public NamedPropertyTypeResolver() : base() { }
 }

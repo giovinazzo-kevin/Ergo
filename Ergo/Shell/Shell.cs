@@ -112,7 +112,7 @@ public partial class ErgoShell
         //var module = scope.InterpreterScope.Modules[scope.InterpreterScope.Module];
         //// TODO: make it easier to save directives
         //var dirs = module.Imports.Contents
-        //    .Select(m => new Directive(new Complex(new("use_module"), m), string.Empty))
+        //    .Select(m => new Directive(new Complex("use_module", m), string.Empty))
         //    .ToArray();
         //var text = new ErgoProgram(dirs, preds.ToArray()).Explain(canonical: false);
         //File.WriteAllText(fileName, text);
@@ -124,7 +124,7 @@ public partial class ErgoShell
         var copy = scope;
         var numPredsBefore = scope.KnowledgeBase.Count;
         var interpreterScope = copy.InterpreterScope;
-        var loaded = Interpreter.Load(ref interpreterScope, new Atom(fileName));
+        var loaded = Interpreter.Load(ref interpreterScope, (Atom)fileName);
         loaded.Do(some =>
         {
             var newKb = interpreterScope.BuildKnowledgeBase(copy.CompilerFlags);

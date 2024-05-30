@@ -4,14 +4,14 @@ public static partial class WellKnown
 {
     public static class Literals
     {
-        public static readonly Variable Discard = new("_");
-        public static readonly Atom TopLevel = new("__toplevel");
-        public static readonly Atom True = new(true);
-        public static readonly Atom False = new(false);
-        public static readonly Atom Cut = new("!");
-        public static readonly Atom EmptyList = new("[]");
-        public static readonly Atom EmptySet = new("{}");
-        public static readonly Atom EmptyCommaList = new("()");
+        public static readonly Variable Discard = "_";
+        public static readonly Atom TopLevel = "__toplevel";
+        public static readonly Atom True = true;
+        public static readonly Atom False = false;
+        public static readonly Atom Cut = "!";
+        public static readonly Atom EmptyList = "[]";
+        public static readonly Atom EmptySet = "{}";
+        public static readonly Atom EmptyCommaList = "()";
 
         public static readonly ITerm[] DefinedLiterals =
         [

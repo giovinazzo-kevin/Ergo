@@ -10,7 +10,7 @@ public sealed class Tabled : BuiltIn
     public override int OptimizationOrder => base.OptimizationOrder;
 
     public Tabled()
-        : base("(called by tabled predicates implicitly)", new("tabled"), 1, WellKnown.Modules.Tabling)
+        : base("(called by tabled predicates implicitly)", "tabled", 1, WellKnown.Modules.Tabling)
     {
     }
 

@@ -60,7 +60,7 @@ public static class LanguageExtensions
             {
                 var functor = typeof(T).GetCustomAttributes<TermAttribute>(true).FirstOrDefault()
                     ?.ComputedFunctor ?? typeof(T).Name.ToErgoCase();
-                if (t is Complex cplx && !cplx.Functor.Equals(new Atom(functor)))
+                if (t is Complex cplx && !cplx.Functor.Equals((Atom)functor))
                     return false;
             }
 
@@ -79,7 +79,7 @@ public static class LanguageExtensions
             match = TermMarshall.FromTerm(t, type, mode);
             if (matchFunctor)
             {
-                if (t is Complex cplx && !cplx.Functor.Equals(new Atom(type.Name.ToLower())))
+                if (t is Complex cplx && !cplx.Functor.Equals((Atom)type.Name.ToLower()))
                     return false;
             }
 
@@ -118,7 +118,7 @@ public static class LanguageExtensions
             return new Signature(qs.Functor, qs.Arity, qm, tag);
         }
         return new Signature(
-            term.Reduce(a => a, v => new Atom(v.Name), c => c.Functor, abs => default),
+            term.Reduce(a => a, v => (Atom)v.Name, c => c.Functor, abs => default),
             term.Reduce(a => 0, v => 0, c => c.Arity, abs => default),
             Maybe<Atom>.None,
             term.Reduce(_ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None, _ => Maybe<Atom>.None)

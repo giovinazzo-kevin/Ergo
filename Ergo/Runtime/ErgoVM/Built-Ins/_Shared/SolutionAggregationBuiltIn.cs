@@ -29,7 +29,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
         templateVars = templateVars.Concat(template.Variables)
             .ToHashSet();
 
-        var variable = new Variable("TMP_BAGOF__"); // TODO: something akin to thread.next_free_variable() from TauProlog
+        var variable = (Variable)"TMP_BAGOF__"; // TODO: something akin to thread.next_free_variable() from TauProlog
         var freeVars = goal.Variables.Where(v => !templateVars.Contains(v))
             .ToHashSet();
         var listVars = new List(freeVars.Cast<ITerm>(), default, default);

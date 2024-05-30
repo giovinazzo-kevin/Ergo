@@ -3,7 +3,7 @@
 public sealed class Compare : BuiltIn
 {
     public Compare()
-        : base("", new("compare"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
+        : base("", "compare", Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
@@ -25,7 +25,7 @@ public sealed class Compare : BuiltIn
                 vm.Fail();
             return;
         }
-        vm.SetArg(1, new Atom(cmp));
+        vm.SetArg(1, (Atom)cmp);
         ErgoVM.Goals.Unify2(vm);
     };
 }

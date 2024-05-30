@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands;
 public sealed class ToggleTrace : ShellCommand
 {
     public ToggleTrace()
-        : base(new[] { "trace" }, "Enables/disables the interactive trace.", @"", true, 20)
+        : base(["trace"], "Enables/disables the interactive trace.", @"", true, 20)
     {
     }
 

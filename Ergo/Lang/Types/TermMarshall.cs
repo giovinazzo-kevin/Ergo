@@ -116,7 +116,7 @@ public sealed class TermMarshall
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(typeof(T));
         if (typeof(T).GetInterfaces().Contains(interfaceType))
             return (T)interfaceType.GetMethod(nameof(FromTerm))
-                .Invoke(_ ?? Activator.CreateInstance<T>(), new object[] { value });
+                .Invoke(_ ?? Activator.CreateInstance<T>(), [value]);
         return GetMode(typeof(T), mode) switch
         {
             TermMarshalling.Positional => (T)Transform(Convert.ChangeType(EnsurePositionalResolver(typeof(T)).FromTerm(value), typeof(T))),
@@ -133,7 +133,7 @@ public sealed class TermMarshall
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);
         if (type.GetInterfaces().Contains(interfaceType))
             return interfaceType.GetMethod(nameof(FromTerm))
-                .Invoke(Activator.CreateInstance(type), new object[] { value });
+                .Invoke(Activator.CreateInstance(type), [value]);
         return GetMode(type, mode) switch
         {
             TermMarshalling.Positional => Transform(EnsurePositionalResolver(type).FromTerm(value)),

@@ -4,12 +4,12 @@ public static partial class WellKnown
 {
     public static class Lexemes
     {
-        public static readonly char[] IdentifierPunctuation = new char[] {
+        public static readonly char[] IdentifierPunctuation = [
             '@', '_', '(', ')', '[', ']', '{', '}'
-        };
-        public static readonly char[] QuotablePunctuation = new char[] {
+        ];
+        public static readonly char[] QuotablePunctuation = [
             ',', '.',  '(', ')', '[', ']', '{', '}'
-        };
+        ];
     }
 
 }

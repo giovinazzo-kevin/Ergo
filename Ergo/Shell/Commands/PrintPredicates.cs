@@ -2,5 +2,5 @@
 
 public sealed class PrintPredicates : PredicatesShellCommand
 {
-    public PrintPredicates() : base(new[] { "::", "desc" }, "Displays the head of all matching predicates.", false) { }
+    public PrintPredicates() : base(["::", "desc"], "Displays the head of all matching predicates.", false) { }
 }

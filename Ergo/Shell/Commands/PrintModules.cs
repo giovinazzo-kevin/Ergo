@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands;
 public sealed class PrintModules : ShellCommand
 {
     public PrintModules()
-        : base(new[] { ":m", "modules" }, "Displays a tree view of the current module and its imports", @"", true, 85)
+        : base([":m", "modules"], "Displays a tree view of the current module and its imports", @"", true, 85)
     {
     }
 

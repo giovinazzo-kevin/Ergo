@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands;
 public sealed class PrintOperators : ShellCommand
 {
     public PrintOperators()
-        : base(new[] { ":o", "operators" }, "Displays help about all operators that start with the given string", @"(?<op>[^\s].*)?", true, 70)
+        : base([":o", "operators"], "Displays help about all operators that start with the given string", @"(?<op>[^\s].*)?", true, 70)
     {
     }
 
@@ -36,7 +36,7 @@ public sealed class PrintOperators : ShellCommand
             yield break;
         }
 
-        shell.WriteTable(new[] { "Precedence", "Affix", "Functors", "Module" }, canonicals, ConsoleColor.DarkYellow);
+        shell.WriteTable(["Precedence", "Affix", "Functors", "Module"], canonicals, ConsoleColor.DarkYellow);
         yield return scope;
     }
 }

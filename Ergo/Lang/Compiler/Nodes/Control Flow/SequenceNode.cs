@@ -29,7 +29,7 @@ public class SequenceNode : ExecutionNode
         {
             if (n is SequenceNode seq)
                 return seq.Nodes.AsEnumerable();
-            return new[] { n };
+            return [n];
         }).ToList();
         // Remove duplicates such as consecutive truths or cuts.
         // Then, applies all available optimizations from the child nodes until a fixed point is reached.

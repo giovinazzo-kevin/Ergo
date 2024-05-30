@@ -145,13 +145,13 @@ public class Hook
 
                 combinedBody = insertAfterCall
                     ? Expression.Block(
-                        new[] { resultVariable },
+                        [resultVariable],
                         assignResult,
                         hookInvokeCall,
                         resultVariable
                       )
                     : Expression.Block(
-                        new[] { resultVariable },
+                        [resultVariable],
                         hookInvokeCall,
                         assignResult,
                         resultVariable

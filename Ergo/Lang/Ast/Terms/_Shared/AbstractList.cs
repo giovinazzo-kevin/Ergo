@@ -173,7 +173,7 @@ public abstract class AbstractList : AbstractTerm
                     if (!c.Arguments[0].IsParenthesized)
                     {
                         list.AddRange(Unfold(c.Arguments[0], emptyElement, matchTail, functors)
-                            .Or(() => Maybe.Some<IEnumerable<ITerm>>(new ITerm[] { c.Arguments[0] }))
+                            .Or(() => Maybe.Some<IEnumerable<ITerm>>([c.Arguments[0]]))
                             .AsEnumerable()
                             .SelectMany(x => x));
                     }

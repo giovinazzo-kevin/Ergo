@@ -26,8 +26,8 @@ public static partial class WellKnown
         public static readonly Operator Set = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Right, 42, Functors.Set);
         public static readonly Operator NamedArgument = new(WellKnown.Modules.Stdlib, Fixity.Infix, OperatorAssociativity.Right, 1000, Functors.NamedArgument);
 
-        public static readonly Operator[] DeclaredOperators = new[] {
+        public static readonly Operator[] DeclaredOperators = [
             UnaryHorn, BinaryHorn, ArityIndicator, Conjunction
-        };
+        ];
     }
 }

@@ -2,5 +2,5 @@
 
 public sealed class ExplainPredicates : PredicatesShellCommand
 {
-    public ExplainPredicates() : base(new[] { ":?", "expl" }, "Prints the AST of all matching predicates.", true) { }
+    public ExplainPredicates() : base([":?", "expl"], "Prints the AST of all matching predicates.", true) { }
 }

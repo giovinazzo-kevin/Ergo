@@ -15,6 +15,6 @@ class ErgoAutoCompleteService
 
     public async Task<IReadOnlyCollection<string>> GetPackages(string query)
     {
-        return new[] { Scope.Entry.ToString()! };
+        return [Scope.Entry.ToString()!];
     }
 }

@@ -13,6 +13,6 @@ public readonly struct Evaluation
     public Evaluation(bool result, Substitution sub)
     {
         Result = result;
-        Substitutions = new(new[] { sub });
+        Substitutions = new([sub]);
     }
 }

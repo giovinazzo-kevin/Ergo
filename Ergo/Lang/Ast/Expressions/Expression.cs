@@ -38,7 +38,7 @@ public readonly partial struct Expression
         Operator = op;
         Left = left;
         Right = right;
-        Term = new Complex(op.CanonicalFunctor, right.Select(some => new[] { left, some }).GetOr(new[] { left }))
+        Term = new Complex(op.CanonicalFunctor, right.Select(some => new[] { left, some }).GetOr([left]))
             .AsOperator(op)
             .AsParenthesized(parenthesized);
     }

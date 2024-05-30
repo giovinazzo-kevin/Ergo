@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands;
 public sealed class ToggleThrow : ShellCommand
 {
     public ToggleThrow()
-        : base(new[] { "throw" }, "Enables/disables throwing of managed exceptions.", @"", true, 20)
+        : base(["throw"], "Enables/disables throwing of managed exceptions.", @"", true, 20)
     {
     }
 

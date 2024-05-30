@@ -63,9 +63,9 @@ public class Dict : AbstractTerm
     {
         return new Complex(
             WellKnown.Functors.Dict.First(),
-            new[] { Functor.Reduce(a => (ITerm)a, b => b),
+            [ Functor.Reduce(a => (ITerm)a, b => b),
                 Argument.Reduce<ITerm>(x => x, x => x)
-            }).AsParenthesized(IsParenthesized);
+            ]).AsParenthesized(IsParenthesized);
     }
 
     public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args = null, Maybe<ParserScope> scope = default, bool parenthesized = false)

@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands;
 public sealed class PrintHelp : ShellCommand
 {
     public PrintHelp()
-        : base(new[] { "?", "help" }, "Displays help about all commands that start with the given string", @"(?<cmd>[^\s].*)?", true, 100)
+        : base(["?", "help"], "Displays help about all commands that start with the given string", @"(?<cmd>[^\s].*)?", true, 100)
     {
     }
 
@@ -33,7 +33,7 @@ public sealed class PrintHelp : ShellCommand
             }
         }
 
-        shell.WriteTable(new[] { "Command", "Priority", "Description" }, dispatchers, ConsoleColor.DarkGreen);
+        shell.WriteTable(["Command", "Priority", "Description"], dispatchers, ConsoleColor.DarkGreen);
         yield return scope;
     }
 }

@@ -62,7 +62,7 @@ public abstract class PredicatesShellCommand : ShellCommand
             })
             .Select(p => Explain
                 ? new[] { p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Explain(canonical: !Explain) }
-                : new[] { p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Documentation })
+                : [p.Head.GetSignature().Explain(), p.DeclaringModule.Explain(canonical: false), p.Documentation])
             .ToArray();
         if (explanations.Length == 0)
         {
@@ -73,7 +73,7 @@ public abstract class PredicatesShellCommand : ShellCommand
 
         var cols = Explain
             ? new[] { "Predicate", "Module", "Explanation" }
-            : new[] { "Predicate", "Module", "Documentation" }
+            : ["Predicate", "Module", "Documentation"]
             ;
         shell.WriteTable(cols, explanations, Explain ? ConsoleColor.DarkMagenta : ConsoleColor.DarkCyan);
         yield return scope;

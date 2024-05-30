@@ -275,7 +275,7 @@ public partial class ErgoParser : IDisposable
     {
         var watch = Probe.Enter();
         var scope = GetScope();
-        return Expect<string>(new[] { ErgoLexer.TokenType.Operator, ErgoLexer.TokenType.Term })
+        return Expect<string>([ErgoLexer.TokenType.Operator, ErgoLexer.TokenType.Term])
             .Map(str => GetOperatorsFromFunctor(new Atom(str)))
             .Where(ops => ops.Any(match))
             .Select(ops => ops.Single(match))

@@ -13,9 +13,9 @@ public static partial class WellKnown
         public static readonly Atom EmptySet = new("{}");
         public static readonly Atom EmptyCommaList = new("()");
 
-        public static readonly ITerm[] DefinedLiterals = new ITerm[]
-        {
+        public static readonly ITerm[] DefinedLiterals =
+        [
             Discard, True, False, Cut, EmptyList, EmptySet, EmptyCommaList
-        };
+        ];
     }
 }

@@ -7,7 +7,7 @@ public static class EnumerableExtensions
         if (sequences == null)
             return null;
 
-        IEnumerable<IEnumerable<T>> emptyProduct = new[] { Enumerable.Empty<T>() };
+        IEnumerable<IEnumerable<T>> emptyProduct = [Enumerable.Empty<T>()];
 
         return sequences.Aggregate(
             emptyProduct,

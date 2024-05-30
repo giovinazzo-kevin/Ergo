@@ -117,7 +117,7 @@ public readonly struct ErgoFacade
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
             if (type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAbstractTermParser<>)) is not { } inter) continue;
             var inst = Activator.CreateInstance(type);
-            newFacade = (ErgoFacade)This_AddParser.MakeGenericMethod(inter.GetGenericArguments().Single()).Invoke(newFacade, new object[] { inst });
+            newFacade = (ErgoFacade)This_AddParser.MakeGenericMethod(inter.GetGenericArguments().Single()).Invoke(newFacade, [inst]);
         }
 
         return newFacade;
@@ -154,7 +154,7 @@ public readonly struct ErgoFacade
     private ErgoParser ConfigureParser(ErgoParser parser)
     {
         foreach (var (type, absParser) in _parsers)
-            Parser_TryAddAbstractParser.MakeGenericMethod(type).Invoke(parser, new object[] { absParser });
+            Parser_TryAddAbstractParser.MakeGenericMethod(type).Invoke(parser, [absParser]);
         return parser;
     }
 

@@ -29,7 +29,7 @@ public partial class ErgoParser
         return Expect(ErgoLexer.TokenType.Punctuation, condition)
             .Or(() => Fail<string>(pos));
     }
-    public Maybe<T> Expect<T>(ErgoLexer.TokenType type, Func<T, bool> cond) => Expect<T>(new[] { type }, cond);
+    public Maybe<T> Expect<T>(ErgoLexer.TokenType type, Func<T, bool> cond) => Expect<T>([type], cond);
     public Maybe<T> Expect<T>(ErgoLexer.TokenType type) => Expect<T>(type, _ => true);
     public Maybe<T> Expect<T>(IEnumerable<ErgoLexer.TokenType> types) => Expect<T>(types, _ => true);
     public Maybe<T> Parenthesized<T>(string opening, string closing, Func<Maybe<T>> tryParse)

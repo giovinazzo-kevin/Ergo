@@ -5,7 +5,7 @@ namespace Ergo.Shell.Commands;
 public sealed class ToggleOptimizations : ShellCommand
 {
     public ToggleOptimizations()
-        : base(new[] { "#optimizations" }, "Enables/disables compile-time optimizations.", @"", true, 22)
+        : base(["#optimizations"], "Enables/disables compile-time optimizations.", @"", true, 22)
     {
     }
 

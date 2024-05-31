@@ -19,14 +19,14 @@ public class ParserTests : ErgoTests
     [InlineData("0.5", 0.5)]
     [InlineData(".5", .5)]
     public void ShouldParseDecimals(string query, object constructor)
-        => ShouldParse(query, (Atom)constructor);
+        => ShouldParse(query, new Atom(constructor));
     [Theory]
     [InlineData("0  .5", 0.5)]
     [InlineData("0. 5", 0.5)]
     [InlineData("0 .  5", 0.5)]
     [InlineData(".   5", .5)]
     public void ShouldNotParseDecimals(string query, object constructor)
-        => ShouldNotParse(query, (Atom)constructor);
+        => ShouldNotParse(query, new Atom(constructor));
     [Theory]
     [InlineData("+26", +26)]
     [InlineData("+06.4592", +06.4592)]
@@ -35,7 +35,7 @@ public class ParserTests : ErgoTests
     [InlineData("-2", -2)]
     public void ShouldParseSignedNumbers(string query, decimal number)
     {
-        ShouldParse(query, (Atom)number);
+        ShouldParse(query, new Atom(number));
     }
     [Theory]
     [InlineData("+ 63", +63)]
@@ -46,7 +46,7 @@ public class ParserTests : ErgoTests
     [InlineData("+.  015", +.015)]
     public void ShouldNotParseSignedNumbers(string query, decimal number)
     {
-        ShouldNotParse(query, (Atom)number);
+        ShouldNotParse(query, new Atom(number));
     }
     [Fact]
     public void ShouldRespectOperatorPrecedence()

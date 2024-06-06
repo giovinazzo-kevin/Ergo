@@ -14,13 +14,13 @@ public class IfThenElseNode(ExecutionNode condition, ExecutionNode trueBranch, E
     public override int CheckSum => HashCode.Combine(Condition.CheckSum, FalseBranch.CheckSum, TrueBranch.CheckSum);
 
     public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThenElse(Condition.Compile(), TrueBranch.Compile(), FalseBranch.Compile());
-    public override ExecutionNode Optimize()
+    public override ExecutionNode Optimize(OptimizationFlags flags)
     {
         if (Condition is TrueNode)
-            return TrueBranch.Optimize();
+            return TrueBranch.Optimize(flags);
         if (Condition is FalseNode)
-            return FalseBranch.Optimize();
-        return new IfThenElseNode(Condition.Optimize(), TrueBranch.Optimize(), FalseBranch.Optimize());
+            return FalseBranch.Optimize(flags);
+        return new IfThenElseNode(Condition.Optimize(flags), TrueBranch.Optimize(flags), FalseBranch.Optimize(flags));
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

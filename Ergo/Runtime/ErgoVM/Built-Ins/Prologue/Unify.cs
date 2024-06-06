@@ -13,10 +13,13 @@ public sealed class Unify : BuiltIn
     public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new(WellKnown.Signatures.Unify.Functor, lhs, rhs);
 
     public override int OptimizationOrder => base.OptimizationOrder + 10;
-    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes, OptimizationFlags flags)
     {
-        PropagateConstants();
-        RemoveDeadUnifications();
+        if (flags.HasFlag(OptimizationFlags.PruneIgnoredVariables))
+        {
+            PropagateConstants();
+            RemoveDeadUnifications();
+        }
         return nodes;
         void PropagateConstants()
         {

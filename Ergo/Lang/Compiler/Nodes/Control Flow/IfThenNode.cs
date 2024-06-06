@@ -7,13 +7,13 @@ public class IfThenNode(ExecutionNode condition, ExecutionNode trueBranch) : Exe
     public override bool IsGround => Condition.IsGround && TrueBranch.IsGround;
     public override int CheckSum => HashCode.Combine(Condition.CheckSum, TrueBranch.CheckSum);
     public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThen(Condition.Compile(), TrueBranch.Compile());
-    public override ExecutionNode Optimize()
+    public override ExecutionNode Optimize(OptimizationFlags flags)
     {
         if (Condition is TrueNode)
-            return TrueBranch.Optimize();
+            return TrueBranch.Optimize(flags);
         if (Condition is FalseNode)
             return Condition;
-        return new IfThenNode(Condition.Optimize(), TrueBranch.Optimize());
+        return new IfThenNode(Condition.Optimize(flags), TrueBranch.Optimize(flags));
     }
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

@@ -16,7 +16,7 @@ public class SequenceNode(List<ExecutionNode> nodes, bool isRoot = false) : Exec
     public SequenceNode AsRoot() => new(Nodes, true);
 
     public override ErgoVM.Op Compile() => ErgoVM.Ops.And(Nodes.Select(n => n.Compile()).ToArray());
-    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes, OptimizationFlags flags)
     {
         var newList = nodes.SelectMany(n =>
         {
@@ -64,16 +64,16 @@ public class SequenceNode(List<ExecutionNode> nodes, bool isRoot = false) : Exec
                     newList.RemoveAt(0);
             }
             var optimizationPassesFromNodes = newList
-                .Select(n => (n.OptimizationOrder, Optimize: (Func<List<ExecutionNode>, List<ExecutionNode>>)n.OptimizeSequence))
+                .Select(n => (n.OptimizationOrder, Optimize: (Func<List<ExecutionNode>, OptimizationFlags, List<ExecutionNode>>)n.OptimizeSequence))
                     .OrderBy(x => x.OptimizationOrder)
                     .Select(n => n.Optimize);
             foreach (var opt in optimizationPassesFromNodes)
             {
-                newList = opt(newList);
+                newList = opt(newList, flags);
             }
             for (int i = 0; i < newList.Count; i++)
             {
-                newList[i] = newList[i].Optimize();
+                newList[i] = newList[i].Optimize(flags);
             }
         }
         while (newCheckSum != checkSum);
@@ -116,9 +116,9 @@ public class SequenceNode(List<ExecutionNode> nodes, bool isRoot = false) : Exec
                 break;
         }
     }
-    public override ExecutionNode Optimize()
+    public override ExecutionNode Optimize(OptimizationFlags flags)
     {
-        var newList = OptimizeSequence(Nodes);
+        var newList = OptimizeSequence(Nodes, flags);
         if (newList.Count == 0)
             return TrueNode.Instance;
         if (newList.Count == 1)

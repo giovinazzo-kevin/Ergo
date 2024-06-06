@@ -35,7 +35,7 @@ public sealed class Call : BuiltIn
             comma = new([goal], goal.Scope);
         var query = new Query(comma);
         var newVm = vm.ScopedInstance();
-        newVm.Query = newVm.CompileQuery(query);
+        newVm.Query = newVm.CompileQuery(query, CompilerFlags.DefaultNoPrune);
         newVm.Run();
         foreach (var sol in newVm.Solutions)
         {

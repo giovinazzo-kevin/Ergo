@@ -4,7 +4,7 @@ public class CutNode : StaticNode
 {
     static void Cut(ErgoVM vm) => vm.Cut();
     public override ErgoVM.Op Compile() => Cut;
-    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes, OptimizationFlags flags)
     {
         var lastCut = nodes.LastOrDefault(x => x is CutNode);
         if (lastCut != null)

@@ -11,7 +11,7 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
     public virtual bool IsDeterminate(ImmutableArray<ITerm> args) => false;
 
     public virtual ExecutionNode Optimize(BuiltInNode node) => node;
-    public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
+    public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes, OptimizationFlags flags) => nodes;
 
     public Predicate GetStub(ImmutableArray<ITerm> arguments)
     {

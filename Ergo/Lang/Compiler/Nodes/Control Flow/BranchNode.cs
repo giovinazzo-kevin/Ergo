@@ -30,10 +30,10 @@ public class BranchNode(ExecutionNode left, ExecutionNode right) : ExecutionNode
 
     //public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Unfold().Select(x => x.Compile()).ToArray());
     public override ErgoVM.Op Compile() => ErgoVM.Ops.Or(Left.Compile(), Right.Compile());
-    public override ExecutionNode Optimize()
+    public override ExecutionNode Optimize(OptimizationFlags flags)
     {
-        var left = Left.Optimize();
-        var right = Right.Optimize();
+        var left = Left.Optimize(flags);
+        var right = Right.Optimize(flags);
         if (left is FalseNode)
             return right;
         if (right is FalseNode)

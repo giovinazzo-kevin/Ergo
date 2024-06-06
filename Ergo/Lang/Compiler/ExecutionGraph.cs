@@ -23,7 +23,9 @@ public class ExecutionGraph
         if (Root is not SequenceNode)
             Root.IsContinuationDet = true;
         var compiledRoot = Root.Compile();
+        Debug.WriteLine(@$"--------- \COMP/ ---------");
         Debug.WriteLine(Root.Explain(false));
+        Debug.WriteLine(@$"--------- /COMP\ ---------");
         // NOTE: PrepareDelegate pre-JITs 'op' so that we don't incur JIT overhead at runtime.
         RuntimeHelpers.PrepareDelegate(compiledRoot);
         Compiled = compiledRoot;
@@ -45,7 +47,7 @@ public class ExecutionGraph
         { Compiled = Compiled };
     }
 
-    public ExecutionGraph Optimized() => new(Head, new SequenceNode([Root]).Optimize());
+    public ExecutionGraph Optimized(OptimizationFlags flags) => new(Head, new SequenceNode([Root]).Optimize(flags));
 
     /// <summary>
     /// Compiles the current graph to a Goal that can run on the ErgoVM.

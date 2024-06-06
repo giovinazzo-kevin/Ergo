@@ -9,10 +9,12 @@ namespace Ergo.Runtime;
 [Flags]
 public enum CompilerFlags
 {
-    Default = EnableInlining | EnableOptimizations,
+    Default = EnableInlining | EnableOptimizations | PruneIgnoredVariables,
+    DefaultNoPrune = Default & ~PruneIgnoredVariables,
     None = 0,
     EnableInlining = 1,
     EnableOptimizations = 4,
+    PruneIgnoredVariables = 8
 }
 [Flags]
 public enum VMFlags
@@ -176,6 +178,10 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     #endregion
     #region Goal API
     [Obsolete]
+    public IEnumerable<ITerm> DebugArgs => args[..Arity]
+        .Select(x => Memory.Dereference(x));
+
+    [Obsolete]
     public void SetArg(int index, ITerm value) => args[index + 1] = Memory.StoreTerm(value);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetArg2(int index, ITermAddress value) => args[index] = value;
@@ -334,6 +340,11 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
         LogState();
         if (!TryPopSolution(out var sol))
             throw StackEmptyException;
+        foreach (var sub in sol.Substitutions)
+        {
+            var addr = Memory.StoreVariable(((Variable)sub.Lhs).Name);
+            Memory[addr] = Memory.StoreTerm(sub.Rhs);
+        }
         State = VMState.Success;
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

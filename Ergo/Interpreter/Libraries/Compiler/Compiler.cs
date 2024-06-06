@@ -29,13 +29,16 @@ public class Compiler : Library
         InlinedPredicates.Add(sig);
     }
 
-    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, bool optimize)
+    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, bool optimize, bool pruneIgnored)
     {
+        var flags = OptimizationFlags.None;
+        if (pruneIgnored)
+            flags |= OptimizationFlags.PruneIgnoredVariables;
         return handler.TryGet(() =>
         {
             var graph = clause.ToExecutionGraph(depGraph);
             if (optimize)
-                graph = graph.Optimized();
+                graph = graph.Optimized(flags);
             return clause.WithExecutionGraph(graph);
         });
     }
@@ -73,7 +76,7 @@ public class Compiler : Library
                     var clause = node.Clauses[i];
                     if (clause.IsBuiltIn || clause.ExecutionGraph.TryGetValue(out _))
                         continue;
-                    if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: true).TryGetValue(out var newClause))
+                    if (TryCompile(clause, kbc.KnowledgeBase.Scope.ExceptionHandler, depGraph, optimize: true, pruneIgnored: true).TryGetValue(out var newClause))
                     {
                         newClause.ExecutionGraph.Do(x => x.Compile());
                         // Hooks can be defined in non-existent modules, but otherwise we want to cache the compiled predicate.
@@ -88,12 +91,15 @@ public class Compiler : Library
         }
         else if (evt is QuerySubmittedEvent qse)
         {
+            var enableOpt = qse.Flags.HasFlag(CompilerFlags.EnableOptimizations);
+            var pruneIgnored = qse.Flags.HasFlag(CompilerFlags.PruneIgnoredVariables);
+
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
             foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
             {
                 var topLevel = match.Predicate;
-                if (TryCompile(topLevel, qse.VM.KB.Scope.ExceptionHandler, qse.VM.KB.DependencyGraph, qse.Flags.HasFlag(CompilerFlags.EnableOptimizations)).TryGetValue(out var newClause))
+                if (TryCompile(topLevel, qse.VM.KB.Scope.ExceptionHandler, qse.VM.KB.DependencyGraph, enableOpt, pruneIgnored).TryGetValue(out var newClause))
                     qse.VM.KB.Replace(topLevel, newClause);
                 else
                     qse.VM.KB.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));

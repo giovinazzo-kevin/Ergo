@@ -1,4 +1,5 @@
 ﻿using Ergo.Runtime.BuiltIns;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -25,20 +26,32 @@ public class BuiltInNode : GoalNode
         vm.SetArgs2(vm.Memory[(StructureAddress)vm.Memory.StoreTerm(Head)]);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         vm.LogState(Explain(false));
+        Debug.WriteLine(@$"--------- \CALL/ ---------");
+        Debug.WriteLine(vm.DebugArgs.Select(a => a.Explain(false)).Join("\r\n"));
         CompiledBuiltIn(vm);
+        if (vm.State != ErgoVM.VMState.Fail)
+        {
+            Debug.WriteLine(vm.DebugArgs.Select(a => a.Explain(false)).Join("\r\n"));
+            Debug.WriteLine(">>>>>>>>>>>>>>>>>> SUCCESS");
+        }
+        else
+        {
+            Debug.WriteLine(">>>>>>>>>>>>>>>>>> FAILURE");
+        }
+        Debug.WriteLine(@$"--------- /CALL\ ---------");
     };
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;
     public override bool IsDeterminate => BuiltIn.IsDeterminate(Args);
     public override int CheckSum => HashCode.Combine(BuiltIn.GetType(),
         Args.Aggregate(0, (a, b) => HashCode.Combine(b, a.GetHashCode())));
-    public override ExecutionNode Optimize()
+    public override ExecutionNode Optimize(OptimizationFlags flags)
     {
         return BuiltIn.Optimize(this);
     }
-    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
+    public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes, OptimizationFlags flags)
     {
-        return BuiltIn.OptimizeSequence(nodes);
+        return BuiltIn.OptimizeSequence(nodes, flags);
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

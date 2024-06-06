@@ -16,11 +16,10 @@ public class Expansions : Library
     public override Atom Module => WellKnown.Modules.Expansions;
 
     protected readonly Dictionary<Signature, HashSet<Expansion>> Table = [];
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        .Append(new DefineExpansion())
-        ;
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => [];
+    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => [
+        new DefineExpansion()
+    ];
 
     public override void OnErgoEvent(ErgoEvent evt)
     {
@@ -80,7 +79,7 @@ public class Expansions : Library
     public IEnumerable<Expansion> GetDefinedExpansions() => Table.SelectMany(x => x.Value);
     public IEnumerable<Expansion> GetDefinedExpansions(Atom module, Signature sig) => Table.TryGetValue(sig, out var exp)
         ? exp.Where(e => e.DeclaringModule.Equals(module))
-        : Enumerable.Empty<Expansion>();
+        : [];
 
     public void AddExpansion(Atom module, Variable outVar, Predicate pred)
     {
@@ -127,7 +126,7 @@ public class Expansions : Library
             {
                 var newHead = headExp.Reduce(e => e.Binding
                     .Select(v => (ITerm)v).GetOr(e.Match), a => a);
-                var headClauses = headExp.Reduce(e => e.Expansion.Contents, _ => ImmutableArray<ITerm>.Empty);
+                var headClauses = headExp.Reduce(e => e.Expansion.Contents, _ => []);
                 var bodyExpansions = new List<Either<ExpansionResult, ITerm>>[p.Body.Contents.Length];
                 for (int i = 0; i < p.Body.Contents.Length; i++)
                 {
@@ -143,7 +142,7 @@ public class Expansions : Library
                     newBody.AddRange(headClauses);
                     foreach (var clause in variant)
                     {
-                        newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()));
+                        newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => []));
                         newBody.Add(clause.Reduce(e => e.Binding.Select(x => (ITerm)x).GetOr(e.Match), a => a));
                     }
                     yield return new Predicate(
@@ -206,9 +205,9 @@ public class Expansions : Library
                            .Select(v => (ITerm)v).GetOr(exp.Match), a => a))
                            .ToImmutableArray());
                     var expClauses = new NTuple(
-                        exp.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>())
+                        exp.Reduce(e => e.Expansion.Contents, _ => [])
                            .Concat(argList.SelectMany(x => x
-                              .Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()))),
+                              .Reduce(e => e.Expansion.Contents, _ => []))),
                         cplx.Scope);
                     if (isLambda)
                     {

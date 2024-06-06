@@ -83,7 +83,7 @@ public sealed class TermMarshall
         var interfaceType = typeof(IErgoMarshalling<>).MakeGenericType(type);
         if (type.GetInterfaces().Contains(interfaceType))
             return (ITerm)interfaceType.GetMethod(nameof(ToTerm))
-                .Invoke(value, Array.Empty<object>());
+                .Invoke(value, []);
         return GetMode(type, mode) switch
         {
             var m when ctx.TryGetCached(m, value, type, functor, out var cached) => cached,

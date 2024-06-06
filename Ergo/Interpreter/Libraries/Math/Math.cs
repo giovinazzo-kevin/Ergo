@@ -6,10 +6,10 @@ namespace Ergo.Interpreter.Libraries.Math;
 public class Math : Library
 {
     public override Atom Module => WellKnown.Modules.Math;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new Eval())
-        .Append(new NumberString())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        ;
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => [
+        new Eval(),
+        new NumberString()
+    ];
+
+    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => [];
 }

@@ -19,7 +19,7 @@ public abstract class SolutionAggregationBuiltIn : BuiltIn
             yield break;
         }
 
-        var templateVars = Enumerable.Empty<Variable>();
+        IEnumerable<Variable> templateVars = [];
         while (goal is Complex c && WellKnown.Functors.ExistentialQualifier.Contains(c.Functor))
         {
             templateVars = templateVars.Concat(c.Arguments[0].Variables);

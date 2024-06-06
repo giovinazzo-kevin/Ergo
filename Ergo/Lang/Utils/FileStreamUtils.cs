@@ -25,7 +25,7 @@ public static class FileStreamUtils
                 }
                 catch
                 {
-                    return Enumerable.Empty<string>();
+                    return [];
                 }
             })
             .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(nameNoExt));

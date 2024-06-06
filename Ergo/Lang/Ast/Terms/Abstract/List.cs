@@ -5,7 +5,7 @@ namespace Ergo.Lang.Ast;
 
 public sealed class List : AbstractList
 {
-    public static readonly List Empty = new(ImmutableArray<ITerm>.Empty, default, default, false);
+    public static readonly List Empty = new([], default, default, false);
     private static readonly ListCompiler ListCompiler = new();
     public override IAbstractTermCompiler Compiler => ListCompiler;
     public readonly ITerm Tail;

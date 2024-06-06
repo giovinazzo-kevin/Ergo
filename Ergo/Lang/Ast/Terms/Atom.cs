@@ -77,7 +77,7 @@ public readonly struct Atom : ITerm
         return this;
     }
 
-    public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>();
+    public IEnumerable<Variable> Variables => [];
     public Atom AsQuoted(bool quoted) => new(Value, quoted, scope: Scope);
     public Atom WithScope(Maybe<ParserScope> scope) => new(Value, IsQuoted, scope: scope);
 

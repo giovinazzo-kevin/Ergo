@@ -70,7 +70,7 @@ public class Dict : AbstractTerm
     public Dict(Either<Atom, Variable> functor, IEnumerable<KeyValuePair<Atom, ITerm>> args = null, Maybe<ParserScope> scope = default, bool parenthesized = false)
         : base(scope)
     {
-        args ??= Enumerable.Empty<KeyValuePair<Atom, ITerm>>();
+        args ??= [];
         Functor = functor;
         Dictionary = ImmutableDictionary.CreateRange(args);
         KeyValuePairs = BuildKVPs();
@@ -87,7 +87,7 @@ public class Dict : AbstractTerm
         Functor = functor;
         Dictionary = ImmutableDictionary.Create<Atom, ITerm>();
         var op = WellKnown.Operators.NamedArgument;
-        KeyValuePairs = Array.Empty<ITerm>();
+        KeyValuePairs = [];
         Argument = unboundArgs;
         IsParenthesized = parenthesized;
         CanonicalForm = BuildCanonical();

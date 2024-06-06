@@ -12,12 +12,12 @@ public class Tabling : Library
 
     protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = [];
     protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = [];
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new Tabled())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        .Append(new DeclareTabledPredicate())
-        ;
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => [
+        new Tabled()
+    ];
+    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => [
+        new DeclareTabledPredicate()
+    ];
     public void AddTabledPredicate(Atom module, Signature sig)
     {
         if (!TabledPredicates.TryGetValue(module, out var sigs))

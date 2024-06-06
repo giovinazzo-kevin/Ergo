@@ -6,12 +6,11 @@ namespace Ergo.Interpreter.Libraries.List;
 public class List : Library
 {
     public override Atom Module => WellKnown.Modules.List;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new Nth0())
-        .Append(new Nth1())
-        .Append(new Sort())
-        .Append(new ListSet())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        ;
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => [
+        new Nth0(),
+        new Nth1(),
+        new Sort(),
+        new ListSet()
+    ];
+    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => [];
 }

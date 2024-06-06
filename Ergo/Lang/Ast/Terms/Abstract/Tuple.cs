@@ -4,7 +4,7 @@ namespace Ergo.Lang.Ast;
 
 public sealed class NTuple : AbstractList
 {
-    public static readonly NTuple Empty = new(ImmutableArray<ITerm>.Empty, default, false);
+    public static readonly NTuple Empty = new([], default, false);
 
     private static readonly NTupleCompiler NTupleCompiler = new();
     public override IAbstractTermCompiler Compiler => NTupleCompiler;

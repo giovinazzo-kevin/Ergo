@@ -6,18 +6,17 @@ namespace Ergo.Interpreter.Libraries.IO;
 public class IO : Library
 {
     public override Atom Module => WellKnown.Modules.IO;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new Write())
-        .Append(new WriteCanonical())
-        .Append(new WriteQuoted())
-        .Append(new WriteDict())
-        .Append(new WriteRaw())
-        .Append(new Read())
-        .Append(new ReadLine())
-        .Append(new GetChar())
-        .Append(new GetSingleChar())
-        .Append(new PeekChar())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        ;
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => [
+        new Write(),
+        new WriteCanonical(),
+        new WriteQuoted(),
+        new WriteDict(),
+        new WriteRaw(),
+        new Read(),
+        new ReadLine(),
+        new GetChar(),
+        new GetSingleChar(),
+        new PeekChar(),
+    ];
+    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => [];
 }

@@ -89,7 +89,7 @@ public partial class ErgoParser
         return Parenthesized(delims.OpeningDelim, delims.ClosingDelim, () =>
                 Unfold(ExpressionOrTerm())
                 .Select(t => new UntypedSequence(op, emptyElement, delims, ImmutableArray.CreateRange(t), scope, false))
-                .Or(() => new UntypedSequence(op, emptyElement, delims, ImmutableArray<ITerm>.Empty, scope, false)))
+                .Or(() => new UntypedSequence(op, emptyElement, delims, [], scope, false)))
             .Or(() => Fail<UntypedSequence>(scope.LexerState));
         Maybe<IEnumerable<ITerm>> Unfold(Maybe<ITerm> term)
         {

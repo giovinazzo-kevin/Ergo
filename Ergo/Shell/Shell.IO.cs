@@ -258,7 +258,7 @@ public partial class ErgoShell
 
         bool IsPathCyclic(TreeNode<T> parent, TreeNode<T> current, out ImmutableArray<TreeNode<T>> cycle, ImmutableArray<TreeNode<T>> seen)
         {
-            cycle = ImmutableArray<TreeNode<T>>.Empty;
+            cycle = [];
             if (parent == current || seen.Contains(current))
             {
                 cycle = ImmutableArray.CreateRange(seen.Skip(seen.LastIndexOf(current)));

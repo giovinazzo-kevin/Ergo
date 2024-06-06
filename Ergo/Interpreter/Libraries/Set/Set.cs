@@ -6,10 +6,9 @@ namespace Ergo.Interpreter.Libraries.List;
 public class Set : Library
 {
     public override Atom Module => WellKnown.Modules.Set;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new Union())
-        .Append(new IsSet())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        ;
+    public override IEnumerable<BuiltIn> GetExportedBuiltins() => [
+        new Union(),
+        new IsSet()
+    ];
+    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => [];
 }

@@ -50,7 +50,7 @@ public readonly struct Variable : ITerm
 
     public Variable WithScope(Maybe<ParserScope> scope) => new(Name, scope);
 
-    public IEnumerable<Variable> Variables => Enumerable.Empty<Variable>().Append(this);
+    public IEnumerable<Variable> Variables => [this];
 
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

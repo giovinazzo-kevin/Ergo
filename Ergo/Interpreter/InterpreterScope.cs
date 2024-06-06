@@ -155,7 +155,7 @@ public readonly struct InterpreterScope
     public InterpreterScope WithRuntime(bool runtime) => new(Facade, BaseImport, Entry, Modules, SearchDirectories, runtime, ExceptionHandler);
     public InterpreterScope WithExceptionHandler(ExceptionHandler newHandler) => new(Facade, BaseImport, Entry, Modules, SearchDirectories, IsRuntime, newHandler);
     public InterpreterScope WithoutModules() => new(Facade, BaseImport, Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
-    public InterpreterScope WithoutSearchDirectories() => new(Facade, BaseImport, Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
+    public InterpreterScope WithoutSearchDirectories() => new(Facade, BaseImport, Entry, Modules, [], IsRuntime, ExceptionHandler);
 
     public T GetLibrary<T>(Maybe<Atom> module = default) where T : Library => Modules[module.GetOr(Entry)].LinkedLibrary
         .GetOrThrow(new ArgumentException(null, nameof(module)))
@@ -179,7 +179,7 @@ public readonly struct InterpreterScope
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedDirectives())
-                .GetOr(Enumerable.Empty<InterpreterDirective>()))
+                .GetOr([]))
             .Where(d => visibleModules.Contains(d.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 
@@ -187,7 +187,7 @@ public readonly struct InterpreterScope
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.GetExportedBuiltins())
-                .GetOr(Enumerable.Empty<BuiltIn>()))
+                .GetOr([]))
             .Where(b => visibleModules.Contains(b.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 

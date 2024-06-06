@@ -113,14 +113,14 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         if (Type.IsArray)
         {
             // Collections are handled recursively
-            args = o == null ? Array.Empty<ITerm>() : ((IEnumerable)o).Cast<object>()
+            args = o == null ? [] : ((IEnumerable)o).Cast<object>()
                 .Select(x => TermMarshall.ToTerm(x, Type.GetElementType(), overrideFunctor, marshalling, ctx))
                 .ToArray();
         }
         else if (Type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)) is { } iList)
         {
             // Collections are handled recursively
-            args = o == null ? Array.Empty<ITerm>() : ((IEnumerable)o).Cast<object>()
+            args = o == null ? [] : ((IEnumerable)o).Cast<object>()
                 .Select(x => TermMarshall.ToTerm(x, iList.GetGenericArguments()[0], overrideFunctor, marshalling, ctx))
                 .ToArray();
         }

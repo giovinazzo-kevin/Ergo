@@ -24,7 +24,7 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
     public virtual Maybe<L> FromCanonical(Complex c)
     {
         if (Empty is null)
-            Empty = Construct(ImmutableArray<ITerm>.Empty, default);
+            Empty = Construct([], default);
         if (c.Arguments[1].Equals(Empty.EmptyElement))
         {
             return Construct([c.Arguments[0]], c.Scope);
@@ -39,7 +39,7 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
     public virtual Maybe<L> Parse(ErgoParser parser)
     {
         if (Empty is null)
-            Empty = Construct(ImmutableArray<ITerm>.Empty, default);
+            Empty = Construct([], default);
         var scope = parser.GetScope();
         // Canonical list: a [|] b [|] []
         return ParseSugared()

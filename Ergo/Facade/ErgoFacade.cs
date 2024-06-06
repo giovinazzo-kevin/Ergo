@@ -31,8 +31,8 @@ public readonly struct ErgoFacade
         .AddParsersByReflection(typeof(DictParser).Assembly)
         ;
 
-    private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
-    private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
+    private readonly ImmutableHashSet<Func<Library>> _libraries = [];
+    private readonly ImmutableHashSet<ShellCommand> _commands = [];
     private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
     public readonly Maybe<TextReader> Input = default;
     public readonly Maybe<TextWriter> Output = default;
@@ -159,7 +159,7 @@ public readonly struct ErgoFacade
     }
 
     public ErgoParser BuildParser(ErgoStream stream, IEnumerable<Operator> operators = null)
-        => ConfigureParser(new(this, new(this, stream, operators ?? Enumerable.Empty<Operator>())));
+        => ConfigureParser(new(this, new(this, stream, operators ?? [])));
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
     public ErgoVM BuildVM(KnowledgeBase kb, TermMemory memory = null, DecimalType decimalType = DecimalType.CliDecimal)

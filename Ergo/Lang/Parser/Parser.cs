@@ -176,7 +176,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Expect<string>(ErgoLexer.TokenType.Term)
-        .Where(term => IsVariableIdentifier(term))
+        .Where(IsVariableIdentifier)
         .Map(term => Maybe.Some(term)
             //.Where(term => !term.StartsWith("__K"))
             .Do(none: () => Throw(scope.LexerState, ErrorType.TermHasIllegalName, term))
@@ -217,7 +217,7 @@ public partial class ErgoParser : IDisposable
             return default;
         }
         return Expression().Select<ITerm>(e => e.Term)
-            .Or(() => Term())
+            .Or(Term)
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             .Select(x => x.WithScope(scope))
@@ -249,11 +249,11 @@ public partial class ErgoParser : IDisposable
             Probe.Leave(watch);
             return default;
         }
-        return Parenthesized("(", ")", () => Expression())
+        return Parenthesized("(", ")", Expression)
                 .Select(x => x.Term.AsParenthesized(true))
             .Or(() => Parenthesized("(", ")", () => Inner()
                 .Select(x => x.AsParenthesized(true))))
-            .Or(() => Inner())
+            .Or(Inner)
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             .Select(x => x.WithScope(scope))
@@ -521,7 +521,7 @@ public partial class ErgoParser : IDisposable
         }
         return Prefix().Select(p => p.Term)
             .Or(() => Postfix().Select(p => p.Term))
-            .Or(() => Term())
+            .Or(Term)
             .Or(() => MemoizeFailureAndFail<ITerm>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             .Select(x => x.WithScope(scope))

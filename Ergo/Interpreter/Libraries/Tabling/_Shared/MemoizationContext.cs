@@ -28,7 +28,7 @@ public sealed class MemoizationContext
 
     public Maybe<ITerm> GetPioneer(ITerm variant)
     {
-        var key = MemoizationTable.Keys.FirstOrDefault(k => variant.IsVariantOf(k));
+        var key = MemoizationTable.Keys.FirstOrDefault(variant.IsVariantOf);
         if (key != null)
             return Maybe.Some(key);
         return default;

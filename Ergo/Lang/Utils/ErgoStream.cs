@@ -32,7 +32,7 @@ public sealed class ErgoStream : Stream
         var ret = new ErgoStream(newStream, FileName);
         if (forwardDispose)
         {
-            ret.Disposing += () => Dispose();
+            ret.Disposing += Dispose;
         }
         ret.Seek(0, SeekOrigin.Begin);
         return ret;

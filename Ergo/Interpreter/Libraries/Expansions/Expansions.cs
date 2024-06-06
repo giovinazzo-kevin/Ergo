@@ -177,7 +177,7 @@ public class Expansions : Library
             yield break;
         }
         foreach (var exp in GetExpansions(term, scope)
-            .Select(x => Either<ExpansionResult, ITerm>.FromA(x))
+            .Select(Either<ExpansionResult, ITerm>.FromA)
             .DefaultIfEmpty(Either<ExpansionResult, ITerm>.FromB(term)))
         {
             var t = exp.Reduce(e => e.Match, a => a);

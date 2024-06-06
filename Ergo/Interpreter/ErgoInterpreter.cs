@@ -213,7 +213,7 @@ public partial class ErgoInterpreter
         }
 
         var parser = Facade.BuildParser(stream, scope.VisibleOperators);
-        if (!scope.ExceptionHandler.TryGet(() => parser.Program()).Map(x => x).TryGetValue(out var program))
+        if (!scope.ExceptionHandler.TryGet(parser.Program).Map(x => x).TryGetValue(out var program))
         {
             stream.Dispose();
             scope.Throw(ErrorType.CouldNotLoadFile, stream.FileName);
@@ -230,7 +230,7 @@ public partial class ErgoInterpreter
             .ForwardEventToLibraries(new ModuleLoadedEvent(this, module.Name) { Scope = scope })
             .Scope;
 
-        scope.ExceptionHandler.Try(() => parser.Dispose());
+        scope.ExceptionHandler.Try(parser.Dispose);
         return module;
     }
 

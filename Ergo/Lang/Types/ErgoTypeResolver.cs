@@ -62,7 +62,7 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
         }
         else
         {
-            IsAtomic = new(() => GetMembers().Count() == 0);
+            IsAtomic = new(() => !GetMembers().Any());
             GetFunctor = o => new Atom(Type.Name.ToErgoCase());
             DefaultValue = new(() => ToTerm(Activator.CreateInstance(Type)));
         }
@@ -206,10 +206,9 @@ public abstract class ErgoTypeResolver<T> : ITypeResolver
                 var paramType = GetParameterType(name, constructor);
                 var arg = GetArgument(name, t);
                 var value = TermMarshall.FromTerm(arg, type, Marshalling);
-                if (value is EDecimal dec)
-                    value = Convert.ChangeType(dec.ToDecimal(), paramType);
-                else
-                    value = Convert.ChangeType(value, paramType);
+                value = value is EDecimal dec
+                    ? Convert.ChangeType(dec.ToDecimal(), paramType)
+                    : Convert.ChangeType(value, paramType);
                 return value;
             }).ToArray());
             return instance;

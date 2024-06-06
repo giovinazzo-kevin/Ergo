@@ -136,7 +136,7 @@ public static class LanguageExtensions
 
     public static ITerm NumberVars(this ITerm term)
     {
-        return term.Instantiate(new("$VAR"), new());
+        return term.Instantiate(new("$VAR"), []);
     }
 
     public static string ToCSharpCase(this string s)

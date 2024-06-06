@@ -33,7 +33,7 @@ public class ExecutionGraph
     {
         if (Root.IsGround)
             return this;
-        vars ??= new();
+        vars ??= [];
         return new(Head.Instantiate(ctx, vars), Root.Instantiate(ctx, vars))
         { Compiled = Compiled };
     }
@@ -45,7 +45,7 @@ public class ExecutionGraph
         { Compiled = Compiled };
     }
 
-    public ExecutionGraph Optimized() => new(Head, new SequenceNode(new() { Root }).Optimize());
+    public ExecutionGraph Optimized() => new(Head, new SequenceNode([Root]).Optimize());
 
     /// <summary>
     /// Compiles the current graph to a Goal that can run on the ErgoVM.
@@ -70,7 +70,7 @@ public static class ExecutionGraphExtensions
     public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, Maybe<Atom> callerModule = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         ctx ??= CompilerContext;
-        cyclicalCallMap ??= new();
+        cyclicalCallMap ??= [];
         var ret = default(ExecutionNode);
         Action<ExecutionNode> onReturn = _ => { };
         var scope = mbScope.GetOr(graph.KnowledgeBase.Scope);// Handle the cyclical call node if it's present
@@ -220,7 +220,7 @@ public static class ExecutionGraphExtensions
                 .GetOr(ToExecutionGraph(substitutedClause, graph, cyclicalCallMap));
             if (!head.Equals(clauseHead))
             {
-                return new SequenceNode(new() { unifNode, execGraph.Root });
+                return new SequenceNode([unifNode, execGraph.Root]);
             }
             return execGraph.Root;
         }

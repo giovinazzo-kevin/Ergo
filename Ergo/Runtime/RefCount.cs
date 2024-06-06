@@ -2,7 +2,7 @@
 
 public sealed class RefCount
 {
-    private readonly Dictionary<Variable, int> dict = new();
+    private readonly Dictionary<Variable, int> dict = [];
     public int Count(Variable variable)
     {
         if (!dict.TryGetValue(variable, out var count))

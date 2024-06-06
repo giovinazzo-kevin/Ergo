@@ -277,7 +277,7 @@ public partial class ErgoShell
 
         TreeNode<T> BuildTree(T value, Dictionary<K, TreeNode<T>> dict = null)
         {
-            dict ??= new();
+            dict ??= [];
             var key = getKey(value);
             if (dict.TryGetValue(key, out var node))
                 return new(value, node.Children);

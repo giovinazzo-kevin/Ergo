@@ -18,7 +18,7 @@ public partial class ErgoLexer : IDisposable
     public readonly Dictionary<string, Operator[]> OperatorLookup;
     public readonly ErgoFacade Facade;
 
-    protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = new();
+    protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = [];
 
     #region Regular Expressions
     protected static readonly Regex UnescapeRegex =

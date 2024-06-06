@@ -52,11 +52,10 @@ public class Dict : AbstractTerm
     protected ITerm[] BuildKVPs()
     {
         var op = WellKnown.Operators.NamedArgument;
-        return Dictionary
+        return [.. Dictionary
             .Select(kv => (ITerm)new Complex(op.CanonicalFunctor, kv.Key, kv.Value)
                     .AsOperator(op))
-            .OrderBy(o => o)
-            .ToArray();
+            .OrderBy(o => o)];
     }
 
     protected ITerm BuildCanonical()
@@ -179,7 +178,7 @@ public class Dict : AbstractTerm
     {
         if (IsGround)
             return this;
-        vars ??= new();
+        vars ??= [];
         var newFunctor = Functor.Reduce(
             a => a.Instantiate(ctx, vars),
             v => v.Instantiate(ctx, vars));

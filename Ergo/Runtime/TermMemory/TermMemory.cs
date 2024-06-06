@@ -19,9 +19,9 @@ public sealed class TermMemory(int vS = 1024, int sS = 1024, int aS = 1024)
     private readonly AbstractCell[] Abstracts = new AbstractCell[aS];
     public uint VP = 0, SP = 0, AP = 0;
 
-    internal Dictionary<string, VariableAddress> VariableLookup = new();
-    internal Dictionary<VariableAddress, string> InverseVariableLookup = new();
-    internal Dictionary<int, ITermAddress> TermLookup = new();
+    internal Dictionary<string, VariableAddress> VariableLookup = [];
+    internal Dictionary<VariableAddress, string> InverseVariableLookup = [];
+    internal Dictionary<int, ITermAddress> TermLookup = [];
 
     public IEnumerable<ITerm> StructuresDebug => Enumerable.Range(0, (int)SP)
         .Select(i => new StructureAddress((uint)i))

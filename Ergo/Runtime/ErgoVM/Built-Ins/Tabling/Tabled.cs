@@ -5,7 +5,7 @@ namespace Ergo.Runtime.BuiltIns;
 
 public sealed class Tabled : BuiltIn
 {
-    private readonly Dictionary<ErgoVM, MemoizationContext> MemoContexts = new();
+    private readonly Dictionary<ErgoVM, MemoizationContext> MemoContexts = [];
 
     public override int OptimizationOrder => base.OptimizationOrder;
 

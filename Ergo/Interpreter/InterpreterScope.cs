@@ -57,9 +57,7 @@ public readonly struct InterpreterScope
         Entry = userModule.Name;
         Modules = ImmutableDictionary.Create<Atom, Module>()
             .Add(userModule.Name, userModule);
-        SearchDirectories = ImmutableArray<string>.Empty
-            .Add(@".\ergo\")
-            .Add(@".\user\")
+        SearchDirectories = [@".\ergo\", @".\user\"]
             ;
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;
@@ -130,7 +128,7 @@ public readonly struct InterpreterScope
     }
     private Maybe<int> GetImportDepthInner(Atom a, Atom entry, int d, HashSet<Atom> visited = null)
     {
-        visited ??= new();
+        visited ??= [];
         visited.Add(a);
         if (!Modules.ContainsKey(a))
             return default;
@@ -208,7 +206,7 @@ public readonly struct InterpreterScope
 
         static IEnumerable<(Operator Op, int Depth)> GetOperatorsInner(Atom defaultModule, ImmutableDictionary<Atom, Module> modules, Maybe<Atom> entry = default, HashSet<Atom> added = null, int depth = 0)
         {
-            added ??= new();
+            added ??= [];
             var currentModule = defaultModule;
             var entryModule = entry.GetOr(currentModule);
             if (added.Contains(entryModule) || !modules.TryGetValue(entryModule, out var module))
@@ -246,7 +244,7 @@ public readonly struct InterpreterScope
     /// </summary>
     private static IEnumerable<Atom> GetVisibleModules(Atom entry, ImmutableDictionary<Atom, Module> modules)
     {
-        return Inner(entry, modules, new())
+        return Inner(entry, modules, [])
             .Select((x, i) => (x.A, x.D, i))
             .OrderBy(x => x.D)
             .ThenByDescending(x => x.i)
@@ -291,7 +289,7 @@ public readonly struct InterpreterScope
 
         static bool Inner(Atom name, Atom entry, IDictionary<Atom, Module> modules, HashSet<Atom> added = null)
         {
-            added ??= new();
+            added ??= [];
             if (added.Contains(entry) || !modules.TryGetValue(entry, out var module))
             {
                 return false;

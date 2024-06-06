@@ -15,7 +15,7 @@ public class Expansions : Library
 
     public override Atom Module => WellKnown.Modules.Expansions;
 
-    protected readonly Dictionary<Signature, HashSet<Expansion>> Table = new();
+    protected readonly Dictionary<Signature, HashSet<Expansion>> Table = [];
     public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         ;
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
@@ -86,7 +86,7 @@ public class Expansions : Library
     {
         var signature = pred.Head.GetSignature();
         if (!Table.TryGetValue(signature, out var set))
-            set = Table[signature] = new();
+            set = Table[signature] = [];
         set.Add(new(module, outVar, pred));
     }
 

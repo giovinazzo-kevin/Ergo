@@ -10,8 +10,8 @@ public class Tabling : Library
     public override int LoadOrder => 10;
     public override Atom Module => WellKnown.Modules.Tabling;
 
-    protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = new();
-    protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = new();
+    protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = [];
+    protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = [];
     public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
         .Append(new Tabled())
         ;
@@ -21,7 +21,7 @@ public class Tabling : Library
     public void AddTabledPredicate(Atom module, Signature sig)
     {
         if (!TabledPredicates.TryGetValue(module, out var sigs))
-            TabledPredicates[module] = sigs = new();
+            TabledPredicates[module] = sigs = [];
         sigs.Add(sig);
     }
     public override void OnErgoEvent(ErgoEvent e)

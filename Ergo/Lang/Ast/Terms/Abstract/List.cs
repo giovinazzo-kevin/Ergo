@@ -26,7 +26,7 @@ public sealed class List : AbstractList
 
     public override AbstractTerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
-        vars ??= new();
+        vars ??= [];
         return new List(
             ImmutableArray.CreateRange(Contents.Select(c => c.Instantiate(ctx, vars))),
             Maybe.Some(Tail.Instantiate(ctx, vars)),

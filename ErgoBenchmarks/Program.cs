@@ -9,7 +9,7 @@ var summary = BenchmarkRunner.Run<ImmutableTermsVsTermMemory>();
 
 public class ImmutableTermsVsTermMemory
 {
-    const int ITER_COUNT = 5000000;
+    const int ITER_COUNT = 1000000;
 
     public readonly TermMemory Memory = new();
     private ITermAddress PtrA, PtrB;

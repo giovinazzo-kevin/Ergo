@@ -65,7 +65,7 @@ public abstract class AbstractList : AbstractTerm
     {
         if (IsGround)
             return this;
-        vars ??= new();
+        vars ??= [];
         var builder = Contents.ToBuilder();
         for (int i = 0; i < Contents.Length; i++)
         {

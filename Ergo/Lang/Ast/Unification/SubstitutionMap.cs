@@ -4,9 +4,9 @@ namespace Ergo.Lang.Ast;
 
 public sealed class SubstitutionMap : IEnumerable<Substitution>
 {
-    public static readonly Pool<SubstitutionMap> Pool = new(() => new(), q => q.Clear());
+    public static readonly Pool<SubstitutionMap> Pool = new(() => [], q => q.Clear());
 
-    private Dictionary<Variable, ITerm> Map = new();
+    private Dictionary<Variable, ITerm> Map = [];
 
     public ITerm this[Variable key] => Map[key];
 

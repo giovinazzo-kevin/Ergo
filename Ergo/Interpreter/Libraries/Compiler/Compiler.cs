@@ -20,7 +20,7 @@ public class Compiler : Library
 
     }
 
-    protected readonly HashSet<Signature> InlinedPredicates = new();
+    protected readonly HashSet<Signature> InlinedPredicates = [];
     public override Atom Module => WellKnown.Modules.Compiler;
     public override IEnumerable<BuiltIn> GetExportedBuiltins() { yield break; }
     public override IEnumerable<InterpreterDirective> GetExportedDirectives() { yield break; }
@@ -102,7 +102,7 @@ public class Compiler : Library
 
         void ProcessNode(DependencyGraphNode node, HashSet<Signature> visited = null)
         {
-            visited ??= new HashSet<Signature>();
+            visited ??= [];
             if (visited.Contains(node.Signature))
             {
                 node.IsCyclical = true;
@@ -134,7 +134,7 @@ public class Compiler : Library
 
     IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, DependencyGraphNode node, DependencyGraphNode dependent, HashSet<Signature> processed = null)
     {
-        processed ??= new HashSet<Signature>();
+        processed ??= [];
         processed.Add(node.Signature);
         if (node.IsInlined)
         {
@@ -223,7 +223,7 @@ public class Compiler : Library
 
     IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, DependencyGraphNode node, HashSet<Signature> processed = null)
     {
-        processed ??= new HashSet<Signature>();
+        processed ??= [];
         foreach (var inline in node.Dependents.Cast<DependencyGraphNode>()
             .SelectMany(d => InlineNodeWithContext(scope, node, d, processed)))
         {

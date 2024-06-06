@@ -9,7 +9,7 @@ public readonly struct Solution
     {
         Substitutions = subs;
     }
-    public Solution Clone() => new(SubstitutionMap.MergeRef(new(), Substitutions));
+    public Solution Clone() => new(SubstitutionMap.MergeRef([], Substitutions));
     public Solution PrependSubstitutions(SubstitutionMap subs) => new(SubstitutionMap.MergeRef(Substitutions, subs));
     public Solution AppendSubstitutions(SubstitutionMap subs) => new(SubstitutionMap.MergeRef(subs, Substitutions));
 

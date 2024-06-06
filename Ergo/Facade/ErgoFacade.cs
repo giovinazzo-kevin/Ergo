@@ -20,7 +20,7 @@ public readonly struct ErgoFacade
     private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(ErgoParser).GetMethod(nameof(ErgoParser.AddAbstractParser));
     private static readonly MethodInfo This_AddParser = typeof(ErgoFacade).GetMethod(nameof(ErgoFacade.AddAbstractParser));
 
-    private static readonly Dictionary<string, ErgoParser> ParserCache = new();
+    private static readonly Dictionary<string, ErgoParser> ParserCache = [];
 
     /// <summary>
     /// The default Ergo environment complete with all the standard Built-Ins, Directives, Commands and Abstract Term Parsers.

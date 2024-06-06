@@ -6,7 +6,7 @@ namespace Ergo.Lang;
 
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
-    protected readonly OrderedDictionary Predicates = new();
+    protected readonly OrderedDictionary Predicates = [];
 
     public readonly InterpreterScope Scope;
     public readonly DependencyGraph DependencyGraph;

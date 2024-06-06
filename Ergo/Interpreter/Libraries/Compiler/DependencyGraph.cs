@@ -13,19 +13,14 @@ public class DependencyGraphNode
     public List<Predicate> InlinedClauses { get; set; } = null;
 }
 
-public class DependencyGraph
+public class DependencyGraph(KnowledgeBase knowledgeBase)
 {
     private readonly Dictionary<Signature, DependencyGraphNode> _nodes = [];
-    public readonly KnowledgeBase KnowledgeBase;
+    public readonly KnowledgeBase KnowledgeBase = knowledgeBase;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
     /// </summary>
     public readonly Unify UnifyInstance = new();
-
-    public DependencyGraph(KnowledgeBase knowledgeBase)
-    {
-        KnowledgeBase = knowledgeBase;
-    }
 
     // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
 

@@ -3,20 +3,14 @@
 /// <summary>
 /// Represents a logical conjunction.
 /// </summary>
-public class SequenceNode : ExecutionNode
+public class SequenceNode(List<ExecutionNode> nodes, bool isRoot = false) : ExecutionNode
 {
-    public readonly bool IsRoot;
+    public readonly bool IsRoot = isRoot;
 
     public override bool IsGround => Nodes.All(n => n.IsGround);
     public override bool IsDeterminate => Nodes.All(n => n.IsDeterminate);
 
-    public SequenceNode(List<ExecutionNode> nodes, bool isRoot = false)
-    {
-        Nodes = nodes;
-        IsRoot = isRoot;
-    }
-
-    public List<ExecutionNode> Nodes { get; }
+    public List<ExecutionNode> Nodes { get; } = nodes;
     public override int CheckSum => Nodes.Aggregate(0, (a, b) => HashCode.Combine(a, b.CheckSum));
 
     public SequenceNode AsRoot() => new(Nodes, true);
@@ -24,7 +18,6 @@ public class SequenceNode : ExecutionNode
     public override ErgoVM.Op Compile() => ErgoVM.Ops.And(Nodes.Select(n => n.Compile()).ToArray());
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
-        var fixpoint = false;
         var newList = nodes.SelectMany(n =>
         {
             if (n is SequenceNode seq)

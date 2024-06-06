@@ -3,20 +3,13 @@
 /// <summary>
 /// Represents an if-then-else statement.
 /// </summary>
-public class IfThenElseNode : ExecutionNode
+public class IfThenElseNode(ExecutionNode condition, ExecutionNode trueBranch, ExecutionNode falseBranch) : ExecutionNode
 {
     public override bool IsDeterminate => false;
 
-    public IfThenElseNode(ExecutionNode condition, ExecutionNode trueBranch, ExecutionNode falseBranch)
-    {
-        Condition = condition;
-        TrueBranch = trueBranch;
-        FalseBranch = falseBranch;
-    }
-
-    public ExecutionNode Condition { get; }
-    public ExecutionNode TrueBranch { get; }
-    public ExecutionNode FalseBranch { get; }
+    public ExecutionNode Condition { get; } = condition;
+    public ExecutionNode TrueBranch { get; } = trueBranch;
+    public ExecutionNode FalseBranch { get; } = falseBranch;
     public override bool IsGround => Condition.IsGround && TrueBranch.IsGround && FalseBranch.IsGround;
     public override int CheckSum => HashCode.Combine(Condition.CheckSum, FalseBranch.CheckSum, TrueBranch.CheckSum);
 

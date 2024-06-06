@@ -11,6 +11,7 @@ public sealed class PrintModules : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match)
     {
+        await Task.CompletedTask;
         var modules = scope.InterpreterScope.Modules;
         var currentModule = scope.InterpreterScope.EntryModule;
         shell.WriteTree(currentModule,

@@ -1,10 +1,5 @@
 ﻿namespace Ergo.Lang.Exceptions;
 
-public class ShellException : ErgoException
+public class ShellException(string message) : ErgoException(message)
 {
-    public ShellException(string message)
-        : base(message)
-    {
-
-    }
 }

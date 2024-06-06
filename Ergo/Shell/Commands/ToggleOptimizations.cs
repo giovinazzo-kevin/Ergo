@@ -11,6 +11,7 @@ public sealed class ToggleOptimizations : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         var flags = scope.CompilerFlags;
         var hasFlag = flags.HasFlag(CompilerFlags.EnableOptimizations);
         if (hasFlag)

@@ -6,18 +6,29 @@ namespace Ergo.Lang.Ast;
 public readonly record struct MetaPredicate(Signature Signature, ImmutableArray<char> Arguments);
 
 [DebuggerDisplay("{ Explain(false) }")]
-public readonly struct Module
+public readonly struct Module(
+    Atom name,
+    List import,
+    List export,
+    ImmutableArray<Operator> operators,
+    ImmutableHashSet<Signature> dynamicPredicates,
+    ImmutableDictionary<Signature, MetaPredicate> metaPredicates,
+    ErgoProgram program,
+    Maybe<Library> linkedLibrary,
+    bool runtime = false,
+    int loadOrder = 0
+    )
 {
-    public readonly Atom Name;
-    public readonly List Exports;
-    public readonly List Imports;
-    public readonly ImmutableArray<Operator> Operators;
-    public readonly ImmutableHashSet<Signature> DynamicPredicates;
-    public readonly ImmutableDictionary<Signature, MetaPredicate> MetaPredicates;
-    public readonly Maybe<Library> LinkedLibrary;
-    public readonly ErgoProgram Program;
-    public readonly bool IsRuntime;
-    public readonly int LoadOrder;
+    public readonly Atom Name = name;
+    public readonly List Exports = export;
+    public readonly List Imports = import;
+    public readonly ImmutableArray<Operator> Operators = operators;
+    public readonly ImmutableHashSet<Signature> DynamicPredicates = dynamicPredicates;
+    public readonly ImmutableDictionary<Signature, MetaPredicate> MetaPredicates = metaPredicates;
+    public readonly Maybe<Library> LinkedLibrary = linkedLibrary;
+    public readonly ErgoProgram Program = program;
+    public readonly bool IsRuntime = runtime;
+    public readonly int LoadOrder = loadOrder;
 
     public Module(Atom name, bool runtime)
         : this(
@@ -33,31 +44,6 @@ public readonly struct Module
             )
     {
 
-    }
-
-    public Module(
-        Atom name,
-        List import,
-        List export,
-        ImmutableArray<Operator> operators,
-        ImmutableHashSet<Signature> dynamicPredicates,
-        ImmutableDictionary<Signature, MetaPredicate> metaPredicates,
-        ErgoProgram program,
-        Maybe<Library> linkedLibrary,
-        bool runtime = false,
-        int loadOrder = 0
-    )
-    {
-        Name = name;
-        Imports = import;
-        Exports = export;
-        Operators = operators;
-        Program = program;
-        IsRuntime = runtime;
-        DynamicPredicates = dynamicPredicates;
-        MetaPredicates = metaPredicates;
-        LinkedLibrary = linkedLibrary;
-        LoadOrder = loadOrder;
     }
 
     public string Explain(bool canonical)

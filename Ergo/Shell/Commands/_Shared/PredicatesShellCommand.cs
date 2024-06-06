@@ -2,15 +2,14 @@
 
 namespace Ergo.Shell.Commands;
 
-public abstract class PredicatesShellCommand : ShellCommand
+public abstract class PredicatesShellCommand(string[] names, string desc, bool explain)
+    : ShellCommand(names, desc, @"(?<term>[^\s].*)?", true, 90)
 {
-    public readonly bool Explain;
-
-    public PredicatesShellCommand(string[] names, string desc, bool explain)
-        : base(names, desc, @"(?<term>[^\s].*)?", true, 90) => Explain = explain;
+    public readonly bool Explain = explain;
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         var term = m.Groups["term"];
         var shellScope = scope;
         var interpreterScope = scope.InterpreterScope;

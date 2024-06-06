@@ -1,13 +1,8 @@
 ﻿namespace Ergo.Lang.Compiler;
 
-public class VariableNode : ExecutionNode
+public class VariableNode(Variable v) : ExecutionNode
 {
-    public Variable Binding { get; private set; }
-
-    public VariableNode(Variable v)
-    {
-        Binding = v;
-    }
+    public Variable Binding { get; private set; } = v;
 
     public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(vm.Memory.StoreVariable(Binding.Name));
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

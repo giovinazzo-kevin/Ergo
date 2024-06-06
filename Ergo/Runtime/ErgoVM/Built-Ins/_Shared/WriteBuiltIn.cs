@@ -3,21 +3,13 @@ using Ergo.Lang.Compiler;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public abstract class WriteBuiltIn : BuiltIn
+public abstract class WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon, bool quoted, bool portray) : BuiltIn(documentation, functor, arity, WellKnown.Modules.IO)
 {
-    public readonly bool Canonical;
-    public readonly bool Quoted;
-    public readonly bool Portrayed;
+    public readonly bool Canonical = canon;
+    public readonly bool Quoted = quoted;
+    public readonly bool Portrayed = portray;
 
     private readonly Hook PortrayHook = new(WellKnown.Hooks.IO.Portray_1);
-
-    protected WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon, bool quoted, bool portray)
-        : base(documentation, functor, arity, WellKnown.Modules.IO)
-    {
-        Canonical = canon;
-        Quoted = quoted;
-        Portrayed = portray;
-    }
 
     protected static ITerm AsQuoted(ITerm t, bool quoted)
     {

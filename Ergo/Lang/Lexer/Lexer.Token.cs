@@ -2,16 +2,10 @@
 
 public partial class ErgoLexer
 {
-    public readonly struct Token
+    public readonly struct Token(ErgoLexer.TokenType type, object value)
     {
-        public readonly TokenType Type;
-        public readonly object Value;
-
-        public Token(TokenType type, object value)
-        {
-            Type = type;
-            Value = value;
-        }
+        public readonly TokenType Type = type;
+        public readonly object Value = value;
 
         public static Token FromString(string value) => new(TokenType.String, value);
         public static Token FromNumber(double value) => new(TokenType.Number, value);

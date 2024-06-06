@@ -2,13 +2,9 @@
 
 namespace Ergo.Interpreter.Libraries.Tabling;
 
-public readonly struct VariantKey
+public readonly struct VariantKey(ITerm from)
 {
-    public readonly int Value = 0;
-    public VariantKey(ITerm from)
-    {
-        Value = 1;
-    }
+    public readonly int Value = 1;
 }
 
 public sealed class MemoizationContext

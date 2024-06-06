@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 
 namespace Ergo.Shell.Commands;
 
-public abstract class SolveShellCommand : ShellCommand
+public abstract class SolveShellCommand(string[] names, string desc, int priority, SolveShellCommand.SolveMode mode, ConsoleColor accentColor) : ShellCommand(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority, caseInsensitive: true)
 {
-    public readonly ConsoleColor DefaultAccentColor;
-    public readonly SolveMode Mode;
+    public readonly ConsoleColor DefaultAccentColor = accentColor;
+    public readonly SolveMode Mode = mode;
 
     private readonly Dictionary<int, CachedVM> VMCache = [];
 
@@ -25,13 +25,6 @@ public abstract class SolveShellCommand : ShellCommand
             .Select(v => v.ToString())
             .ToList();
         return colorMap.Join("|");
-    }
-
-    protected SolveShellCommand(string[] names, string desc, int priority, SolveMode mode, ConsoleColor accentColor)
-        : base(names, desc, $@"(?<color>{GetColorAlternatives()})?\s*(?<query>(?:[^\s].*\s*=)?\s*[^\s].*)", true, priority, caseInsensitive: true)
-    {
-        Mode = mode;
-        DefaultAccentColor = accentColor;
     }
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)

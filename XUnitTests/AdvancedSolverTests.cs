@@ -1,9 +1,8 @@
 ﻿namespace Tests;
 
 
-public class AdvancedSolverTests : ErgoTests
+public class AdvancedSolverTests(ErgoTestFixture fixture) : ErgoTests(fixture)
 {
-    public AdvancedSolverTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows
     [Theory]
     [InlineData("min(3,5,3)", 1, "")]

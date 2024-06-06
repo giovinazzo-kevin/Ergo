@@ -2,10 +2,7 @@
 
 namespace Ergo.Lang.Exceptions;
 
-public class RuntimeException : ErgoException
+public class RuntimeException(ErgoVM.ErrorType error, params object[] args) : ErgoException(ExceptionUtils.GetVMError(error, args))
 {
-    public readonly ErgoVM.ErrorType ErrorType;
-
-    public RuntimeException(ErgoVM.ErrorType error, params object[] args)
-        : base(ExceptionUtils.GetVMError(error, args)) => ErrorType = error;
+    public readonly ErgoVM.ErrorType ErrorType = error;
 }

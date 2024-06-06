@@ -1,15 +1,9 @@
 ﻿namespace Ergo.Lang.Compiler;
 
-public class IfThenNode : ExecutionNode
+public class IfThenNode(ExecutionNode condition, ExecutionNode trueBranch) : ExecutionNode
 {
-    public IfThenNode(ExecutionNode condition, ExecutionNode trueBranch)
-    {
-        Condition = condition;
-        TrueBranch = trueBranch;
-    }
-
-    public ExecutionNode Condition { get; }
-    public ExecutionNode TrueBranch { get; }
+    public ExecutionNode Condition { get; } = condition;
+    public ExecutionNode TrueBranch { get; } = trueBranch;
     public override bool IsGround => Condition.IsGround && TrueBranch.IsGround;
     public override int CheckSum => HashCode.Combine(Condition.CheckSum, TrueBranch.CheckSum);
     public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThen(Condition.Compile(), TrueBranch.Compile());

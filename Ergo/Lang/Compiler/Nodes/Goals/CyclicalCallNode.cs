@@ -1,10 +1,9 @@
 ﻿namespace Ergo.Lang.Compiler;
 public class CyclicalCallNode : DynamicNode
 {
-    public class NodeRef
+    public class NodeRef(ExecutionNode node)
     {
-        public ExecutionNode Node { get; set; }
-        public NodeRef(ExecutionNode node) => Node = node;
+        public ExecutionNode Node { get; set; } = node;
     }
 
     public readonly Signature Signature;

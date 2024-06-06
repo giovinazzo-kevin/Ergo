@@ -11,6 +11,7 @@ public sealed class PrintOperators : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match match)
     {
+        await Task.CompletedTask;
         var operators = new List<Operator>();
         var startsWith = match.Groups["op"].Success ? match.Groups["op"].Value : "";
         foreach (var op in scope.InterpreterScope.VisibleOperators)

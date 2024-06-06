@@ -1,8 +1,5 @@
 ﻿namespace Ergo.Lang.Exceptions;
 
-public abstract class ErgoException : Exception
+public abstract class ErgoException(string message) : Exception(message)
 {
-    protected ErgoException(string message) : base(message)
-    {
-    }
 }

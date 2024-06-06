@@ -36,7 +36,7 @@ public enum VMMode
     Batch
 }
 
-public partial class ErgoVM
+public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, DecimalType decimalType = DecimalType.CliDecimal)
 {
     private static int NUM_VMS = 0;
     public const int MAX_ARGUMENTS = 255;
@@ -52,8 +52,8 @@ public partial class ErgoVM
     /// </summary>
     public readonly record struct ChoicePoint(Op Continue, TermMemory.State State);
     #endregion
-    public readonly DecimalType DecimalType;
-    public readonly KnowledgeBase KB;
+    public readonly DecimalType DecimalType = decimalType;
+    public readonly KnowledgeBase KB = kb;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
@@ -76,25 +76,14 @@ public partial class ErgoVM
     /// </summary>
     internal Op @continue;
 
-    public readonly TermMemory Memory;
-    protected ITermAddress[] args;
+    public readonly TermMemory Memory = memory ?? new();
+    protected ITermAddress[] args = new ITermAddress[MAX_ARGUMENTS];
     protected HashSet<VariableAddress> trackedVars;
-
-    public ErgoVM(KnowledgeBase kb, TermMemory memory = default, DecimalType decimalType = DecimalType.CliDecimal)
-    {
-        Memory = memory ?? new();
-        args = new ITermAddress[MAX_ARGUMENTS];
-        KB = kb;
-        DecimalType = decimalType;
-        In = Console.In;
-        Out = Console.Out;
-        Err = Console.Error;
-    }
     #endregion
     #region I/O
-    public TextReader In { get; private set; }
-    public TextWriter Out { get; private set; }
-    public TextWriter Err { get; private set; }
+    public TextReader In { get; private set; } = Console.In;
+    public TextWriter Out { get; private set; } = Console.Out;
+    public TextWriter Err { get; private set; } = Console.Error;
 
     public void SetIn(TextReader newIn)
     {

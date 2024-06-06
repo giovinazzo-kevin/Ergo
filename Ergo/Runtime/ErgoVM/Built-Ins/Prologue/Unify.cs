@@ -10,7 +10,7 @@ public sealed class Unify : BuiltIn
     }
 
     public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
-    public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new Complex(WellKnown.Signatures.Unify.Functor, lhs, rhs);
+    public static Complex MakeComplex(ITerm lhs, ITerm rhs) => new(WellKnown.Signatures.Unify.Functor, lhs, rhs);
 
     public override int OptimizationOrder => base.OptimizationOrder + 10;
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
@@ -33,7 +33,7 @@ public sealed class Unify : BuiltIn
             for (int i = nodes.Count - 1; i >= 0; i--)
             {
                 var current = nodes[i];
-                if (constantUnifications.Values.Contains(current))
+                if (constantUnifications.ContainsValue(current))
                 {
                     nodes.RemoveAt(i);
                     continue;
@@ -57,7 +57,7 @@ public sealed class Unify : BuiltIn
             for (int i = nodes.Count - 1; i >= 0; i--)
             {
                 var current = nodes[i];
-                if (deadUnifications.Values.Contains(current))
+                if (deadUnifications.ContainsValue(current))
                 {
                     nodes.RemoveAt(i);
                     continue;

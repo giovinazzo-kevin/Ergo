@@ -2,15 +2,10 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public abstract class MathBuiltIn : BuiltIn
+public abstract class MathBuiltIn(string documentation, Atom functor, Maybe<int> arity) : BuiltIn(documentation, functor, arity, WellKnown.Modules.Math)
 {
     public static readonly EDecimal DTrue = 1;
     public static readonly EDecimal DFalse = 0;
-
-    protected MathBuiltIn(string documentation, Atom functor, Maybe<int> arity)
-        : base(documentation, functor, arity, WellKnown.Modules.Math)
-    {
-    }
 
     public EDecimal Evaluate(ErgoVM vm, ITerm t)
     {

@@ -3,13 +3,9 @@ using Ergo.Lang.Compiler;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public abstract class DynamicPredicateBuiltIn : BuiltIn
+public abstract class DynamicPredicateBuiltIn(string documentation, Atom functor, Maybe<int> arity)
+    : BuiltIn(documentation, functor, arity, WellKnown.Modules.Prologue)
 {
-    protected DynamicPredicateBuiltIn(string documentation, Atom functor, Maybe<int> arity)
-        : base(documentation, functor, arity, WellKnown.Modules.Prologue)
-    {
-    }
-
     protected static Maybe<Predicate> GetPredicate(ErgoVM vm, ITerm arg)
     {
         if (!Predicate.FromCanonical(arg, vm.KB.Scope.Entry, out var pred))

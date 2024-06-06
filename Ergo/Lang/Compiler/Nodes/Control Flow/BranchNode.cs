@@ -3,19 +3,13 @@
 /// <summary>
 /// Represents a logical disjunction.
 /// </summary>
-public class BranchNode : ExecutionNode
+public class BranchNode(ExecutionNode left, ExecutionNode right) : ExecutionNode
 {
-    public readonly ExecutionNode Left;
-    public readonly ExecutionNode Right;
+    public readonly ExecutionNode Left = left;
+    public readonly ExecutionNode Right = right;
 
     public override bool IsGround => Left.IsGround && Right.IsGround;
     public override bool IsDeterminate => false;
-
-    public BranchNode(ExecutionNode left, ExecutionNode right)
-    {
-        Left = left;
-        Right = right;
-    }
 
     public IEnumerable<ExecutionNode> Unfold()
     {

@@ -11,6 +11,7 @@ public sealed class ToggleThrow : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         var throwingEnabled = scope.InterpreterScope.ExceptionHandler.Equals(shell.ThrowingExceptionHandler);
         var handler = throwingEnabled
             ? shell.LoggingExceptionHandler : shell.ThrowingExceptionHandler;

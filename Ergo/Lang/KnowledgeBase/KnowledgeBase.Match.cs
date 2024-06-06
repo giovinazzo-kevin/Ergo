@@ -1,15 +1,8 @@
 ﻿namespace Ergo.Lang;
 
-public readonly struct KBMatch
+public readonly struct KBMatch(ITerm lhs, Predicate rhs, SubstitutionMap substitutions)
 {
-    public readonly ITerm Goal;
-    public readonly Predicate Predicate;
-    public readonly SubstitutionMap Substitutions;
-
-    public KBMatch(ITerm lhs, Predicate rhs, SubstitutionMap substitutions)
-    {
-        Goal = lhs;
-        Predicate = rhs;
-        Substitutions = substitutions;
-    }
+    public readonly ITerm Goal = lhs;
+    public readonly Predicate Predicate = rhs;
+    public readonly SubstitutionMap Substitutions = substitutions;
 }

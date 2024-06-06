@@ -11,6 +11,7 @@ public sealed class ToggleTrace : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         scope = scope.WithTrace(!scope.TraceEnabled);
         shell.WriteLine($"Trace mode {(scope.TraceEnabled ? "enabled" : "disabled")}.", LogLevel.Inf);
         if (scope.TraceEnabled)

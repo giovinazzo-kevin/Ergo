@@ -4,18 +4,12 @@ using System.Diagnostics;
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain() }")]
-public readonly struct Substitution
+public readonly struct Substitution(ITerm lhs, ITerm rhs)
 {
-    public readonly ITerm Lhs;
-    public readonly ITerm Rhs;
+    public readonly ITerm Lhs = lhs;
+    public readonly ITerm Rhs = rhs;
 
     internal static readonly Pool<Queue<Substitution>> QueuePool = new(() => new(), q => q.Clear());
-
-    public Substitution(ITerm lhs, ITerm rhs)
-    {
-        Lhs = lhs;
-        Rhs = rhs;
-    }
 
     public Substitution WithRhs(ITerm newRhs) => new(Lhs, newRhs);
 

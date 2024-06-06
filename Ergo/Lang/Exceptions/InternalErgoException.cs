@@ -1,9 +1,5 @@
 ﻿namespace Ergo.Lang.Exceptions;
 
-public class InternalErgoException : ErgoException
+public class InternalErgoException(string text) : ErgoException(text)
 {
-    public InternalErgoException(string text)
-        : base(text)
-    {
-    }
 }

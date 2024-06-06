@@ -1,14 +1,10 @@
 ﻿namespace Ergo.Runtime;
 
-public readonly struct Solution
+public readonly struct Solution(SubstitutionMap subs)
 {
-    public readonly SubstitutionMap Substitutions;
+    public readonly SubstitutionMap Substitutions = subs;
     public IEnumerable<Variable> Variables => Substitutions.SelectMany(x => x.Rhs.Variables).Distinct();
 
-    public Solution(SubstitutionMap subs)
-    {
-        Substitutions = subs;
-    }
     public Solution Clone() => new(SubstitutionMap.MergeRef([], Substitutions));
     public Solution PrependSubstitutions(SubstitutionMap subs) => new(SubstitutionMap.MergeRef(Substitutions, subs));
     public Solution AppendSubstitutions(SubstitutionMap subs) => new(SubstitutionMap.MergeRef(subs, Substitutions));

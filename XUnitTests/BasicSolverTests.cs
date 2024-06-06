@@ -9,9 +9,8 @@ using A = Atom;
 using C = Complex;
 using V = Variable;
 
-public class BasicSolverTests : ErgoTests
+public class BasicSolverTests(ErgoTestFixture fixture) : ErgoTests(fixture)
 {
-    public BasicSolverTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows
     [Theory]
     [InlineData("⊥", 0)]

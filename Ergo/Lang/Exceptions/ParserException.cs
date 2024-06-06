@@ -2,10 +2,7 @@
 
 namespace Ergo.Lang.Exceptions;
 
-public class ParserException : ErgoException
+public class ParserException(ErgoParser.ErrorType error, ErgoLexer.StreamState state, params object[] args) : ErgoException(ExceptionUtils.GetMessage(state, ExceptionUtils.GetParserError(error, args)))
 {
-    public readonly ErgoParser.ErrorType ErrorType;
-
-    public ParserException(ErgoParser.ErrorType error, ErgoLexer.StreamState state, params object[] args)
-        : base(ExceptionUtils.GetMessage(state, ExceptionUtils.GetParserError(error, args))) => ErrorType = error;
+    public readonly ErgoParser.ErrorType ErrorType = error;
 }

@@ -11,6 +11,7 @@ public sealed class Save : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         shell.Save(scope, m.Groups["path"].Value);
         yield return scope;
     }

@@ -2,23 +2,15 @@
 
 namespace Ergo.Shell;
 
-public readonly struct ShellScope
+public readonly struct ShellScope(InterpreterScope i, bool trace, KnowledgeBase kb, CompilerFlags compilerFlags)
 {
     /// <summary>
     /// If true, the tracing debugger will engage on the next solution.
     /// </summary>
-    public readonly bool TraceEnabled;
-    public readonly CompilerFlags CompilerFlags;
-    public readonly InterpreterScope InterpreterScope;
-    public readonly KnowledgeBase KnowledgeBase;
-
-    public ShellScope(InterpreterScope i, bool trace, KnowledgeBase kb, CompilerFlags compilerFlags)
-    {
-        InterpreterScope = i;
-        TraceEnabled = trace;
-        KnowledgeBase = kb;
-        CompilerFlags = compilerFlags;
-    }
+    public readonly bool TraceEnabled = trace;
+    public readonly CompilerFlags CompilerFlags = compilerFlags;
+    public readonly InterpreterScope InterpreterScope = i;
+    public readonly KnowledgeBase KnowledgeBase = kb;
 
     public ShellScope WithInterpreterScope(InterpreterScope newScope) => new(newScope, TraceEnabled, KnowledgeBase, CompilerFlags);
     public ShellScope WithTrace(bool x) => new(InterpreterScope, x, KnowledgeBase, CompilerFlags);

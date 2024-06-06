@@ -1,13 +1,8 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public abstract class SolutionAggregationBuiltIn : BuiltIn
+public abstract class SolutionAggregationBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module) : BuiltIn(documentation, functor, arity, module)
 {
-    protected SolutionAggregationBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
-        : base(documentation, functor, arity, module)
-    {
-    }
-
-    protected IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoVM vm)
+    protected static IEnumerable<(List ArgVars, List ListTemplate, List ListVars)> AggregateSolutions(ErgoVM vm)
     {
         var (template, goal, instances) = (
             vm.Memory.Dereference(vm.Args2[1]),

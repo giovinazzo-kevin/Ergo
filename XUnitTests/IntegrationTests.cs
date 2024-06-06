@@ -2,9 +2,8 @@
 
 namespace Tests;
 
-public class IntegrationTests : ErgoTests
+public class IntegrationTests(ErgoTestFixture fixture) : ErgoTests(fixture)
 {
-    public IntegrationTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows
     [Theory]
     [InlineData("tests : fail", 0)]

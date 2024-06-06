@@ -11,9 +11,8 @@ public static class MockWellKnown
     }
 }
 
-public class ParserTests : ErgoTests
+public class ParserTests(ErgoTestFixture test) : ErgoTests(test)
 {
-    public ParserTests(ErgoTestFixture test) : base(test) { }
     [Theory]
     [InlineData("0", 0)]
     [InlineData("0.5", 0.5)]

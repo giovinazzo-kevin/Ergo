@@ -11,6 +11,7 @@ public sealed class Load : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         shell.Load(ref scope, m.Groups["path"].Value);
         yield return scope;
     }

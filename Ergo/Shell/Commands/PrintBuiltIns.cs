@@ -12,6 +12,7 @@ public sealed class PrintBuiltIns : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         var match = m.Groups["term"];
         var builtins = new List<BuiltIn>();
         if (match?.Success ?? false)

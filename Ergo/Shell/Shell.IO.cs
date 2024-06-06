@@ -5,17 +5,11 @@ using System.Text;
 
 namespace Ergo.Shell;
 
-internal class TreeNode<T>
+internal class TreeNode<T>(T val, params TreeNode<T>[] children)
 {
-    public readonly T Value;
+    public readonly T Value = val;
     public Maybe<TreeNode<T>> Parent { get; set; }
-    public TreeNode<T>[] Children { get; set; }
-
-    public TreeNode(T val, params TreeNode<T>[] children)
-    {
-        Children = children;
-        Value = val;
-    }
+    public TreeNode<T>[] Children { get; set; } = children;
 }
 
 public partial class ErgoShell

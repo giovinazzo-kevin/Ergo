@@ -11,6 +11,7 @@ public sealed class ExecuteDirective : ShellCommand
 
     public override async IAsyncEnumerable<ShellScope> Callback(ErgoShell shell, ShellScope scope, Match m)
     {
+        await Task.CompletedTask;
         var dir = m.Groups["dir"].Value;
         var interpreterScope = scope.InterpreterScope;
         var currentModule = interpreterScope.EntryModule;

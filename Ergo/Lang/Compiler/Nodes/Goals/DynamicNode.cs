@@ -3,17 +3,12 @@
 /// <summary>
 /// Represents a goal that could not be resolved at compile time.
 /// </summary>
-public class DynamicNode : ExecutionNode
+public class DynamicNode(ITerm goal) : ExecutionNode
 {
     public override bool IsGround => Goal.IsGround;
     public override bool IsDeterminate => IsGround;
 
-    public DynamicNode(ITerm goal)
-    {
-        Goal = goal;
-    }
-
-    public ITerm Goal { get; }
+    public ITerm Goal { get; } = goal;
     public override ErgoVM.Op Compile() => vm => ErgoVM.Ops.Goal(vm.Memory.StoreTerm(Goal))(vm);
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

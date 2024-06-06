@@ -6,18 +6,12 @@ using Ergo.Runtime;
 
 namespace Tests;
 
-public class ErgoTests : IClassFixture<ErgoTestFixture>
+public class ErgoTests(ErgoTestFixture fixture) : IClassFixture<ErgoTestFixture>
 {
-    public readonly ErgoInterpreter Interpreter;
-    public InterpreterScope InterpreterScope;
-    public KnowledgeBase KnowledgeBase;
+    public readonly ErgoInterpreter Interpreter = fixture.Interpreter;
+    public InterpreterScope InterpreterScope = fixture.InterpreterScope;
+    public KnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
 
-    public ErgoTests(ErgoTestFixture fixture)
-    {
-        Interpreter = fixture.Interpreter;
-        InterpreterScope = fixture.InterpreterScope;
-        KnowledgeBase = fixture.KnowledgeBase;
-    }
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)
     {

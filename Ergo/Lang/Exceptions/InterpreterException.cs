@@ -3,10 +3,6 @@ using Ergo.Lang.Utils;
 
 namespace Ergo.Lang.Exceptions;
 
-public class InterpreterException : ErgoException
+public class InterpreterException(ErgoInterpreter.ErrorType error, InterpreterScope scope, params object[] args) : ErgoException(ExceptionUtils.GetInterpreterError(error, scope, args))
 {
-    public InterpreterException(ErgoInterpreter.ErrorType error, InterpreterScope scope, params object[] args)
-        : base(ExceptionUtils.GetInterpreterError(error, scope, args))
-    {
-    }
 }

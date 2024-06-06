@@ -1,25 +1,14 @@
-﻿using Ergo.Runtime;
-
-namespace Ergo.Interpreter.Libraries.Tabling;
-
-public readonly struct VariantKey
-{
-    public readonly int Value = 0;
-    public VariantKey(ITerm from)
-    {
-        Value = 1;
-    }
-}
+﻿namespace Ergo.Interpreter.Libraries.Tabling;
 
 public sealed class MemoizationContext
 {
-    private Dictionary<ITerm, MemoizationTable> MemoizationTable = [];
+    private readonly Dictionary<ITerm, MemoizationTable> MemoizationTable = [];
 
     public void MemoizePioneer(ITerm pioneer)
     {
-        if (!MemoizationTable.TryGetValue(pioneer, out _))
-            MemoizationTable[pioneer] = new();
-        else throw new InvalidOperationException();
+        MemoizationTable[pioneer] = !MemoizationTable.TryGetValue(pioneer, out _)
+            ? new()
+            : throw new InvalidOperationException();
     }
 
     public void MemoizeFollower(ITerm pioneer, ITerm follower)

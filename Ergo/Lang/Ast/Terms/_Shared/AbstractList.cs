@@ -4,13 +4,13 @@ using System.Diagnostics;
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain(false) }")]
-public abstract class AbstractList : AbstractTerm
+public abstract class AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized) : AbstractTerm(scope)
 {
-    public readonly ImmutableArray<ITerm> Contents;
-    public readonly bool IsEmpty;
+    public readonly ImmutableArray<ITerm> Contents = head;
+    public readonly bool IsEmpty = head.Length == 0;
 
     public override bool IsQualified => CanonicalForm.IsQualified;
-    public override bool IsParenthesized { get; }
+    public override bool IsParenthesized { get; } = parenthesized;
     public override bool IsGround => CanonicalForm.IsGround;
     public override IEnumerable<Variable> Variables => CanonicalForm.Variables;
     public override int CompareTo(ITerm other) => CanonicalForm.CompareTo(other);
@@ -28,13 +28,6 @@ public abstract class AbstractList : AbstractTerm
 
     public override ITerm CanonicalForm { get; set; }
 
-    public AbstractList(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized)
-        : base(scope)
-    {
-        Contents = head;
-        IsEmpty = head.Length == 0;
-        IsParenthesized = parenthesized;
-    }
     public AbstractList(IEnumerable<ITerm> args, Maybe<ParserScope> scope, bool parenthesized) : this(ImmutableArray.CreateRange(args), scope, parenthesized) { }
     protected abstract AbstractList Create(ImmutableArray<ITerm> head, Maybe<ParserScope> scope, bool parenthesized);
 

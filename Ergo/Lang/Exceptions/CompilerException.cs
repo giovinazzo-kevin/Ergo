@@ -3,10 +3,7 @@ using Ergo.Lang.Utils;
 
 namespace Ergo.Lang.Exceptions;
 
-public class CompilerException : ErgoException
+public class CompilerException(ErgoCompiler.ErrorType error, params object[] args) : ErgoException(ExceptionUtils.GetCompilerError(error, args))
 {
-    public readonly ErgoCompiler.ErrorType ErrorType;
-
-    public CompilerException(ErgoCompiler.ErrorType error, params object[] args)
-        : base(ExceptionUtils.GetCompilerError(error, args)) => ErrorType = error;
+    public readonly ErgoCompiler.ErrorType ErrorType = error;
 }

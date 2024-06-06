@@ -3,7 +3,7 @@
 namespace Tests;
 
 
-public class TailCallOptimizationTests : ErgoTests
+public class TailCallOptimizationTests(ErgoTestFixture fixture) : ErgoTests(fixture)
 {
     const string Fib1000 =
         "434665576869374564356885276750406258025646605173717804024817290895365554179490518904038798400792551692959" +
@@ -34,8 +34,6 @@ public class TailCallOptimizationTests : ErgoTests
         "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
         "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
         "000000000000000000000000";
-
-    public TailCallOptimizationTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows
     [Theory]
     [InlineData("fibonacci(1000,X)", 1, $"X/{Fib1000}")]

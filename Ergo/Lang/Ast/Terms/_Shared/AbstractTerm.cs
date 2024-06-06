@@ -4,18 +4,14 @@ using Ergo.Lang.Compiler;
 
 namespace Ergo.Lang.Ast.Terms.Interfaces;
 
-public abstract class AbstractTerm : ITerm
+public abstract class AbstractTerm(Maybe<ParserScope> scope) : ITerm
 {
-    public Maybe<ParserScope> Scope { get; }
+    public Maybe<ParserScope> Scope { get; } = scope;
     public abstract ITerm CanonicalForm { get; set; }
     public abstract bool IsGround { get; }
     public abstract bool IsQualified { get; }
     public abstract bool IsParenthesized { get; }
     public abstract IEnumerable<Variable> Variables { get; }
-    public AbstractTerm(Maybe<ParserScope> scope)
-    {
-        Scope = scope;
-    }
 
     public abstract IAbstractTermCompiler Compiler { get; }
 

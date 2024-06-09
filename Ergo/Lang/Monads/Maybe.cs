@@ -11,6 +11,13 @@ public static class Maybe
             return Some(value);
         return Maybe<T>.None;
     }
+
+    public static Maybe<T> FromEnumerable<T>(IEnumerable<T> enumerable)
+    {
+        foreach (var item in enumerable)
+            return item;
+        return default;
+    }
 }
 
 public readonly struct Maybe<T>
@@ -148,7 +155,8 @@ public readonly struct Maybe<T>
     public static readonly Maybe<T> None = default;
     public static Maybe<T> Some(T value) => new(value);
 
-    public static implicit operator Maybe<T>(T a) => Maybe.Some(a);
+    public static implicit operator Maybe<T>(T a) => Some(a);
+    public static implicit operator Maybe<T>((bool b, T a) x) => !x.b ? None : Some(x.a);
 
     public override int GetHashCode()
     {

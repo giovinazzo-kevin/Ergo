@@ -3,6 +3,6 @@
 [Flags]
 public enum OptimizationFlags
 {
-    None = 0,
+    Default = 0,
     PruneIgnoredVariables = 1
 }

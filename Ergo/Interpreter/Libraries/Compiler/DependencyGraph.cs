@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Lang.Compiler;
 using Ergo.Runtime.BuiltIns;
 
 public class DependencyGraphNode
@@ -11,6 +12,7 @@ public class DependencyGraphNode
     public bool IsInlined { get; set; }
     public bool IsCyclical { get; set; }
     public List<Predicate> InlinedClauses { get; set; } = null;
+    public Maybe<List<PredicateAddress>> Addresses { get; set; }
 }
 
 public class DependencyGraph(KnowledgeBase knowledgeBase)

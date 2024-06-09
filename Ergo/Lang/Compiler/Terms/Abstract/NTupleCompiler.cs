@@ -23,4 +23,12 @@ public class NTupleCompiler : IAbstractTermCompiler<NTuple>
     {
         return mem.Unify(mem[a1].Address, other, transaction: false);
     }
+    public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
+    {
+        ConstAddress => [mem.StoreTerm(WellKnown.Literals.EmptyCommaList)],
+        StructureAddress s => mem[s],
+        _ => throw new NotSupportedException()
+    };
+    public Signature GetSignature(TermMemory mem, AbstractAddress a) =>
+        new(WellKnown.Operators.Conjunction.CanonicalFunctor, GetArgs(mem, a).Length, default, default);
 }

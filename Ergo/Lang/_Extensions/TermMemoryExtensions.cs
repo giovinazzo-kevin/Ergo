@@ -49,6 +49,54 @@ public static class TermMemoryExtensions
         }
     }
 
+    public static ITermAddress[] GetArgs(this ITermAddress a, TermMemory mem)
+    {
+        if (a is VariableAddress v && mem.IsVariableAssigned(v)) return mem[v].GetArgs(mem);
+        if (a is StructureAddress s) return mem[s];
+        if (a is AbstractAddress b) return mem[b].Compiler.GetArgs(mem, mem[b].Address);
+        return [a];
+    }
+
+
+    public static Signature GetSignature(this ITermAddress ta, TermMemory mem) => ta switch
+    {
+        ConstAddress a => ForConst(mem, a),
+        VariableAddress a => ForVariable(mem, a),
+        StructureAddress a when mem[a][0] is ConstAddress => ForStructure(mem, a),
+        AbstractAddress a => ForAbstract(mem, a),
+        PredicateAddress a => mem[a].Head.GetSignature(mem),
+        _ => throw new NotSupportedException()
+    };
+
+    static Signature ForConst(TermMemory mem, ConstAddress a) => new(mem[a], 1, default, default);
+    static Signature ForVariable(TermMemory mem, VariableAddress a)
+    {
+        var reference = mem[a];
+        if (reference is VariableAddress vr && !mem.IsVariableAssigned(vr))
+            return new Signature(new Atom(mem.InverseVariableLookup[a]), default, default, default);
+        return reference.GetSignature(mem);
+    }
+
+    static Signature ForStructure(TermMemory mem, StructureAddress a)
+    {
+        var args = mem[a];
+        var functor = mem[(ConstAddress)args[0]];
+        if (args.Length == 3
+            && args[1] is ConstAddress c
+            && WellKnown.Functors.Module.Contains(functor))
+            return ForQualified(mem, functor, args);
+        return new Signature(functor, args.Length - 1, default, default);
+    }
+
+    static Signature ForQualified(TermMemory mem, Atom functor, ITermAddress[] args)
+    {
+        var module = mem[(ConstAddress)args[1]];
+        var sig = args[2].GetSignature(mem);
+        return sig.WithModule(module);
+    }
+
+    static Signature ForAbstract(TermMemory mem, AbstractAddress a) => mem[a].Compiler.GetSignature(mem, a);
+
     public static ITermAddress StoreTerm(this TermMemory vm, ITerm term)
     {
         var hash = term.GetHashCode();

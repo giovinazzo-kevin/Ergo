@@ -141,120 +141,40 @@ public partial class ErgoVM
 
             void Resolve(ErgoVM vm)
             {
-                var newGoal = vm.Memory.Dereference(goal);
-                var module = newGoal.GetQualification(out _).GetOr(vm.KB.Scope.Entry);
-                vm.LogState(newGoal.Explain(false));
-                var matchEnum = GetEnumerator(vm, newGoal);
+                var matchEnum = GetEnumerator();
                 NextMatch(vm);
                 void NextMatch(ErgoVM vm)
                 {
                     var anyMatch = false;
-                    var state = vm.Memory.SaveState();
-                TCO:
-                    // In the non-tail recursive case, you can imagine this 'while' as if it were an 'if'.
-                    while (matchEnum.MoveNext())
+                    if (matchEnum.MoveNext())
                     {
-                        if (dynamic && !matchEnum.Current.Predicate.IsDynamic)
-                            continue;
-                        Console.WriteLine(matchEnum.Current.Goal.Explain(false));
+                        var predicate = matchEnum.Current;
+                        if (dynamic && !predicate.IsDynamic)
+                            return;
                         anyMatch = true;
                         // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);
-                        // Update the environment by adding the current match's substitutions.
-                        // TODO: Let KB use TermMemory
-                        foreach (var sub in matchEnum.Current.Substitutions)
-                        {
-                            var lhs = vm.Memory.StoreVariable(((Variable)sub.Lhs).Name);
-                            var rhs = vm.Memory.StoreTerm(sub.Rhs);
-                            vm.Memory[lhs] = rhs;
-                        }
                         // Decide how to execute this goal depending on whether:
                         Op runGoal = NoOp;
-                        var pred = matchEnum.Current.Predicate;
-                        // - It's a builtin (we can run it directly with low overhead)
-                        if (pred.BuiltIn.TryGetValue(out var builtIn))
-                        {
-                            runGoal = builtIn.Compile();
-                        }
-                        // - It has an execution graph (we can run it directly with low overhead if there's a cached compiled version)
-                        else if (pred.ExecutionGraph.TryGetValue(out var graph))
-                        {
-                            runGoal = graph.Compile();
-                            if (runGoal != NoOp)
-                                SetArgs();
-                        }
-                        // - It has to be interpreted (we have to run it traditionally)
-                        else if (!pred.IsFactual) // probably a dynamic goal with no associated graph
-                        {
-                            var addr = vm.Memory.StoreTerm(pred.Body);
-                            runGoal = Goal(addr);
-                        }
+                        var pred = matchEnum.Current.Body;
                         // Track the number of choice points before executing the goal (up to the one we just pushed)
                         var numCp = vm.NumChoicePoints;
                         // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
                         runGoal(vm);
                         // If the VM is in success state, promote that success to a solution by pushing the current environment.
                         vm.SuccessToSolution();
-                        // If this is a tail call of pred, then we can recycle the current stack frame (hence the top-level 'while').
-                        if (pred.IsTailRecursive && Predicate.IsTailCall(newGoal, pred.Body)
-                            /*&& vm.Flag(VMFlags.ContinuationIsDet)*/)
-                        {
-                            // Pop all choice points that were created by this predicate.
-                            // TODO: figure out if this is actually the correct thing to do.
-                            while (vm.NumChoicePoints > numCp)
-                            {
-                                var cp = vm.PopChoice().GetOr(default);
-                                if (vm.NumChoicePoints == numCp)
-                                {
-                                    // Set the environment to that of the oldest popped choice point.
-                                    vm.Memory.LoadState(cp.State);
-                                    // If runGoal failed, set the vm back to success as we're retrying now.
-                                    if (vm.State == VMState.Fail)
-                                        vm.State = VMState.Success;
-                                }
-                            }
-                            // If the above loop didn't run and runGoal failed, then we can't retry so we exit the outer loop.
-                            if (vm.State == VMState.Fail)
-                                break;
-                            // Keep the list of substitutions that contributed to this iteration.
-                            var body = (StructureAddress)vm.Memory.StoreTerm(pred.Body.Contents.Last().Qualified(module));
-                            vm.Memory[(StructureAddress)goal] = vm.Memory[body];
-                            vm.SetArgs2(vm.Memory[body]);
-                            // Substitute the tail call with this list, creating the new head, and qualify it with the current module.
-                            newGoal = vm.Memory.Dereference(goal);
-                            // Remove all substitutions that are no longer relevant, including those we just used.
-                            //vm.Environment.RemoveRange(tcoSubs.Concat(matchEnum.Current.Substitutions));
-                            vm.DiscardChoices(1); // We don't need the NextMatch choice point anymore.
-                            matchEnum = GetEnumerator(vm, newGoal);
-                            vm.Memory.LoadState(state);
-                            goto TCO;
-                        }
-                        // Non-tail recursive predicates don't benefit from the while loop and must backtrack as normal.
-                        else break;
                     }
-                    // If the 'while' above were an 'if', this would be the 'else' branch.
-                    if (!anyMatch)
+                    else if (!anyMatch)
                     {
                         // Essentially, when we exhaust the list of matches for 'goal', we set the VM in a failure state to signal backtracking.
                         vm.Fail();
                     }
                 }
-
-                void SetArgs()
-                {
-                    matchEnum.Current.Goal.GetQualification(out var inst);
-                    var args = inst.GetArguments();
-                    vm.Arity = args.Length + 1;
-                    for (int i = 0; i < args.Length; i++)
-                        vm.SetArg(i, args[i]);
-                }
             }
-            IEnumerator<KBMatch> GetEnumerator(ErgoVM vm, ITerm newGoal)
+            IEnumerator<TermMemory.PredicateCell> GetEnumerator()
             {
-                if (!vm.KB.GetMatches(vm.InstantiationContext, newGoal, false).TryGetValue(out var matches))
-                {
-                    return Enumerable.Empty<KBMatch>().GetEnumerator();
-                }
+                if (!vm.CKB.GetMatches(goal).TryGetValue(out var matches))
+                    return Enumerable.Empty<TermMemory.PredicateCell>().GetEnumerator();
                 return matches.GetEnumerator();
             }
         };

@@ -1,6 +1,5 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
-using Ergo.Events.Runtime;
 using Ergo.Interpreter.Directives;
 using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Runtime.BuiltIns;
@@ -47,33 +46,33 @@ public class Expansions : Library
                 }
             }
         }
-        if (evt is QuerySubmittedEvent qse)
-        {
-            var expansions = new Queue<Predicate>();
-            var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
-                .AsEnumerable().SelectMany(x => x))
-            {
-                var pred = match.Predicate.Substitute(match.Substitutions);
-                foreach (var exp in ExpandPredicate(pred, qse.VM.KB.Scope))
-                {
-                    if (!exp.IsSameDefinitionAs(pred))
-                        expansions.Enqueue(exp);
-                }
-                if (expansions.Count > 0)
-                {
-                    // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
-                    if (!qse.VM.KB.Retract(pred))
-                        throw new InvalidOperationException();
-                    while (expansions.TryDequeue(out var exp))
-                    {
-                        qse.VM.KB.Retract(exp);
-                        qse.VM.KB.AssertZ(exp);
-                    }
-                    expansions.Clear();
-                }
-            }
-        }
+        //if (evt is QuerySubmittedEvent qse)
+        //{
+        //    var expansions = new Queue<Predicate>();
+        //    var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
+        //    foreach (var match in qse.vm.CKB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
+        //        .AsEnumerable().SelectMany(x => x))
+        //    {
+        //        var pred = match.Predicate.Substitute(match.Substitutions);
+        //        foreach (var exp in ExpandPredicate(pred, qse.vm.CKB.Scope))
+        //        {
+        //            if (!exp.IsSameDefinitionAs(pred))
+        //                expansions.Enqueue(exp);
+        //        }
+        //        if (expansions.Count > 0)
+        //        {
+        //            // TODO: Verify if this makes sense, consider implementing AssertAfter(Predicate, Predicate) to maintain order
+        //            if (!qse.vm.CKB.Retract(pred))
+        //                throw new InvalidOperationException();
+        //            while (expansions.TryDequeue(out var exp))
+        //            {
+        //                qse.vm.CKB.Retract(exp);
+        //                qse.vm.CKB.AssertZ(exp);
+        //            }
+        //            expansions.Clear();
+        //        }
+        //    }
+        //}
     }
 
     public IEnumerable<Expansion> GetDefinedExpansions() => Table.SelectMany(x => x.Value);

@@ -177,7 +177,8 @@ public class Hook
             }
             // Compile and cache the hook the first time it's called
             // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            if (!vm.KB.Get(Signature).TryGetValue(out var preds))
+            if (!vm.CKB.GetPredicates((Signature.Functor.Explain(false), Signature.Arity.GetOr(int.MaxValue)))
+                .TryGetValue(out var preds))
             {
                 if (throwIfNotDefined)
                     vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.Explain());
@@ -188,20 +189,12 @@ public class Hook
             var ops = new ErgoVM.Op[preds.Count];
             for (int i = 0; i < preds.Count; i++)
             {
-                var predHead = preds[i].Unqualified().Head;
-                if (!preds[i].ExecutionGraph.TryGetValue(out var graph))
-                {
-                    return;
-                }
-                var gOp = graph.Compile();
+                var cell = vm.Memory[preds[i]];
+                var predHead = cell.Head;
                 ops[i] = vm =>
                 {
                     vm.SetArg(0, head);
-                    vm.SetArg(1, predHead);
-                    ErgoVM.Goals.Unify2(vm);
-                    if (vm.State == ErgoVM.VMState.Fail)
-                        return;
-                    gOp(vm);
+                    cell.Body(vm);
                 };
             }
             var branch = ErgoVM.Ops.Or(ops);

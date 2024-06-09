@@ -19,7 +19,7 @@ public sealed class Read : BuiltIn
             sb.Append((char)ch);
             if (ch == '\n')
             {
-                maybeTerm = vm.KB.Scope.Parse<ITerm>(sb.ToString());
+                maybeTerm = vm.CKB.Scope.Parse<ITerm>(sb.ToString());
                 if (maybeTerm.TryGetValue(out _))
                     break;
             }

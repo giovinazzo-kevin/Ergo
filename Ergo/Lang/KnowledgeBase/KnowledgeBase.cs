@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Specialized;
 
 namespace Ergo.Lang;
-
 public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 {
     protected readonly OrderedDictionary Predicates = [];

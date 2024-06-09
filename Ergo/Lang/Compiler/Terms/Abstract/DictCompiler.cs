@@ -49,4 +49,14 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
     {
         return mem.Unify(mem[a1].Address, other, transaction: false);
     }
+    public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
+    {
+        StructureAddress s => mem[s],
+        _ => throw new NotSupportedException()
+    };
+    public Signature GetSignature(TermMemory mem, AbstractAddress a)
+    {
+        var args = GetArgs(mem, a);
+        return new(functor_dict, args.Length, default, mem[(ConstAddress)args[1]]);
+    }
 }

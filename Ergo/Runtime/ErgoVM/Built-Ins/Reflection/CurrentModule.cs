@@ -11,7 +11,7 @@ public sealed class CurrentModule : BuiltIn
     {
         return vm =>
         {
-            vm.SetArg(1, vm.KB.Scope.Entry);
+            vm.SetArg(1, vm.CKB.Scope.Entry);
             ErgoVM.Goals.Unify2(vm);
         };
     }

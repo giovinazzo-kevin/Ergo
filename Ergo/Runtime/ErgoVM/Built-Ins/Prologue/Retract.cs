@@ -13,7 +13,7 @@ public sealed class Retract : DynamicPredicateBuiltIn
         return RetractOp;
         static void RetractOp(ErgoVM vm)
         {
-            if (Retract(vm, vm.Arg(0), all: false))
+            if (Retract(vm, vm.Arg2(1), all: false))
             {
                 vm.PushChoice(RetractOp);
                 vm.Solution();

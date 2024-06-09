@@ -71,4 +71,12 @@ public class ListCompiler : IAbstractTermCompiler<List>
             };
         }
     }
+    public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
+    {
+        ConstAddress => [mem.StoreTerm(WellKnown.Literals.EmptyList)],
+        StructureAddress s => mem[s],
+        _ => throw new NotSupportedException()
+    };
+    public Signature GetSignature(TermMemory mem, AbstractAddress a) =>
+        new(WellKnown.Operators.List.CanonicalFunctor, GetArgs(mem, a).Length, default, default);
 }

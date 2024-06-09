@@ -1,5 +1,4 @@
 ﻿using Ergo.Events;
-using Ergo.Events.Runtime;
 using Ergo.Interpreter.Directives;
 using Ergo.Runtime.BuiltIns;
 
@@ -31,7 +30,7 @@ public class Compiler : Library
 
     static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, bool optimize, bool pruneIgnored)
     {
-        var flags = OptimizationFlags.None;
+        var flags = OptimizationFlags.Default;
         if (pruneIgnored)
             flags |= OptimizationFlags.PruneIgnoredVariables;
         return handler.TryGet(() =>
@@ -89,22 +88,16 @@ public class Compiler : Library
                 }
             }
         }
-        else if (evt is QuerySubmittedEvent qse)
-        {
-            var enableOpt = qse.Flags.HasFlag(CompilerFlags.EnableOptimizations);
-            var pruneIgnored = qse.Flags.HasFlag(CompilerFlags.PruneIgnoredVariables);
+        //else if (evt is QuerySubmittedEvent qse)
+        //{
+        //    var enableOpt = qse.Flags.HasFlag(CompilerFlags.EnableOptimizations);
+        //    var pruneIgnored = qse.Flags.HasFlag(CompilerFlags.PruneIgnoredVariables);
+        //    foreach (var match in qse.VM.CKB.GetMatches(qse.VM.Memory[qse.TopLevelAddr].Head)
+        //        .AsEnumerable().SelectMany(x => x))
+        //    {
 
-            var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-            foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
-                .AsEnumerable().SelectMany(x => x))
-            {
-                var topLevel = match.Predicate;
-                if (TryCompile(topLevel, qse.VM.KB.Scope.ExceptionHandler, qse.VM.KB.DependencyGraph, enableOpt, pruneIgnored).TryGetValue(out var newClause))
-                    qse.VM.KB.Replace(topLevel, newClause);
-                else
-                    qse.VM.KB.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));
-            }
-        }
+        //    }
+        //}
 
         void ProcessNode(DependencyGraphNode node, HashSet<Signature> visited = null)
         {

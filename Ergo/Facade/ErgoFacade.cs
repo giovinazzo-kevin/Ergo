@@ -163,7 +163,7 @@ public readonly struct ErgoFacade
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
     public ErgoVM BuildVM(KnowledgeBase kb, TermMemory memory = null, DecimalType decimalType = DecimalType.CliDecimal)
-        => ConfigureVM(new(kb, memory, decimalType));
+        => ConfigureVM(new(new(kb.Scope, memory ?? new(), kb.DependencyGraph), decimalType));
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));
 }

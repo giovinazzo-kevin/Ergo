@@ -38,7 +38,7 @@ public enum VMMode
     Batch
 }
 
-public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, DecimalType decimalType = DecimalType.CliDecimal)
+public partial class ErgoVM
 {
     private static int NUM_VMS = 0;
     public const int MAX_ARGUMENTS = 255;
@@ -54,8 +54,7 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     /// </summary>
     public readonly record struct ChoicePoint(Op Continue, TermMemory.State State);
     #endregion
-    public readonly DecimalType DecimalType = decimalType;
-    public readonly KnowledgeBase KB = kb;
+    public readonly DecimalType DecimalType;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
@@ -78,7 +77,8 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     /// </summary>
     internal Op @continue;
 
-    public readonly TermMemory Memory = memory ?? new();
+    public readonly TermMemory Memory;
+    public readonly CompiledKnowledgeBase CKB;
     protected ITermAddress[] args = new ITermAddress[MAX_ARGUMENTS];
     protected HashSet<VariableAddress> trackedVars;
     #endregion
@@ -133,13 +133,14 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM ScopedInstance() => new(KB, Memory.Clone(), DecimalType)
+    public ErgoVM ScopedInstance() => new(CKB, DecimalType)
     { In = In, Err = Err, Out = Out, /*args = [.. args], Arity = Arity*/ };
 
     public void TrackVariable(VariableAddress arg)
     {
         trackedVars.Add(arg);
     }
+
 
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
@@ -213,7 +214,7 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     {
         LogState();
         State = VMState.Fail;
-        KB.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
+        CKB.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
         choicePoints.Clear();
     }
     /// <summary>
@@ -294,6 +295,15 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     }
 
     private static readonly Exception StackEmptyException = new RuntimeException(ErrorType.StackEmpty);
+
+    public ErgoVM(CompiledKnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
+    {
+        DecimalType = decimalType;
+        Memory = kb.Memory;
+        CKB = kb;
+        CKB.CompileGraph();
+    }
+
     public void DiscardChoices(int numChoices)
     {
         while (numChoices-- > 0)
@@ -394,7 +404,7 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
 
     public Op ParseAndCompileQuery(string query, CompilerFlags flags = CompilerFlags.Default)
     {
-        if (KB.Scope.Parse<Query>(query).TryGetValue(out var q))
+        if (CKB.Scope.Parse<Query>(query).TryGetValue(out var q))
             return CompileQuery(q, flags);
         return Ops.Fail;
     }
@@ -402,16 +412,6 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
     public Op CompileQuery(Query query, CompilerFlags flags = CompilerFlags.Default)
     {
         LogState();
-        var exps = GetQueryExpansions(query, flags);
-        var ops = new Op[exps.Length];
-        for (int i = 0; i < exps.Length; i++)
-        {
-            var subs = exps[i].Substitutions; subs.Invert();
-            var newPred = exps[i].Predicate.Substitute(subs);
-            ops[i] = newPred.ExecutionGraph.TryGetValue(out var graph)
-                ? graph.Compile()
-                : Ops.NoOp;
-        }
         var variables = query.Goals.Variables.ToArray();
         return vm =>
         {
@@ -420,23 +420,32 @@ public partial class ErgoVM(KnowledgeBase kb, TermMemory memory = default, Decim
                 vm.refCounts.Count(var);
                 vm.TrackVariable(vm.Memory.StoreVariable(var.Name));
             }
-            Ops.Or(ops)(vm);
+            foreach (var exp in GetQueryExpansions(query, flags))
+            {
+                exp.Body(vm);
+                vm.Backtrack();
+            }
         };
     }
 
-    KBMatch[] GetQueryExpansions(Query query, CompilerFlags flags)
+    IEnumerable<TermMemory.PredicateCell> GetQueryExpansions(Query query, CompilerFlags flags)
     {
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-        var topLevel = new Predicate(string.Empty, KB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
-        KB.AssertA(topLevel);
+        var topLevel = new Predicate(string.Empty, CKB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+        var topLevelAddr = CKB.CompileAndAssertA(topLevel);
+        var topLevelHeadAddr = Memory[topLevelAddr].Head;
         // Let libraries know that a query is being submitted, so they can expand or modify it.
-        KB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
-        var queryExpansions = KB
-            .GetMatches(InstantiationContext, topLevelHead, desugar: false)
+        CKB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
+        var queryExpansions = CKB
+            .GetMatches(topLevelHeadAddr)
             .AsEnumerable()
-            .SelectMany(x => x)
-            .ToArray();
-        KB.RetractAll(topLevelHead);
-        return queryExpansions;
+            .SelectMany(x => x);
+        var toRemove = new List<PredicateAddress>();
+        foreach (var exp in queryExpansions)
+        {
+            yield return exp;
+            toRemove.Add(exp.Addr);
+        }
+        CKB.RetractAll(toRemove);
     }
 }

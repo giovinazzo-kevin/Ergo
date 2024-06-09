@@ -7,6 +7,8 @@ public interface IAbstractTermCompiler
     ITermAddress Store(TermMemory vm, AbstractTerm term);
     AbstractTerm Dereference(TermMemory vm, ITermAddress address);
     bool Unify(TermMemory mem, AbstractAddress address, ITermAddress other);
+    Signature GetSignature(TermMemory mem, AbstractAddress a);
+    ITermAddress[] GetArgs(TermMemory mem, ITermAddress a);
     Type ElementType { get; }
 }
 

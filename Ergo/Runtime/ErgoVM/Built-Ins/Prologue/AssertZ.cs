@@ -9,7 +9,7 @@ public sealed class AssertZ : DynamicPredicateBuiltIn
 
     public override ErgoVM.Op Compile() => vm =>
     {
-        if (!Assert(vm, vm.Arg(0), z: true))
+        if (!Assert(vm, vm.Arg2(1), z: true))
             vm.Fail();
     };
 }

@@ -23,4 +23,12 @@ public class SetCompiler : IAbstractTermCompiler<Set>
     {
         return mem.Unify(mem[a1].Address, other, transaction: false);
     }
+    public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
+    {
+        ConstAddress => [mem.StoreTerm(WellKnown.Literals.EmptySet)],
+        StructureAddress s => mem[s],
+        _ => throw new NotSupportedException()
+    };
+    public Signature GetSignature(TermMemory mem, AbstractAddress a) =>
+        new(WellKnown.Operators.Set.CanonicalFunctor, GetArgs(mem, a).Length, default, default);
 }

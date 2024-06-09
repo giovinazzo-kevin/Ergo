@@ -13,4 +13,7 @@
 // C1 | A1 A2 A3 C2
 // C2 | A4 V1 V2
 
-public interface ITermAddress { uint Index { get; } }
+public interface ITermAddress
+{
+    uint Index { get; }
+}

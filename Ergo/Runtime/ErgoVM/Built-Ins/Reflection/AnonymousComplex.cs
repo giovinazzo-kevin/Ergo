@@ -29,7 +29,7 @@ public sealed class AnonymousComplex : BuiltIn
             return;
         }
         var anon = functor.BuildAnonymousTerm(arity)
-            .Qualified(vm.KB.Scope.Entry);
+            .Qualified(vm.CKB.Scope.Entry);
         vm.SetArg(0, anon);
         vm.SetArg(1, vm.Arg(2));
         ErgoVM.Goals.Unify2(vm);

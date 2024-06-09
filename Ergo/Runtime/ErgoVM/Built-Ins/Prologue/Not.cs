@@ -15,7 +15,7 @@ public sealed class Not : BuiltIn
         //return node; // TODO: fix bug with \+(a </> _)
         var op = node.Goal.GetArguments()[0]
             .ToExecutionNode(node.Node.Graph, ctx: new("NOT"))
-            .Optimize(OptimizationFlags.None)
+            .Optimize(OptimizationFlags.Default)
             .Compile();
         return new VirtualNode(vm =>
         {

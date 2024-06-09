@@ -7,7 +7,7 @@ public class NTupleCompiler : IAbstractTermCompiler<NTuple>
     private static readonly NTupleParser Parser = new();
     public NTuple Dereference(TermMemory vm, ITermAddress address)
     {
-        if (address is ConstAddress) return NTuple.Empty;
+        if (address is AtomAddress) return NTuple.Empty;
         if (address is StructureAddress sAddr)
         {
             var canonical = (Complex)vm.Dereference(sAddr);
@@ -25,7 +25,7 @@ public class NTupleCompiler : IAbstractTermCompiler<NTuple>
     }
     public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
     {
-        ConstAddress => [mem.StoreTerm(WellKnown.Literals.EmptyCommaList)],
+        AtomAddress => [mem.StoreTerm(WellKnown.Literals.EmptyCommaList)],
         StructureAddress s => mem[s],
         _ => throw new NotSupportedException()
     };

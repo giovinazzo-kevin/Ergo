@@ -57,6 +57,6 @@ public class DictCompiler : IAbstractTermCompiler<Dict>
     public Signature GetSignature(TermMemory mem, AbstractAddress a)
     {
         var args = GetArgs(mem, a);
-        return new(functor_dict, args.Length, default, mem[(ConstAddress)args[1]]);
+        return new(functor_dict, args.Length, default, mem[(AtomAddress)args[1]]);
     }
 }

@@ -1,4 +1,4 @@
-﻿:- module(stdlib, []).
+﻿:- module(stdlib, [tail_recurse/1]).
 :- use_module(compiler).
 :- use_module(prologue).
 :- use_module(expansions).
@@ -15,3 +15,10 @@
 :- use_module(string).
 :- use_module(meta).
 :- use_module(reflection).
+
+
+tail_recurse(0) :- !.
+tail_recurse(X) :- 
+	X > 0, 
+	Y := X - 1, 
+	tail_recurse(Y).

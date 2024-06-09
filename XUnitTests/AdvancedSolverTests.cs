@@ -1,6 +1,5 @@
 ﻿namespace Tests;
 
-
 public class AdvancedSolverTests(ErgoTestFixture fixture) : ErgoTests(fixture)
 {
     #region Rows

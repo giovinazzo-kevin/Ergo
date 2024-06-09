@@ -14,7 +14,7 @@ public static class TermMemoryExtensions
     {
         return addr switch
         {
-            ConstAddress c => vm[c],
+            AtomAddress c => vm[c],
             VariableAddress v => DereferenceVariable(vm, v),
             StructureAddress s => DereferenceStruct(vm, s),
             AbstractAddress a when vm[a] is { } cell => cell.Compiler.Dereference(vm, cell.Address),
@@ -39,7 +39,7 @@ public static class TermMemoryExtensions
             if (args.Length == 0)
                 throw new InvalidOperationException();
             var addr_functor = args[0];
-            if (addr_functor is not ConstAddress const_functor)
+            if (addr_functor is not AtomAddress const_functor)
                 throw new InvalidOperationException();
             var functor = vm[const_functor];
             var rest = args[1..]
@@ -60,15 +60,15 @@ public static class TermMemoryExtensions
 
     public static Signature GetSignature(this ITermAddress ta, TermMemory mem) => ta switch
     {
-        ConstAddress a => ForConst(mem, a),
+        AtomAddress a => ForConst(mem, a),
         VariableAddress a => ForVariable(mem, a),
-        StructureAddress a when mem[a][0] is ConstAddress => ForStructure(mem, a),
+        StructureAddress a when mem[a][0] is AtomAddress => ForStructure(mem, a),
         AbstractAddress a => ForAbstract(mem, a),
         PredicateAddress a => mem[a].Head.GetSignature(mem),
         _ => throw new NotSupportedException()
     };
 
-    static Signature ForConst(TermMemory mem, ConstAddress a) => new(mem[a], 1, default, default);
+    static Signature ForConst(TermMemory mem, AtomAddress a) => new(mem[a], 1, default, default);
     static Signature ForVariable(TermMemory mem, VariableAddress a)
     {
         var reference = mem[a];
@@ -80,9 +80,9 @@ public static class TermMemoryExtensions
     static Signature ForStructure(TermMemory mem, StructureAddress a)
     {
         var args = mem[a];
-        var functor = mem[(ConstAddress)args[0]];
+        var functor = mem[(AtomAddress)args[0]];
         if (args.Length == 3
-            && args[1] is ConstAddress c
+            && args[1] is AtomAddress c
             && WellKnown.Functors.Module.Contains(functor))
             return ForQualified(mem, functor, args);
         return new Signature(functor, args.Length - 1, default, default);
@@ -90,7 +90,7 @@ public static class TermMemoryExtensions
 
     static Signature ForQualified(TermMemory mem, Atom functor, ITermAddress[] args)
     {
-        var module = mem[(ConstAddress)args[1]];
+        var module = mem[(AtomAddress)args[1]];
         var sig = args[2].GetSignature(mem);
         return sig.WithModule(module);
     }
@@ -99,9 +99,6 @@ public static class TermMemoryExtensions
 
     public static ITermAddress StoreTerm(this TermMemory vm, ITerm term)
     {
-        var hash = term.GetHashCode();
-        if (vm.TermLookup.TryGetValue(hash, out var c))
-            return c;
         if (term.GetFunctor().TryGetValue(out var functor))
         {
             var args = term.GetArguments();
@@ -147,7 +144,7 @@ public static class TermMemoryExtensions
         {
             return (a, b) switch
             {
-                (ConstAddress ca, ConstAddress cb) => UnifyConst(mem, ca, cb),
+                (AtomAddress ca, AtomAddress cb) => UnifyConst(mem, ca, cb),
                 (StructureAddress va, StructureAddress vb) => UnifyStruct(mem, vb, va),
                 (VariableAddress va, VariableAddress vb) => UnifyVar(mem, va, vb),
                 (VariableAddress va, _) => UnifyVarNonVar(mem, va, b),
@@ -158,7 +155,7 @@ public static class TermMemoryExtensions
             };
         }
 
-        static bool UnifyConst(TermMemory mem, ConstAddress ca, ConstAddress cb)
+        static bool UnifyConst(TermMemory mem, AtomAddress ca, AtomAddress cb)
         {
             return mem[ca].Equals(mem[cb]);
         }
@@ -173,7 +170,7 @@ public static class TermMemoryExtensions
             var (argsa, argsb) = (mem[va], mem[vb]);
             if (argsa.Length != argsb.Length)
                 return false;
-            if (!UnifyConst(mem, (ConstAddress)argsa[0], (ConstAddress)argsb[0]))
+            if (!UnifyConst(mem, (AtomAddress)argsa[0], (AtomAddress)argsb[0]))
                 return false;
             for (int i = 0; i < argsa.Length; i++)
             {
@@ -188,7 +185,9 @@ public static class TermMemoryExtensions
             var derefA = DerefVar(mem, va);
             if (derefA is VariableAddress va1)
             {
+                var old = mem[va1];
                 mem[va1] = b;
+                mem.Trail.Push(new(va1, b, old));
                 return true;
             }
             return Unify(mem, derefA, b, transaction: false);
@@ -199,8 +198,12 @@ public static class TermMemoryExtensions
             var (derefA, derefB) = (DerefVar(mem, va), DerefVar(mem, vb));
             if (derefA is VariableAddress va2 && derefB is VariableAddress vb2)
             {
+                if (va2 == vb2)
+                    return true;
                 // still variables, must handle the unification
+                var old = mem[va2];
                 mem[va2] = mem[vb2];
+                mem.Trail.Push(new(va2, mem[vb2], old));
                 return true;
             }
             return Unify(mem, derefA, derefB);

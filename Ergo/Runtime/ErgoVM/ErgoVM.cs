@@ -23,7 +23,11 @@ public enum VMFlags
     /// <summary>
     /// If set, the rest of the current execution path (@continue) is known to be determinate.
     /// </summary>
-    ContinuationIsDet = 1
+    ContinuationIsDet = 1,
+    /// <summary>
+    /// 
+    /// </summary>
+    TCO = 2
 }
 
 public enum VMMode
@@ -110,8 +114,8 @@ public partial class ErgoVM
     /// <summary>
     /// Represents the current execution state of the VM.
     /// </summary>
-    public VMState State { get; private set; } = VMState.Ready;
-    public VMMode Mode { get; private set; } = VMMode.Batch;
+    public VMState State { get; internal set; } = VMState.Ready;
+    public VMMode Mode { get; internal set; } = VMMode.Batch;
     /// <summary>
     /// The current computed set of solutions. See also <see cref="RunInteractive"/>, which yields them one at a time.
     /// </summary>

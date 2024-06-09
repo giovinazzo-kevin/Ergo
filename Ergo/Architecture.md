@@ -71,3 +71,6 @@ The virtual machine is the engine that's actually responsible for answering quer
 It also handles compilation, though most of it actually happens automatically through events.
 
 All layers of the architecture can be extended by implementing the corresponding Command, Directive, BuiltIn or Op.
+
+# New Architecture
+

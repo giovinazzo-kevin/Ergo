@@ -7,7 +7,7 @@ public class SetCompiler : IAbstractTermCompiler<Set>
     private static readonly SetParser Parser = new();
     public Set Dereference(TermMemory vm, ITermAddress address)
     {
-        if (address is ConstAddress) return Set.Empty;
+        if (address is AtomAddress) return Set.Empty;
         if (address is StructureAddress sAddr)
         {
             var canonical = (Complex)vm.Dereference(sAddr);
@@ -25,7 +25,7 @@ public class SetCompiler : IAbstractTermCompiler<Set>
     }
     public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
     {
-        ConstAddress => [mem.StoreTerm(WellKnown.Literals.EmptySet)],
+        AtomAddress => [mem.StoreTerm(WellKnown.Literals.EmptySet)],
         StructureAddress s => mem[s],
         _ => throw new NotSupportedException()
     };

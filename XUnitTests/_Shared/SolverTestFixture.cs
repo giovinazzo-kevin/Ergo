@@ -1,7 +1,7 @@
 ﻿using Ergo.Facade;
 using Ergo.Interpreter;
 using Ergo.Lang;
-using Ergo.Lang.Ast;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Exceptions.Handler;
 using Ergo.Runtime;
 
@@ -14,6 +14,7 @@ public class ErgoTestFixture : IDisposable
     public readonly ErgoInterpreter Interpreter;
     public readonly InterpreterScope InterpreterScope;
     public readonly KnowledgeBase KnowledgeBase;
+    public readonly TermMemory Memory = new();
 
     public ErgoTestFixture()
     {

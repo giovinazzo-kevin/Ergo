@@ -119,22 +119,22 @@ public partial class ErgoVM
                 return NoOp;
             if (goals.Length == 1)
                 return Goal(goals[0]);
-            return And(goals.Select(x => Goal(x, dynamic: false)).ToArray());
+            return And(goals.Select(x => Goal(x)).ToArray());
         }
 
         /// <summary>
         /// Calls an individual goal.
         /// </summary>
-        public static Op Goal(ITermAddress goal, bool dynamic = false) => vm =>
+        public static Op Goal(ITermAddress goal) => vm =>
         {
             const string cutValue = "!";
             var op = goal switch
             {
                 AbstractAddress a when vm.Memory[a].Type == typeof(NTuple)
                     && vm.Memory[(StructureAddress)vm.Memory[a].Address] is var goals => Goals(goals),
-                ConstAddress a when vm.Memory[a] is Atom { Value: true } => NoOp,
-                ConstAddress a when vm.Memory[a] is Atom { Value: false } => Fail,
-                ConstAddress a when vm.Memory[a] is Atom { Value: cutValue, IsQuoted: false } => Cut,
+                AtomAddress a when vm.Memory[a] is Atom { Value: true } => NoOp,
+                AtomAddress a when vm.Memory[a] is Atom { Value: false } => Fail,
+                AtomAddress a when vm.Memory[a] is Atom { Value: cutValue, IsQuoted: false } => Cut,
                 _ => Resolve
             };
             op(vm);
@@ -146,25 +146,41 @@ public partial class ErgoVM
                 void NextMatch(ErgoVM vm)
                 {
                     var anyMatch = false;
-                    if (matchEnum.MoveNext())
+                TCO:
+                    while (matchEnum.MoveNext())
                     {
                         var predicate = matchEnum.Current;
-                        if (dynamic && !predicate.IsDynamic)
-                            return;
+                        //if (!predicate.IsDynamic)
+                        //    return;
                         anyMatch = true;
                         // Push a choice point for this match. If it fails, it will be retried until there are no more matches.
                         vm.PushChoice(NextMatch);
-                        // Decide how to execute this goal depending on whether:
-                        Op runGoal = NoOp;
-                        var pred = matchEnum.Current.Body;
-                        // Track the number of choice points before executing the goal (up to the one we just pushed)
-                        var numCp = vm.NumChoicePoints;
                         // Actually execute the goal. This may produce success, a solution, or set the VM in a failure state.
-                        runGoal(vm);
-                        // If the VM is in success state, promote that success to a solution by pushing the current environment.
+                        var numCp = vm.NumChoicePoints;
+                        matchEnum.Current.Body(vm);
+                        vm.SetFlag(VMFlags.TCO, false);
+                        // If the VM is in success state, promote that success to a solution.
                         vm.SuccessToSolution();
+                        if (!predicate.IsTailRecursive)
+                            break;
+                        vm.SetFlag(VMFlags.TCO, true);
+                        while (vm.NumChoicePoints > numCp)
+                        {
+                            var cp = vm.PopChoice().GetOr(default);
+                            // Set the environment to that of the oldest popped choice point.
+                            vm.Memory.LoadState(cp.State);
+                            // If runGoal failed, set the vm back to success as we're retrying now.
+                            if (vm.State == VMState.Fail)
+                                vm.State = VMState.Success;
+                        }
+                        // If the above loop didn't run and runGoal failed, then we can't retry so we exit the outer loop.
+                        if (vm.State == VMState.Fail)
+                            break;
+                        vm.DiscardChoices(1);
+                        matchEnum = GetEnumerator();
+                        goto TCO;
                     }
-                    else if (!anyMatch)
+                    if (!anyMatch)
                     {
                         // Essentially, when we exhaust the list of matches for 'goal', we set the VM in a failure state to signal backtracking.
                         vm.Fail();

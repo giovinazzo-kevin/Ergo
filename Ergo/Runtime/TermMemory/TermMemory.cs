@@ -1,121 +1,104 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
-public sealed class TermMemory(int vS = 1024, int sS = 1024, int aS = 1024, int pS = 1024)
+public readonly record struct TrailRecord(VariableAddress Lhs, ITermAddress OldRhs, ITermAddress NewRhs);
+public sealed class Trail : Stack<TrailRecord>
 {
-    public readonly record struct State(
-        ITermAddress[] Variables,
-        ITermAddress[][] Structures,
-        AbstractCell[] Abstracts,
-        PredicateCell[] Predicates,
-        Dictionary<string, VariableAddress> VariableLookup,
-        Dictionary<VariableAddress, string> InverseVariableLookup,
-        Dictionary<ITermAddress, PredicateAddress> PredicateLookup,
-        Dictionary<int, ITermAddress> TermLookup
-    );
+
+}
+
+public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int aS = 1024, int pS = 1024)
+{
+    public readonly record struct Binding(VariableAddress Lhs, ITermAddress NewRhs, ITermAddress OldRhs);
+    public readonly record struct State(uint CP, uint VP, uint SP, uint AP, uint PP, int TP);
     public readonly record struct AbstractCell(IAbstractTermCompiler Compiler, ITermAddress Address, Type Type, bool IsCellDisposed = false);
-    public readonly record struct PredicateCell(PredicateAddress Addr, ITermAddress Head, ErgoVM.Op Body, bool IsDynamic, bool IsCellDisposed = false);
-    private readonly Dictionary<int, Atom> Atoms = [];
+    public readonly record struct PredicateCell(PredicateAddress Addr, ITermAddress Head, ErgoVM.Op Body, bool IsTailRecursive, bool IsDynamic, bool IsCellDisposed = false);
+    private readonly Atom[] Atoms = new Atom[cS];
     private readonly ITermAddress[] Variables = new ITermAddress[vS];
     private readonly ITermAddress[][] Structures = new ITermAddress[sS][];
     private readonly AbstractCell[] Abstracts = new AbstractCell[aS];
     private readonly PredicateCell[] Predicates = new PredicateCell[pS];
-    public uint VP = 0, SP = 0, AP = 0, PP = 0;
+    public uint CP = 0, VP = 0, SP = 0, AP = 0, PP = 0;
+    public readonly int MaxAtoms = cS;
     public readonly int MaxVariables = vS;
     public readonly int MaxStructures = sS;
     public readonly int MaxAbstracts = aS;
     public readonly int MaxPredicates = pS;
 
+    internal Dictionary<(Type Type, int HashCode), AtomAddress> AtomLookup = [];
     internal Dictionary<string, VariableAddress> VariableLookup = [];
     internal Dictionary<VariableAddress, string> InverseVariableLookup = [];
     internal Dictionary<ITermAddress, PredicateAddress> PredicateLookup = [];
-    internal Dictionary<int, ITermAddress> TermLookup = [];
 
+    internal Queue<AtomAddress> AtomsAddressPool = [];
     internal Queue<PredicateAddress> PredicateAddressPool = [];
     internal Queue<VariableAddress> VariablesAddressPool = [];
     internal Queue<StructureAddress> StructuresAddressPool = [];
     internal Queue<AbstractAddress> AbstractsAddressPool = [];
 
+    internal Stack<Binding> Trail = [];
+
     public IEnumerable<ITerm> StructuresDebug => Enumerable.Range(0, (int)SP)
         .Select(i => new StructureAddress((uint)i))
         .Select(x => x.Deref(this));
 
-    public void Free(VariableAddress var)
+    public void UndoTrail(int count)
     {
-        this[var] = var;
-    }
-
-    public void Clear()
-    {
-        VP = 0;
-        SP = 0;
-        AP = 0;
-        Array.Clear(Variables);
-        Array.Clear(Structures);
-        Array.Clear(Abstracts);
-        TermLookup.Clear();
-        VariableLookup.Clear();
-        InverseVariableLookup.Clear();
-        PredicateLookup.Clear();
-    }
-
-    public TermMemory Clone()
-    {
-        var state = SaveState();
-        var mem = new TermMemory(MaxVariables, MaxStructures, MaxAbstracts, MaxPredicates);
-        mem.LoadState(state);
-        return mem;
+        for (int i = 0; i < count; i++)
+        {
+            if (!Trail.TryPop(out var t))
+                throw new InvalidOperationException();
+            ref var cell = ref this[t.Lhs];
+            Debug.Assert(Equals(cell, t.NewRhs));
+            cell = t.OldRhs;
+        }
     }
 
     public State SaveState()
     {
-        var variables = new ITermAddress[VP];
-        var structures = new ITermAddress[SP][];
-        var abstracts = new AbstractCell[AP];
-        var predicates = new PredicateCell[AP];
-        Array.Copy(Variables, variables, VP);
-        Array.Copy(Abstracts, abstracts, AP);
-        Array.Copy(Predicates, predicates, AP);
-        for (int i = 0; i < SP; i++)
-        {
-            structures[i] = new ITermAddress[Structures[i].Length];
-            Array.Copy(Structures[i], structures[i], Structures[i].Length);
-        }
-        return new State(
-            variables,
-            structures,
-            abstracts,
-            predicates,
-            VariableLookup.ToDictionary(),
-            InverseVariableLookup.ToDictionary(),
-            PredicateLookup.ToDictionary(),
-            TermLookup.ToDictionary()
-        );
+        return new(CP, VP, SP, AP, PP, Trail.Count);
+    }
+    public void LoadState(State s)
+    {
+        (CP, VP, SP, AP, PP, var TP) = (s.CP, s.VP, s.SP, s.AP, s.PP, s.TP);
+        UndoTrail(Trail.Count - TP);
+    }
+    public void Clear()
+    {
+        CP = 0;
+        VP = 0;
+        SP = 0;
+        AP = 0;
+        PP = 0;
+
+        Array.Clear(Atoms);
+        Array.Clear(Variables);
+        Array.Clear(Structures);
+        Array.Clear(Abstracts);
+        Array.Clear(Predicates);
+
+        AtomLookup.Clear();
+        VariableLookup.Clear();
+        InverseVariableLookup.Clear();
+        PredicateLookup.Clear();
+
+        AtomsAddressPool.Clear();
+        PredicateAddressPool.Clear();
+        VariablesAddressPool.Clear();
+        StructuresAddressPool.Clear();
+        AbstractsAddressPool.Clear();
     }
 
-    public void LoadState(State state)
+    public AtomAddress StoreAtom(Atom value)
     {
-        (VP, SP, AP, PP) = (
-            (uint)state.Variables.Length,
-            (uint)state.Structures.Length,
-            (uint)state.Abstracts.Length,
-            (uint)state.Predicates.Length
-        );
-        Array.Copy(state.Variables, Variables, VP);
-        Array.Copy(state.Structures, Structures, SP);
-        Array.Copy(state.Abstracts, Abstracts, AP);
-        Array.Copy(state.Predicates, Predicates, AP);
-        VariableLookup = state.VariableLookup.ToDictionary();
-        InverseVariableLookup = state.InverseVariableLookup.ToDictionary();
-        PredicateLookup = state.PredicateLookup.ToDictionary();
-        TermLookup = state.TermLookup.ToDictionary();
-    }
-
-    public ConstAddress StoreAtom(Atom value)
-    {
-        var hash = value.GetHashCode();
-        var addr = new ConstAddress((uint)hash);
+        var lookupKey = (value.Value.GetType(), value.GetHashCode());
+        if (AtomLookup.TryGetValue(lookupKey, out var lookupAddr))
+            return lookupAddr;
+        if (!AtomsAddressPool.TryDequeue(out var addr))
+            addr = new AtomAddress(CP++);
+        AtomLookup[lookupKey] = addr;
         this[addr] = value;
         return addr;
     }
@@ -150,23 +133,28 @@ public sealed class TermMemory(int vS = 1024, int sS = 1024, int aS = 1024, int 
         this[addr] = new(compiler, address, compiler.ElementType);
         return addr;
     }
-    public PredicateAddress StorePredicate(ITermAddress headAddr, ErgoVM.Op body, bool isDynamic)
+    public PredicateAddress StorePredicate(ITermAddress headAddr, ErgoVM.Op body, bool isTailRecursive, bool isDynamic)
     {
         if (!PredicateAddressPool.TryDequeue(out var addr))
             addr = new PredicateAddress(PP++);
-        this[addr] = new(addr, headAddr, body, isDynamic);
+        this[addr] = new(addr, headAddr, body, isTailRecursive, isDynamic);
         return addr;
     }
     public bool Free(ITermAddress addr) => addr switch
     {
-        ConstAddress a => FreeConstant(a),
+        AtomAddress a => FreeConstant(a),
         VariableAddress a => FreeVariable(a),
         StructureAddress a => FreeStructure(a),
         AbstractAddress a => FreeAbstract(a),
         PredicateAddress a => FreePredicate(a),
         _ => throw new NotSupportedException()
     };
-    public bool FreeConstant(ConstAddress addr) => Atoms.Remove((int)addr.Index);
+    public bool FreeConstant(AtomAddress addr)
+    {
+        AtomsAddressPool.Enqueue(addr);
+        Atoms[addr.Index] = default;
+        return true;
+    }
     public bool FreeVariable(VariableAddress addr)
     {
         VariablesAddressPool.Enqueue(addr);
@@ -205,10 +193,9 @@ public sealed class TermMemory(int vS = 1024, int sS = 1024, int aS = 1024, int 
         return true;
     }
     public bool IsVariableAssigned(VariableAddress a) => !(this[a] is VariableAddress b && b.Index == a.Index);
-    public Atom this[ConstAddress c]
+    public ref Atom this[AtomAddress c]
     {
-        get => Atoms[(int)c.Index];
-        internal set => Atoms[(int)c.Index] = value;
+        get => ref Atoms[c.Index];
     }
     public ref ITermAddress this[VariableAddress c]
     {

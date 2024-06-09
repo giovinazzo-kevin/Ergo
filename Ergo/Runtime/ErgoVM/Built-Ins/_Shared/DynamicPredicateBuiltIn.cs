@@ -39,7 +39,7 @@ public abstract class DynamicPredicateBuiltIn(string documentation, Atom functor
     protected static bool Retract(ErgoVM vm, ITermAddress term, bool all)
     {
         if (all)
-            return vm.CKB.RetractAll(term).Any();
+            return vm.CKB.RetractAll(term) > 0;
         else
             return vm.CKB.Retract(term).HasValue;
     }

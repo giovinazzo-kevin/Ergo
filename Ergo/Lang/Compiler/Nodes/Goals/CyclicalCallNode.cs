@@ -18,11 +18,18 @@ public class CyclicalCallNode : DynamicNode
         Signature = goal.GetSignature();
         goal.GetQualification(out Head);
     }
-    public override ErgoVM.Op Compile()
+    public override ErgoVM.Op Compile() => vm =>
     {
-        return vm
-            => ErgoVM.Ops.Goal(vm.Memory.StoreTerm(Goal))(vm);
-    }
+        var head = vm.Memory.StoreTerm(Head);
+        ErgoVM.Ops.Goal(head)(vm);
+        return;
+        if (IsTailCall)
+        {
+            var tail = head.Deref(vm.Memory);
+            vm.SetArgs2(head.GetArgs(vm.Memory));
+        }
+        ErgoVM.Ops.Goal(head)(vm);
+    };
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {

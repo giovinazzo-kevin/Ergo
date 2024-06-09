@@ -1,9 +1,10 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang.Compiler;
+using System.Diagnostics;
 
 namespace Ergo.Lang;
 
-using IX_Signature = (string Functor, int Arity);
+using IX_Signature = (string Module, string Functor, int Arity);
 using Match = TermMemory.PredicateCell;
 
 public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Memory, DependencyGraph Graph)
@@ -11,21 +12,22 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
     protected readonly SortedDictionary<IX_Signature, List<PredicateAddress>> _signatureIndex = [];
     protected readonly InstantiationContext IC = new("k");
 
-    public IEnumerable<PredicateAddress> CompileGraph()
+    public void CompileGraph()
     {
+        // Graph.Rebuild();
         foreach (var node in Graph.GetAllNodes())
         {
             if (node.Addresses.TryGetValue(out var addrList))
             {
-                foreach (var addr in addrList)
-                    yield return addr;
+                //foreach (var addr in addrList)
+                //    yield return addr;
                 continue;
             }
             addrList = [];
             foreach (var clause in node.Clauses)
             {
                 addrList.Add(CompileAndAssertZ(clause));
-                yield return addrList[addrList.Count - 1];
+                //yield return addrList[addrList.Count - 1];
             }
             node.Addresses = addrList;
         }
@@ -36,6 +38,7 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
     {
         var sig = head.GetSignature(Memory);
         return (
+            sig.Module.Select(x => x.Value.ToString()).GetOr(null),
             sig.Functor.Value.ToString(),
             sig.Arity.GetOr(int.MaxValue)
         );
@@ -44,9 +47,8 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
     protected void Assert(PredicateAddress pk, bool endOfList = true)
     {
         var ix = GetIX_Signature(pk);
-        var key = (ix.Functor, ix.Arity);
-        if (!_signatureIndex.TryGetValue(key, out var predicateList))
-            _signatureIndex[key] = predicateList = [];
+        if (!_signatureIndex.TryGetValue(ix, out var predicateList))
+            _signatureIndex[ix] = predicateList = [];
         if (endOfList)
             predicateList.Add(pk);
         else
@@ -107,9 +109,14 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
         }
     }
     public Maybe<PredicateAddress> Retract(ITermAddress head) => Maybe.FromEnumerable(RetractMatch(head, false));
-    public IEnumerable<PredicateAddress> RetractAll(ITermAddress head) => RetractMatch(head, true).ToArray();
+    public int RetractAll(ITermAddress head) => RetractMatch(head, true).Count();
     public Maybe<List<PredicateAddress>> GetPredicates(IX_Signature ix)
         => (_signatureIndex.TryGetValue(ix, out var predicateList), predicateList);
+    public Maybe<List<PredicateAddress>> GetPredicates(Signature signature)
+        => (_signatureIndex.TryGetValue((signature.Module.Select(x => x.Value.ToString()).GetOr(null),
+            signature.Functor.Value.ToString(),
+            signature.Arity.GetOr(int.MaxValue)),
+            out var predicateList), predicateList);
 
     public Maybe<IEnumerable<Match>> GetMatches(ITermAddress head)
     {
@@ -124,11 +131,37 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
             foreach (var addr in list)
             {
                 var cell = Memory[addr];
+                if (cell.Head is null)
+                    throw new InvalidOperationException();
+                //StripQualification(cell.Head, out var cellHead);
+                Debug.WriteLine($"MATCHING :: {head.Deref(Memory).Explain()} with {cell.Head.Deref(Memory).Explain()}");
                 if (Memory.Unify(head, cell.Head, transaction: false))
+                {
+                    Debug.WriteLine($"         :: SUCCESS");
                     yield return cell;
+                }
+                else
+                {
+                    Debug.WriteLine($"         :: FAILURE");
+                }
                 Memory.LoadState(state);
                 i++;
             }
+        }
+
+        bool StripQualification(ITermAddress term, out ITermAddress head)
+        {
+            head = term;
+            if (term is StructureAddress a)
+            {
+                var functor = (AtomAddress)Memory[a][0];
+                if (WellKnown.Functors.Module.Contains(Memory[functor]))
+                {
+                    head = Memory[a][2];
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -148,19 +181,32 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
     protected PredicateAddress CompileAndStorePredicate(Predicate p, OptimizationFlags flags)
     {
         var inst = p.Instantiate(IC);
-        var head = Memory.StoreTerm(inst.Head);
+        var module = p.Head.GetQualification(out _).GetOr(p.DeclaringModule);
+        var head = inst.Head.Qualified(module);
+        var headAddr = Memory.StoreTerm(head);
         var body = Scope.ExceptionHandler.TryGet(() => inst.ExecutionGraph.GetOrLazy(() => inst
                 .ToExecutionGraph(Graph)
                 .Optimized(flags))
             .Compile())
             .GetOr(ErgoVM.Ops.Fail);
-        var args = head.GetArgs(Memory);
-        var addr = Memory.StorePredicate(head, PredicateCall, p.IsDynamic);
+        var args = headAddr.GetArgs(Memory);
+        var tailArgs = args;
+        if (p.IsTailRecursive)
+        {
+            inst.Body.Contents.Last().GetQualification(out var tail);
+            var tailAddr = Memory.StoreTerm(tail);
+            tailArgs = tailAddr.GetArgs(Memory);
+        }
+        var addr = Memory.StorePredicate(headAddr, PredicateCall, p.IsTailRecursive, p.IsDynamic);
         return addr;
         void PredicateCall(ErgoVM vm)
         {
-            vm.SetArgs2(args);
+            if (vm.Flag(VMFlags.TCO))
+                vm.SetArgs2(tailArgs);
+            else
+                vm.SetArgs2(args);
             body(vm);
+            vm.SuccessToSolution();
         }
     }
 }

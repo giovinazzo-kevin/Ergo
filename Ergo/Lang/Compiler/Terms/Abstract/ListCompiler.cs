@@ -7,7 +7,7 @@ public class ListCompiler : IAbstractTermCompiler<List>
     private static readonly ListParser Parser = new();
     public List Dereference(TermMemory vm, ITermAddress address)
     {
-        if (address is ConstAddress) return List.Empty;
+        if (address is AtomAddress) return List.Empty;
         if (address is StructureAddress sAddr)
         {
             var canonical = (Complex)vm.Dereference(sAddr);
@@ -33,7 +33,7 @@ public class ListCompiler : IAbstractTermCompiler<List>
         {
             if (tail is VariableAddress _)
                 return mem.Unify(v, tail, transaction: false);
-            if (tail is StructureAddress || tail is ConstAddress)
+            if (tail is StructureAddress || tail is AtomAddress)
             {
                 // The tail is still a canonical list, so we can create an abstract pointer to it!
                 // The associated compiler will know how to dereference the sublist accordingly. Neat.
@@ -63,7 +63,7 @@ public class ListCompiler : IAbstractTermCompiler<List>
             {
                 (VariableAddress va1, _) => UnifyVariableWithTail(va1, b[2]),
                 (_, VariableAddress vb1) => UnifyVariableWithTail(vb1, a[2]),
-                (ConstAddress ca1, ConstAddress cb1) => mem.Unify(ca1, cb1, transaction: false),
+                (AtomAddress ca1, AtomAddress cb1) => mem.Unify(ca1, cb1, transaction: false),
                 (StructureAddress sa1, StructureAddress sb1) => UnifySubstructure(sa1, sb1),
                 (_, AbstractAddress ab1) => Unify(mem, ab1, a[2]),
                 (AbstractAddress aa1, _) => Unify(mem, aa1, b[2]),
@@ -73,7 +73,7 @@ public class ListCompiler : IAbstractTermCompiler<List>
     }
     public ITermAddress[] GetArgs(TermMemory mem, ITermAddress a) => a switch
     {
-        ConstAddress => [mem.StoreTerm(WellKnown.Literals.EmptyList)],
+        AtomAddress => [mem.StoreTerm(WellKnown.Literals.EmptyList)],
         StructureAddress s => mem[s],
         _ => throw new NotSupportedException()
     };

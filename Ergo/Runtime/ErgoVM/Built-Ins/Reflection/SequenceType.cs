@@ -33,7 +33,7 @@ public sealed class SequenceType : BuiltIn
             else if (t == typeof(Set))
                 vm.SetArg2(2, S);
         }
-        else if (seq is ConstAddress c)
+        else if (seq is AtomAddress c)
         {
             var f = vm.Memory[c];
             if (f.Equals(WellKnown.Literals.EmptyList))

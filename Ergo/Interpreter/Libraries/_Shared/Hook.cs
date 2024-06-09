@@ -177,8 +177,7 @@ public class Hook
             }
             // Compile and cache the hook the first time it's called
             // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            if (!vm.CKB.GetPredicates((Signature.Functor.Explain(false), Signature.Arity.GetOr(int.MaxValue)))
-                .TryGetValue(out var preds))
+            if (!vm.CKB.GetPredicates(Signature).TryGetValue(out var preds))
             {
                 if (throwIfNotDefined)
                     vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.Explain());

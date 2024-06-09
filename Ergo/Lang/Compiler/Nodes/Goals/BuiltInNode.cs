@@ -23,7 +23,8 @@ public class BuiltInNode : GoalNode
     }
     public override ErgoVM.Op Compile() => vm =>
     {
-        vm.SetArgs2(vm.Memory[(StructureAddress)vm.Memory.StoreTerm(Head)]);
+        if (!vm.Flag(VMFlags.TCO))
+            vm.SetArgs2(vm.Memory[(StructureAddress)vm.Memory.StoreTerm(Head)]);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);
         vm.LogState(Explain(false));
         Debug.WriteLine(@$"--------- \CALL/ ---------");

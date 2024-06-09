@@ -1,6 +1,7 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Lang.Compiler;
 using Ergo.Lang.Extensions;
 using Ergo.Runtime;
 
@@ -11,6 +12,7 @@ public class ErgoTests(ErgoTestFixture fixture) : IClassFixture<ErgoTestFixture>
     public readonly ErgoInterpreter Interpreter = fixture.Interpreter;
     public InterpreterScope InterpreterScope = fixture.InterpreterScope;
     public KnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
+    public TermMemory Memory = fixture.Memory;
 
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)

@@ -1,5 +1,4 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
-using System.Diagnostics;
 
 namespace Ergo.Lang.Compiler;
 
@@ -51,8 +50,9 @@ public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int 
             if (!Trail.TryPop(out var t))
                 throw new InvalidOperationException();
             ref var cell = ref this[t.Lhs];
-            Debug.Assert(Equals(cell, t.NewRhs));
-            cell = t.OldRhs;
+            cell = t.Lhs;
+            // Debug.Assert(Equals(cell, t.NewRhs));
+            // cell = t.OldRhs;
         }
     }
 
@@ -152,6 +152,8 @@ public sealed class TermMemory(int cS = 1024, int vS = 1024, int sS = 1024, int 
     public bool FreeConstant(AtomAddress addr)
     {
         AtomsAddressPool.Enqueue(addr);
+        var val = Atoms[addr.Index];
+        AtomLookup.Remove((val.Value.GetType(), val.GetHashCode()));
         Atoms[addr.Index] = default;
         return true;
     }

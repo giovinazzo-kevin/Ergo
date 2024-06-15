@@ -387,6 +387,7 @@ public partial class ErgoVM
     {
         LogState();
         State = VMState.Ready;
+        flags = VMFlags.None;
         trackedVars = [];
         cutIndex = 0;
         @continue = Ops.NoOp;
@@ -403,7 +404,7 @@ public partial class ErgoVM
     [Conditional("ERGO_VM_DIAGNOSTICS")]
     internal void LogState([CallerMemberName] string state = null)
     {
-        Debug.WriteLine($"vm{Id:000}:: {state}".Indent(NumChoicePoints, tabWidth: 1));
+        // Debug.WriteLine($"vm{Id:000}:: {state}".Indent(NumChoicePoints, tabWidth: 1));
     }
 
     public Op ParseAndCompileQuery(string query, CompilerFlags flags = CompilerFlags.Default)
@@ -424,10 +425,13 @@ public partial class ErgoVM
                 vm.refCounts.Count(var);
                 vm.TrackVariable(vm.Memory.StoreVariable(var.Name));
             }
+            // Need to enumerate the expansions because CKB.GetMatches needs to be enumerated
+            // as it alters the state of the TermMemory
             foreach (var exp in GetQueryExpansions(query, flags))
             {
                 exp.Body(vm);
                 vm.Backtrack();
+                // TODO: Figure out if this is equivalent to ErgoVM.Ops.Or
             }
         };
     }

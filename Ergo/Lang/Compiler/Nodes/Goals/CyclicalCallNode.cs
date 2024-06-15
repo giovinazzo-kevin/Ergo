@@ -20,13 +20,12 @@ public class CyclicalCallNode : DynamicNode
     }
     public override ErgoVM.Op Compile() => vm =>
     {
-        var head = vm.Memory.StoreTerm(Head);
-        ErgoVM.Ops.Goal(head)(vm);
-        return;
+        var head = vm.Memory.StoreTerm(Goal);
         if (IsTailCall)
         {
-            var tail = head.Deref(vm.Memory);
-            vm.SetArgs2(head.GetArgs(vm.Memory));
+            vm.Memory.StripQualification(head, out var headNoModule);
+            var tail = headNoModule.Deref(vm.Memory);
+            vm.SetArgs2(headNoModule.GetArgs(vm.Memory));
         }
         ErgoVM.Ops.Goal(head)(vm);
     };

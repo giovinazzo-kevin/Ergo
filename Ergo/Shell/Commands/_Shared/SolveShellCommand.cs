@@ -196,7 +196,7 @@ public abstract class SolveShellCommand(string[] names, string desc, int priorit
             shell.WriteLine("Execution terminated by the user.", LogLevel.Err);
         }
 
-        cached.VM.Memory.Clear();
+        // cached.VM.Memory.Clear();
         Console.CancelKeyPress -= RequestCancel;
         yield return scope;
         yield break;

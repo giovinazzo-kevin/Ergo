@@ -209,5 +209,23 @@ public static class TermMemoryExtensions
             return Unify(mem, derefA, derefB);
         }
     }
+
+
+    public static bool StripQualification(this TermMemory mem, ITermAddress term, out ITermAddress head)
+    {
+        head = term;
+        if (term is StructureAddress a)
+        {
+            // TODO: Maybe we can just return a-1, due to how structure addresses are laid out in memory
+
+            var functor = (AtomAddress)mem[a][0];
+            if (WellKnown.Functors.Module.Contains(mem[functor]))
+            {
+                head = mem[a][2];
+                return true;
+            }
+        }
+        return false;
+    }
 }
 

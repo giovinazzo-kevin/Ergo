@@ -148,21 +148,6 @@ public record class CompiledKnowledgeBase(InterpreterScope Scope, TermMemory Mem
                 i++;
             }
         }
-
-        bool StripQualification(ITermAddress term, out ITermAddress head)
-        {
-            head = term;
-            if (term is StructureAddress a)
-            {
-                var functor = (AtomAddress)Memory[a][0];
-                if (WellKnown.Functors.Module.Contains(Memory[functor]))
-                {
-                    head = Memory[a][2];
-                    return true;
-                }
-            }
-            return false;
-        }
     }
 
     public PredicateAddress CompileAndAssertA(Predicate p, OptimizationFlags flags = OptimizationFlags.Default)

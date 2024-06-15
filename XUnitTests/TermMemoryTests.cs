@@ -111,11 +111,11 @@ public class TermMemoryTests(ErgoTestFixture fixture) : ErgoTests(fixture)
     [Fact]
     public void ShouldTailRecurse()
     {
-        var test0 = InterpreterScope.Parse<ITerm>("tail_recurse(0)")
+        var test0 = InterpreterScope.Parse<ITerm>("':'(stdlib, tail_recurse(0))")
             .GetOrThrow(new InvalidOperationException());
-        var test1 = InterpreterScope.Parse<ITerm>("tail_recurse(10)")
+        var test1 = InterpreterScope.Parse<ITerm>("':'(stdlib, tail_recurse(10))")
             .GetOrThrow(new InvalidOperationException());
-        var test2 = InterpreterScope.Parse<ITerm>("tail_recurse(-10)")
+        var test2 = InterpreterScope.Parse<ITerm>("':'(stdlib, tail_recurse(-10))")
             .GetOrThrow(new InvalidOperationException());
         var vm = new ErgoVM(new CompiledKnowledgeBase(InterpreterScope, new(), KnowledgeBase.DependencyGraph));
         lock (_lock)

@@ -30,19 +30,6 @@ public class BuiltInNode : GoalNode
         Debug.WriteLine(@$"--------- \CALL/ ---------");
         Debug.WriteLine(vm.DebugArgs.Select(a => a.Explain(false)).Join("\r\n"));
         CompiledBuiltIn(vm);
-        if (vm.State != ErgoVM.VMState.Fail)
-        {
-            Debug.WriteLine(@$"vvvvvvvvvvvvvvvvvvvvvvvvvv");
-            foreach (var v in vm.Memory.VariableLookup)
-            {
-                //Debug.WriteLine($"{v.Key}/{vm.Memory[v.Value].Deref(vm).Explain(false)}");
-            }
-            Debug.WriteLine(@$"--------- /CALL\ ->SUCCESS");
-        }
-        else
-        {
-            Debug.WriteLine(@$"--------- /CALL\ ->FAILURE");
-        }
     };
 
     public override int OptimizationOrder => base.OptimizationOrder + BuiltIn.OptimizationOrder;

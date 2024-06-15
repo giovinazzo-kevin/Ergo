@@ -30,12 +30,12 @@ public sealed class For : BuiltIn
         Solution Get(int i)
         {
             if (discarded && cnt == ErgoVM.Ops.NoOp)
-            {
                 return new Solution(new(vm.Env));
-            }
             Atom k = EDecimal.FromInt32(step * i + from);
-            vm.Memory.LoadState(env);
-            vm.Memory[var] = vm.Memory.StoreAtom(k);
+            ref var loopVar = ref vm.Memory[var];
+            if (loopVar is AtomAddress constAddr)
+                vm.Memory.Free(constAddr);
+            loopVar = vm.Memory.StoreAtom(k);
             vm.Ready();
             cnt(vm);
             return new Solution(new(vm.Env));
@@ -84,8 +84,11 @@ public sealed class For : BuiltIn
             {
                 if (!discarded)
                 {
-                    // HACK; TODO: use stack
-                    vm.Memory[varAddr] = vm.Memory.StoreAtom((Atom)EDecimal.FromInt32(i));
+                    vm.Memory.LoadState(env);
+                    ref var loopVar = ref vm.Memory[varAddr];
+                    if (loopVar is AtomAddress oldConst)
+                        vm.Memory.Free(oldConst);
+                    loopVar = vm.Memory.StoreAtom((Atom)EDecimal.FromInt32(i));
                 }
                 if ((i += iStep) < iTo)
                 {

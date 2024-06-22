@@ -100,7 +100,7 @@ var sendMessage = Hook.MarshallDelegate(eventTest.SendMessage, new Atom("message
 var messageEvent = typeof(EventTest).GetEvent(nameof(EventTest.MessageSent));
 using (var hook = Hook.MarshallEvent(messageEvent, eventTest, new Atom("message_sent_event"), WellKnown.Modules.User)(vm))
 {
-    // these will call message_event_event/1 as well as message_sent_delegate/1
+    // these will call message_sent_event/1 as well as message_sent_delegate/1
     sendMessage("hello,");
     sendMessage("world!");
 }

@@ -175,12 +175,13 @@ public class Hook
                 op(vm);
                 return;
             }
+            var sig = Signature.WithModule(Signature.Module.GetOr(vm.KB.Scope.Entry));
             // Compile and cache the hook the first time it's called
             // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            if (!vm.KB.Get(Signature).TryGetValue(out var preds))
+            if (!vm.KB.Get(sig).TryGetValue(out var preds))
             {
                 if (throwIfNotDefined)
-                    vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, Signature.Explain());
+                    vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, sig.Explain());
                 else
                     vm.Fail();
                 return;
@@ -207,7 +208,7 @@ public class Hook
             var branch = ErgoVM.Ops.Or(ops);
             cached = op = vm =>
             {
-                head = args.Length > 0 ? new Complex(Signature.Functor, args) : Signature.Functor;
+                head = args.Length > 0 ? new Complex(sig.Functor, args) : sig.Functor;
                 branch(vm);
             };
             op(vm);

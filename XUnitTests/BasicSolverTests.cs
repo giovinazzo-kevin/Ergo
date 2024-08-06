@@ -1,6 +1,4 @@
-﻿
-
-using Ergo.Lang.Ast;
+﻿using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
 
 namespace Tests;

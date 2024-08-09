@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Lang;
 
-internal interface ITypeResolver
+public interface ITermConverter
 {
     Type Type { get; }
     TermMarshalling Marshalling { get; }

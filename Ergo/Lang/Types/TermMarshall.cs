@@ -5,12 +5,11 @@ namespace Ergo.Lang;
 
 public sealed class TermMarshall
 {
-
     public readonly record struct Unmarshalled(object Value);
 
     internal static readonly ConcurrentDictionary<Type, TermAttribute> AttributeCache = new();
-    internal static readonly ConcurrentDictionary<Type, ITypeResolver> PositionalResolvers = new();
-    internal static readonly ConcurrentDictionary<Type, ITypeResolver> NamedResolvers = new();
+    internal static readonly ConcurrentDictionary<Type, ITermConverter> PositionalResolvers = new();
+    internal static readonly ConcurrentDictionary<Type, ITermConverter> NamedResolvers = new();
     internal static readonly ConcurrentDictionary<Type, List<Func<object, object>>> Transforms = new();
 
     public static Action RegisterTransform<T>(Func<T, T> transform)
@@ -22,25 +21,41 @@ public sealed class TermMarshall
         return () => list.Remove(cast);
     }
 
-    internal static ITypeResolver EnsurePositionalResolver(Type t)
+    public static void RegisterConverter(ITermConverter converter)
     {
-        if (!PositionalResolvers.TryGetValue(t, out var resolver))
-        {
-            resolver = (ITypeResolver)Activator.CreateInstance(typeof(PositionalPropertyTypeResolver<>).MakeGenericType(t));
-            PositionalResolvers.AddOrUpdate(t, resolver, (t, r) => r);
-        }
+        if (converter.Marshalling == TermMarshalling.Named)
+            NamedResolvers.TryAdd(converter.Type, converter);
+        else
+            PositionalResolvers.TryAdd(converter.Type, converter);
+    }
 
+    internal static ITermConverter EnsurePositionalResolver(Type t)
+    {
+        var baseType = t;
+        do
+        {
+            if (PositionalResolvers.TryGetValue(baseType, out var pResolver))
+                return pResolver;
+            baseType = baseType.BaseType;
+        }
+        while (baseType != typeof(object));
+        var resolver = (ITermConverter)Activator.CreateInstance(typeof(PositionalPropertyTypeResolver<>).MakeGenericType(t));
+        PositionalResolvers.AddOrUpdate(t, resolver, (t, r) => r);
         return resolver;
     }
 
-    internal static ITypeResolver EnsureNamedResolver(Type t)
+    internal static ITermConverter EnsureNamedResolver(Type t)
     {
-        if (!NamedResolvers.TryGetValue(t, out var resolver))
+        var baseType = t;
+        do
         {
-            resolver = (ITypeResolver)Activator.CreateInstance(typeof(NamedPropertyTypeResolver<>).MakeGenericType(t));
-            NamedResolvers.AddOrUpdate(t, resolver, (t, r) => r);
+            if (NamedResolvers.TryGetValue(baseType, out var nResolver))
+                return nResolver;
+            baseType = baseType.BaseType;
         }
-
+        while (baseType != typeof(object));
+        var resolver = (ITermConverter)Activator.CreateInstance(typeof(NamedPropertyTypeResolver<>).MakeGenericType(t));
+        NamedResolvers.AddOrUpdate(t, resolver, (t, r) => r);
         return resolver;
     }
 

@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Ergo.Lang;
 
-public abstract class ErgoTypeResolver<T> : ITypeResolver
+public abstract class ErgoTypeResolver<T> : ITermConverter
 {
     public Type Type => typeof(T);
     public readonly TermAttribute Attribute;

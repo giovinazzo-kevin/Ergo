@@ -37,6 +37,7 @@ public class CompiledHook
 
     public void SetArgs(ErgoVM vm, params object[] args)
     {
+        vm.Arity = args.Length;
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] is ITerm term)
@@ -183,26 +184,27 @@ public class Hook
                 op(vm);
                 return;
             }
-            var compiledHook = Compile(sig, vm.KB);
+            var compiledHook = Compile(sig, vm.KB, throwIfNotDefined);
             compiledHook.Args = lazyHook.Args;
             (cached = compiledHook.Op)(vm);
         };
         return lazyHook;
     }
 
-    public static CompiledHook Compile(Signature sig, KnowledgeBase kb)
+    public static CompiledHook Compile(Signature sig, KnowledgeBase kb, bool throwIfNotDefined = false)
     {
         var compiledHook = new CompiledHook(sig);
-        compiledHook.Op = CompileOp(compiledHook, sig, kb);
+        compiledHook.Op = CompileOp(compiledHook, sig, kb, throwIfNotDefined) ?? ErgoVM.Ops.Fail;
         return compiledHook;
     }
 
-    static ErgoVM.Op CompileOp(CompiledHook compiledHook, Signature sig, KnowledgeBase kb)
+    static ErgoVM.Op CompileOp(CompiledHook compiledHook, Signature sig, KnowledgeBase kb, bool throwIfNotDefined)
     {
         sig = sig.WithModule(sig.Module.GetOr(kb.Scope.Entry));
         if (!kb.Get(sig).TryGetValue(out var clauses))
         {
-            kb.Scope.ExceptionHandler.Throw(new RuntimeException(ErgoVM.ErrorType.UndefinedPredicate, sig.Explain()));
+            if(throwIfNotDefined)
+                kb.Scope.ExceptionHandler.Throw(new RuntimeException(ErgoVM.ErrorType.UndefinedPredicate, sig.Explain()));
             return default;
         }
         var ops = new ErgoVM.Op[clauses.Count];

@@ -52,8 +52,8 @@ public class ParserTests : ErgoTests<ErgoTestFixture>
     [Fact]
     public void ShouldRespectOperatorPrecedence()
     {
-        ShouldParse("1-1/2", new Expression(new Complex(new Atom("-"), new Atom(1), new Complex(new Atom("/"), new Atom(1), new Atom(2))), InterpreterScope));
-        ShouldParse("1/1-2", new Expression(new Complex(new Atom("-"), new Complex(new Atom("/"), new Atom(1), new Atom(1)), new Atom(2)), InterpreterScope));
+        ShouldParse("1-1/2", new Expr(new Complex(new Atom("-"), new Atom(1), new Complex(new Atom("/"), new Atom(1), new Atom(2))), InterpreterScope));
+        ShouldParse("1/1-2", new Expr(new Complex(new Atom("-"), new Complex(new Atom("/"), new Atom(1), new Atom(1)), new Atom(2)), InterpreterScope));
     }
 
     [Fact]
@@ -69,6 +69,6 @@ public class ParserTests : ErgoTests<ErgoTestFixture>
     [Fact]
     public void ShouldParsePathologicalCases_PeriodAsInfix()
         => ShouldParse("a.b",
-            new Expression(new Complex(MockWellKnown.Operators.DictAccess.CanonicalFunctor, new Atom("a"), new Atom("b"))
+            new Expr(new Complex(MockWellKnown.Operators.DictAccess.CanonicalFunctor, new Atom("a"), new Atom("b"))
                 .AsOperator(MockWellKnown.Operators.DictAccess), InterpreterScope));
 }

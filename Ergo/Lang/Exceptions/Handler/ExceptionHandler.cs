@@ -5,6 +5,9 @@ using System.Runtime.ExceptionServices;
 namespace Ergo.Lang.Exceptions.Handler;
 public struct ExceptionHandler
 {
+    public static readonly ExceptionHandler SILENT = new((ex) => { });
+    public static readonly ExceptionHandler THROWING = new((ex) => ExceptionDispatchInfo.Capture(ex).Throw());
+
     public readonly Action<ErgoException> Catch;
     public readonly Action Finally;
 

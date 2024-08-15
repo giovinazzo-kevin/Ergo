@@ -2,14 +2,14 @@
 
 namespace Ergo.Lang.Ast;
 
-public readonly partial struct Expression
+public readonly partial struct Expr
 {
     public readonly ITerm Left;
     public readonly Maybe<ITerm> Right;
     public readonly Operator Operator;
     public readonly ITerm Term;
 
-    private Expression(ITerm left, Maybe<ITerm> right, Operator op, ITerm term)
+    private Expr(ITerm left, Maybe<ITerm> right, Operator op, ITerm term)
     {
         Left = left;
         Right = right;
@@ -17,7 +17,7 @@ public readonly partial struct Expression
         Term = term;
     }
 
-    public Expression(Complex fromComplex, Maybe<InterpreterScope> maybeScope = default)
+    public Expr(Complex fromComplex, Maybe<InterpreterScope> maybeScope = default)
     {
         var ops = WellKnown.Operators.DeclaredOperators.AsEnumerable();
         if (maybeScope.TryGetValue(out var scope))
@@ -33,7 +33,7 @@ public readonly partial struct Expression
         Term = fromComplex;
     }
 
-    public Expression(Operator op, ITerm left, Maybe<ITerm> right = default, bool parenthesized = true)
+    public Expr(Operator op, ITerm left, Maybe<ITerm> right = default, bool parenthesized = true)
     {
         Operator = op;
         Left = left;
@@ -43,6 +43,6 @@ public readonly partial struct Expression
             .AsParenthesized(parenthesized);
     }
 
-    public Expression WithTerm(ITerm t) => new(Left, Right, Operator, t);
+    public Expr WithTerm(ITerm t) => new(Left, Right, Operator, t);
 }
 

@@ -24,7 +24,7 @@ public sealed class Not : BuiltIn
             newVm.Run();
             if (newVm.Solutions.Any())
                 vm.Fail();
-        });
+        }, node.Goal.GetArguments()[0].GetArguments());
     }
 
     public override ErgoVM.Op Compile() => vm =>

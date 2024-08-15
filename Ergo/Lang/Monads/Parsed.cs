@@ -25,7 +25,7 @@ public readonly struct Parsed<T>
         _ when typeof(T) == typeof(Atom) => p => Cast<Atom, T>(p.Atom()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Variable) => p => Cast<Variable, T>(p.Variable()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Complex) => p => Cast<Complex, T>(p.Complex()).Or(() => onParseFail(data)),
-        _ when typeof(T) == typeof(Expression) => p => Cast<Expression, T>(p.Expression()).Or(() => onParseFail(data)),
+        _ when typeof(T) == typeof(Expr) => p => Cast<Expr, T>(p.Expression()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Predicate) => p => Cast<Predicate, T>(p.Predicate()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Directive) => p => Cast<Directive, T>(p.Directive()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(ErgoProgram) => p => Cast<ErgoProgram, T>(p.Program()).Or(() => onParseFail(data)),

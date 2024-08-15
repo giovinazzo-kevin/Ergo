@@ -7,6 +7,14 @@ using Ergo.Runtime;
 
 namespace Tests;
 
+public class CompilerTestFixture : ErgoTestFixture
+{
+    protected override string TestsModuleName => "inlining";
+    protected override CompilerFlags CompilerFlags => base.CompilerFlags
+        | CompilerFlags.EnableInlining;
+    protected override bool TrimKnowledgeBase => false;
+}
+
 public class ErgoTestFixture : IDisposable
 {
     public readonly ExceptionHandler NullExceptionHandler = default;
@@ -15,26 +23,45 @@ public class ErgoTestFixture : IDisposable
     public readonly InterpreterScope InterpreterScope;
     public readonly KnowledgeBase KnowledgeBase;
 
+    protected virtual string TestsModuleName => "tests";
+    protected virtual InterpreterFlags InterpreterFlags => InterpreterFlags.Default;
+    protected virtual CompilerFlags CompilerFlags => CompilerFlags.Default;
+    protected virtual bool TrimKnowledgeBase => true;
+
     public ErgoTestFixture()
     {
         var basePath = Directory.GetCurrentDirectory();
         var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
-        var moduleName = new Atom("tests");
 
-        Interpreter = ErgoFacade.Standard
-            .BuildInterpreter(InterpreterFlags.Default);
-        var scope = Interpreter.CreateScope(x => x
-            .WithExceptionHandler(ThrowingExceptionHandler)
-            .WithoutSearchDirectories()
-            .WithSearchDirectory(testsPath)
-        );
-        scope = scope.WithRuntime(true);
+        Interpreter = CreateInterpreter();
+        InterpreterScope = CreateScope(testsPath);
+        LoadTestsModule(ref InterpreterScope);
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags);
+        if(TrimKnowledgeBase)
+            KnowledgeBase.Trim();
+    }
+
+    protected virtual ErgoInterpreter CreateInterpreter()
+    {
+        return ErgoFacade.Standard
+            .BuildInterpreter(InterpreterFlags);
+    }
+
+    protected virtual InterpreterScope CreateScope(string testsPath) 
+    {
+        return Interpreter.CreateScope(x => x
+                .WithExceptionHandler(ThrowingExceptionHandler)
+                .WithoutSearchDirectories()
+                .WithSearchDirectory(testsPath))
+            .WithRuntime(true);
+    }
+
+    protected virtual void LoadTestsModule(ref InterpreterScope scope)
+    {
         var module = Interpreter
-            .Load(ref scope, moduleName)
+            .Load(ref scope, new(TestsModuleName))
             .GetOrThrow(new InvalidOperationException());
-        InterpreterScope = scope
-            .WithModule(scope.EntryModule.WithImport(module.Name));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags.Default);
+        scope = scope.WithModule(scope.EntryModule.WithImport(module.Name));
     }
 
     ~ErgoTestFixture()

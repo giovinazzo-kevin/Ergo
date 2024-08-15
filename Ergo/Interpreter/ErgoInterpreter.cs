@@ -45,7 +45,7 @@ public partial class ErgoInterpreter
         {
             var sig = directive.Signature.Explain();
             var directiveWatch = Probe.Enter(sig);
-            var ret = directive.Execute(this, ref scope, ((Complex)d.Body).Arguments.ToArray());
+            var ret = directive.Execute(this, ref scope, [.. ((Complex)d.Body).Arguments]);
             Probe.Leave(directiveWatch, sig);
             return ret;
         }
@@ -162,7 +162,7 @@ public partial class ErgoInterpreter
         {
             var sig = BuiltIn.Signature.Explain();
             var builtinWatch = Probe.Enter(sig);
-            BuiltIn.Execute(this, ref scope, ((Complex)Ast.Body).Arguments.ToArray());
+            BuiltIn.Execute(this, ref scope, [.. ((Complex)Ast.Body).Arguments]);
             // NOTE: It's only after module/2 has been called that the module actually gets its name!
             Probe.Leave(builtinWatch, sig);
         }

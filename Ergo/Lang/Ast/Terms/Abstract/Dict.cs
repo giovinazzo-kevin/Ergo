@@ -49,11 +49,10 @@ public class Dict : AbstractTerm
     protected ITerm[] BuildKVPs()
     {
         var op = WellKnown.Operators.NamedArgument;
-        return Dictionary
+        return [.. Dictionary
             .Select(kv => (ITerm)new Complex(op.CanonicalFunctor, kv.Key, kv.Value)
                     .AsOperator(op))
-            .OrderBy(o => o)
-            .ToArray();
+            .OrderBy(o => o)];
     }
 
     protected ITerm BuildCanonical()

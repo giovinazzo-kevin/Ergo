@@ -57,10 +57,7 @@ public readonly struct InterpreterScope
         Entry = userModule.Name;
         Modules = ImmutableDictionary.Create<Atom, Module>()
             .Add(userModule.Name, userModule);
-        SearchDirectories = ImmutableArray<string>.Empty
-            .Add(@".\ergo\")
-            .Add(@".\user\")
-            ;
+        SearchDirectories = [@".\ergo\", @".\user\"];
         IsRuntime = userModule.IsRuntime;
         ExceptionHandler = default;
         VisibleModules = GetVisibleModules(Entry, Modules).ToImmutableArray();

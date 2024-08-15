@@ -1,6 +1,7 @@
 ﻿using Ergo.Interpreter;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace Ergo.Lang;
 
@@ -26,6 +27,27 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
     public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
     public void Clear() => Predicates.Clear();
+
+    /// <summary>
+    /// Removes all non-dynamic, non-cyclical predicates while preserving them in the dependency graph.
+    /// </summary>
+    public void Trim()
+    {
+        for (int k = Predicates.Count - 1; k >= 0; k--)
+        {
+            var list = (List<Predicate>)Predicates[k];
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                var sig = DependencyGraph.GetKey(list[i]);
+                if (!DependencyGraph.GetNode(sig).TryGetValue(out var node))
+                    Debug.Assert(false);
+                if (!node.IsCyclical && !list[i].IsDynamic)
+                    list.RemoveAt(i);
+            }
+            if (list.Count == 0)
+                Predicates.RemoveAt(k);
+        }
+    }
 
     public KnowledgeBase Clone()
     {

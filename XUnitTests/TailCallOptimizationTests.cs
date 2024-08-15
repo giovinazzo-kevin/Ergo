@@ -3,7 +3,7 @@
 namespace Tests;
 
 
-public class TailCallOptimizationTests : ErgoTests
+public class TailCallOptimizationTests : ErgoTests<ErgoTestFixture>
 {
     const string Fib1000 =
         "434665576869374564356885276750406258025646605173717804024817290895365554179490518904038798400792551692959" +

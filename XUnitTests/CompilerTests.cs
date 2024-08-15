@@ -1,21 +1,16 @@
 ﻿
-
 using Ergo.Interpreter;
 using Ergo.Lang.Ast;
+using Ergo.Lang;
+using Tests;
 using Ergo.Lang.Extensions;
-using Ergo.Runtime;
 
 namespace Tests;
 
-public class CompilerTests : ErgoTests
+public class CompilerTests : ErgoTests<CompilerTestFixture>
 {
-    public CompilerTests(ErgoTestFixture fixture) : base(fixture)
+    public CompilerTests(CompilerTestFixture fixture) : base(fixture)
     {
-        var inlining = new Atom("inlining");
-        Interpreter.Load(ref InterpreterScope, inlining);
-        InterpreterScope = InterpreterScope.WithModule(InterpreterScope.EntryModule
-            .WithImport(inlining));
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags.Default); // Triggers Compiler library
     }
     [Theory]
     [InlineData("inline_b", "inline_b.")] // instead of: inline_b :- inline_a.

@@ -91,7 +91,7 @@ public readonly partial struct Complex : ITerm
             newArgs[i] = Arguments[i].Substitute(s);
         }
 
-        var ret = WithArguments(newArgs.ToImmutableArray());
+        var ret = WithArguments([.. newArgs]);
         return ret;
     }
 

@@ -333,7 +333,7 @@ public readonly struct Predicate : IExplainable
             pred = new("(dynamic)", mod, head, body, true, false, default);
             return true;
         }
-        pred = new("(dynamic)", module, term, new NTuple(ImmutableArray<ITerm>.Empty.Add(WellKnown.Literals.True), term.Scope), true, false, default);
+        pred = new("(dynamic)", module, term, new NTuple([WellKnown.Literals.True], term.Scope), true, false, default);
         return true;
     }
 

@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-public class IntegrationTests : ErgoTests
+public class IntegrationTests : ErgoTests<ErgoTestFixture>
 {
     public IntegrationTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows

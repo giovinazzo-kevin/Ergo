@@ -1,7 +1,7 @@
 ﻿namespace Tests;
 
 
-public class AdvancedSolverTests : ErgoTests
+public class AdvancedSolverTests : ErgoTests<ErgoTestFixture>
 {
     public AdvancedSolverTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows

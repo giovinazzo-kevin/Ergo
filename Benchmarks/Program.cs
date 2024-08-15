@@ -24,7 +24,7 @@ for (int i = 0; i < N_BENCHMARKS; i++)
 }
 
 var shell = facade.BuildShell();
-shell.WriteTable(["Query Parse", "Query Compile", "Query Execute", "Num Solutions"], times.ToArray());
+shell.WriteTable(["Query Parse", "Query Compile", "Query Execute", "Num Solutions"], [.. times]);
 
 
 public sealed class ErgoBenchmarks

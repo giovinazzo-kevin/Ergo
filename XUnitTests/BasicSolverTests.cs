@@ -7,7 +7,7 @@ using A = Atom;
 using C = Complex;
 using V = Variable;
 
-public class BasicSolverTests : ErgoTests
+public class BasicSolverTests : ErgoTests<ErgoTestFixture>
 {
     public BasicSolverTests(ErgoTestFixture fixture) : base(fixture) { }
     #region Rows

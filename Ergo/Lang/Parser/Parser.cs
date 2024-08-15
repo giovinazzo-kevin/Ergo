@@ -201,7 +201,7 @@ public partial class ErgoParser : IDisposable
         }
         return Atom()
             .Map(functor => TupleParser.ParseArgList(this) // Regular tuples can't be 1 item long, but arg lists can.
-                .Select(args => new Complex(functor, args.Contents.ToArray())))
+                .Select(args => new Complex(functor, [.. args.Contents])))
             .Or(() => MemoizeFailureAndFail<Complex>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             .Select(x => x.WithScope(scope))
@@ -684,7 +684,7 @@ public partial class ErgoParser : IDisposable
                 return p.Exported();
             return p;
         });
-        return Maybe.Some(new ErgoProgram(directives.ToArray(), exportedPredicates.ToArray())
+        return Maybe.Some(new ErgoProgram([.. directives], exportedPredicates.ToArray())
             .AsPartial(false))
             .Do(() => Probe.Leave(watch))
             ;
@@ -746,7 +746,7 @@ public partial class ErgoParser : IDisposable
 
         if (!ret)
             return default;
-        return Maybe.Some(new ErgoProgram(directives.ToArray(), Array.Empty<Predicate>())
+        return Maybe.Some(new ErgoProgram([.. directives], Array.Empty<Predicate>())
             .AsPartial(true))
             .Do(() => Probe.Leave(watch))
             ;

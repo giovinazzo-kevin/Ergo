@@ -3,6 +3,7 @@
 namespace Tests;
 
 
+[Collection("Default")]
 public class TailCallOptimizationTests : ErgoTests<ErgoTestFixture>
 {
     const string Fib1000 =

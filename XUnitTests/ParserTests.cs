@@ -11,6 +11,7 @@ public static class MockWellKnown
     }
 }
 
+[Collection("Default")]
 public class ParserTests : ErgoTests<ErgoTestFixture>
 {
     public ParserTests(ErgoTestFixture test) : base(test) { }

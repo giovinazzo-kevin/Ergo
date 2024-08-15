@@ -1,6 +1,7 @@
 ﻿namespace Tests;
 
 
+[Collection("Default")]
 public class AdvancedSolverTests : ErgoTests<ErgoTestFixture>
 {
     public AdvancedSolverTests(ErgoTestFixture fixture) : base(fixture) { }

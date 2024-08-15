@@ -4,6 +4,7 @@ using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions.Handler;
 using Ergo.Runtime;
+using System.Diagnostics;
 
 namespace Tests;
 
@@ -71,3 +72,9 @@ public class ErgoTestFixture : IDisposable
 
     public void Dispose() => GC.SuppressFinalize(this);
 }
+
+
+[CollectionDefinition("Default")]
+public class ErgoTestCollection : ICollectionFixture<ErgoTestFixture> { }
+[CollectionDefinition("Compiler")]
+public class CompilerTestCollection : ICollectionFixture<CompilerTestFixture> { }

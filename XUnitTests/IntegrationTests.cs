@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+[Collection("Default")]
 public class IntegrationTests : ErgoTests<ErgoTestFixture>
 {
     public IntegrationTests(ErgoTestFixture fixture) : base(fixture) { }

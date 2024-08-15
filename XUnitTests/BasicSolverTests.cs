@@ -7,6 +7,7 @@ using A = Atom;
 using C = Complex;
 using V = Variable;
 
+[Collection("Default")]
 public class BasicSolverTests : ErgoTests<ErgoTestFixture>
 {
     public BasicSolverTests(ErgoTestFixture fixture) : base(fixture) { }

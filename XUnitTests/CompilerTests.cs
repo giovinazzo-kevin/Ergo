@@ -7,6 +7,7 @@ using Ergo.Lang.Extensions;
 
 namespace Tests;
 
+[Collection("Compiler")]
 public class CompilerTests : ErgoTests<CompilerTestFixture>
 {
     public CompilerTests(CompilerTestFixture fixture) : base(fixture)

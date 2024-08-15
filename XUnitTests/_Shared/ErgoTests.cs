@@ -6,7 +6,7 @@ using Ergo.Runtime;
 
 namespace Tests;
 
-public class ErgoTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+public class ErgoTests<TFixture>(TFixture fixture)
     where TFixture : ErgoTestFixture
 {
     public readonly ErgoInterpreter Interpreter = fixture.Interpreter;

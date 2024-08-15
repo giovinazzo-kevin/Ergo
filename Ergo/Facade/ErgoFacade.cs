@@ -161,7 +161,7 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(this, new(this, stream, operators ?? Enumerable.Empty<Operator>())));
     public ErgoInterpreter BuildInterpreter(InterpreterFlags flags = InterpreterFlags.Default)
         => ConfigureInterpreter(new(this, flags));
-    public ErgoVM BuildVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
+    public ErgoVM BuildVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.BigDecimal)
         => ConfigureVM(new(kb, decimalType));
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));

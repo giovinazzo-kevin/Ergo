@@ -23,10 +23,12 @@ public class ErgoTestFixture : IDisposable
     public readonly ErgoInterpreter Interpreter;
     public readonly InterpreterScope InterpreterScope;
     public readonly KnowledgeBase KnowledgeBase;
+    public readonly ErgoVM VM;
 
     protected virtual string TestsModuleName => "tests";
     protected virtual InterpreterFlags InterpreterFlags => InterpreterFlags.Default;
     protected virtual CompilerFlags CompilerFlags => CompilerFlags.Default;
+    protected virtual DecimalType DecimalType => DecimalType.BigDecimal;
     protected virtual bool TrimKnowledgeBase => true;
 
     public ErgoTestFixture()
@@ -40,6 +42,12 @@ public class ErgoTestFixture : IDisposable
         KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags);
         if(TrimKnowledgeBase)
             KnowledgeBase.Trim();
+        VM = CreateVM();
+    }
+
+    protected virtual ErgoVM CreateVM()
+    {
+        return Interpreter.Facade.BuildVM(KnowledgeBase, DecimalType.BigDecimal);
     }
 
     protected virtual ErgoInterpreter CreateInterpreter()

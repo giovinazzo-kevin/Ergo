@@ -12,6 +12,7 @@ public class ErgoTests<TFixture>(TFixture fixture)
     public readonly ErgoInterpreter Interpreter = fixture.Interpreter;
     public InterpreterScope InterpreterScope = fixture.InterpreterScope;
     public KnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
+    public ErgoVM VM = fixture.VM;
 
     // "⊤" : "⊥"
     protected void ShouldParse<T>(string query, T expected)
@@ -48,13 +49,7 @@ public class ErgoTests<TFixture>(TFixture fixture)
             .GetOrThrow(new InvalidOperationException());
         if (checkParse)
             Assert.Equal(query, ((ITerm)parsed.Goals).StripTemporaryVariables().Explain(false));
-        Optimized();
-        void Optimized()
-        {
-            var vm = Interpreter.Facade.BuildVM(KnowledgeBase.Clone(), DecimalType.BigDecimal);
-            Solve(vm, parsed);
-        }
-
+        Solve(VM, parsed);
         void Solve(ErgoVM vm, Query parsed)
         {
             var numSolutions = 0;

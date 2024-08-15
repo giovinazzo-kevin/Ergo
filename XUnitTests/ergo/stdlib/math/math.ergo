@@ -97,6 +97,5 @@ factorial(0, R, R) :- !.
 factorial(N, Acc, R) :-
     factorial(:=(N - 1), :=(Acc * N), R).
 
-
 max(A, B, Max) :- A > B -> Max = A ; Max = B.
 min(A, B, Min) :- A < B -> Min = A ; Min = B.

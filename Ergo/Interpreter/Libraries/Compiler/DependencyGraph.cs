@@ -1,5 +1,6 @@
 ﻿using Ergo.Interpreter;
 using Ergo.Runtime.BuiltIns;
+using System.Collections.Generic;
 
 public class DependencyGraphNode
 {
@@ -50,6 +51,29 @@ public class DependencyGraph
         }
     }
 
+    protected bool IsCyclical(DependencyGraphNode node)
+    {
+        if (node.IsCyclical)
+            return true;
+        var visited = new HashSet<DependencyGraphNode>();
+        return Inner(node, node, visited);
+
+        bool Inner(DependencyGraphNode cycle, DependencyGraphNode node, HashSet<DependencyGraphNode> visited)
+        {
+            visited.Add(node);
+            foreach (var dep in node.Dependencies)
+            {
+                if (dep == cycle)
+                    return true;
+                if (visited.Contains(dep))
+                    return false;
+                if (Inner(cycle, dep, visited))
+                    return true;
+            }
+            return false;
+        }
+    }
+
     public void CalculateDependencies(Predicate pred)
     {
         var sig = GetKey(pred);
@@ -62,6 +86,7 @@ public class DependencyGraph
                     node.Dependencies.Add(calledNode);
                 if (!calledNode.Dependents.Contains(node))
                     calledNode.Dependents.Add(node);
+                calledNode.IsCyclical = IsCyclical(calledNode);
             }
         }
     }

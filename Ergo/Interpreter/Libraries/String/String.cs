@@ -6,9 +6,13 @@ namespace Ergo.Interpreter.Libraries.String;
 public class String : Library
 {
     public override Atom Module => WellKnown.Modules.String;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new FormatString())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        ;
+
+    private readonly BuiltIn[] _exportedBuiltIns = [
+        new FormatString(),
+    ];
+    private readonly InterpreterDirective[] _interpreterDirectives = [
+    ];
+
+    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
 }

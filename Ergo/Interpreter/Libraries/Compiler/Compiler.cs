@@ -22,8 +22,9 @@ public class Compiler : Library
 
     protected readonly HashSet<Signature> InlinedPredicates = new();
     public override Atom Module => WellKnown.Modules.Compiler;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() { yield break; }
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() { yield break; }
+
+    public override IEnumerable<BuiltIn> ExportedBuiltins => [];
+    public override IEnumerable<InterpreterDirective> ExportedDirectives => [];
     public void AddInlinedPredicate(Signature sig)
     {
         InlinedPredicates.Add(sig);

@@ -9,8 +9,8 @@ public abstract class Library
 {
     public virtual int LoadOrder => 0;
     public abstract Atom Module { get; }
-    public abstract IEnumerable<InterpreterDirective> GetExportedDirectives();
-    public abstract IEnumerable<BuiltIn> GetExportedBuiltins();
+    public abstract IEnumerable<InterpreterDirective> ExportedDirectives { get; }
+    public abstract IEnumerable<BuiltIn> ExportedBuiltins { get; }
     public virtual void OnErgoEvent(ErgoEvent evt) { }
 
 }

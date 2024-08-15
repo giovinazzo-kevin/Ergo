@@ -122,7 +122,7 @@ public partial class ErgoInterpreter
         if (_libraries.TryGetValue(moduleName, out var linkedLib))
         {
             linkLibrary = linkedLib;
-            foreach (var dir in linkedLib.GetExportedDirectives())
+            foreach (var dir in linkedLib.ExportedDirectives)
             {
                 if (visibleDirectives.ContainsKey(dir.Signature))
                     break; // This library was already added

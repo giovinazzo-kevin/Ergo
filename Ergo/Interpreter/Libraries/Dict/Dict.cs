@@ -6,10 +6,12 @@ namespace Ergo.Interpreter.Libraries.Dict;
 public class Dict : Library
 {
     public override Atom Module => WellKnown.Modules.Dict;
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        .Append(new DictKeyValue())
-        .Append(new With())
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        ;
+    private readonly BuiltIn[] _exportedBuiltIns = [
+        new DictKeyValue(),
+        new With()
+    ];
+    private readonly InterpreterDirective[] _interpreterDirectives = [
+    ];
+    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
 }

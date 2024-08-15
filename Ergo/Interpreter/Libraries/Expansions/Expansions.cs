@@ -16,11 +16,13 @@ public class Expansions : Library
     public override Atom Module => WellKnown.Modules.Expansions;
 
     protected readonly Dictionary<Signature, HashSet<Expansion>> Table = new();
-    public override IEnumerable<BuiltIn> GetExportedBuiltins() => Enumerable.Empty<BuiltIn>()
-        ;
-    public override IEnumerable<InterpreterDirective> GetExportedDirectives() => Enumerable.Empty<InterpreterDirective>()
-        .Append(new DefineExpansion())
-        ;
+    private readonly BuiltIn[] _exportedBuiltIns = [
+    ];
+    private readonly InterpreterDirective[] _interpreterDirectives = [
+        new DefineExpansion()
+    ];
+    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
 
     public override void OnErgoEvent(ErgoEvent evt)
     {

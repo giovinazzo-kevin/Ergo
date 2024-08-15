@@ -8,7 +8,7 @@ public abstract class WriteBuiltIn : BuiltIn
     public readonly bool Quoted;
     public readonly bool Portrayed;
 
-    private readonly Hook PortrayHook = new(WellKnown.Hooks.IO.Portray_1);
+    public static readonly CompiledHook PORTRAY_1 = Hook.CompileJIT(WellKnown.Hooks.IO.Portray_1, throwIfNotDefined: false);
 
     protected WriteBuiltIn(string documentation, Atom functor, Maybe<int> arity, bool canon, bool quoted, bool portray)
         : base(documentation, functor, arity, WellKnown.Modules.IO)
@@ -38,20 +38,15 @@ public abstract class WriteBuiltIn : BuiltIn
 
     public override ErgoVM.Op Compile()
     {
-        var portray = PortrayHook.Compile(throwIfNotDefined: false);
         return vm =>
         {
             var portrayVm = vm.ScopedInstance();
-            portrayVm.Query = portray;
-
-            var args = vm.Args;
-            foreach (var arg in args)
+            foreach (var arg in vm.Args)
             {
                 // https://www.swi-prolog.org/pldoc/man?predicate=portray/1
                 if (Portrayed && arg is not Variable)
                 {
-                    PortrayHook.SetArg(0, arg);
-                    portrayVm.Run();
+                    PORTRAY_1.Call(portrayVm, arg);
                     if (portrayVm.NumSolutions > 0)
                         break; // Do nothing, the hook already took care of this term by calling write_raw.
                 }

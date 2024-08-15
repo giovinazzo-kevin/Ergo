@@ -1,63 +1,67 @@
 ﻿using System.Reflection;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using Expression = System.Linq.Expressions.Expression;
 namespace Ergo.Interpreter.Libraries;
 
 
-public class DisposableHook(Signature sig) : Hook(sig), IDisposable
+public class DisposableHook : CompiledHook, IDisposable
 {
+    internal DisposableHook(Signature sig) : base(sig) { }
+
     internal Action<DisposableHook> DisposeAction { get; set; }
 
     public void Dispose() => DisposeAction(this);
 }
 
-public class Hook
+public class CompiledHook
 {
-    private static readonly InstantiationContext ctx = new("_H");
-    private readonly ITerm[] args;
+    private static readonly InstantiationContext CTX = new("_H");
+
     public readonly Signature Signature;
-    private Maybe<ErgoVM.Op> cached = default;
-    private ITerm head = default;
-    public Hook(Signature sig)
+    public ITerm[] Args { get; internal set; }
+    public ErgoVM.Op Op { get; internal set; }
+
+    public CompiledHook(Signature sig)
     {
         Signature = sig;
-        args = new ITerm[Signature.Arity.GetOr(ErgoVM.MAX_ARGUMENTS)];
-        for (int i = 0; i < args.Length; i++)
-            args[i] = ctx.GetFreeVariable();
+        Args = new ITerm[sig.Arity.GetOr(ErgoVM.MAX_ARGUMENTS)];
+        for (int i = 0; i < Args.Length; i++)
+            Args[i] = CTX.GetFreeVariable();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetArg(int i, ITerm arg)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(i, args.Length);
-        args[i] = arg;
+        Args[i] = arg;
+    }
+
+    public void SetArgs(ErgoVM vm, params object[] args)
+    {
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] is ITerm term)
+                SetArg(i, term);
+            else if (args[i] is { } obj)
+                SetArg(i, TermMarshall.ToTerm(obj, obj.GetType()));
+        }
     }
 
     public IEnumerable<Solution> CallInteractive(ErgoVM vm, params object[] args)
     {
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] is ITerm term)
-                SetArg(i, term);
-            else if (args[i] is { } obj)
-                SetArg(i, TermMarshall.ToTerm(obj, obj.GetType()));
-        }
-        vm.Query = Compile();
+        SetArgs(vm, args);
+        vm.Query = Op;
         return vm.RunInteractive();
     }
     public void Call(ErgoVM vm, params object[] args)
     {
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] is ITerm term)
-                SetArg(i, term);
-            else if (args[i] is { } obj)
-                SetArg(i, TermMarshall.ToTerm(obj, obj.GetType()));
-        }
-        vm.Query = Compile();
+        SetArgs(vm, args);
+        vm.Query = Op;
         vm.Run();
     }
+}
 
-
+public class Hook
+{
     /// <summary>
     /// Creates a hook that automagically binds to a C# event until it is disposed.
     /// </summary>
@@ -76,7 +80,7 @@ public class Hook
         var returnType = invokeMethod.ReturnType;
 
         var hook = new DisposableHook(new(functor, parms.Length, module, default));
-        var hookInvokeMethod = typeof(DisposableHook).GetMethod(nameof(Hook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
+        var hookInvokeMethod = typeof(DisposableHook).GetMethod(nameof(DisposableHook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
         var hookInvokeCall = Expression.Call(
             Expression.Constant(hook),
             hookInvokeMethod,
@@ -116,8 +120,10 @@ public class Hook
                 .ToArray();
             var returnType = invokeMethod.ReturnType;
 
-            var hook = new Hook(new(functor, parms.Length, module, default));
-            var hookInvokeMethod = typeof(Hook).GetMethod(nameof(Hook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
+            var sig = new Signature(functor, parms.Length, module, default);
+            var hook = Compile(sig, vm.KB);
+
+            var hookInvokeMethod = typeof(CompiledHook).GetMethod(nameof(CompiledHook.Call), BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
             var hookInvokeCall = Expression.Call(
                 Expression.Constant(hook),
                 hookInvokeMethod,
@@ -166,53 +172,56 @@ public class Hook
     /// <summary>
     /// Creates a wrapper that compiles the hook just in time when it is first called.
     /// </summary>
-    public ErgoVM.Op Compile(bool throwIfNotDefined = true)
+    public static CompiledHook CompileJIT(Signature sig, bool throwIfNotDefined = true)
     {
-        return vm =>
+        var lazyHook = new CompiledHook(sig);
+        ErgoVM.Op cached = default;
+        lazyHook.Op = vm =>
         {
-            if (cached.TryGetValue(out var op))
+            if (cached is { } op)
             {
                 op(vm);
                 return;
             }
-            var sig = Signature.WithModule(Signature.Module.GetOr(vm.KB.Scope.Entry));
-            // Compile and cache the hook the first time it's called
-            // TODO: Invalidate cache when any predicate matching this hook is asserted or retracted
-            if (!vm.KB.Get(sig).TryGetValue(out var preds))
-            {
-                if (throwIfNotDefined)
-                    vm.Throw(ErgoVM.ErrorType.UndefinedPredicate, sig.Explain());
-                else
-                    vm.Fail();
-                return;
-            }
-            var ops = new ErgoVM.Op[preds.Count];
-            for (int i = 0; i < preds.Count; i++)
-            {
-                var predHead = preds[i].Unqualified().Head;
-                if (!preds[i].ExecutionGraph.TryGetValue(out var graph))
-                {
-                    return;
-                }
-                var gOp = graph.Compile();
-                ops[i] = vm =>
-                {
-                    vm.SetArg(0, head);
-                    vm.SetArg(1, predHead);
-                    ErgoVM.Goals.Unify2(vm);
-                    if (vm.State == ErgoVM.VMState.Fail)
-                        return;
-                    gOp(vm);
-                };
-            }
-            var branch = ErgoVM.Ops.Or(ops);
-            cached = op = vm =>
-            {
-                head = args.Length > 0 ? new Complex(sig.Functor, args) : sig.Functor;
-                branch(vm);
-            };
-            op(vm);
+            var compiledHook = Compile(sig, vm.KB);
+            compiledHook.Args = lazyHook.Args;
+            (cached = compiledHook.Op)(vm);
         };
+        return lazyHook;
+    }
+
+    public static CompiledHook Compile(Signature sig, KnowledgeBase kb)
+    {
+        var compiledHook = new CompiledHook(sig);
+        compiledHook.Op = CompileOp(compiledHook, sig, kb);
+        return compiledHook;
+    }
+
+    static ErgoVM.Op CompileOp(CompiledHook compiledHook, Signature sig, KnowledgeBase kb)
+    {
+        sig = sig.WithModule(sig.Module.GetOr(kb.Scope.Entry));
+        if (!kb.Get(sig).TryGetValue(out var clauses))
+        {
+            kb.Scope.ExceptionHandler.Throw(new RuntimeException(ErgoVM.ErrorType.UndefinedPredicate, sig.Explain()));
+            return default;
+        }
+        var ops = new ErgoVM.Op[clauses.Count];
+        for (int i = 0; i < clauses.Count; i++)
+        {
+            var predHead = clauses[i].Unqualified().Head;
+            if (!clauses[i].ExecutionGraph.TryGetValue(out var graph))
+                return default;
+            var gOp = graph.Compile();
+            ops[i] = vm => {
+                vm.SetArg(0, compiledHook.Args.Length > 0 ? new Complex(sig.Functor, compiledHook.Args) : sig.Functor);
+                vm.SetArg(1, predHead);
+                ErgoVM.Goals.Unify2(vm);
+                if (vm.State == ErgoVM.VMState.Fail)
+                    return;
+                gOp(vm);
+            };
+        }
+        return ErgoVM.Ops.Or(ops);
     }
 
 }

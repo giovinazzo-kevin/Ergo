@@ -11,6 +11,20 @@ public static class Maybe
             return Some(value);
         return Maybe<T>.None;
     }
+    public static Maybe<T> FromNullable<T>(T? nullable)
+        where T : struct
+    {
+        if (nullable.HasValue)
+            return Some(nullable.Value);
+        return Maybe<T>.None;
+    }
+    public static Maybe<T> FromNullable<T>(T nullable)
+        where T : class
+    {
+        if (nullable is not null)
+            return Some(nullable);
+        return Maybe<T>.None;
+    }
 }
 
 public readonly struct Maybe<T>

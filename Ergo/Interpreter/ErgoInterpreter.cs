@@ -60,7 +60,7 @@ public partial class ErgoInterpreter
         return false;
     }
 
-    public Module EnsureModule(ref InterpreterScope scope, Atom name)
+    public Module EnsureModule(ref InterpreterScope scope, Atom name, bool throwOnFileNotFound = false)
     {
         if (!scope.Modules.TryGetValue(name, out var module))
         {
@@ -73,6 +73,8 @@ public partial class ErgoInterpreter
             }
             catch (FileNotFoundException)
             {
+                if (throwOnFileNotFound)
+                    throw;
                 scope = scope
                     .WithModule(module = new Module(name, runtime: true));
             }

@@ -15,3 +15,6 @@
 :- use_module(string).
 :- use_module(meta).
 :- use_module(reflection).
+
+io:portray(X) :-
+	write_raw(culo, X, culo).

@@ -163,6 +163,23 @@ public readonly struct ErgoFacade
         => ConfigureInterpreter(new(this, flags));
     public ErgoVM BuildVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.BigDecimal)
         => ConfigureVM(new(kb, decimalType));
+    public ErgoVM BuildVM(
+        InterpreterFlags interpreterFlags = InterpreterFlags.Default,
+        CompilerFlags vmFlags = CompilerFlags.Default, 
+        DecimalType decimalType = DecimalType.BigDecimal,
+        Func<InterpreterScope, InterpreterScope> configureStdlibScope = null,
+        Func<ErgoInterpreter, InterpreterScope, InterpreterScope> configureScope = null,
+        Action<KnowledgeBase> beforeKbCompile = null,
+        Action<KnowledgeBase> afterKbCompile = null,
+        bool trimKb = false
+    ) {
+        var interpreter = BuildInterpreter(interpreterFlags);
+        var scope = interpreter.CreateScope(configureStdlibScope);
+        if (configureScope != null)
+            scope = configureScope(interpreter, scope);
+        var kb = scope.BuildKnowledgeBase(vmFlags, beforeKbCompile, afterKbCompile, trimKb);
+        return BuildVM(kb);
+    }
     public ErgoShell BuildShell(Func<LogLine, string> formatter = null, Encoding encoding = null)
         => ConfigureShell(new(this, formatter, encoding));
 }

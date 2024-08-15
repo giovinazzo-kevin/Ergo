@@ -4,9 +4,9 @@ namespace Ergo.Lang;
 
 public partial class ErgoParser
 {
-    protected static bool IsPunctuation(ErgoLexer.Token token, [NotNull] string p) => token.Type == ErgoLexer.TokenType.Punctuation && p.Equals(token.Value);
-    protected static bool IsVariableIdentifier(string s) => s[0] == '_' || char.IsLetter(s[0]) && char.IsUpper(s[0]);
-    protected static bool IsAtomIdentifier(string s) => !IsVariableIdentifier(s);
+    public static bool IsPunctuation(ErgoLexer.Token token, [NotNull] string p) => token.Type == ErgoLexer.TokenType.Punctuation && p.Equals(token.Value);
+    public static bool IsVariableIdentifier(string s) => s[0] == '_' || char.IsLetter(s[0]) && char.IsUpper(s[0]);
+    public static bool IsAtomIdentifier(string s) => !IsVariableIdentifier(s);
     public Maybe<T> Fail<T>(ErgoLexer.StreamState s, T _ = default)
     {
         Lexer.Seek(s);

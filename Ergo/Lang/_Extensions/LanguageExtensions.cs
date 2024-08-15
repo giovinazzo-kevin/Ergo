@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 
 namespace Ergo.Lang.Extensions;
+
 public static class LanguageExtensions
 {
     public static string Join<T>(this IEnumerable<T> source, Func<T, string> toString, string separator = ",")

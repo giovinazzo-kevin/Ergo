@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Ergo.Lang.Ast;
 
@@ -75,4 +76,9 @@ public readonly struct Signature
         sig = default;
         return false;
     }
+    public static Signature Create(string functor, int? arity = null, string module = default, string tag = default) => new(
+        Maybe.FromNullable(functor).Select(x => new Atom(x)).GetOrThrow(),
+        Maybe.FromNullable(arity),
+        Maybe.FromNullable(module).Select(x => new Atom(x)),
+        Maybe.FromNullable(tag).Select(x => new Atom(x)));
 }

@@ -41,7 +41,9 @@ public partial class ErgoInterpreter
     public virtual bool RunDirective(ref InterpreterScope scope, Directive d)
     {
         var watch = Probe.Enter();
-        if (scope.VisibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
+        var bodySig = d.Body.GetSignature();
+        if (scope.VisibleDirectives.TryGetValue(bodySig, out var directive)
+            || scope.VisibleDirectives.TryGetValue(bodySig.WithArity(default), out directive))
         {
             var sig = directive.Signature.Explain();
             var directiveWatch = Probe.Enter(sig);
@@ -109,7 +111,9 @@ public partial class ErgoInterpreter
         var visibleDirectives = scope.VisibleDirectives;
         var directives = program.Directives.Select(d =>
         {
-            if (visibleDirectives.TryGetValue(d.Body.GetSignature(), out var directive))
+            var sig = d.Body.GetSignature();
+            if (visibleDirectives.TryGetValue(sig, out var directive)
+                || visibleDirectives.TryGetValue(sig.WithArity(default), out directive))
                 return (Ast: d, Builtin: directive, Defined: true);
             return (Ast: d, Builtin: default, Defined: false);
         });

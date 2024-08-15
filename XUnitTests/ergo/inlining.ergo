@@ -3,7 +3,7 @@
 	noinline_a/0, noinline_b/0
 ]).
 
-:- inline([inline_a/0, inline_b/0, inline_c/0, inline_d/0, inline_e/1, inline_f/1, inline_h/1, inline_j/1]).
+:- inline(inline_a/0, inline_b/0, inline_c/0, inline_d/0, inline_e/1, inline_f/1, inline_h/1, inline_j/1).
 
 noinline_a.
 noinline_b.

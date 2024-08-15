@@ -6,19 +6,13 @@ namespace Ergo.Interpreter.Directives;
 public class DeclareInlinedPredicate : InterpreterDirective
 {
     public DeclareInlinedPredicate()
-        : base("Marks a predicate to be inlined.", new("inline"), 1, 11)
+        : base("Marks a predicate to be inlined.", new("inline"), default, 11)
     {
     }
 
     public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
     {
-        // TODO: make sure sig is unqualified, accept list of sigs
-        if (args[0] is not List list)
-        {
-            scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, nameof(List), args[0].Explain());
-            return false;
-        }
-        foreach (var arg in list.Contents)
+        foreach (var arg in args)
         {
             if (!Signature.FromCanonical(arg, out var sig))
                 sig = args[0].GetSignature();

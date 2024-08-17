@@ -11,10 +11,12 @@ namespace Tests;
 public class CompilerTestFixture : ErgoTestFixture
 {
     protected override string TestsModuleName => "inlining";
-    protected override CompilerFlags CompilerFlags => base.CompilerFlags
-        | CompilerFlags.EnableInlining;
-    protected override bool TrimKnowledgeBase => false;
+
+    protected override ErgoFacade Facade => base.Facade
+        .SetTrimKnowledgeBase(false)
+        .SetCompilerFlags(base.Facade.CompilerFlags | CompilerFlags.EnableInlining);
 }
+
 
 public class ErgoTestFixture : IDisposable
 {
@@ -26,51 +28,38 @@ public class ErgoTestFixture : IDisposable
     public readonly ErgoVM VM;
 
     protected virtual string TestsModuleName => "tests";
-    protected virtual InterpreterFlags InterpreterFlags => InterpreterFlags.Default;
-    protected virtual CompilerFlags CompilerFlags => CompilerFlags.Default;
-    protected virtual DecimalType DecimalType => DecimalType.BigDecimal;
-    protected virtual bool TrimKnowledgeBase => true;
+
+    protected virtual ErgoFacade Facade { get; private set; }
 
     public ErgoTestFixture()
     {
         var basePath = Directory.GetCurrentDirectory();
         var testsPath = Path.Combine(basePath, @"..\..\..\ergo");
 
-        Interpreter = CreateInterpreter();
-        InterpreterScope = CreateScope(testsPath);
-        LoadTestsModule(ref InterpreterScope);
-        KnowledgeBase = InterpreterScope.BuildKnowledgeBase(CompilerFlags);
-        if(TrimKnowledgeBase)
-            KnowledgeBase.Trim();
-        VM = CreateVM();
-    }
-
-    protected virtual ErgoVM CreateVM()
-    {
-        return Interpreter.Facade.BuildVM(KnowledgeBase, DecimalType.BigDecimal);
-    }
-
-    protected virtual ErgoInterpreter CreateInterpreter()
-    {
-        return ErgoFacade.Standard
-            .BuildInterpreter(InterpreterFlags);
-    }
-
-    protected virtual InterpreterScope CreateScope(string testsPath) 
-    {
-        return Interpreter.CreateScope(x => x
-                .WithExceptionHandler(ThrowingExceptionHandler)
-                .WithoutSearchDirectories()
-                .WithSearchDirectory(testsPath))
-            .WithRuntime(true);
-    }
-
-    protected virtual void LoadTestsModule(ref InterpreterScope scope)
-    {
-        var module = Interpreter
-            .Load(ref scope, new(TestsModuleName))
-            .GetOrThrow(new InvalidOperationException());
-        scope = scope.WithModule(scope.EntryModule.WithImport(module.Name));
+        Facade = ErgoFacade.Standard
+            .SetDecimalType(DecimalType.BigDecimal)
+            .ConfigureStdlibScope(scope =>
+            {
+                scope = scope
+                    .WithExceptionHandler(ThrowingExceptionHandler)
+                    .WithoutSearchDirectories()
+                    .WithSearchDirectory(testsPath);
+                return ErgoFacade.Standard.ConfigureStdlibScopeHandler(scope);
+            })
+            .ConfigureInterpreterScope((interpreter, scope) =>
+            {
+                var module = interpreter
+                    .Load(ref scope, new(TestsModuleName))
+                    .GetOrThrow(new InvalidOperationException());
+                scope = scope.WithModule(scope.EntryModule.WithImport(module.Name));
+                scope = scope.WithRuntime(true);
+                return ErgoFacade.Standard.ConfigureInterpreterScopeHandler(interpreter, scope);
+            })
+            ;
+        Interpreter = Facade.BuildInterpreter();
+        InterpreterScope = Interpreter.CreateScope();
+        KnowledgeBase = InterpreterScope.BuildKnowledgeBase();
+        VM = Facade.BuildVM();
     }
 
     ~ErgoTestFixture()

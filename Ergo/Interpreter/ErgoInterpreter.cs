@@ -11,8 +11,8 @@ namespace Ergo.Interpreter;
 public partial class ErgoInterpreter
 {
     public readonly ErgoFacade Facade;
-    public readonly InterpreterFlags Flags;
-    private readonly Dictionary<Atom, InterpreterScope> ModuleCache = new();
+    public InterpreterFlags Flags => Facade.InterpreterFlags;
+    private readonly Dictionary<Atom, InterpreterScope> ModuleCache = [];
 
     protected readonly DiagnosticProbe Probe = new()
     {
@@ -24,9 +24,8 @@ public partial class ErgoInterpreter
     private readonly Dictionary<Atom, Library> _libraries = new();
     public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
 
-    internal ErgoInterpreter(ErgoFacade facade, InterpreterFlags flags = InterpreterFlags.Default)
+    internal ErgoInterpreter(ErgoFacade facade)
     {
-        Flags = flags;
         Facade = facade;
 
     }
@@ -240,11 +239,10 @@ public partial class ErgoInterpreter
         return module;
     }
 
-    public InterpreterScope CreateScope(Func<InterpreterScope, InterpreterScope> configureStdlibScope = null)
+    public InterpreterScope CreateScope()
     {
-        configureStdlibScope ??= s => s;
         var stdlibScope = new InterpreterScope(Facade, new Module(WellKnown.Modules.Stdlib, runtime: true));
-        stdlibScope = configureStdlibScope(stdlibScope);
+        stdlibScope = Facade.ConfigureStdlibScopeHandler(stdlibScope);
         Load(ref stdlibScope, WellKnown.Modules.Stdlib);
         var scope = stdlibScope
             .WithRuntime(false)
@@ -254,6 +252,6 @@ public partial class ErgoInterpreter
 #if ERGO_INTERPRETER_DIAGNOSTICS
         Console.WriteLine(Probe.GetDiagnostics());
 #endif
-        return scope;
+        return Facade.ConfigureInterpreterScopeHandler(this, scope);
     }
 }

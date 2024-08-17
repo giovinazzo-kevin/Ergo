@@ -78,11 +78,11 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
-    public ErgoVM(KnowledgeBase kb, DecimalType decimalType = DecimalType.CliDecimal)
+    public ErgoVM(KnowledgeBase kb)
     {
         args = new ITerm[MAX_ARGUMENTS];
         KB = kb;
-        DecimalType = decimalType;
+        DecimalType = kb.Scope.Facade.DecimalType;
         In = Console.In;
         Out = Console.Out;
         Err = Console.Error;
@@ -143,7 +143,7 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM ScopedInstance() => new(KB, DecimalType)
+    public ErgoVM ScopedInstance() => new(KB)
     { In = In, Err = Err, Out = Out, /*args = [.. args], Arity = Arity*/ };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.

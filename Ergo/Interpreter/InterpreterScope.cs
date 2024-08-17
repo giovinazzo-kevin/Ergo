@@ -93,12 +93,7 @@ public readonly struct InterpreterScope
         VisibleOperators = GetOperators().ToImmutableArray();
     }
 
-    public KnowledgeBase BuildKnowledgeBase(
-        CompilerFlags vmFlags = CompilerFlags.Default, 
-        Action<KnowledgeBase> beforeCompile = null, 
-        Action<KnowledgeBase> afterCompile = null,
-        bool trim = false
-    ) {
+    public KnowledgeBase BuildKnowledgeBase() {
         var kb = new KnowledgeBase(this);
         foreach (var builtIn in VisibleBuiltIns.Values)
         {
@@ -120,11 +115,9 @@ public readonly struct InterpreterScope
                 kb.AssertZ(newPred);
             }
         }
-        beforeCompile?.Invoke(kb);
-        ForwardEventToLibraries(new KnowledgeBaseCreatedEvent(kb, vmFlags));
-        afterCompile?.Invoke(kb);
-        if (trim)
-            kb.Trim();
+        Facade.BeforeKbCompiledHandler(kb);
+        ForwardEventToLibraries(new KnowledgeBaseCreatedEvent(kb, Facade.CompilerFlags));
+        Facade.AfterKbCompiledHandler(kb);
         return kb;
     }
 

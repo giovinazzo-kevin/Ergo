@@ -1,4 +1,5 @@
 ﻿using Ergo.Interpreter;
+using Ergo.Runtime.BuiltIns;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Diagnostics;

@@ -37,14 +37,19 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
         var invokeMethod = handlerType.GetMethod("Invoke");
         var parms = invokeMethod.GetParameters();
         var returnType = invokeMethod.ReturnType;
-        if (!returnType.IsGenericType || returnType.GetGenericTypeDefinition() != typeof(IEnumerable<>))
-            throw new NotSupportedException($"delegate return type must be IEnumerable<T>");
-        var ienumerableType = returnType.GetGenericArguments()[0];
-        Type[] returnTypes = [ienumerableType];
-        if (ienumerableType.IsAssignableTo(typeof(ITuple)))
-            returnTypes = ienumerableType.GetGenericArguments();
-        var arity = parms.Length + returnTypes.Length;
+        if (!returnType.IsAssignableTo(typeof(IEnumerable)))
+            throw new NotSupportedException($"delegate return type must be IEnumerable or IEnumerable<T>");
+        Type[] returnTypes = [];
+        int arity = parms.Length;
         var fun = functor.GetOr(new Atom(del.Method.Name.ToErgoCase()));
+        if(returnType.IsGenericType)
+        {
+            var ienumerableType = returnType.GetGenericArguments()[0];
+            returnTypes = [ienumerableType];
+            if (ienumerableType.IsAssignableTo(typeof(ITuple)))
+                returnTypes = ienumerableType.GetGenericArguments();
+            arity = parms.Length + returnTypes.Length;
+        }
         return new FunctionalBuiltIn(string.Empty, fun, arity, module, CallDelegate);
 
         void CallDelegate(ErgoVM vm)
@@ -73,7 +78,7 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
                             return;
                     }
                 }
-                else
+                else if(returnType.IsGenericType)
                 {
                     UnifyArg(enumerator.Current, enumerator.Current.GetType(), 0);
                 }

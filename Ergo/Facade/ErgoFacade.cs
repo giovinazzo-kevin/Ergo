@@ -28,11 +28,6 @@ public readonly struct ErgoFacade
         .AddLibrariesByReflection(typeof(Library).Assembly)
         .AddCommandsByReflection(typeof(Save).Assembly)
         .AddParsersByReflection(typeof(DictParser).Assembly)
-        // coalesce to default handlers
-        .AfterKnowledgeBaseCompile(null)
-        .BeforeKnowledgeBaseCompile(null)
-        .ConfigureInterpreterScope(null)
-        .ConfigureStdlibScope(null)
         ;
 
     private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
@@ -79,12 +74,8 @@ public readonly struct ErgoFacade
         _parsers = parsers;
         ConfigureStdlibScopeHandler = configureStdlibScope ?? (s => s);
         ConfigureInterpreterScopeHandler = configureInterpreterScope ?? ((i, s) => s);
-        BeforeKbCompiledHandler = beforeKbCompiled ?? (kb => {});
-        AfterKbCompiledHandler = afterKbCompiled ?? (kb =>
-        {
-            if (trimKnowledgeBase)
-                kb.Trim();
-        });
+        BeforeKbCompiledHandler = beforeKbCompiled ?? (kb => { });
+        AfterKbCompiledHandler = afterKbCompiled ?? (kb => { });
         InterpreterFlags = interpreterFlags;
         CompilerFlags = compilerFlags;
         DecimalType = decimalType;

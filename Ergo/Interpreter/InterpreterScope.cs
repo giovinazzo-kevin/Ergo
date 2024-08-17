@@ -118,6 +118,8 @@ public readonly struct InterpreterScope
         Facade.BeforeKbCompiledHandler(kb);
         ForwardEventToLibraries(new KnowledgeBaseCreatedEvent(kb, Facade.CompilerFlags));
         Facade.AfterKbCompiledHandler(kb);
+        if (Facade.TrimKnowledgeBase)
+            kb.Trim();
         return kb;
     }
 

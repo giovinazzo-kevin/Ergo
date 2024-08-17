@@ -39,23 +39,23 @@ public abstract class MathBuiltIn : BuiltIn
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Lte.Contains(f)
                 => Evaluate(c.Arguments[0]).CompareTo(Evaluate(c.Arguments[1])) <= 0 ? DTrue : DFalse,
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Modulo.Contains(f)
-                => Remainder(c),
+                => Remainder(c, context),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Addition.Contains(f)
-                => Add(c),
+                => Add(c, context),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Subtraction.Contains(f)
-                => Subtract(c),
+                => Subtract(c, context),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Multiplication.Contains(f)
-                => Multiply(c),
+                => Multiply(c, context),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Division.Contains(f)
-                => Divide(c),
+                => Divide(c, context),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.IntDivision.Contains(f)
-                => (Evaluate(c.Arguments[0]).DivideToIntegerNaturalScale(Evaluate(c.Arguments[1]))),
+                => IntegerDivide(c, context),
                 var f when c.Arguments.Length == 2 && WellKnown.Functors.Power.Contains(f)
-                => (Evaluate(c.Arguments[0])).Pow(Evaluate(c.Arguments[1])),
+                => Pow(c, context),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.SquareRoot.Contains(f)
-                => (Evaluate(c.Arguments[0])).Sqrt(null),
+                => (Evaluate(c.Arguments[0])).Sqrt(context),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.AbsoluteValue.Contains(f)
-                => (Evaluate(c.Arguments[0])).Abs(),
+                => (Evaluate(c.Arguments[0])).Abs(context),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Minus.Contains(f)
                 => -Evaluate(c.Arguments[0]),
                 var f when c.Arguments.Length == 1 && WellKnown.Functors.Plus.Contains(f)
@@ -70,7 +70,7 @@ public abstract class MathBuiltIn : BuiltIn
             };
         }
 
-        EDecimal Divide(Complex c)
+        EDecimal Pow(Complex c, EContext ctx)
         {
             var a = Evaluate(c.Arguments[0]);
             if (a is null)
@@ -78,10 +78,11 @@ public abstract class MathBuiltIn : BuiltIn
             var b = Evaluate(c.Arguments[1]);
             if (b is null)
                 return EDecimal.NaN;
-            return a.Divide(b, context);
+            var ret = a.Pow(b, ctx);
+            return ret;
         }
 
-        EDecimal Remainder(Complex c)
+        EDecimal IntegerDivide(Complex c, EContext ctx)
         {
             var a = Evaluate(c.Arguments[0]);
             if (a is null)
@@ -89,10 +90,11 @@ public abstract class MathBuiltIn : BuiltIn
             var b = Evaluate(c.Arguments[1]);
             if (b is null)
                 return EDecimal.NaN;
-            return a.Remainder(b, context);
+            var ret = a.DivideToIntegerNaturalScale(b, ctx);
+            return ret;
         }
 
-        EDecimal Add(Complex c)
+        EDecimal Divide(Complex c, EContext ctx)
         {
             var a = Evaluate(c.Arguments[0]);
             if (a is null)
@@ -100,25 +102,48 @@ public abstract class MathBuiltIn : BuiltIn
             var b = Evaluate(c.Arguments[1]);
             if (b is null)
                 return EDecimal.NaN;
-            return a.Add(b, context);
+            var ret = a.Divide(b, ctx);
+            return ret;
         }
 
-        EDecimal Subtract(Complex c)
+        EDecimal Remainder(Complex c, EContext ctx)
+        {
+            var a = Evaluate(c.Arguments[0]);
+            if (a is null)
+                return EDecimal.NaN;
+            var b = Evaluate(c.Arguments[1]);
+            if (b is null)
+                return EDecimal.NaN;
+            return a.Remainder(b, ctx);
+        }
+
+        EDecimal Add(Complex c, EContext ctx)
+        {
+            var a = Evaluate(c.Arguments[0]);
+            if (a is null)
+                return EDecimal.NaN;
+            var b = Evaluate(c.Arguments[1]);
+            if (b is null)
+                return EDecimal.NaN;
+            return a.Add(b, ctx);
+        }
+
+        EDecimal Subtract(Complex c, EContext ctx)
         {
             var a = Evaluate(c.Arguments[0]);
             if (a is null) return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
             if (b is null) return EDecimal.NaN;
-            return a.Subtract(b, context);
+            return a.Subtract(b, ctx);
         }
 
-        EDecimal Multiply(Complex c)
+        EDecimal Multiply(Complex c, EContext ctx)
         {
             var a = Evaluate(c.Arguments[0]);
             if (a is null) return EDecimal.NaN;
             var b = Evaluate(c.Arguments[1]);
             if (b is null) return EDecimal.NaN;
-            return a.Multiply(b, context);
+            return a.Multiply(b, ctx);
         }
 
         EDecimal Throw(ITerm t)

@@ -44,7 +44,7 @@ public readonly struct ErgoFacade
     public readonly Action<KnowledgeBase> BeforeKbCompiledHandler;
     public readonly Action<KnowledgeBase> AfterKbCompiledHandler;
 
-    public readonly bool TrimKnowledgeBase;
+    public readonly bool TrimKnowledgeBase = true;
 
     public readonly Maybe<TextReader> Input = default;
     public readonly Maybe<TextWriter> Output = default;

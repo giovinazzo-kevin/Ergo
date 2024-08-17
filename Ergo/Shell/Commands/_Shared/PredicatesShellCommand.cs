@@ -14,11 +14,12 @@ public abstract class PredicatesShellCommand : ShellCommand
         var term = m.Groups["term"];
         var shellScope = scope;
         var interpreterScope = scope.InterpreterScope;
-        var predicates = scope.KnowledgeBase.AsEnumerable();
+        var predicates = scope.KnowledgeBase.DependencyGraph.GetAllNodes()
+            .SelectMany(x => x.Clauses);
         if (term?.Success ?? false)
         {
             var parsed = interpreterScope.Parse<ITerm>($"{term.Value}, true");
-            if (!parsed.TryGetValue(out var t))
+            if (!parsed.TryGetValue(out var query))
             {
                 shell.No();
                 yield return scope;
@@ -27,8 +28,8 @@ public abstract class PredicatesShellCommand : ShellCommand
 
             var yes = interpreterScope.ExceptionHandler.TryGet(() =>
             {
-                predicates = scope.KnowledgeBase
-                    .Where(x => x.DeclaringModule.Equals(t) || x.Unify(t).TryGetValue(out _));
+                predicates = predicates
+                    .Where(x => x.DeclaringModule.Equals(query) || x.Unify(query).TryGetValue(out _));
                 if (predicates.Any())
                 {
                     shellScope = shellScope.WithInterpreterScope(interpreterScope);

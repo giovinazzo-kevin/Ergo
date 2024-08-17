@@ -31,7 +31,6 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
     }
     public abstract ErgoVM.Op Compile();
     
-    // del has the shape: IEnumerable
     public static BuiltIn MarshallDelegate(Atom module, Delegate del, Maybe<Atom> functor = default)
     {
         var handlerType = del.GetType();

@@ -28,19 +28,20 @@ public readonly struct ErgoFacade
         .AddLibrariesByReflection(typeof(Library).Assembly)
         .AddCommandsByReflection(typeof(Save).Assembly)
         .AddParsersByReflection(typeof(DictParser).Assembly)
-        .AfterKnowledgeBaseCompile(kb =>
-        {
-            kb.Trim();
-        })
+        // coalesce to default handlers
+        .AfterKnowledgeBaseCompile(null)
+        .BeforeKnowledgeBaseCompile(null)
+        .ConfigureInterpreterScope(null)
+        .ConfigureStdlibScope(null)
         ;
 
     private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
     private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
     private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
 
-    public readonly Func<InterpreterScope, InterpreterScope> ConfigureStdlibScopeHandler = s => s;
-    public readonly Func<ErgoInterpreter, InterpreterScope, InterpreterScope> ConfigureInterpreterScopeHandler = (i, s) => s;
-    public readonly Action<KnowledgeBase> BeforeKbCompiledHandler = k => { };
+    public readonly Func<InterpreterScope, InterpreterScope> ConfigureStdlibScopeHandler;
+    public readonly Func<ErgoInterpreter, InterpreterScope, InterpreterScope> ConfigureInterpreterScopeHandler;
+    public readonly Action<KnowledgeBase> BeforeKbCompiledHandler;
     public readonly Action<KnowledgeBase> AfterKbCompiledHandler;
 
     public readonly bool TrimKnowledgeBase;
@@ -76,10 +77,14 @@ public readonly struct ErgoFacade
         _libraries = libs;
         _commands = commands;
         _parsers = parsers;
-        ConfigureStdlibScopeHandler = configureStdlibScope;
-        ConfigureInterpreterScopeHandler = configureInterpreterScope;
-        BeforeKbCompiledHandler = beforeKbCompiled;
-        AfterKbCompiledHandler = afterKbCompiled;
+        ConfigureStdlibScopeHandler = configureStdlibScope ?? (s => s);
+        ConfigureInterpreterScopeHandler = configureInterpreterScope ?? ((i, s) => s);
+        BeforeKbCompiledHandler = beforeKbCompiled ?? (kb => {});
+        AfterKbCompiledHandler = afterKbCompiled ?? (kb =>
+        {
+            if (trimKnowledgeBase)
+                kb.Trim();
+        });
         InterpreterFlags = interpreterFlags;
         CompilerFlags = compilerFlags;
         DecimalType = decimalType;
@@ -88,11 +93,6 @@ public readonly struct ErgoFacade
         Output = outStream;
         Error = errStream;
         InputReader = inReader;
-        AfterKbCompiledHandler = kb =>
-        {
-            if (trimKnowledgeBase)
-                kb.Trim();
-        };
     }
 
     public ErgoFacade AddLibrary(Func<Library> lib)

@@ -203,6 +203,8 @@ public readonly struct ErgoFacade
         => ConfigureInterpreter(new(this));
     public ErgoVM BuildVM(KnowledgeBase kb)
         => ConfigureVM(new(kb));
+    public ErgoVM BuildVM(ref InterpreterScope scope)
+        => BuildVM((scope = scope.WithFacade(this)).BuildKnowledgeBase());
     public ErgoVM BuildVM() {
         var interpreter = BuildInterpreter();
         var scope = interpreter.CreateScope();

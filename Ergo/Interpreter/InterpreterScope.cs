@@ -148,6 +148,7 @@ public readonly struct InterpreterScope
         return default;
     }
 
+    public InterpreterScope WithFacade(ErgoFacade fac) => new(fac, BaseImport, Entry, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithBaseModule(Atom a) => new(Facade, a, Entry, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithCurrentModule(Atom a) => new(Facade, BaseImport, a, Modules, SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithModule(Module m) => new(Facade, BaseImport, Entry, Modules.SetItem(m.Name, m), SearchDirectories, IsRuntime, ExceptionHandler);

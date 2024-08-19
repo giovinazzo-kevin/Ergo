@@ -5,36 +5,6 @@ using static Ergo.Runtime.Solutions;
 
 namespace Ergo.Runtime;
 
-[Flags]
-public enum CompilerFlags
-{
-    Default = EnableInlining | EnableOptimizations,
-    None = 0,
-    EnableInlining = 1,
-    EnableOptimizations = 4,
-}
-[Flags]
-public enum VMFlags
-{
-    None = 0,
-    /// <summary>
-    /// If set, the rest of the current execution path (@continue) is known to be determinate.
-    /// </summary>
-    ContinuationIsDet = 1
-}
-
-public enum VMMode
-{
-    /// <summary>
-    /// Yields solutions interactively, one at a time. Ideal for a REPL environment.
-    /// </summary>
-    Interactive,
-    /// <summary>
-    /// Computes all solutions.
-    /// </summary>
-    Batch
-}
-
 public partial class ErgoVM
 {
     private static int NUM_VMS = 0;

@@ -20,7 +20,11 @@ public class DeclareModule() : ErgoDirective("", new("module"), 2, 0)
             exportSigs.Add(new Signature(new Atom(sig.Predicate), sig.Arity, default, default));
         }
         module = ctx.ModuleTree.Define(moduleName);
-        module.Exports.UnionWith(exportSigs);
+        foreach (var sig in exportSigs)
+        {
+            var pInfo = module.GetMetaTableEntry(sig);
+            module.MetaTable[sig] = pInfo with { IsExported = true };
+        }
         ctx = ctx with { CurrentModuleName = moduleName };
         return true;
     }

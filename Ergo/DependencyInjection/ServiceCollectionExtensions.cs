@@ -71,17 +71,24 @@ public static class ServiceCollectionExtensions
             .AddErgoLibraries(typeof(Stdlib).Assembly)
             .AddErgoAbstractParsers(typeof(ListParser).Assembly)
             .AddTransient<IErgoEnv, ErgoEnv>()
-            // -- ILoadModulePipeline --
+            // -- IBuildModuleTreePipeline --
             .AddSingleton<ILocateModuleStep, LocateModuleStep>()
             .AddSingleton<IStreamFileStep, StreamFileStep>()
             .AddSingleton<IParseStreamStep, ParseStreamStep>()
             .AddSingleton<IBuildModuleTreeStep, BuildModuleTreeStep>()
             .AddErgoPipeline((sp, builder) => builder
-                .FixEnvironment<ILoadModulePipeline.Env>()
+                .FixEnvironment<IBuildModuleTreePipeline.Env>()
                 .AddStep(sp.GetRequiredService<ILocateModuleStep>())
                 .AddStep(sp.GetRequiredService<IStreamFileStep>())
                 .AddStep(sp.GetRequiredService<IParseStreamStep>())
                 .AddStep(sp.GetRequiredService<IBuildModuleTreeStep>())
-                .Cast<ILoadModulePipeline>())
+                .Cast<IBuildModuleTreePipeline>())
+            // -- IBuildDependencyGraphPipeline --
+            .AddSingleton<IBuildDependencyGraphStep, BuildDependencyGraphStep>()
+            .AddErgoPipeline((sp, builder) => builder
+                .FixEnvironment<IBuildDependencyGraphPipeline.Env>()
+                .AddStep(sp.GetRequiredService<IBuildModuleTreePipeline>())
+                .AddStep(sp.GetRequiredService<IBuildDependencyGraphStep>())
+                .Cast<IBuildDependencyGraphPipeline>())
         ;
 }

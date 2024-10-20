@@ -16,7 +16,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
     public override int LoadOrder => 100;
     public readonly HashSet<Signature> InlinedPredicates = [];
 
-    static Maybe<Clause> TryCompile(Clause clause, ExceptionHandler handler, ErgoDependencyGraph depGraph, bool optimize)
+    static Maybe<Clause> TryCompile(Clause clause, ExceptionHandler handler, LegacyDependencyGraph depGraph, bool optimize)
     {
         return handler.TryGet(() =>
         {
@@ -87,7 +87,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
             }
         }
 
-        void ProcessNode(DependencyGraphNode node, HashSet<Signature> visited = null)
+        void ProcessNode(LegacyDependencyGraphNode node, HashSet<Signature> visited = null)
         {
             visited ??= [];
             if (visited.Contains(node.Signature))
@@ -97,7 +97,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
             }
             node.InlinedClauses ??= new(node.Clauses);
             visited.Add(node.Signature);
-            foreach (var child in node.Dependents.Cast<DependencyGraphNode>())
+            foreach (var child in node.Dependents.Cast<LegacyDependencyGraphNode>())
             {
                 var copy = visited.ToHashSet();
                 ProcessNode(child, copy);
@@ -110,7 +110,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
         }
     }
 
-    public IEnumerable<DependencyGraphNode> InlineInContext(InterpreterScope scope, ErgoDependencyGraph graph)
+    public IEnumerable<LegacyDependencyGraphNode> InlineInContext(InterpreterScope scope, LegacyDependencyGraph graph)
     {
         foreach (var node in graph.GetRootNodes()
             .SelectMany(r => InlineNodeWithContext(scope, r)))
@@ -119,7 +119,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
         }
     }
 
-    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, DependencyGraphNode node, DependencyGraphNode dependent, HashSet<Signature> processed = null)
+    IEnumerable<LegacyDependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, LegacyDependencyGraphNode node, LegacyDependencyGraphNode dependent, HashSet<Signature> processed = null)
     {
         processed ??= [];
         processed.Add(node.Signature);
@@ -156,7 +156,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
         }
 
 
-        IEnumerable<DependencyGraphNode> Inline(DependencyGraphNode node, DependencyGraphNode dependent)
+        IEnumerable<LegacyDependencyGraphNode> Inline(LegacyDependencyGraphNode node, LegacyDependencyGraphNode dependent)
         {
             if (node.InlinedClauses.Count == 1)
             {
@@ -180,7 +180,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
             }
         }
 
-        IEnumerable<DependencyGraphNode> InlineInner(Clause inlined, DependencyGraphNode dependent)
+        IEnumerable<LegacyDependencyGraphNode> InlineInner(Clause inlined, LegacyDependencyGraphNode dependent)
         {
             var newClauses = new List<Clause>();
             foreach (var clause in dependent.InlinedClauses)
@@ -208,10 +208,10 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
         }
     }
 
-    IEnumerable<DependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, DependencyGraphNode node, HashSet<Signature> processed = null)
+    IEnumerable<LegacyDependencyGraphNode> InlineNodeWithContext(InterpreterScope scope, LegacyDependencyGraphNode node, HashSet<Signature> processed = null)
     {
         processed ??= [];
-        foreach (var inline in node.Dependents.Cast<DependencyGraphNode>()
+        foreach (var inline in node.Dependents.Cast<LegacyDependencyGraphNode>()
             .SelectMany(d => InlineNodeWithContext(scope, node, d, processed)))
         {
             yield return inline;

@@ -9,7 +9,7 @@ public abstract class ErgoDirective
         Maybe<ErgoModule> AccessModule(Atom m) => ModuleTree[m];
     }
 
-    public readonly int Priority;
+    public readonly int DisplayPriority;
     public readonly string Description;
     public readonly Signature Signature;
 
@@ -17,7 +17,7 @@ public abstract class ErgoDirective
     {
         Signature = new(functor, arity, Maybe<Atom>.None, Maybe<Atom>.None);
         Description = desc;
-        Priority = weight;
+        DisplayPriority = weight;
     }
 
     public abstract bool Execute(ref Context context, ImmutableArray<ITerm> args);

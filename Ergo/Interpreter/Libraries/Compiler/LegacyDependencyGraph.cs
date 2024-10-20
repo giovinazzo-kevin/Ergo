@@ -1,28 +1,28 @@
 ﻿using Ergo.Modules;
 using Ergo.Runtime.BuiltIns;
 
-public class DependencyGraphNode
+public class LegacyDependencyGraphNode
 {
-    public ErgoDependencyGraph Graph { get; set; }
+    public LegacyDependencyGraph Graph { get; set; }
     public List<Clause> Clauses { get; } = [];
     public Signature Signature { get; set; }
-    public HashSet<DependencyGraphNode> Dependencies { get; } = [];
-    public HashSet<DependencyGraphNode> Dependents { get; } = [];
+    public HashSet<LegacyDependencyGraphNode> Dependencies { get; } = [];
+    public HashSet<LegacyDependencyGraphNode> Dependents { get; } = [];
     public bool IsInlined { get; set; }
     public bool IsCyclical { get; set; }
     public List<Clause> InlinedClauses { get; set; } = null;
 }
 
-public class ErgoDependencyGraph
+public class LegacyDependencyGraph
 {
-    private readonly Dictionary<Signature, DependencyGraphNode> _nodes = [];
+    private readonly Dictionary<Signature, LegacyDependencyGraphNode> _nodes = [];
     public readonly ErgoKnowledgeBase KnowledgeBase;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
     /// </summary>
     public readonly Unify UnifyInstance = new();
 
-    public ErgoDependencyGraph(ErgoKnowledgeBase knowledgeBase)
+    public LegacyDependencyGraph(ErgoKnowledgeBase knowledgeBase)
     {
         KnowledgeBase = knowledgeBase;
     }
@@ -50,14 +50,14 @@ public class ErgoDependencyGraph
         }
     }
 
-    protected bool IsCyclical(DependencyGraphNode node)
+    protected bool IsCyclical(LegacyDependencyGraphNode node)
     {
         if (node.IsCyclical)
             return true;
-        var visited = new HashSet<DependencyGraphNode>();
+        var visited = new HashSet<LegacyDependencyGraphNode>();
         return Inner(node, node, visited);
 
-        bool Inner(DependencyGraphNode cycle, DependencyGraphNode node, HashSet<DependencyGraphNode> visited)
+        bool Inner(LegacyDependencyGraphNode cycle, LegacyDependencyGraphNode node, HashSet<LegacyDependencyGraphNode> visited)
         {
             visited.Add(node);
             foreach (var dep in node.Dependencies)
@@ -90,22 +90,22 @@ public class ErgoDependencyGraph
         }
     }
 
-    public DependencyGraphNode AddNode(Clause pred)
+    public LegacyDependencyGraphNode AddNode(Clause pred)
     {
         var sig = GetKey(pred);
         if (!_nodes.TryGetValue(sig, out var node))
         {
-            node = new DependencyGraphNode { Signature = sig, Graph = this };
+            node = new LegacyDependencyGraphNode { Signature = sig, Graph = this };
             _nodes[sig] = node;
         }
         node.Clauses.Add(pred);
         return node;
     }
 
-    public DependencyGraphNode SetNode(Clause pred)
+    public LegacyDependencyGraphNode SetNode(Clause pred)
     {
         var sig = GetKey(pred);
-        var node = _nodes[sig] = new DependencyGraphNode() { Signature = sig };
+        var node = _nodes[sig] = new LegacyDependencyGraphNode() { Signature = sig };
         node.Clauses.Add(pred);
         return node;
     }
@@ -138,18 +138,18 @@ public class ErgoDependencyGraph
         }
     }
 
-    public Maybe<DependencyGraphNode> GetNode(Signature s) => _nodes.TryGetValue(s, out var node) ? node : Maybe<DependencyGraphNode>.None;
+    public Maybe<LegacyDependencyGraphNode> GetNode(Signature s) => _nodes.TryGetValue(s, out var node) ? node : Maybe<LegacyDependencyGraphNode>.None;
 
-    public IEnumerable<DependencyGraphNode> GetRootNodes()
+    public IEnumerable<LegacyDependencyGraphNode> GetRootNodes()
     {
         // Step 5: Identify Roots for Analysis
         return _nodes.Values.Where(node => !node.Dependencies.Any());
     }
-    public IEnumerable<DependencyGraphNode> GetLeafNodes()
+    public IEnumerable<LegacyDependencyGraphNode> GetLeafNodes()
     {
         return _nodes.Values.Where(node => !node.Dependents.Any());
     }
-    public IEnumerable<DependencyGraphNode> GetAllNodes()
+    public IEnumerable<LegacyDependencyGraphNode> GetAllNodes()
     {
         return _nodes.Values;
     }

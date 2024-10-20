@@ -128,7 +128,7 @@ public partial class ErgoInterpreter
                 visibleDirectives = visibleDirectives.Add(dir.Signature, dir);
             }
         }
-        foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.Priority))
+        foreach (var (Ast, Builtin, _) in directives.Where(x => x.Defined).OrderBy(x => x.Builtin.DisplayPriority))
         {
             Execute(Ast, Builtin, ref scope);
         }

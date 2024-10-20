@@ -2,7 +2,7 @@
 using Ergo.Modules;
 
 namespace Ergo.Pipelines.LoadModule;
-public interface ILoadModulePipeline : IErgoPipeline<Atom, ErgoModuleTree, ILoadModulePipeline.Env>
+public interface IBuildModuleTreePipeline : IErgoPipeline<Atom, ErgoModuleTree, IBuildModuleTreePipeline.Env>
 {
     public interface Env
         : ILocateModuleStep.Env

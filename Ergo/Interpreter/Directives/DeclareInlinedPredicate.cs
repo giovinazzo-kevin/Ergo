@@ -14,7 +14,7 @@ public class DeclareInlinedPredicate() : ErgoDirective("Marks a predicate to be 
             if (sig.Module.TryGetValue(out var module) && module != ctx.CurrentModule.Name)
                 throw new InterpreterException(ErgoInterpreter.ErrorType.CantInlineForeignGoal, arg.Explain());
             sig = sig.WithModule(ctx.CurrentModule.Name);
-            ctx.ModuleTree.GetLibrary<Compiler>()
+            ctx.ModuleTree.GetLibrary<Libraries.Compiler.Compiler>()
                 .InlinedPredicates.Add(sig);
         }
         return true;

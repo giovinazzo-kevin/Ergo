@@ -60,13 +60,13 @@ public static class ExecutionGraphExtensions
 {
     public static readonly InstantiationContext CompilerContext = new("E");
 
-    public static ExecutionGraph ToExecutionGraph(this Clause clause, ErgoDependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
+    public static ExecutionGraph ToExecutionGraph(this Clause clause, LegacyDependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         var root = ToExecutionNode(clause.Body, graph, graph.KnowledgeBase.Scope, clause.DeclaringModule, cyclicalCallMap: cyclicalCallMap);
         return new(clause.Head, root);
     }
 
-    public static ExecutionNode ToExecutionNode(this ITerm goal, ErgoDependencyGraph graph, Maybe<InterpreterScope> mbScope = default, Maybe<Atom> callerModule = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
+    public static ExecutionNode ToExecutionNode(this ITerm goal, LegacyDependencyGraph graph, Maybe<InterpreterScope> mbScope = default, Maybe<Atom> callerModule = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         ctx ??= CompilerContext;
         cyclicalCallMap ??= [];

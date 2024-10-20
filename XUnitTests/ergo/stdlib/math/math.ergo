@@ -1,6 +1,7 @@
 ﻿:- module(math, [
 	':='/1, ':='/2, '=:='/2, '=\\='/2,
 	'>'/2, '<'/2, '>='/2, '<='/2,
+	'=='/2, '\\=='/2,
 	range/2, range/1,
 	between/3, between/6,
 	plus/3, minus/3,
@@ -43,6 +44,10 @@
 
 % OPERATORS
 
+%: Arithmetic comparison (eq).
+'=='(A, B) :- compare(0, A, B).
+%: Arithmetic comparison (neq).
+'\\=='(A, B) :- not(compare(0, A, B)).
 %: Assignment of A to the arithmetic evaluation of B.
 ':='(A, B) :- eval(A, B).
 %: Equivalence of the arithmetic evaluations of A and B.

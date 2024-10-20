@@ -4,12 +4,13 @@ using Ergo.Lang.Ast;
 using Microsoft.Extensions.DependencyInjection;
 using Ergo.Pipelines;
 using Ergo.Modules;
+using Ergo.Compiler;
 
 namespace Ergo;
 
 public static class Program
 {
-    class TestConsumer(IErgoEnv env, ILoadModulePipeline loadModule)
+    class TestConsumer(IErgoEnv env, IBuildDependencyGraphPipeline loadModule)
     {
         public void Do()
         {
@@ -21,6 +22,7 @@ public static class Program
                 while (ex != null)
                     ex = ex.InnerException;
                 Console.WriteLine(error.Exception);
+                return;
             }
         }
     }

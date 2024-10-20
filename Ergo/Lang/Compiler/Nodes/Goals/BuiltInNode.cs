@@ -8,7 +8,7 @@ public class BuiltInNode : GoalNode
     protected Op CompiledBuiltIn { get; private set; }
     public readonly ImmutableArray<ITerm> Args;
 
-    public BuiltInNode(DependencyGraphNode node, ITerm goal, ErgoBuiltIn builtIn, bool compile = true) : base(node, goal)
+    public BuiltInNode(LegacyDependencyGraphNode node, ITerm goal, ErgoBuiltIn builtIn, bool compile = true) : base(node, goal)
     {
         BuiltIn = builtIn;
         Goal.GetQualification(out var head);

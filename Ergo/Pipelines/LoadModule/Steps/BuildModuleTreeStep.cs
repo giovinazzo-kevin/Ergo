@@ -14,6 +14,7 @@ public interface IBuildModuleTreeStep : IErgoPipeline<LegacyErgoParser, ErgoModu
         Maybe<ErgoModuleTree> ModuleTree { get; set; }
         Maybe<Atom> CurrentModule { get; set; }
         ISet<Operator> Operators { get; }
+        int LoadOrder { get; set; }
     }
 }
 public class BuildModuleTreeStep(IServiceProvider sp) : IBuildModuleTreeStep
@@ -24,7 +25,7 @@ public class BuildModuleTreeStep(IServiceProvider sp) : IBuildModuleTreeStep
         // Build the module tree recursively by executing the directives found in each module
         var directivesAST = parser.ProgramDirectives2();
         var ctx = new ErgoDirective.Context(moduleTree, env.CurrentModule);
-        foreach(var ast in directivesAST)
+        foreach (var ast in directivesAST)
         {
             var sig = ast.Body.GetSignature();
             if (!TryGetImpl(sig, out var impl))
@@ -36,6 +37,7 @@ public class BuildModuleTreeStep(IServiceProvider sp) : IBuildModuleTreeStep
         parser.AddOperators(env.Operators);
         // Parse the clauses and return the module as-is
         ctx.CurrentModule.Clauses.AddRange(parser.ProgramClauses2());
+        ctx.CurrentModule.LoadOrder = env.LoadOrder++;
         return moduleTree;
         bool TryGetImpl(Signature sig, out ErgoDirective impl)
         {

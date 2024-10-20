@@ -13,7 +13,8 @@ namespace Ergo.Pipelines;
 
 public interface IErgoEnv
     :
-        ILoadModulePipeline.Env
+        IBuildModuleTreePipeline.Env,
+        IBuildDependencyGraphPipeline.Env
     ;
 
 public class ErgoEnv : IErgoEnv
@@ -29,4 +30,5 @@ public class ErgoEnv : IErgoEnv
     public ErgoLexer.StreamState StreamState { get; set; }
     public Maybe<Atom> CurrentModule { get; set; }
     public Maybe<ErgoModuleTree> ModuleTree { get; set; }
+    public int LoadOrder { get; set; }
 }

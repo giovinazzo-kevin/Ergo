@@ -10,7 +10,7 @@ public partial class ErgoKnowledgeBase : IReadOnlyCollection<Clause>
     protected readonly OrderedDictionary Predicates = [];
 
     public readonly InterpreterScope Scope;
-    public readonly ErgoDependencyGraph DependencyGraph;
+    public readonly LegacyDependencyGraph DependencyGraph;
 
     public ErgoKnowledgeBase(InterpreterScope scope)
     {
@@ -18,7 +18,7 @@ public partial class ErgoKnowledgeBase : IReadOnlyCollection<Clause>
         DependencyGraph = new(this);
     }
 
-    private ErgoKnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, ErgoDependencyGraph dependencyGraph)
+    private ErgoKnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, LegacyDependencyGraph dependencyGraph)
     {
         Scope = scope;
         Predicates = predicates;

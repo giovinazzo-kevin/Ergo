@@ -3,7 +3,7 @@ using Ergo.Pipelines.LoadModule;
 
 namespace Ergo.Modules.Directives;
 
-public class UseModule(IErgoEnv env, ILoadModulePipeline loadModule) 
+public class UseModule(IErgoEnv env, IBuildModuleTreePipeline loadModule) 
     : ErgoDirective("", new("use_module"), 1, 1)
 {
     public override bool Execute(ref Context ctx, ImmutableArray<ITerm> args)

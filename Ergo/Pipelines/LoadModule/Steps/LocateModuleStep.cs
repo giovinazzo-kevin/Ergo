@@ -4,7 +4,6 @@ using System.IO;
 
 namespace Ergo;
 
-
 public interface ILocateModuleStep : IErgoPipeline<Atom, string, ILocateModuleStep.Env>
 {
     public interface Env

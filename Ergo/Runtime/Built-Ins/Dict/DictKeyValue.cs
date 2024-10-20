@@ -1,7 +1,7 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
 
-public sealed class DictKeyValue : BuiltIn
+public sealed class DictKeyValue : ErgoBuiltIn
 {
     const int Arity = 3;
     public DictKeyValue()
@@ -9,7 +9,7 @@ public sealed class DictKeyValue : BuiltIn
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0] is Variable)

@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Union : BuiltIn
+public sealed class Union : ErgoBuiltIn
 {
     public Union()
         : base("", new("union"), 3, WellKnown.Modules.Set)
@@ -8,7 +8,7 @@ public sealed class Union : BuiltIn
 
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0] is Set s1)

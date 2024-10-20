@@ -1,10 +1,8 @@
-﻿using Ergo.Runtime.BuiltIns;
+﻿namespace Ergo.Lang.Compiler;
 
-namespace Ergo.Lang.Compiler;
-
-public class VirtualNode(ErgoVM.Op op, ImmutableArray<ITerm> args) : StaticNode
+public class VirtualNode(Op op, ImmutableArray<ITerm> args) : StaticNode
 {
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         BuiltInNode.SetArgs(args)(vm);
         op(vm);

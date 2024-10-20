@@ -14,8 +14,8 @@ public partial class ErgoLexer : IDisposable
     protected long Position => Stream.Position;
     protected string Context { get; private set; }
 
-    public readonly Operator[] AvailableOperators;
-    public readonly Dictionary<string, Operator[]> OperatorLookup;
+    public readonly HashSet<Operator> AvailableOperators;
+    public readonly Dictionary<string, List<Operator>> OperatorLookup;
     public readonly ErgoFacade Facade;
 
     protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = new();
@@ -63,20 +63,41 @@ public partial class ErgoLexer : IDisposable
 
     public bool Eof => Stream.Position >= Stream.Length;
 
-    internal ErgoLexer(ErgoFacade facade, ErgoStream s, IEnumerable<Operator> userOperators)
+    public ErgoLexer(ErgoFacade facade, ErgoStream s, IEnumerable<Operator> userOperators)
     {
         Facade = facade;
         Stream = s;
-        AvailableOperators = userOperators.ToArray();
-        OperatorSymbols = AvailableOperators
+        AvailableOperators = userOperators.ToHashSet();
+        OperatorSymbols.UnionWith(AvailableOperators
             .SelectMany(op => op.Synonyms
-                .Select(s => (string)s.Value))
-            .ToArray();
+                .Select(s => (string)s.Value)));
         OperatorLookup = AvailableOperators
             .SelectMany(o => o.Synonyms
                 .Select(s => (s, o)))
             .GroupBy(x => x.s)
-            .ToDictionary(x => (string)x.Key.Value, x => x.Select(x => x.o).ToArray());
+            .ToDictionary(x => (string)x.Key.Value, x => x.Select(x => x.o).ToList());
+    }
+
+    public void AddOperator(Operator op)
+    {
+        if (AvailableOperators.Contains(op))
+            return;
+        AvailableOperators.Add(op);
+        OperatorSymbols.UnionWith(op.Synonyms
+            .Select(s => (string)s.Value));
+        foreach (var syn in op.Synonyms)
+        {
+            var key = (string)syn.Value;
+            if (!OperatorLookup.TryGetValue(key, out var ops))
+                ops = OperatorLookup[key] = [];
+            ops.Add(op);
+        }
+    }
+
+    public void AddOperators(IEnumerable<Operator> ops)
+    {
+        foreach (var op in ops) 
+            AddOperator(op);
     }
 
     public Maybe<Token> PeekNext()

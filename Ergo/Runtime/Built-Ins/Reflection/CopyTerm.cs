@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class CopyTerm : BuiltIn
+public sealed class CopyTerm : ErgoBuiltIn
 {
     public CopyTerm()
         : base("", new("copy_term"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var copy = vm.Arg(0).Instantiate(vm.InstantiationContext);
         vm.SetArg(0, copy);

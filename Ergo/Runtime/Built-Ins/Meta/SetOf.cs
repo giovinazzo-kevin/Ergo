@@ -7,7 +7,7 @@ public sealed class SetOf : SolutionAggregationBuiltIn
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var any = false;

@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class With : BuiltIn
+public sealed class With : ErgoBuiltIn
 {
     const int Arity = 3;
 
@@ -9,7 +9,7 @@ public sealed class With : BuiltIn
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0] is Dict a)

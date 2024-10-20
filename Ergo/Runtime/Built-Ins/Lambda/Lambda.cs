@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Lambda : BuiltIn
+public sealed class Lambda : ErgoBuiltIn
 {
 
     public Lambda()
@@ -9,7 +9,7 @@ public sealed class Lambda : BuiltIn
     }
 
     private readonly Call CallInst = new();
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args.Length < 2)

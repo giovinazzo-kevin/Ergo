@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain(false) }")]
-public readonly struct Predicate : IExplainable
+public readonly struct Clause : IExplainable
 {
     public readonly Atom DeclaringModule;
     public readonly ITerm Head;
@@ -17,7 +17,7 @@ public readonly struct Predicate : IExplainable
     public readonly bool IsFactual;
     public readonly bool IsBuiltIn;
     public readonly bool IsVariadic;
-    public readonly Maybe<BuiltIn> BuiltIn;
+    public readonly Maybe<ErgoBuiltIn> BuiltIn;
     public readonly Maybe<ExecutionGraph> ExecutionGraph;
     //public readonly bool IsDeterminate;
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
@@ -50,7 +50,7 @@ public readonly struct Predicate : IExplainable
         return false;
     }
 
-    public bool IsSameDeclarationAs(Predicate other)
+    public bool IsSameDeclarationAs(Clause other)
     {
         if (BuiltIn.TryGetValue(out var b1) && other.BuiltIn.TryGetValue(out var b2))
             return b1 == b2;
@@ -61,7 +61,7 @@ public readonly struct Predicate : IExplainable
         return true;
     }
 
-    public bool IsSameDefinitionAs(Predicate other)
+    public bool IsSameDefinitionAs(Clause other)
     {
         if (!IsSameDeclarationAs(other))
             return false;
@@ -72,7 +72,7 @@ public readonly struct Predicate : IExplainable
         return true;
     }
 
-    public static IEnumerable<ITerm> GetGoals(Predicate p)
+    public static IEnumerable<ITerm> GetGoals(Clause p)
     {
         var goals = new List<ITerm>();
         ExpandGoals(p.Body, t => { goals.Add(t); return t; });
@@ -163,14 +163,14 @@ public readonly struct Predicate : IExplainable
         }
     }
 
-    public static Predicate Fact(Atom module, ITerm head, bool dynamic = false, bool exported = false)
+    public static Clause Fact(Atom module, ITerm head, bool dynamic = false, bool exported = false)
         => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.True, TrueNode.Instance));
-    public static Predicate Falsehood(Atom module, ITerm head, bool dynamic = false, bool exported = false)
+    public static Clause Falsehood(Atom module, ITerm head, bool dynamic = false, bool exported = false)
         => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.False, FalseNode.Instance));
-    public static Predicate FromOp(Atom module, ITerm head, ErgoVM.Op op, bool dynamic = false, bool exported = false)
+    public static Clause FromOp(Atom module, ITerm head, Op op, bool dynamic = false, bool exported = false)
         => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.True, new VirtualNode(op, head.GetArguments())));
 
-    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<ExecutionGraph> graph)
+    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<ExecutionGraph> graph)
     {
         Documentation = desc;
         DeclaringModule = module;
@@ -186,12 +186,12 @@ public readonly struct Predicate : IExplainable
         ExecutionGraph = graph;
     }
 
-    public Predicate(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, Maybe<ExecutionGraph> graph)
+    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, Maybe<ExecutionGraph> graph)
         : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body), graph)
     {
     }
 
-    public Predicate(BuiltIn builtIn, Maybe<ITerm> head = default)
+    public Clause(ErgoBuiltIn builtIn, Maybe<ITerm> head = default)
     {
         Documentation = $"<builtin> {builtIn.Documentation}";
         DeclaringModule = builtIn.Signature.Module.GetOr(WellKnown.Modules.Stdlib);
@@ -210,14 +210,14 @@ public readonly struct Predicate : IExplainable
         BuiltIn = builtIn;
     }
 
-    public Predicate Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
+    public Clause Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
         if (IsBuiltIn)
             return this;
         if (Head.GetFunctor().TryGetValue(out var head) && head.Equals(WellKnown.Literals.TopLevel))
             return this; // No need to instantiate the top level query, it would hide the fact that top level variables are not ignored thus preventing some optimizations.
         vars ??= new Dictionary<string, Variable>();
-        return new Predicate(
+        return new Clause(
             Documentation
             , DeclaringModule
             , Head.Instantiate(ctx, vars)
@@ -232,7 +232,7 @@ public readonly struct Predicate : IExplainable
     /// <summary>
     /// Moves all non-variable terms in pred's head to the beginning of its body, unifying them with free variables.
     /// </summary>
-    public static Predicate InlineHead(InstantiationContext ctx, Predicate pred)
+    public static Clause InlineHead(InstantiationContext ctx, Clause pred)
     {
         if (pred.IsBuiltIn)
             return pred;
@@ -264,63 +264,63 @@ public readonly struct Predicate : IExplainable
         return inst.WithHead(newHead).WithBody(new NTuple(new ITerm[] { ifThenConstruct }));
     }
 
-    public Predicate Substitute(IEnumerable<Substitution> s)
+    public Clause Substitute(IEnumerable<Substitution> s)
     {
         if (IsBuiltIn)
             return WithHead(Head.Substitute(s));
         return new(Documentation, DeclaringModule, Head.Substitute(s), (NTuple)Body
             .Substitute(s), IsDynamic, IsExported, IsTailRecursive, ExecutionGraph.Select(g => g.Substitute(s)));
     }
-    public Predicate WithExecutionGraph(Maybe<ExecutionGraph> newGraph)
+    public Clause WithExecutionGraph(Maybe<ExecutionGraph> newGraph)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
         return new(Documentation, DeclaringModule, Head, Body, IsDynamic, IsExported, IsTailRecursive, newGraph);
     }
-    public Predicate WithHead(ITerm newHead)
+    public Clause WithHead(ITerm newHead)
     {
         if (BuiltIn.TryGetValue(out var builtIn))
             return new(builtIn, Maybe.Some(newHead));
         return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
     }
-    public Predicate WithBody(NTuple newBody)
+    public Clause WithBody(NTuple newBody)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
         return new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
     }
-    public Predicate WithModuleName(Atom module)
+    public Clause WithModuleName(Atom module)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
         return new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
     }
-    public Predicate Dynamic()
+    public Clause Dynamic()
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
         return new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive, ExecutionGraph);
     }
-    public Predicate Exported()
+    public Clause Exported()
     {
         if (IsBuiltIn)
             return this;
         return new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive, ExecutionGraph);
     }
-    public Predicate Qualified()
+    public Clause Qualified()
     {
         if (Head.IsQualified)
             return this;
         return WithHead(Head.Qualified(DeclaringModule));
     }
-    public Predicate Unqualified()
+    public Clause Unqualified()
     {
         if (!Head.GetQualification(out var head).TryGetValue(out var _))
             return this;
         return WithHead(head);
     }
 
-    public static bool FromCanonical(ITerm term, Atom defaultModule, out Predicate pred)
+    public static bool FromCanonical(ITerm term, Atom defaultModule, out Clause pred)
     {
         var module = term.GetQualification(out term).GetOr(defaultModule);
         if (term is Complex c && WellKnown.Functors.Horn.Contains(c.Functor))

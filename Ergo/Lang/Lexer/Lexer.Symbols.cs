@@ -22,6 +22,6 @@ public partial class ErgoLexer
         "(", ")", "[", "]", "{", "}", ",", "."
     ];
 
-    public readonly string[] OperatorSymbols;
+    public readonly HashSet<string> OperatorSymbols = [];
 
 }

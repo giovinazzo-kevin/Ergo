@@ -1,6 +1,4 @@
-﻿using Ergo.Runtime;
-
-namespace Ergo.Interpreter.Libraries.Tabling;
+﻿namespace Ergo.Modules.Libraries.Tabling;
 
 public sealed class MemoizationTable
 {

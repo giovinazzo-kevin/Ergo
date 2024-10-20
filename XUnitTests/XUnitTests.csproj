@@ -8,6 +8,8 @@
     <IsPackable>false</IsPackable>
 
     <Configurations>Debug;Release;Diagnostics</Configurations>
+
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,7 +2,7 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Unify : BuiltIn
+public sealed class Unify : ErgoBuiltIn
 {
     public Unify()
         : base("", new("unify"), Maybe<int>.Some(2), WellKnown.Modules.Prologue)
@@ -96,5 +96,5 @@ public sealed class Unify : BuiltIn
         return TrueNode.Instance;
     }
 
-    public override ErgoVM.Op Compile() => ErgoVM.Goals.Unify2;
+    public override Op Compile() => ErgoVM.Goals.Unify2;
 }

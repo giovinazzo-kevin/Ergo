@@ -24,7 +24,7 @@ public partial class ErgoParser : IDisposable
     protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
     protected List<IAbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
 
-    public readonly ErgoLexer Lexer;
+    public ErgoLexer Lexer { get; set; }
     public readonly ErgoFacade Facade;
 
     public ParserScope GetScope() => new(Lexer.State);
@@ -90,7 +90,7 @@ public partial class ErgoParser : IDisposable
         return Fail<T>(state);
     }
 
-    internal ErgoParser(ErgoFacade facade, ErgoLexer lexer)
+    public ErgoParser(ErgoFacade facade, ErgoLexer lexer)
     {
         Facade = facade;
         Lexer = lexer;
@@ -591,7 +591,7 @@ public partial class ErgoParser : IDisposable
             ;
     }
 
-    public Maybe<Predicate> Predicate()
+    public Maybe<Clause> Predicate()
     {
         var watch = Probe.Enter();
         var scope = GetScope();
@@ -613,7 +613,7 @@ public partial class ErgoParser : IDisposable
         }
 
         if (Lexer.Eof)
-            return MemoizeFailureAndFail<Predicate>(scope.LexerState).Do(() => Probe.Leave(watch));
+            return MemoizeFailureAndFail<Clause>(scope.LexerState).Do(() => Probe.Leave(watch));
 
         desc ??= " ";
         return Expression()
@@ -631,11 +631,11 @@ public partial class ErgoParser : IDisposable
             .Map(p => ExpectDelimiter(p => p.Equals("."))
                 .Do(none: () => Throw(scope.LexerState, ErrorType.UnterminatedClauseList))
                 .Select(_ => p))
-            .Or(() => MemoizeFailureAndFail<Predicate>(scope.LexerState))
+            .Or(() => MemoizeFailureAndFail<Clause>(scope.LexerState))
             .Do(() => Probe.Leave(watch))
             ;
 
-        Maybe<Predicate> MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, NTuple body)
+        Maybe<Clause> MakePredicate(ErgoLexer.StreamState pos, string desc, ITerm head, NTuple body)
         {
             var headVars = head.Variables
                 .Where(v => !v.Equals(WellKnown.Literals.Discard));
@@ -648,7 +648,7 @@ public partial class ErgoParser : IDisposable
                 Throw(scope.LexerState, ErrorType.PredicateHasSingletonVariables, head.GetSignature().Explain(), singletons.Join());
             }
 
-            return new Predicate(desc, WellKnown.Modules.User, head, body, false, false, default);
+            return new Clause(desc, WellKnown.Modules.User, head, body, false, false, default);
         }
     }
 
@@ -656,7 +656,7 @@ public partial class ErgoParser : IDisposable
     {
         var watch = Probe.Enter();
         var directives = new List<Directive>();
-        var predicates = new List<Predicate>();
+        var predicates = new List<Clause>();
         while (Directive().TryGetValue(out var directive))
         {
             directives.Add(directive);
@@ -746,10 +746,34 @@ public partial class ErgoParser : IDisposable
 
         if (!ret)
             return default;
-        return Maybe.Some(new ErgoProgram([.. directives], Array.Empty<Predicate>())
+        return Maybe.Some(new ErgoProgram([.. directives], Array.Empty<Clause>())
             .AsPartial(true))
             .Do(() => Probe.Leave(watch))
             ;
+    }
+
+    public IEnumerable<Directive> ProgramDirectives2()
+    {
+        var watch = Probe.Enter();
+        var directives = new List<Directive>();
+        try
+        {
+            while (Directive().TryGetValue(out var directive))
+                directives.Add(directive);
+        }
+        catch (LexerException le) when (le.ErrorType == ErgoLexer.ErrorType.UnrecognizedOperator)
+        {
+            // The parser reached a point where a newly-declared operator was used. Probably.
+        }
+        Probe.Leave(watch);
+        return directives;
+    }
+
+    public IEnumerable<Clause> ProgramClauses2()
+    {
+        var watch = Probe.Enter();
+        while (Predicate().TryGetValue(out var predicate))
+            yield return predicate;
     }
 
     public void Dispose()

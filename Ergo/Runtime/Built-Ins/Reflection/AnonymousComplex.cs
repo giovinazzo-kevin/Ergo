@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class AnonymousComplex : BuiltIn
+public sealed class AnonymousComplex : ErgoBuiltIn
 {
     public AnonymousComplex()
         : base("", new("anon"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (!args[1].Match<int>(out var arity))

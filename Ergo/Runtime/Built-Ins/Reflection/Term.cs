@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Term : BuiltIn
+public sealed class Term : ErgoBuiltIn
 {
     public Term()
         : base("", new("term"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var arguments = vm.Args;
         var (functorArg, args, termArg) = (arguments[0], arguments[1], arguments[2]);

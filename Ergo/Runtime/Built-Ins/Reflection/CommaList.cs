@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class CommaToList : BuiltIn
+public sealed class CommaToList : ErgoBuiltIn
 {
     public CommaToList()
         : base("", new("comma_list"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var (commaArg, listArg) = (args[0], args[1]);

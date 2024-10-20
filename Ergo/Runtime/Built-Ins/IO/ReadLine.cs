@@ -2,14 +2,14 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class ReadLine : BuiltIn
+public sealed class ReadLine : ErgoBuiltIn
 {
     public ReadLine()
         : base("", new("read_line"), 1, WellKnown.Modules.IO)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         int value;
         var builder = new StringBuilder();

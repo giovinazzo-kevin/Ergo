@@ -1,4 +1,6 @@
 ﻿using Ergo.Facade;
+using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel.Design;
 
 var facade = ErgoFacade.Standard;
 var shell = facade.BuildShell();

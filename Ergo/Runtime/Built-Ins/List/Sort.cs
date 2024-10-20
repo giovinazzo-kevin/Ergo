@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Sort : BuiltIn
+public sealed class Sort : ErgoBuiltIn
 {
     public Sort()
         : base("", new("sort"), 2, WellKnown.Modules.List)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0] is List list)

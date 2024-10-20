@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace Ergo.Debugger;
+﻿namespace Ergo.Debugger;
 
 public enum DebuggerState
 {

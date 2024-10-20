@@ -12,7 +12,7 @@ public class IfThenNode : ExecutionNode
     public ExecutionNode TrueBranch { get; }
     public override bool IsGround => Condition.IsGround && TrueBranch.IsGround;
     public override int CheckSum => HashCode.Combine(Condition.CheckSum, TrueBranch.CheckSum);
-    public override ErgoVM.Op Compile() => ErgoVM.Ops.IfThen(Condition.Compile(), TrueBranch.Compile());
+    public override Op Compile() => Ops.IfThen(Condition.Compile(), TrueBranch.Compile());
     public override ExecutionNode Optimize()
     {
         if (Condition is TrueNode)

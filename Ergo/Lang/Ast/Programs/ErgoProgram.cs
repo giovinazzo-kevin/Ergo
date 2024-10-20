@@ -1,4 +1,4 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -7,7 +7,7 @@ namespace Ergo.Lang.Ast;
 public readonly struct ErgoProgram : IExplainable
 {
     public readonly Directive[] Directives;
-    public readonly KnowledgeBase KnowledgeBase;
+    public readonly ErgoKnowledgeBase KnowledgeBase;
     public readonly bool IsPartial;
 
     public string Explain(bool canonical)
@@ -16,10 +16,10 @@ public readonly struct ErgoProgram : IExplainable
             .Join("\r\n\r\n");
     }
 
-    public ErgoProgram(Directive[] directives, Predicate[] kb)
+    public ErgoProgram(Directive[] directives, Clause[] kb)
     {
         Directives = directives;
-        KnowledgeBase = new KnowledgeBase(default);
+        KnowledgeBase = new ErgoKnowledgeBase(default);
         foreach (var k in kb)
         {
             KnowledgeBase.AssertZ(k);
@@ -28,7 +28,7 @@ public readonly struct ErgoProgram : IExplainable
         IsPartial = false;
     }
 
-    private ErgoProgram(Directive[] dirs, KnowledgeBase kb, bool partial)
+    private ErgoProgram(Directive[] dirs, ErgoKnowledgeBase kb, bool partial)
     {
         Directives = dirs;
         KnowledgeBase = kb;
@@ -41,7 +41,7 @@ public readonly struct ErgoProgram : IExplainable
 
     public static ErgoProgram Empty(Atom module) => new ErgoProgram(
         new[] { new Directive(new Complex(new DeclareModule().Signature.Functor, module, WellKnown.Literals.EmptyList), string.Empty) },
-        Array.Empty<Predicate>()
+        Array.Empty<Clause>()
     );
 }
 

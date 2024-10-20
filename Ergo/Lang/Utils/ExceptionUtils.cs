@@ -1,5 +1,5 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang.Compiler;
+﻿using Ergo.Lang.Compiler;
+using Ergo.Modules;
 
 namespace Ergo.Lang.Utils;
 
@@ -78,7 +78,7 @@ public static class ExceptionUtils
         return msg;
     }
 
-    public static string GetInterpreterError(ErgoInterpreter.ErrorType error, InterpreterScope scope, params object[] args)
+    public static string GetInterpreterError(ErgoInterpreter.ErrorType error, params object[] args)
     {
         var msg = error switch
         {

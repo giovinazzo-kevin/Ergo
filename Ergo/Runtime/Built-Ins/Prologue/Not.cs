@@ -3,7 +3,7 @@ using Ergo.Lang.Compiler;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Not : BuiltIn
+public sealed class Not : ErgoBuiltIn
 {
     public Not()
         : base("", new("not"), Maybe<int>.Some(1), WellKnown.Modules.Prologue)
@@ -27,7 +27,7 @@ public sealed class Not : BuiltIn
         }, node.Goal.GetArguments()[0].GetArguments());
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         // NOTE: This will never be called if optimizations are enabled.
         // Which is good, because compiling the query on the fly is expensive.

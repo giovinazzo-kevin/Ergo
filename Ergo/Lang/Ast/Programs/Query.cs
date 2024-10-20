@@ -1,5 +1,4 @@
-﻿using Ergo.Lang.Compiler;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
 
@@ -10,8 +9,8 @@ public class Query
     public Query(NTuple goals) => Goals = goals;
     public Query(params ITerm[] goals) => Goals = new(goals, default);
     public Query(ImmutableArray<ITerm> goals) => Goals = new(goals, default);
-    public ErgoVM.Op Compile()
+    public Op Compile()
     {
-        return ErgoVM.Ops.Goals(Goals);
+        return Ops.Goals(Goals);
     }
 }

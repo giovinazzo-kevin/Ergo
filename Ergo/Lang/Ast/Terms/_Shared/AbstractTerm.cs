@@ -1,5 +1,5 @@
-﻿using Ergo.Interpreter;
-using Ergo.Interpreter.Libraries.Expansions;
+﻿using Ergo.Modules;
+using Ergo.Modules.Libraries.Expansions;
 
 namespace Ergo.Lang.Ast.Terms.Interfaces;
 

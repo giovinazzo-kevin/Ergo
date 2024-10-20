@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class ListSet : BuiltIn
+public sealed class ListSet : ErgoBuiltIn
 {
     public ListSet()
         : base("", new("list_set"), 2, WellKnown.Modules.List)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0] is List list)
@@ -24,6 +24,6 @@ public sealed class ListSet : BuiltIn
             vm.SetArg(1, lst);
             ErgoVM.Goals.Unify2(vm);
         }
-        else ErgoVM.Ops.Fail(vm);
+        else Ops.Fail(vm);
     };
 }

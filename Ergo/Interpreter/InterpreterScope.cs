@@ -1,12 +1,12 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
 using Ergo.Facade;
-using Ergo.Interpreter.Directives;
-using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Exceptions.Handler;
+using Ergo.Modules.Directives;
+using Ergo.Modules.Libraries;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter;
+namespace Ergo.Modules;
 
 public readonly struct InterpreterScope
 {
@@ -43,13 +43,13 @@ public readonly struct InterpreterScope
 
     public readonly ImmutableArray<Operator> VisibleOperators;
     public readonly ImmutableArray<Atom> VisibleModules;
-    public readonly ImmutableHashSet<Library> VisibleLibraries;
-    public readonly ImmutableDictionary<Signature, BuiltIn> VisibleBuiltIns;
+    public readonly ImmutableHashSet<IErgoLibrary> VisibleLibraries;
+    public readonly ImmutableDictionary<Signature, ErgoBuiltIn> VisibleBuiltIns;
     /// <summary>
     /// List optimized for enumeration otherwise identical to VisibleBuiltIns.Keys
     /// </summary>
     public readonly IReadOnlyList<Signature> VisibleBuiltInsKeys;
-    public readonly ImmutableDictionary<Signature, InterpreterDirective> VisibleDirectives;
+    public readonly ImmutableDictionary<Signature, ErgoDirective> VisibleDirectives;
 
     public InterpreterScope(ErgoFacade facade, Module userModule)
     {
@@ -93,11 +93,11 @@ public readonly struct InterpreterScope
         VisibleOperators = GetOperators().ToImmutableArray();
     }
 
-    public KnowledgeBase BuildKnowledgeBase() {
-        var kb = new KnowledgeBase(this);
+    public ErgoKnowledgeBase BuildKnowledgeBase() {
+        var kb = new ErgoKnowledgeBase(this);
         foreach (var builtIn in VisibleBuiltIns.Values)
         {
-            kb.AssertZ(new Predicate(builtIn));
+            kb.AssertZ(new Clause(builtIn));
         }
         foreach (var module in VisibleModules)
         {
@@ -159,7 +159,7 @@ public readonly struct InterpreterScope
     public InterpreterScope WithoutModules() => new(Facade, BaseImport, Entry, ImmutableDictionary.Create<Atom, Module>().Add(WellKnown.Modules.Stdlib, Modules[WellKnown.Modules.Stdlib]), SearchDirectories, IsRuntime, ExceptionHandler);
     public InterpreterScope WithoutSearchDirectories() => new(Facade, BaseImport, Entry, Modules, ImmutableArray<string>.Empty, IsRuntime, ExceptionHandler);
 
-    public T GetLibrary<T>(Maybe<Atom> module = default) where T : Library => Modules[module.GetOr(Entry)].LinkedLibrary
+    public T GetLibrary<T>(Maybe<Atom> module = default) where T : IErgoLibrary => Modules[module.GetOr(Entry)].LinkedLibrary
         .GetOrThrow(new ArgumentException(null, nameof(module)))
         as T;
 
@@ -171,25 +171,25 @@ public readonly struct InterpreterScope
         return e;
     }
 
-    private static ImmutableHashSet<Library> GetVisibleLibraries(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableHashSet<IErgoLibrary> GetVisibleLibraries(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .Select(m => (HasValue: modules[m].LinkedLibrary.TryGetValue(out var lib), Value: lib))
             .Where(x => x.HasValue)
             .Select(x => x.Value)
         .ToImmutableHashSet();
-    private static ImmutableDictionary<Signature, InterpreterDirective> GetVisibleDirectives(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableDictionary<Signature, ErgoDirective> GetVisibleDirectives(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.ExportedDirectives)
-                .GetOr(Enumerable.Empty<InterpreterDirective>()))
+                .GetOr(Enumerable.Empty<ErgoDirective>()))
             .Where(d => visibleModules.Contains(d.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 
-    private static ImmutableDictionary<Signature, BuiltIn> GetVisibleBuiltIns(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
+    private static ImmutableDictionary<Signature, ErgoBuiltIn> GetVisibleBuiltIns(IEnumerable<Atom> visibleModules, ImmutableDictionary<Atom, Module> modules)
         => visibleModules
             .SelectMany(m => modules[m].LinkedLibrary
                 .Select(l => l.ExportedBuiltins)
-                .GetOr(Enumerable.Empty<BuiltIn>()))
+                .GetOr(Enumerable.Empty<ErgoBuiltIn>()))
             .Where(b => visibleModules.Contains(b.Signature.Module.GetOr(WellKnown.Modules.Stdlib)))
             .ToImmutableDictionary(x => x.Signature);
 

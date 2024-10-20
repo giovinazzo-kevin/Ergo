@@ -2,7 +2,7 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public abstract class MathBuiltIn : BuiltIn
+public abstract class MathBuiltIn : ErgoBuiltIn
 {
     public static readonly EDecimal DTrue = 1;
     public static readonly EDecimal DFalse = 0;

@@ -1,32 +1,31 @@
-﻿using Ergo.Interpreter;
-using Ergo.Runtime.BuiltIns;
+﻿using Ergo.Modules;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Diagnostics;
 
 namespace Ergo.Lang;
 
-public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
+public partial class ErgoKnowledgeBase : IReadOnlyCollection<Clause>
 {
     protected readonly OrderedDictionary Predicates = new();
 
     public readonly InterpreterScope Scope;
-    public readonly DependencyGraph DependencyGraph;
+    public readonly ErgoDependencyGraph DependencyGraph;
 
-    public KnowledgeBase(InterpreterScope scope)
+    public ErgoKnowledgeBase(InterpreterScope scope)
     {
         Scope = scope;
         DependencyGraph = new(this);
     }
 
-    private KnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, DependencyGraph dependencyGraph)
+    private ErgoKnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, ErgoDependencyGraph dependencyGraph)
     {
         Scope = scope;
         Predicates = predicates;
         DependencyGraph = dependencyGraph;
     }
 
-    public int Count => Predicates.Values.Cast<List<Predicate>>().Sum(l => l.Count);
+    public int Count => Predicates.Values.Cast<List<Clause>>().Sum(l => l.Count);
     public void Clear() => Predicates.Clear();
 
     /// <summary>
@@ -36,7 +35,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     {
         for (int k = Predicates.Count - 1; k >= 0; k--)
         {
-            var list = (List<Predicate>)Predicates[k];
+            var list = (List<Clause>)Predicates[k];
             for (int i = list.Count - 1; i >= 0; i--)
             {
                 var sig = DependencyGraph.GetKey(list[i]);
@@ -50,7 +49,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         }
     }
 
-    public KnowledgeBase Clone()
+    public ErgoKnowledgeBase Clone()
     {
         var inner = new OrderedDictionary();
         foreach (DictionaryEntry kv in Predicates)
@@ -60,43 +59,43 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return new(Scope, inner, DependencyGraph);
     }
 
-    private List<Predicate> GetOrCreate(Signature key, bool append = false)
+    private List<Clause> GetOrCreate(Signature key, bool append = false)
     {
         if (!Predicates.Contains(key))
         {
             if (append)
             {
-                Predicates.Add(key, new List<Predicate>());
+                Predicates.Add(key, new List<Clause>());
             }
             else
             {
-                Predicates.Insert(0, key, new List<Predicate>());
+                Predicates.Insert(0, key, new List<Clause>());
             }
         }
 
-        return (List<Predicate>)Predicates[key];
+        return (List<Clause>)Predicates[key];
     }
 
-    private Maybe<List<Predicate>> GetImpl(Signature key)
+    private Maybe<List<Clause>> GetImpl(Signature key)
     {
         if (Predicates.Contains(key))
         {
-            return Maybe.Some((List<Predicate>)Predicates[key]);
+            return Maybe.Some((List<Clause>)Predicates[key]);
         }
         return default;
     }
 
-    public Maybe<IList<Predicate>> Get(Signature sig)
+    public Maybe<IList<Clause>> Get(Signature sig)
     {
         // Direct match
         if (GetImpl(sig).TryGetValue(out var list))
-            return Maybe.Some<IList<Predicate>>(list);
+            return Maybe.Some<IList<Clause>>(list);
         // Variadic match (write/*, call/*)
         if (GetImpl(sig.WithArity(default)).TryGetValue(out list))
-            return Maybe.Some<IList<Predicate>>(list);
+            return Maybe.Some<IList<Clause>>(list);
         // Matching exported predicates with qualification
         if (sig.Module.TryGetValue(out var module) && Get(sig.WithModule(default)).TryGetValue(out var list_))
-            return Maybe.Some<IList<Predicate>>(list_.Where(p => p.IsExported || p.DeclaringModule.Equals(module)).ToArray());
+            return Maybe.Some<IList<Clause>>(list_.Where(p => p.IsExported || p.DeclaringModule.Equals(module)).ToArray());
         return default;
     }
 
@@ -118,7 +117,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         // Return predicate matches
         var sig = goal.GetSignature();
         return Get(sig).Select(Inner);
-        IEnumerable<KBMatch> Inner(IList<Predicate> list)
+        IEnumerable<KBMatch> Inner(IList<Clause> list)
         {
             var buf = list.ToArray();
             foreach (var k in buf)
@@ -138,7 +137,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         }
     }
 
-    List<Predicate> Assert_(Predicate k, bool append)
+    List<Clause> Assert_(Clause k, bool append)
     {
         var sig = k.Head.GetSignature();
         if (k.IsVariadic)
@@ -146,11 +145,11 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return GetOrCreate(sig, append: append);
     }
 
-    public void AssertA(Predicate k)
+    public void AssertA(Clause k)
     {
         Assert_(k, append: false).Insert(0, k);
     }
-    public void AssertZ(Predicate k)
+    public void AssertZ(Clause k)
     {
         Assert_(k, append: true).Add(k);
     }
@@ -176,7 +175,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
     /// <summary>
     /// NOTE: Unlike other flavors of retract, this one allows you to retract built-ins.
     /// </summary>
-    public bool Retract(Predicate pred)
+    public bool Retract(Clause pred)
     {
         if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
         {
@@ -193,7 +192,7 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
 
         return false;
     }
-    public bool Replace(Predicate pred, Predicate other)
+    public bool Replace(Clause pred, Clause other)
     {
         if (Get(pred.Head.GetSignature()).TryGetValue(out var matches))
         {
@@ -233,10 +232,10 @@ public partial class KnowledgeBase : IReadOnlyCollection<Predicate>
         return retracted;
     }
 
-    public IEnumerator<Predicate> GetEnumerator()
+    public IEnumerator<Clause> GetEnumerator()
     {
         return Predicates.Values
-            .Cast<List<Predicate>>()
+            .Cast<List<Clause>>()
             .SelectMany(l => l)
             .GetEnumerator();
     }

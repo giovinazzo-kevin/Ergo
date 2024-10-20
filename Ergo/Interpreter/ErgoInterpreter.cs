@@ -1,12 +1,12 @@
 ﻿using Ergo.Events.Interpreter;
 using Ergo.Facade;
-using Ergo.Interpreter.Directives;
-using Ergo.Interpreter.Libraries;
 using Ergo.Lang.Utils;
+using Ergo.Modules.Directives;
+using Ergo.Modules.Libraries;
 using System.Collections.Concurrent;
 using System.IO;
 
-namespace Ergo.Interpreter;
+namespace Ergo.Modules;
 
 public partial class ErgoInterpreter
 {
@@ -21,8 +21,8 @@ public partial class ErgoInterpreter
 #endif
     };
 
-    private readonly Dictionary<Atom, Library> _libraries = new();
-    public Maybe<Library> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
+    private readonly Dictionary<Atom, IErgoLibrary> _libraries = new();
+    public Maybe<IErgoLibrary> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
 
     internal ErgoInterpreter(ErgoFacade facade)
     {
@@ -30,7 +30,7 @@ public partial class ErgoInterpreter
 
     }
 
-    public void AddLibrary(Library l)
+    public void AddLibrary(IErgoLibrary l)
     {
         if (_libraries.ContainsKey(l.Module))
             throw new ArgumentException($"A library for module {l.Module} was already added");
@@ -108,7 +108,7 @@ public partial class ErgoInterpreter
         }
         parser.Lexer.Seek(pos);
 
-        var linkLibrary = Maybe<Library>.None;
+        var linkLibrary = Maybe<IErgoLibrary>.None;
         var visibleDirectives = scope.VisibleDirectives;
         var directives = program.Directives.Select(d =>
         {
@@ -163,7 +163,7 @@ public partial class ErgoInterpreter
         Probe.Leave(watch);
         return module;
 
-        void Execute(Directive Ast, InterpreterDirective BuiltIn, ref InterpreterScope scope)
+        void Execute(Directive Ast, ErgoDirective BuiltIn, ref InterpreterScope scope)
         {
             var sig = BuiltIn.Signature.Explain();
             var builtinWatch = Probe.Enter(sig);

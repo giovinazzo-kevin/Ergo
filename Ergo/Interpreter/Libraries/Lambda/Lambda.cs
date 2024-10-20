@@ -1,14 +1,14 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Lambda;
+namespace Ergo.Modules.Libraries.Lambda;
 
-public class Lambda : Library
+public class Lambda : IErgoLibrary
 {
     public override Atom Module => WellKnown.Modules.Lambda;
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new Runtime.BuiltIns.Lambda(),
     ];
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => [];
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => [];
 }

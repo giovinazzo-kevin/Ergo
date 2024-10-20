@@ -1,16 +1,16 @@
 ﻿
-using Ergo.Interpreter.Libraries.Compiler;
+using Ergo.Modules.Libraries.Compiler;
 
-namespace Ergo.Interpreter.Directives;
+namespace Ergo.Modules.Directives;
 
-public class DeclareInlinedPredicate : InterpreterDirective
+public class DeclareInlinedPredicate : ErgoDirective
 {
     public DeclareInlinedPredicate()
         : base("Marks a predicate to be inlined.", new("inline"), default, 11)
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         foreach (var arg in args)
         {

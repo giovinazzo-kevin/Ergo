@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public abstract class NthBase : BuiltIn
+public abstract class NthBase : ErgoBuiltIn
 {
     public readonly int Offset;
 
     public NthBase(int offset)
         : base("", new($"nth{offset}"), Maybe<int>.Some(3), WellKnown.Modules.List) => Offset = offset;
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0].Match<int>(out var index))

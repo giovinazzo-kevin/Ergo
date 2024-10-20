@@ -1,8 +1,8 @@
-﻿using Ergo.Interpreter;
-using Ergo.Interpreter.Libraries;
-using Ergo.Lang.Ast.Terms.Interfaces;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
+using Ergo.Modules;
+using Ergo.Modules.Libraries;
 using Ergo.Shell;
 using Ergo.Shell.Commands;
 using System.IO;
@@ -25,19 +25,19 @@ public readonly struct ErgoFacade
     /// The default Ergo environment complete with all the standard Built-Ins, Directives, Commands and Abstract Term Parsers.
     /// </summary>
     public static readonly ErgoFacade Standard = new ErgoFacade()
-        .AddLibrariesByReflection(typeof(Library).Assembly)
+        .AddLibrariesByReflection(typeof(IErgoLibrary).Assembly)
         .AddCommandsByReflection(typeof(Save).Assembly)
         .AddParsersByReflection(typeof(DictParser).Assembly)
         ;
 
-    private readonly ImmutableHashSet<Func<Library>> _libraries = ImmutableHashSet<Func<Library>>.Empty;
+    private readonly ImmutableHashSet<Func<IErgoLibrary>> _libraries = ImmutableHashSet<Func<IErgoLibrary>>.Empty;
     private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
     private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
 
     public readonly Func<InterpreterScope, InterpreterScope> ConfigureStdlibScopeHandler;
     public readonly Func<ErgoInterpreter, InterpreterScope, InterpreterScope> ConfigureInterpreterScopeHandler;
-    public readonly Action<KnowledgeBase> BeforeKbCompiledHandler;
-    public readonly Action<KnowledgeBase> AfterKbCompiledHandler;
+    public readonly Action<ErgoKnowledgeBase> BeforeKbCompiledHandler;
+    public readonly Action<ErgoKnowledgeBase> AfterKbCompiledHandler;
 
     public readonly bool TrimKnowledgeBase = true;
 
@@ -52,7 +52,7 @@ public readonly struct ErgoFacade
     public ErgoFacade() { }
 
     private ErgoFacade(
-        ImmutableHashSet<Func<Library>> libs,
+        ImmutableHashSet<Func<IErgoLibrary>> libs,
         ImmutableHashSet<ShellCommand> commands,
         ImmutableDictionary<Type, IAbstractTermParser> parsers,
         Maybe<TextReader> inStream,
@@ -61,8 +61,8 @@ public readonly struct ErgoFacade
         Maybe<IAsyncInputReader> inReader,
         Func<InterpreterScope, InterpreterScope> configureStdlibScope,
         Func<ErgoInterpreter, InterpreterScope, InterpreterScope> configureInterpreterScope,
-        Action<KnowledgeBase> beforeKbCompiled,
-        Action<KnowledgeBase> afterKbCompiled,
+        Action<ErgoKnowledgeBase> beforeKbCompiled,
+        Action<ErgoKnowledgeBase> afterKbCompiled,
         InterpreterFlags interpreterFlags,
         CompilerFlags compilerFlags,
         DecimalType decimalType,
@@ -86,7 +86,7 @@ public readonly struct ErgoFacade
         InputReader = inReader;
     }
 
-    public ErgoFacade AddLibrary(Func<Library> lib)
+    public ErgoFacade AddLibrary(Func<IErgoLibrary> lib)
         => new(_libraries.Add(lib), _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade AddCommand(ShellCommand command)
         => new(_libraries, _commands.Add(command), _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
@@ -101,8 +101,8 @@ public readonly struct ErgoFacade
     public ErgoFacade SetError(TextWriter err) => new(_libraries, _commands, _parsers, Input, Output, err, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade ConfigureStdlibScope(Func<InterpreterScope, InterpreterScope> f) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, f, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade ConfigureInterpreterScope(Func<ErgoInterpreter, InterpreterScope, InterpreterScope> f) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, f, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
-    public ErgoFacade BeforeKnowledgeBaseCompile(Action<KnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, a, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
-    public ErgoFacade AfterKnowledgeBaseCompile(Action<KnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, a, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
+    public ErgoFacade BeforeKnowledgeBaseCompile(Action<ErgoKnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, a, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
+    public ErgoFacade AfterKnowledgeBaseCompile(Action<ErgoKnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, a, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade SetInterpreterFlags(InterpreterFlags flags)
         => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, flags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade SetCompilerFlags(CompilerFlags flags)
@@ -120,9 +120,9 @@ public readonly struct ErgoFacade
         var newFacade = this;
         foreach (var type in lookInAssembly.GetTypes())
         {
-            if (!type.IsAssignableTo(typeof(Library))) continue;
+            if (!type.IsAssignableTo(typeof(IErgoLibrary))) continue;
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            newFacade = newFacade.AddLibrary(() => (Library)Activator.CreateInstance(type));
+            newFacade = newFacade.AddLibrary(() => (IErgoLibrary)Activator.CreateInstance(type));
         }
 
         return newFacade;
@@ -201,7 +201,7 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(this, new(this, stream, operators ?? [])));
     public ErgoInterpreter BuildInterpreter()
         => ConfigureInterpreter(new(this));
-    public ErgoVM BuildVM(KnowledgeBase kb)
+    public ErgoVM BuildVM(ErgoKnowledgeBase kb)
         => ConfigureVM(new(kb));
     public ErgoVM BuildVM(ref InterpreterScope scope)
         => BuildVM((scope = scope.WithFacade(this)).BuildKnowledgeBase());

@@ -72,7 +72,7 @@ public static class LanguageExtensions
             return false;
         }
     }
-    public static bool MatchesUntyped(this ITerm t, out object match, Type type, Func<object, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
+    public static bool MatchUntyped(this ITerm t, out object match, Type type, Func<object, bool> filter = null, Maybe<TermMarshalling> mode = default, bool matchFunctor = false)
     {
         match = default;
         try
@@ -95,7 +95,7 @@ public static class LanguageExtensions
     public static Maybe<SubstitutionMap> Unify(this ITerm a, ITerm b, SubstitutionMap map = null)
         => new Substitution(a, b).Unify(map);
 
-    public static Maybe<SubstitutionMap> Unify(this Predicate predicate, ITerm head)
+    public static Maybe<SubstitutionMap> Unify(this Clause predicate, ITerm head)
     {
         var h = predicate.Head;
         h.GetQualification(out var qv);

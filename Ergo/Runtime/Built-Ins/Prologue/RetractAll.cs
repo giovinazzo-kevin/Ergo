@@ -7,7 +7,7 @@ public sealed class RetractAll : DynamicPredicateBuiltIn
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         if (Retract(vm, vm.Arg(0), all: true))
         {

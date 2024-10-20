@@ -1,10 +1,8 @@
 ﻿using Ergo.Facade;
-using Ergo.Interpreter;
 using Ergo.Lang;
-using Ergo.Lang.Ast;
 using Ergo.Lang.Exceptions.Handler;
+using Ergo.Modules;
 using Ergo.Runtime;
-using System.Diagnostics;
 
 namespace Tests;
 
@@ -25,7 +23,7 @@ public class ErgoTestFixture : IDisposable
     public readonly ExceptionHandler ThrowingExceptionHandler = new(ex => throw ex);
     public readonly ErgoInterpreter Interpreter;
     public readonly InterpreterScope InterpreterScope;
-    public readonly KnowledgeBase KnowledgeBase;
+    public readonly ErgoKnowledgeBase KnowledgeBase;
     public readonly ErgoVM VM;
 
     protected virtual string TestsModuleName => "tests";

@@ -1,18 +1,18 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang.Compiler;
+﻿using Ergo.Lang.Compiler;
+using Ergo.Modules;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public abstract class DynamicPredicateBuiltIn : BuiltIn
+public abstract class DynamicPredicateBuiltIn : ErgoBuiltIn
 {
     protected DynamicPredicateBuiltIn(string documentation, Atom functor, Maybe<int> arity)
         : base(documentation, functor, arity, WellKnown.Modules.Prologue)
     {
     }
 
-    protected static Maybe<Predicate> GetPredicate(ErgoVM vm, ITerm arg)
+    protected static Maybe<Clause> GetPredicate(ErgoVM vm, ITerm arg)
     {
-        if (!Predicate.FromCanonical(arg, vm.KB.Scope.Entry, out var pred))
+        if (!Clause.FromCanonical(arg, vm.KB.Scope.Entry, out var pred))
         {
             vm.KB.Scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, arg.Explain());
             return default;

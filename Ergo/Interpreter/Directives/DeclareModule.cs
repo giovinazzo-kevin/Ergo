@@ -1,56 +1,28 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Modules.Directives;
 
-public class DeclareModule : InterpreterDirective
+public class DeclareModule : ErgoDirective
 {
     public DeclareModule()
         : base("", new("module"), 2, 0)
     {
     }
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, Atom currentModule, ImmutableArray<ITerm> args)
     {
         if (args[0] is not Atom moduleName)
-        {
-            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.String, args[0].Explain());
-        }
-
-        if (!scope.IsRuntime && scope.Entry == moduleName)
-        {
-            throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleRedefinition, scope, scope.Entry.Explain(), moduleName.Explain());
-        }
-
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, default, WellKnown.Types.String, args[0].Explain());
+        if (!args[0].Equals(currentModule))
+            throw new InvalidOperationException($"module/2 can only be executed in the context of the module being loaded");
         if (args[1] is not List exports)
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, default, WellKnown.Types.List, args[1].Explain());
+        if (moduleTree[moduleName].TryGetValue(out var module))
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleRedefinition, default, moduleName.Explain());
+        module = moduleTree.Define(moduleName);
+        foreach (var exp in exports.Contents)
         {
-            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.List, args[1].Explain());
+            if (!exp.Match(out var sig, new { Predicate = default(string), Arity = default(int) }))
+                throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, default, WellKnown.Types.Signature, exp.Explain());
+            module.Export(new Signature(new Atom(sig.Predicate), sig.Arity, default, default));
         }
-
-        if (scope.Modules.TryGetValue(moduleName, out var module))
-        {
-            //if (!module.IsRuntime)
-            //{
-            //    throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleNameClash, scope, moduleName.Explain());
-            //}
-
-            module = module.WithExports(exports.Contents);
-        }
-        else
-        {
-            module = new Module(moduleName, runtime: scope.IsRuntime)
-                .WithExports(exports.Contents)
-                .WithImport(scope.BaseImport);
-        }
-        module = module.WithLinkedLibrary(interpreter.GetLibrary(module.Name));
-        scope = scope
-            .WithModule(module)
-            .WithCurrentModule(module.Name);
-        foreach (var item in exports.Contents)
-        {
-            // make sure that 'item' is in the form 'predicate/arity'
-            if (!item.Match(out var match, new { Predicate = default(string), Arity = default(int) }))
-            {
-                throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, scope, WellKnown.Types.Signature, item.Explain());
-            }
-        }
-
         return true;
     }
 }

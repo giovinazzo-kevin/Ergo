@@ -2,7 +2,7 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class FormatString : BuiltIn
+public sealed class FormatString : ErgoBuiltIn
 {
     private readonly Regex PositionalParamRegex = new(@"(?<!{){(\d+)}(?!})");
 
@@ -10,7 +10,7 @@ public sealed class FormatString : BuiltIn
         : base("", new("str_fmt"), Maybe<int>.Some(3), WellKnown.Modules.String)
     {
     }
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var arguments = vm.Args;
         var (format, args, result) = (arguments[0], arguments[1], arguments[2]);

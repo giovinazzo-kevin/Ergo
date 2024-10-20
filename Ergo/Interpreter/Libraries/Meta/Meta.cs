@@ -1,13 +1,13 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Meta;
+namespace Ergo.Modules.Libraries.Meta;
 
-public class Meta : Library
+public class Meta : IErgoLibrary
 {
     public override Atom Module => WellKnown.Modules.Meta;
 
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new BagOf(),
         new For(),
         new Call(),
@@ -17,6 +17,6 @@ public class Meta : Library
         new Choose()
     ];
 
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => [];
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => [];
 }

@@ -1,8 +1,8 @@
-﻿using Ergo.Interpreter.Libraries;
+﻿using Ergo.Modules.Libraries;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public abstract class WriteBuiltIn : BuiltIn
+public abstract class WriteBuiltIn : ErgoBuiltIn
 {
     public readonly bool Canonical;
     public readonly bool Quoted;
@@ -36,7 +36,7 @@ public abstract class WriteBuiltIn : BuiltIn
 
     protected virtual string Explain(ITerm arg) => AsQuoted(arg, Quoted).Explain(Canonical);
 
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return vm =>
         {

@@ -9,7 +9,7 @@ public sealed class ErgoStream : Stream
 
     public event Action Disposing;
 
-    internal ErgoStream(MemoryStream from, string fileName)
+    public ErgoStream(MemoryStream from, string fileName)
     {
         _stream = from;
         FileName = fileName;

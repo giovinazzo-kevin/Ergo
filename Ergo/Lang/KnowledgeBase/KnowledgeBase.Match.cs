@@ -3,10 +3,10 @@
 public readonly struct KBMatch
 {
     public readonly ITerm Goal;
-    public readonly Predicate Predicate;
+    public readonly Clause Predicate;
     public readonly SubstitutionMap Substitutions;
 
-    public KBMatch(ITerm lhs, Predicate rhs, SubstitutionMap substitutions)
+    public KBMatch(ITerm lhs, Clause rhs, SubstitutionMap substitutions)
     {
         Goal = lhs;
         Predicate = rhs;

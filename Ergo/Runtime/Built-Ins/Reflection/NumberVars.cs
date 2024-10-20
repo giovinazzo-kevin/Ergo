@@ -2,14 +2,14 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class NumberVars : BuiltIn
+public sealed class NumberVars : ErgoBuiltIn
 {
     public NumberVars()
         : base("", new("numbervars"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var allSubs = SubstitutionMap.Pool.Acquire();

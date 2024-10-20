@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Explain : BuiltIn
+public sealed class Explain : ErgoBuiltIn
 {
     public Explain()
         : base("", new("explain"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var expl = new Atom(args[0].AsQuoted(false).Explain(), false);

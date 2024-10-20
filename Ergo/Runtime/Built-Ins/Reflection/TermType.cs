@@ -2,7 +2,7 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class TermType : BuiltIn
+public sealed class TermType : ErgoBuiltIn
 {
     public TermType()
         : base("", new("term_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
@@ -14,7 +14,7 @@ public sealed class TermType : BuiltIn
     private static readonly Atom _C = new("complex");
     private static readonly Atom _B = new("abstract");
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var type = vm.Arg(0) switch
         {

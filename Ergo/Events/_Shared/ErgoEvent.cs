@@ -1,3 +1,3 @@
 ﻿namespace Ergo.Events;
 
-public abstract record class ErgoEvent;
+public abstract record ErgoEvent;

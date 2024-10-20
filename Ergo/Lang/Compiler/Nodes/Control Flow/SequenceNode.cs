@@ -21,7 +21,7 @@ public class SequenceNode : ExecutionNode
 
     public SequenceNode AsRoot() => new(Nodes, true);
 
-    public override ErgoVM.Op Compile() => ErgoVM.Ops.And(Nodes.Select(n => n.Compile()).ToArray());
+    public override Op Compile() => Ops.And(Nodes.Select(n => n.Compile()).ToArray());
     public override List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes)
     {
         var fixpoint = false;

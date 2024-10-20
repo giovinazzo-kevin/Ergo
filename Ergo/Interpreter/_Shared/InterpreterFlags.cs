@@ -1,4 +1,4 @@
-﻿namespace Ergo.Interpreter;
+﻿namespace Ergo.Modules;
 
 [Flags]
 public enum InterpreterFlags

@@ -1,12 +1,12 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.IO;
+namespace Ergo.Modules.Libraries.IO;
 
-public class IO : Library
+public class IO : IErgoLibrary
 {
     public override Atom Module => WellKnown.Modules.IO;
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new Write(),
         new WriteCanonical(),
         new WriteQuoted(),
@@ -18,8 +18,8 @@ public class IO : Library
         new GetSingleChar(),
         new PeekChar()
     ];
-    private readonly InterpreterDirective[] _interpreterDirectives = [
+    private readonly ErgoDirective[] _interpreterDirectives = [
     ];
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
 }

@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class GetChar : BuiltIn
+public sealed class GetChar : ErgoBuiltIn
 {
     public GetChar()
         : base("", new("get_char"), 1, WellKnown.Modules.IO)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         int value;
         do

@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Unifiable : BuiltIn
+public sealed class Unifiable : ErgoBuiltIn
 {
     public Unifiable()
         : base("", new("unifiable"), Maybe<int>.Some(3), WellKnown.Modules.Prologue)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[0].Unify(args[1]).TryGetValue(out var subs))

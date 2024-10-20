@@ -1,9 +1,9 @@
-﻿using Ergo.Interpreter.Libraries.Tabling;
-using Ergo.Lang.Compiler;
+﻿using Ergo.Lang.Compiler;
+using Ergo.Modules.Libraries.Tabling;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Tabled : BuiltIn
+public sealed class Tabled : ErgoBuiltIn
 {
     private readonly Dictionary<ErgoVM, MemoizationContext> MemoContexts = new();
 
@@ -43,7 +43,7 @@ public sealed class Tabled : BuiltIn
         return nodes;
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         /* tabled/1 overrides the regular SLD resolution with SLDT resolution.
          * Predicates tagged by the 'table' directive are rewritten as follows:

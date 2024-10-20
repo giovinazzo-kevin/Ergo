@@ -2,7 +2,7 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Ground : BuiltIn
+public sealed class Ground : ErgoBuiltIn
 {
     public Ground()
         : base("", new("ground"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
@@ -11,7 +11,7 @@ public sealed class Ground : BuiltIn
 
     public override ExecutionNode Optimize(BuiltInNode node) =>
         node.Goal.IsGround ? TrueNode.Instance : node;
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return vm =>
         {

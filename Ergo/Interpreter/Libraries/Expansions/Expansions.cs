@@ -1,13 +1,13 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
 using Ergo.Events.Runtime;
-using Ergo.Interpreter.Directives;
 using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Expansions;
+namespace Ergo.Modules.Libraries.Expansions;
 
-public class Expansions : Library
+public class Expansions : IErgoLibrary
 {
     private static readonly InstantiationContext InstantiationContext = new("X");
 
@@ -16,19 +16,19 @@ public class Expansions : Library
     public override Atom Module => WellKnown.Modules.Expansions;
 
     protected readonly Dictionary<Signature, HashSet<Expansion>> Table = new();
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
     ];
-    private readonly InterpreterDirective[] _interpreterDirectives = [
+    private readonly ErgoDirective[] _interpreterDirectives = [
         new DefineExpansion()
     ];
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
 
     public override void OnErgoEvent(ErgoEvent evt)
     {
         if (evt is KnowledgeBaseCreatedEvent kce)
         {
-            var expansions = new Queue<Predicate>();
+            var expansions = new Queue<Clause>();
             foreach (var pred in kce.KnowledgeBase.ToList())
             {
                 foreach (var exp in ExpandPredicate(pred, kce.KnowledgeBase.Scope))
@@ -52,7 +52,7 @@ public class Expansions : Library
         }
         if (evt is QuerySubmittedEvent qse)
         {
-            var expansions = new Queue<Predicate>();
+            var expansions = new Queue<Clause>();
             var topLevelHead = new Complex(WellKnown.Literals.TopLevel, qse.Query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
             foreach (var match in qse.VM.KB.GetMatches(qse.VM.InstantiationContext, topLevelHead, desugar: false)
                 .AsEnumerable().SelectMany(x => x))
@@ -84,7 +84,7 @@ public class Expansions : Library
         ? exp.Where(e => e.DeclaringModule.Equals(module))
         : Enumerable.Empty<Expansion>();
 
-    public void AddExpansion(Atom module, Variable outVar, Predicate pred)
+    public void AddExpansion(Atom module, Variable outVar, Clause pred)
     {
         var signature = pred.Head.GetSignature();
         if (!Table.TryGetValue(signature, out var set))
@@ -94,12 +94,12 @@ public class Expansions : Library
 
 
     // See: https://github.com/G3Kappa/Ergo/issues/36
-    public IEnumerable<Predicate> ExpandPredicate(Predicate p, InterpreterScope scope)
+    public IEnumerable<Clause> ExpandPredicate(Clause p, InterpreterScope scope)
     {
-        Predicate currentPredicate = p;
+        Clause currentPredicate = p;
         while (true)
         {
-            var newPredicate = default(Predicate);
+            var newPredicate = default(Clause);
             foreach (var expanded in ExpandPredicateOnce(currentPredicate))
             {
                 newPredicate = expanded;
@@ -112,7 +112,7 @@ public class Expansions : Library
             }
             currentPredicate = newPredicate;
         }
-        IEnumerable<Predicate> ExpandPredicateOnce(Predicate p)
+        IEnumerable<Clause> ExpandPredicateOnce(Clause p)
         {
             if (p.IsBuiltIn)
             {
@@ -148,7 +148,7 @@ public class Expansions : Library
                         newBody.AddRange(clause.Reduce(e => e.Expansion.Contents, _ => Enumerable.Empty<ITerm>()));
                         newBody.Add(clause.Reduce(e => e.Binding.Select(x => (ITerm)x).GetOr(e.Match), a => a));
                     }
-                    yield return new Predicate(
+                    yield return new Clause(
                         p.Documentation,
                         p.DeclaringModule,
                         newHead,

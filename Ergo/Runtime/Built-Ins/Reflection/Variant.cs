@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Variant : BuiltIn
+public sealed class Variant : ErgoBuiltIn
 {
     public Variant()
         : base("", new("variant"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return vm =>
         {

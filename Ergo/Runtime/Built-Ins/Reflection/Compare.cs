@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Compare : BuiltIn
+public sealed class Compare : ErgoBuiltIn
 {
     public Compare()
         : base("", new("compare"), Maybe<int>.Some(3), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var cmp = args[1].CompareTo(args[2]);

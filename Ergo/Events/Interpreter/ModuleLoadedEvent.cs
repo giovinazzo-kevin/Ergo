@@ -1,4 +1,4 @@
-﻿using Ergo.Interpreter;
+﻿using Ergo.Modules;
 
 namespace Ergo.Events.Interpreter;
 

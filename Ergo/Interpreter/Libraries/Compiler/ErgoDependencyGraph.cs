@@ -1,36 +1,35 @@
-﻿using Ergo.Interpreter;
+﻿using Ergo.Modules;
 using Ergo.Runtime.BuiltIns;
-using System.Collections.Generic;
 
 public class DependencyGraphNode
 {
-    public DependencyGraph Graph { get; set; }
-    public List<Predicate> Clauses { get; } = new();
+    public ErgoDependencyGraph Graph { get; set; }
+    public List<Clause> Clauses { get; } = new();
     public Signature Signature { get; set; }
     public HashSet<DependencyGraphNode> Dependencies { get; } = new();
     public HashSet<DependencyGraphNode> Dependents { get; } = new();
     public bool IsInlined { get; set; }
     public bool IsCyclical { get; set; }
-    public List<Predicate> InlinedClauses { get; set; } = null;
+    public List<Clause> InlinedClauses { get; set; } = null;
 }
 
-public class DependencyGraph
+public class ErgoDependencyGraph
 {
     private readonly Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
-    public readonly KnowledgeBase KnowledgeBase;
+    public readonly ErgoKnowledgeBase KnowledgeBase;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
     /// </summary>
     public readonly Unify UnifyInstance = new();
 
-    public DependencyGraph(KnowledgeBase knowledgeBase)
+    public ErgoDependencyGraph(ErgoKnowledgeBase knowledgeBase)
     {
         KnowledgeBase = knowledgeBase;
     }
 
     // Populate nodes and dependencies from the solver's knowledge base and scoped built-ins
 
-    public Signature GetKey(Predicate pred)
+    public Signature GetKey(Clause pred)
     {
         var sig = pred.Qualified().Head.GetSignature();
         if (pred.IsVariadic)
@@ -74,7 +73,7 @@ public class DependencyGraph
         }
     }
 
-    public void CalculateDependencies(Predicate pred)
+    public void CalculateDependencies(Clause pred)
     {
         var sig = GetKey(pred);
         var node = _nodes[sig];
@@ -91,7 +90,7 @@ public class DependencyGraph
         }
     }
 
-    public DependencyGraphNode AddNode(Predicate pred)
+    public DependencyGraphNode AddNode(Clause pred)
     {
         var sig = GetKey(pred);
         if (!_nodes.TryGetValue(sig, out var node))
@@ -103,7 +102,7 @@ public class DependencyGraph
         return node;
     }
 
-    public DependencyGraphNode SetNode(Predicate pred)
+    public DependencyGraphNode SetNode(Clause pred)
     {
         var sig = GetKey(pred);
         var node = _nodes[sig] = new DependencyGraphNode() { Signature = sig };
@@ -111,14 +110,14 @@ public class DependencyGraph
         return node;
     }
 
-    public static IEnumerable<Signature> ExtractCalledSignatures(Predicate pred, KnowledgeBase kb)
+    public static IEnumerable<Signature> ExtractCalledSignatures(Clause pred, ErgoKnowledgeBase kb)
     {
         var scope = kb.Scope.WithCurrentModule(pred.DeclaringModule);
-        return Predicate.GetGoals(pred)
+        return Clause.GetGoals(pred)
             .SelectMany(c => ExtractCalledSignatures(c, scope, kb));
     }
 
-    public static IEnumerable<Signature> ExtractCalledSignatures(ITerm item, InterpreterScope scope, KnowledgeBase kb)
+    public static IEnumerable<Signature> ExtractCalledSignatures(ITerm item, InterpreterScope scope, ErgoKnowledgeBase kb)
     {
         var signature = item.GetSignature();
         if (signature.Module.TryGetValue(out _))

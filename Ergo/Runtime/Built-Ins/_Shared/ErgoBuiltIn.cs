@@ -1,18 +1,17 @@
 ﻿using Ergo.Lang.Compiler;
 using System.Collections;
 using System.Diagnostics;
-using System.Linq.Expressions;
 
 namespace Ergo.Runtime.BuiltIns;
 
-internal sealed class FunctionalBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module, ErgoVM.Op op) 
-    : BuiltIn(documentation, functor, arity, module)
+internal sealed class FunctionalBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module, Op op) 
+    : ErgoBuiltIn(documentation, functor, arity, module)
 {
-    private readonly ErgoVM.Op _op = op;
-    public override ErgoVM.Op Compile() => _op;
+    private readonly Op _op = op;
+    public override Op Compile() => _op;
 }
 
-public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
+public abstract class ErgoBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
 {
     public readonly Signature Signature = new(functor, arity, module, Maybe<Atom>.None);
     public readonly string Documentation = documentation;
@@ -23,15 +22,15 @@ public abstract class BuiltIn(string documentation, Atom functor, Maybe<int> ari
     public virtual ExecutionNode Optimize(BuiltInNode node) => node;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
 
-    public Predicate GetStub(ImmutableArray<ITerm> arguments)
+    public Clause GetStub(ImmutableArray<ITerm> arguments)
     {
         var module = Signature.Module.GetOr(WellKnown.Modules.Stdlib);
         var head = ((ITerm)new Complex(Signature.Functor, arguments)).Qualified(module);
-        return new Predicate(Documentation, module, head, NTuple.Empty, dynamic: false, exported: true, default);
+        return new Clause(Documentation, module, head, NTuple.Empty, dynamic: false, exported: true, default);
     }
-    public abstract ErgoVM.Op Compile();
+    public abstract Op Compile();
     
-    public static BuiltIn MarshallDelegate(Atom module, Delegate del, Maybe<Atom> functor = default)
+    public static ErgoBuiltIn MarshallDelegate(Atom module, Delegate del, Maybe<Atom> functor = default)
     {
         var handlerType = del.GetType();
         var invokeMethod = handlerType.GetMethod("Invoke");

@@ -1,40 +1,22 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿using Ergo.Pipelines;
+using Ergo.Pipelines.LoadModule;
 
-public class UseModule : InterpreterDirective
+namespace Ergo.Modules.Directives;
+
+public class UseModule(IErgoEnv env, ILoadModulePipeline loadModule) 
+    : ErgoDirective("", new("use_module"), 1, 1)
 {
-    public UseModule()
-        : base("", new("use_module"), 1, 1)
-    {
-    }
-
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, Atom currentModule, ImmutableArray<ITerm> args)
     {
         if (args[0] is not Atom moduleName)
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.String, args[0].Explain());
+        if (moduleTree[currentModule].GetOrThrow().ImportedModules.Select(x => x.Name).Contains(moduleName))
+            throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleAlreadyImported, moduleName.Explain());
+        if (!moduleTree[moduleName].TryGetValue(out var module))
         {
-            scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.String, args[0].Explain());
-            return false;
-        }
-
-        if (moduleName == scope.Entry || scope.EntryModule.Imports.Contents.Contains(moduleName))
-        {
-            scope.Throw(ErgoInterpreter.ErrorType.ModuleAlreadyImported, args[0].Explain());
-            return false;
-        }
-
-        if (!scope.Modules.TryGetValue(moduleName, out var module))
-        {
-            var importScope = scope
-                .WithModule(new Module(moduleName, scope.IsRuntime));
-            if (!interpreter.LoadDirectives(ref importScope, moduleName).TryGetValue(out module))
-                return false;
-            // Pull all new modules that were imported by the module currently being imported
-            foreach (var newModule in importScope.Modules)
-            {
-                if (newModule.Key != module.Name && !scope.Modules.ContainsKey(newModule.Key))
-                {
-                    scope = scope.WithModule(newModule.Value);
-                }
-            }
+            var result = loadModule.Run(moduleName, env);
+            if (result.TryGetB(out var err))
+                throw err.Exception;
         }
         scope = scope
             .WithModule(module)

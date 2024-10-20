@@ -2,14 +2,14 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Read : BuiltIn
+public sealed class Read : ErgoBuiltIn
 {
     public Read()
         : base("", new("read"), 1, WellKnown.Modules.IO)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var sb = new StringBuilder();
         int ch;

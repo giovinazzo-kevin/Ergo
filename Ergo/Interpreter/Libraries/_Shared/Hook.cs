@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Expression = System.Linq.Expressions.Expression;
-namespace Ergo.Interpreter.Libraries;
+namespace Ergo.Modules.Libraries;
 
 
 public class DisposableHook : CompiledHook, IDisposable
@@ -19,7 +18,7 @@ public class CompiledHook
 
     public readonly Signature Signature;
     public ITerm[] Args { get; internal set; }
-    public ErgoVM.Op Op { get; internal set; }
+    public Op Op { get; internal set; }
 
     public CompiledHook(Signature sig)
     {
@@ -176,7 +175,7 @@ public class Hook
     public static CompiledHook CompileJIT(Signature sig, bool throwIfNotDefined = true)
     {
         var lazyHook = new CompiledHook(sig);
-        ErgoVM.Op cached = default;
+        Op cached = default;
         lazyHook.Op = vm =>
         {
             if (cached is { } op)
@@ -191,14 +190,14 @@ public class Hook
         return lazyHook;
     }
 
-    public static CompiledHook Compile(Signature sig, KnowledgeBase kb, bool throwIfNotDefined = false)
+    public static CompiledHook Compile(Signature sig, ErgoKnowledgeBase kb, bool throwIfNotDefined = false)
     {
         var compiledHook = new CompiledHook(sig);
-        compiledHook.Op = CompileOp(compiledHook, sig, kb, throwIfNotDefined) ?? ErgoVM.Ops.Fail;
+        compiledHook.Op = CompileOp(compiledHook, sig, kb, throwIfNotDefined) ?? Ops.Fail;
         return compiledHook;
     }
 
-    static ErgoVM.Op CompileOp(CompiledHook compiledHook, Signature sig, KnowledgeBase kb, bool throwIfNotDefined)
+    static Op CompileOp(CompiledHook compiledHook, Signature sig, ErgoKnowledgeBase kb, bool throwIfNotDefined)
     {
         sig = sig.WithModule(sig.Module.GetOr(kb.Scope.Entry));
         if (!kb.Get(sig).TryGetValue(out var clauses))
@@ -207,7 +206,7 @@ public class Hook
                 kb.Scope.ExceptionHandler.Throw(new RuntimeException(ErgoVM.ErrorType.UndefinedPredicate, sig.Explain()));
             return default;
         }
-        var ops = new ErgoVM.Op[clauses.Count];
+        var ops = new Op[clauses.Count];
         for (int i = 0; i < clauses.Count; i++)
         {
             var predHead = clauses[i].Unqualified().Head;
@@ -223,7 +222,7 @@ public class Hook
                 gOp(vm);
             };
         }
-        return ErgoVM.Ops.Or(ops);
+        return Ops.Or(ops);
     }
 
 }

@@ -1,4 +1,4 @@
-﻿using Ergo.Interpreter.Libraries;
+﻿using Ergo.Modules.Libraries;
 using System.Diagnostics;
 
 namespace Ergo.Lang.Ast;
@@ -14,7 +14,7 @@ public readonly struct Module
     public readonly ImmutableArray<Operator> Operators;
     public readonly ImmutableHashSet<Signature> DynamicPredicates;
     public readonly ImmutableDictionary<Signature, MetaPredicate> MetaPredicates;
-    public readonly Maybe<Library> LinkedLibrary;
+    public readonly Maybe<IErgoLibrary> LinkedLibrary;
     public readonly ErgoProgram Program;
     public readonly bool IsRuntime;
     public readonly int LoadOrder;
@@ -43,7 +43,7 @@ public readonly struct Module
         ImmutableHashSet<Signature> dynamicPredicates,
         ImmutableDictionary<Signature, MetaPredicate> metaPredicates,
         ErgoProgram program,
-        Maybe<Library> linkedLibrary,
+        Maybe<IErgoLibrary> linkedLibrary,
         bool runtime = false,
         int loadOrder = 0
     )
@@ -76,7 +76,7 @@ public readonly struct Module
     public Module WithMetaPredicates(ImmutableDictionary<Signature, MetaPredicate> predicates) => new(Name, Imports, Exports, Operators, DynamicPredicates, predicates, Program, LinkedLibrary, IsRuntime, LoadOrder);
     public Module WithMetaPredicate(MetaPredicate predicate) => new(Name, Imports, Exports, Operators, DynamicPredicates, MetaPredicates.Add(predicate.Signature, predicate), Program, LinkedLibrary, IsRuntime, LoadOrder);
     public Module WithProgram(ErgoProgram p) => new(Name, Imports, Exports, Operators, DynamicPredicates, MetaPredicates, p, LinkedLibrary, IsRuntime, LoadOrder);
-    public Module WithLinkedLibrary(Maybe<Library> lib) => new(Name, Imports, Exports, Operators, DynamicPredicates, MetaPredicates, Program, lib, IsRuntime, LoadOrder);
+    public Module WithLinkedLibrary(Maybe<IErgoLibrary> lib) => new(Name, Imports, Exports, Operators, DynamicPredicates, MetaPredicates, Program, lib, IsRuntime, LoadOrder);
     public Module AsRuntime(bool runtime) => new(Name, Imports, Exports, Operators, DynamicPredicates, MetaPredicates, Program, LinkedLibrary, runtime, LoadOrder);
     public Module WithLoadOrder(int loadOrder) => new(Name, Imports, Exports, Operators, DynamicPredicates, MetaPredicates, Program, LinkedLibrary, IsRuntime, loadOrder);
 

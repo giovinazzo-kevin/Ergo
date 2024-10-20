@@ -1,15 +1,15 @@
-﻿using Ergo.Interpreter.Libraries.Tabling;
+﻿using Ergo.Modules.Libraries.Tabling;
 
-namespace Ergo.Interpreter.Directives;
+namespace Ergo.Modules.Directives;
 
-public class DeclareTabledPredicate : InterpreterDirective
+public class DeclareTabledPredicate : ErgoDirective
 {
     public DeclareTabledPredicate()
         : base("", new("table"), 1, 35)
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         if (!Signature.FromCanonical(args[0], out var sig))
             sig = args[0].GetSignature();

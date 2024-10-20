@@ -4,11 +4,11 @@ namespace Ergo.Lang.Compiler;
 
 public class BuiltInNode : GoalNode
 {
-    public BuiltIn BuiltIn { get; }
-    protected ErgoVM.Op CompiledBuiltIn { get; private set; }
+    public ErgoBuiltIn BuiltIn { get; }
+    protected Op CompiledBuiltIn { get; private set; }
     public readonly ImmutableArray<ITerm> Args;
 
-    public BuiltInNode(DependencyGraphNode node, ITerm goal, BuiltIn builtIn, bool compile = true) : base(node, goal)
+    public BuiltInNode(DependencyGraphNode node, ITerm goal, ErgoBuiltIn builtIn, bool compile = true) : base(node, goal)
     {
         BuiltIn = builtIn;
         Goal.GetQualification(out var head);
@@ -19,14 +19,14 @@ public class BuiltInNode : GoalNode
             RuntimeHelpers.PrepareDelegate(CompiledBuiltIn);
         }
     }
-    public static ErgoVM.Op SetArgs(ImmutableArray<ITerm> args) => vm =>
+    public static Op SetArgs(ImmutableArray<ITerm> args) => vm =>
     {
         vm.Arity = args.Length;
         for (int i = 0; i < args.Length; i++)
             vm.SetArg(i, args[i].Substitute(vm.Environment));
     };
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         SetArgs(Args)(vm);
         vm.SetFlag(VMFlags.ContinuationIsDet, IsContinuationDet);

@@ -1,4 +1,4 @@
-﻿namespace Ergo.Interpreter;
+﻿namespace Ergo.Modules;
 
 public partial class ErgoInterpreter
 {

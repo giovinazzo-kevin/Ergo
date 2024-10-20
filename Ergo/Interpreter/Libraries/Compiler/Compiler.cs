@@ -1,9 +1,9 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Runtime;
-using Ergo.Interpreter.Directives;
+using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Compiler;
+namespace Ergo.Modules.Libraries.Compiler;
 
 using Ergo.Events.Interpreter;
 using Ergo.Lang.Compiler;
@@ -11,7 +11,7 @@ using Ergo.Lang.Exceptions.Handler;
 using Ergo.Runtime;
 using System.Collections.Generic;
 
-public class Compiler : Library
+public class Compiler : IErgoLibrary
 {
     public override int LoadOrder => 100;
 
@@ -23,14 +23,14 @@ public class Compiler : Library
     protected readonly HashSet<Signature> InlinedPredicates = new();
     public override Atom Module => WellKnown.Modules.Compiler;
 
-    public override IEnumerable<BuiltIn> ExportedBuiltins => [];
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => [];
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => [];
+    public override IEnumerable<ErgoDirective> ExportedDirectives => [];
     public void AddInlinedPredicate(Signature sig)
     {
         InlinedPredicates.Add(sig);
     }
 
-    static Maybe<Predicate> TryCompile(Predicate clause, ExceptionHandler handler, DependencyGraph depGraph, bool optimize)
+    static Maybe<Clause> TryCompile(Clause clause, ExceptionHandler handler, ErgoDependencyGraph depGraph, bool optimize)
     {
         return handler.TryGet(() =>
         {
@@ -124,7 +124,7 @@ public class Compiler : Library
         }
     }
 
-    public IEnumerable<DependencyGraphNode> InlineInContext(InterpreterScope scope, DependencyGraph graph)
+    public IEnumerable<DependencyGraphNode> InlineInContext(InterpreterScope scope, ErgoDependencyGraph graph)
     {
         foreach (var node in graph.GetRootNodes()
             .SelectMany(r => InlineNodeWithContext(scope, r)))
@@ -183,7 +183,7 @@ public class Compiler : Library
                 // Inlining predicates with multiple clauses is a bit hairier.
                 // The bulk of the work is done by Predicate.InlineHead, which turns all arguments into variables
                 // and moves their unification to a precondition in the body. This normalizes all variants to the same form.
-                var normalized = node.InlinedClauses.Select(x => Predicate.InlineHead(new("_TMP"), x)).ToList();
+                var normalized = node.InlinedClauses.Select(x => Clause.InlineHead(new("_TMP"), x)).ToList();
                 var newBody = normalized
                     .Select(g => (ITerm)g.Body)
                      .Aggregate((a, b) => WellKnown.Operators.Disjunction.ToComplex(a, Maybe.Some(b)));
@@ -194,9 +194,9 @@ public class Compiler : Library
             }
         }
 
-        IEnumerable<DependencyGraphNode> InlineInner(Predicate inlined, DependencyGraphNode dependent)
+        IEnumerable<DependencyGraphNode> InlineInner(Clause inlined, DependencyGraphNode dependent)
         {
-            var newClauses = new List<Predicate>();
+            var newClauses = new List<Clause>();
             foreach (var clause in dependent.InlinedClauses)
             {
                 if (clause.IsBuiltIn)
@@ -204,7 +204,7 @@ public class Compiler : Library
                     newClauses.Add(clause);
                     continue;
                 }
-                var newBody = Predicate.ExpandGoals(clause.Body, g =>
+                var newBody = Clause.ExpandGoals(clause.Body, g =>
                 {
                     if (g.Unify(inlined.Head).TryGetValue(out var subs))
                         return inlined.Body.Substitute(subs);

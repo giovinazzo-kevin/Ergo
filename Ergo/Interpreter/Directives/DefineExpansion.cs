@@ -1,15 +1,15 @@
-﻿using Ergo.Interpreter.Libraries.Expansions;
+﻿using Ergo.Modules.Libraries.Expansions;
 
-namespace Ergo.Interpreter.Directives;
+namespace Ergo.Modules.Directives;
 
-public class DefineExpansion : InterpreterDirective
+public class DefineExpansion : ErgoDirective
 {
     public DefineExpansion()
         : base("", new("expand"), 1, 20)
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         var lib = scope.GetLibrary<Expansions>(WellKnown.Modules.Expansions);
         var visibleModules = scope.VisibleModules;
@@ -24,7 +24,7 @@ public class DefineExpansion : InterpreterDirective
             else if (lambdaArgs.Contents.Length != 1 || lambdaArgs.Contents[0] is not Variable lambdaVariable)
                 scope.Throw(ErgoInterpreter.ErrorType.ExpansionLambdaShouldHaveOneVariable, cplx.Arguments[0].Explain());
             //  The body of the lambda must be a predicate definition
-            else if (!Predicate.FromCanonical(cplx.Arguments[1], scope.Entry, out var pred))
+            else if (!Clause.FromCanonical(cplx.Arguments[1], scope.Entry, out var pred))
                 scope.Throw(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, WellKnown.Types.Predicate, cplx.Arguments[1].Explain());
             // The lambda variable can't be referenced in the head of the predicate
             else if (pred.Head.Variables.Any(v => v.Name.Equals(lambdaVariable.Name)))

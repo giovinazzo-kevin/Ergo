@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class For : BuiltIn
+public sealed class For : ErgoBuiltIn
 {
     public For()
         : base("", new("for"), 4, WellKnown.Modules.Meta)
@@ -24,11 +24,11 @@ public sealed class For : BuiltIn
         return n <= 1;
     }
 
-    class ForEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var, ErgoVM vm, ErgoVM.Op cnt) : ISolutionEnumerable
+    class ForEnumerable(int from, int step, int count, bool discarded, SubstitutionMap env, Variable var, ErgoVM vm, Op cnt) : ISolutionEnumerable
     {
         Solution Get(int i)
         {
-            if (discarded && cnt == ErgoVM.Ops.NoOp)
+            if (discarded && cnt == Ops.NoOp)
             {
                 return new Solution(env);
             }
@@ -52,27 +52,27 @@ public sealed class For : BuiltIn
     }
 
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         Inner()(vm);
-        ErgoVM.Op Inner()
+        Op Inner()
         {
             var args = vm.Args;
             if (args[1] is not Atom { Value: EDecimal from })
-                return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[1].Explain(false));
+                return Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[1].Explain(false));
             if (args[2] is not Atom { Value: EDecimal to })
-                return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[2].Explain(false));
+                return Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[2].Explain(false));
             if (args[3] is not Atom { Value: EDecimal step })
-                return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[3].Explain(false));
+                return Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[3].Explain(false));
             var (iFrom, iTo, iStep) = (from.ToInt32Checked(), to.ToInt32Checked(), step.ToInt32Checked());
             if (args[0] is not Variable { } var)
             {
                 if (args[0] is not Atom { Value: EDecimal d })
-                    return ErgoVM.Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[0].Explain(false));
+                    return Ops.Throw(ErgoVM.ErrorType.ExpectedTermOfTypeAt, typeof(EDecimal), args[0].Explain(false));
                 var i_ = d.ToInt32Checked();
                 if (i_ < iFrom || i_ >= iTo)
-                    return ErgoVM.Ops.Fail;
-                return ErgoVM.Ops.NoOp;
+                    return Ops.Fail;
+                return Ops.NoOp;
             }
             var discarded = (var.Ignored && vm.IsSingletonVariable(var));
             int i = iFrom;

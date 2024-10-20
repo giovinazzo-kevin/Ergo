@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class FindAll : BuiltIn
+public sealed class FindAll : ErgoBuiltIn
 {
     public FindAll()
         : base("", new("findall"), 3, WellKnown.Modules.Meta)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args[1] is not NTuple comma)

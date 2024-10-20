@@ -8,9 +8,9 @@ public class CyclicalCallNode : DynamicNode
     }
 
     public readonly Signature Signature;
-    public Predicate Clause { get; set; }
+    public Clause Clause { get; set; }
     public NodeRef Ref { get; set; } = new(default);
-    public bool IsTailCall => Clause.Body != null && Predicate.IsTailCall(Goal, Clause.Body);
+    public bool IsTailCall => Clause.Body != null && Clause.IsTailCall(Goal, Clause.Body);
     public readonly ITerm Head;
     public override bool IsDeterminate => false;
 
@@ -19,13 +19,13 @@ public class CyclicalCallNode : DynamicNode
         Signature = goal.GetSignature();
         goal.GetQualification(out Head);
     }
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         if (IsTailCall)
         {
-            return vm => ErgoVM.Ops.Goal(Goal)(vm);
+            return vm => Ops.Goal(Goal)(vm);
         }
-        return ErgoVM.Ops.Goal(Goal);
+        return Ops.Goal(Goal);
     }
 
     public override ExecutionNode Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)

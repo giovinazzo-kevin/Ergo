@@ -5,6 +5,12 @@ using static Ergo.Runtime.Solutions;
 
 namespace Ergo.Runtime;
 
+/// <summary>
+/// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
+/// </summary>
+public delegate void Op(ErgoVM vm);
+public delegate Op Call(ReadOnlySpan<ITerm> args);
+
 public partial class ErgoVM
 {
     private static int NUM_VMS = 0;
@@ -12,17 +18,12 @@ public partial class ErgoVM
 
     #region Type Declarations
     /// <summary>
-    /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
-    /// </summary>
-    public delegate void Op(ErgoVM vm);
-    public delegate Op Call(ReadOnlySpan<ITerm> args);
-    /// <summary>
     /// Represents a continuation point for the VM to backtrack to and a snapshot of the VM at the time when this choice point was created.
     /// </summary>
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     #endregion
     public readonly DecimalType DecimalType;
-    public readonly KnowledgeBase KB;
+    public readonly ErgoKnowledgeBase KB;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
@@ -48,7 +49,7 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
-    public ErgoVM(KnowledgeBase kb)
+    public ErgoVM(ErgoKnowledgeBase kb)
     {
         args = new ITerm[MAX_ARGUMENTS];
         KB = kb;
@@ -375,7 +376,7 @@ public partial class ErgoVM
     KBMatch[] GetQueryExpansions(Query query, CompilerFlags flags)
     {
         var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-        var topLevel = new Predicate(string.Empty, KB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+        var topLevel = new Clause(string.Empty, KB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
         KB.AssertA(topLevel);
         // Let libraries know that a query is being submitted, so they can expand or modify it.
         KB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));

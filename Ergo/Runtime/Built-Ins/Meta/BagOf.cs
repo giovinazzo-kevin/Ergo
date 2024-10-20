@@ -7,7 +7,7 @@ public sealed class BagOf : SolutionAggregationBuiltIn
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var any = false;
         var args = vm.Args;

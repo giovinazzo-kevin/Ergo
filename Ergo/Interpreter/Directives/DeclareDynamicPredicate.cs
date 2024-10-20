@@ -1,13 +1,13 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Modules.Directives;
 
-public class DeclareDynamicPredicate : InterpreterDirective
+public class DeclareDynamicPredicate : ErgoDirective
 {
     public DeclareDynamicPredicate()
         : base("", new("dynamic"), 1, 30)
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         if (!Signature.FromCanonical(args[0], out var sig))
         {

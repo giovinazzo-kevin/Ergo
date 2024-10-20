@@ -3,7 +3,7 @@ using PeterO.Numbers;
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Number : BuiltIn
+public sealed class Number : ErgoBuiltIn
 {
     public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
 
@@ -23,7 +23,7 @@ public sealed class Number : BuiltIn
         return node; // we don't know yet
     }
 
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return vm =>
         {

@@ -1,13 +1,13 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Prologue;
+namespace Ergo.Modules.Libraries.Prologue;
 
-public class Prologue : Library
+public class Prologue : IErgoLibrary
 {
     public override Atom Module => WellKnown.Modules.Prologue;
 
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new AssertA(),
         new AssertZ(),
         new Cut(),
@@ -17,9 +17,9 @@ public class Prologue : Library
         new Unifiable(),
         new Unify(),
     ];
-    private readonly InterpreterDirective[] _interpreterDirectives = [
+    private readonly ErgoDirective[] _interpreterDirectives = [
         new DeclareMetaPredicate()
     ];
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
 }

@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class IsSet : BuiltIn
+public sealed class IsSet : ErgoBuiltIn
 {
     public IsSet()
         : base("", new("is_set"), 1, WellKnown.Modules.Set)
@@ -8,7 +8,7 @@ public sealed class IsSet : BuiltIn
 
     }
 
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return vm =>
         {

@@ -1,13 +1,13 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Reflection;
+namespace Ergo.Modules.Libraries.Reflection;
 
-public class Reflection : Library
+public class Reflection : IErgoLibrary
 {
     public override Atom Module => WellKnown.Modules.Reflection;
 
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new AnonymousComplex(),
         new CommaToList(),
         new Compare(),
@@ -23,9 +23,9 @@ public class Reflection : Library
         new Variant(),
         new Explain(),
     ];
-    private readonly InterpreterDirective[] _interpreterDirectives = [
+    private readonly ErgoDirective[] _interpreterDirectives = [
     ];
 
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
 }

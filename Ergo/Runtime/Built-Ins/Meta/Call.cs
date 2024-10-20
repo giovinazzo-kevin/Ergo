@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Call : BuiltIn
+public sealed class Call : ErgoBuiltIn
 {
     public Call()
         : base("", new("call"), Maybe<int>.None, WellKnown.Modules.Meta)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         if (args.Length == 0)

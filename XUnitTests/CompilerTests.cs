@@ -1,9 +1,7 @@
 ﻿
-using Ergo.Interpreter;
 using Ergo.Lang.Ast;
-using Ergo.Lang;
-using Tests;
 using Ergo.Lang.Extensions;
+using Ergo.Modules;
 
 namespace Tests;
 

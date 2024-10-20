@@ -1,13 +1,13 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Modules.Directives;
 
-public class SetModule : InterpreterDirective
+public class SetModule : ErgoDirective
 {
     public SetModule()
         : base("", new("module"), 1, 0)
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         if (args[0] is not Atom moduleName)
         {

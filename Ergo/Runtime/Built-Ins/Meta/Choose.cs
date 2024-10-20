@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Choose : BuiltIn
+public sealed class Choose : ErgoBuiltIn
 {
     public Random Rng { get; set; } = new Random();
     private readonly Call CallInst = new();
@@ -10,7 +10,7 @@ public sealed class Choose : BuiltIn
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var arg = vm.Args[Rng.Next(vm.Arity)];
         vm.Arity = 1;

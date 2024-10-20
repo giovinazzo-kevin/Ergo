@@ -153,6 +153,8 @@ public readonly struct Maybe<T>
     public Maybe<T> Do(Action<T> some = null, Action none = null) => Map<T>(v => { some?.Invoke(v); return v; }, () => { none?.Invoke(); return default; });
     public Maybe<T> Do(Action always = null) => Map<T>(v => { always?.Invoke(); return v; }, () => { always?.Invoke(); return default; });
 
+    public bool Check(Func<T, bool> cond) => HasValue && cond(Value);
+
     private Maybe(T value)
     {
         Value = value;

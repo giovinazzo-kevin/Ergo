@@ -1,11 +1,11 @@
-﻿using Ergo.Interpreter;
+﻿using Ergo.Modules;
 using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Lang.Compiler;
 
 public class ExecutionGraph
 {
-    private Maybe<ErgoVM.Op> Compiled;
+    private Maybe<Op> Compiled;
     public readonly ExecutionNode Root;
     public readonly ITerm Head;
 
@@ -16,7 +16,7 @@ public class ExecutionGraph
         Root = root;
         head.GetQualification(out Head);
     }
-    private ErgoVM.Op CompileAndCache()
+    private Op CompileAndCache()
     {
         Root.Analyze(); // Do static analysis on the optimized graph before compiling
         if (Root is not SequenceNode)
@@ -50,7 +50,7 @@ public class ExecutionGraph
     /// Compiles the current graph to a Goal that can run on the ErgoVM.
     /// Caches the result, since ExecutionGraphs are immutable by design and stored by Predicates.
     /// </summary>
-    public ErgoVM.Op Compile()
+    public Op Compile()
     {
         return Compiled.GetOr(CompileAndCache());
     }
@@ -60,13 +60,13 @@ public static class ExecutionGraphExtensions
 {
     public static readonly InstantiationContext CompilerContext = new("E");
 
-    public static ExecutionGraph ToExecutionGraph(this Predicate clause, DependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
+    public static ExecutionGraph ToExecutionGraph(this Clause clause, ErgoDependencyGraph graph, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         var root = ToExecutionNode(clause.Body, graph, graph.KnowledgeBase.Scope, clause.DeclaringModule, cyclicalCallMap: cyclicalCallMap);
         return new(clause.Head, root);
     }
 
-    public static ExecutionNode ToExecutionNode(this ITerm goal, DependencyGraph graph, Maybe<InterpreterScope> mbScope = default, Maybe<Atom> callerModule = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
+    public static ExecutionNode ToExecutionNode(this ITerm goal, ErgoDependencyGraph graph, Maybe<InterpreterScope> mbScope = default, Maybe<Atom> callerModule = default, InstantiationContext ctx = null, Dictionary<Signature, CyclicalCallNode> cyclicalCallMap = null)
     {
         ctx ??= CompilerContext;
         cyclicalCallMap ??= new();
@@ -178,9 +178,9 @@ public static class ExecutionGraphExtensions
                 c.Ref.Node = ret;
             }
         }
-        Maybe<ExecutionNode> Clause(Predicate clause, Atom callerModule)
+        Maybe<ExecutionNode> Clause(Clause clause, Atom callerModule)
         {
-            var facts = new List<Predicate>();
+            var facts = new List<Clause>();
             goal.GetQualification(out var head);
             if (scope.Modules.TryGetValue(clause.DeclaringModule, out var module))
             {

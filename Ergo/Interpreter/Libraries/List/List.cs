@@ -1,19 +1,19 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.List;
+namespace Ergo.Modules.Libraries.List;
 
-public class List : Library
+public class List : IErgoLibrary
 {
     public override Atom Module => WellKnown.Modules.List;
 
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new Nth0(),
         new Nth1(),
         new Sort(),
         new ListSet()
     ];
 
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => [];
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => [];
 }

@@ -2,14 +2,14 @@
 
 namespace Ergo.Runtime.BuiltIns;
 
-public sealed class NumberString : BuiltIn
+public sealed class NumberString : ErgoBuiltIn
 {
     public NumberString()
         : base("", new("number_string"), Maybe<int>.Some(2), WellKnown.Modules.Math)
     {
     }
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var (str, num) = (vm.Arg(1), vm.Arg(0));
         if (!str.IsGround && !num.IsGround)

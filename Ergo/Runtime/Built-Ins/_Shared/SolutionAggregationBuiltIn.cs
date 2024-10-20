@@ -1,8 +1,6 @@
-﻿using Ergo.Lang.Compiler;
+﻿namespace Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Runtime.BuiltIns;
-
-public abstract class SolutionAggregationBuiltIn : BuiltIn
+public abstract class SolutionAggregationBuiltIn : ErgoBuiltIn
 {
     protected SolutionAggregationBuiltIn(string documentation, Atom functor, Maybe<int> arity, Atom module)
         : base(documentation, functor, arity, module)

@@ -1,6 +1,6 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Modules.Directives;
 
-public class DeclareOperator : InterpreterDirective
+public class DeclareOperator : ErgoDirective
 {
 
     public DeclareOperator()
@@ -8,7 +8,7 @@ public class DeclareOperator : InterpreterDirective
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         if (!args[0].Match<int>(out var precedence))
         {

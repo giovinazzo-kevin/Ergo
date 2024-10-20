@@ -1,11 +1,11 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Interpreter;
-using Ergo.Interpreter.Directives;
+using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries.Tabling;
+namespace Ergo.Modules.Libraries.Tabling;
 
-public class Tabling : Library
+public class Tabling : IErgoLibrary
 {
     public override int LoadOrder => 10;
     public override Atom Module => WellKnown.Modules.Tabling;
@@ -13,15 +13,15 @@ public class Tabling : Library
     protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = new();
     protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = new();
 
-    private readonly BuiltIn[] _exportedBuiltIns = [
+    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
         new Tabled(),
     ];
-    private readonly InterpreterDirective[] _interpreterDirectives = [
+    private readonly ErgoDirective[] _interpreterDirectives = [
         new DeclareTabledPredicate(),
     ];
 
-    public override IEnumerable<BuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => _interpreterDirectives;
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
+    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
 
     public void AddTabledPredicate(Atom module, Signature sig)
     {
@@ -47,7 +47,7 @@ public class Tabling : Library
                 var anon = sig.Functor.BuildAnonymousTerm(sig.Arity.GetOr(0));
                 var aux = ((ITerm)new Complex(auxFunctor, anon.GetArguments())).Qualified(moduleName);
 
-                var tblPred = new Predicate(
+                var tblPred = new Clause(
                     "(auto-generated auxilliary predicate for tabling)",
                     moduleName,
                     anon,
@@ -61,7 +61,7 @@ public class Tabling : Library
                     .AsEnumerable().SelectMany(x => x))
                 {
                     match.Predicate.Head.GetQualification(out var head);
-                    var auxPred = new Predicate(
+                    var auxPred = new Clause(
                         match.Predicate.Documentation,
                         match.Predicate.DeclaringModule,
                         head.WithFunctor(auxFunctor),

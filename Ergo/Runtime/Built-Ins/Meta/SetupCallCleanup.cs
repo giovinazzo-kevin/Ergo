@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class SetupCallCleanup : BuiltIn
+public sealed class SetupCallCleanup : ErgoBuiltIn
 {
     public SetupCallCleanup()
         : base("", new("setup_call_cleanup"), 3, WellKnown.Modules.Meta)
@@ -8,12 +8,12 @@ public sealed class SetupCallCleanup : BuiltIn
     }
 
     private readonly Call CallInst = new();
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var newVm = vm.ScopedInstance();
         var setup = CallInst.Compile();
-        newVm.Query = ErgoVM.Ops.And2(setup, ErgoVM.Ops.Cut);
+        newVm.Query = Ops.And2(setup, Ops.Cut);
         newVm.Arity = vm.Arity = 1;
         newVm.SetArg(0, args[0]);
         newVm.Run();

@@ -1,15 +1,15 @@
-﻿namespace Ergo.Interpreter.Directives;
+﻿namespace Ergo.Modules.Directives;
 
 // SEE: https://eu.swi-prolog.org/pldoc/man?section=metapred
 
-public class DeclareMetaPredicate : InterpreterDirective
+public class DeclareMetaPredicate : ErgoDirective
 {
     public DeclareMetaPredicate()
         : base("", new("meta_predicate"), 1, 50)
     {
     }
 
-    public override bool Execute(ErgoInterpreter interpreter, ref InterpreterScope scope, params ITerm[] args)
+    public override  bool Execute(ErgoModuleTree moduleTree, ImmutableArray<ITerm> args)
     {
         var termArgs = args[0].GetArguments();
         var metaArgs = new char[termArgs.Length];

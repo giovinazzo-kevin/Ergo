@@ -1,14 +1,14 @@
-﻿using Ergo.Interpreter.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Runtime.BuiltIns;
 
-namespace Ergo.Interpreter.Libraries._Stdlib;
+namespace Ergo.Modules.Libraries._Stdlib;
 
-public class Stdlib : Library
+public class Stdlib : IErgoLibrary
 {
     public override int LoadOrder => 0;
     public override Atom Module => WellKnown.Modules.Stdlib;
 
-    private readonly InterpreterDirective[] _exportedDirectives = [
+    private readonly ErgoDirective[] _exportedDirectives = [
         new DeclareInlinedPredicate(),
         new DeclareDynamicPredicate(),
         new DeclareModule(),
@@ -17,6 +17,6 @@ public class Stdlib : Library
         new UseModule()
     ];
 
-    public override IEnumerable<BuiltIn> ExportedBuiltins => [];
-    public override IEnumerable<InterpreterDirective> ExportedDirectives => _exportedDirectives;
+    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => [];
+    public override IEnumerable<ErgoDirective> ExportedDirectives => _exportedDirectives;
 }

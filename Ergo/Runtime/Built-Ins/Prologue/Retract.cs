@@ -8,7 +8,7 @@ public sealed class Retract : DynamicPredicateBuiltIn
     }
 
 
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return RetractOp;
         static void RetractOp(ErgoVM vm)

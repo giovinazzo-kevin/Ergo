@@ -1,6 +1,6 @@
 ﻿using Ergo.Facade;
-using Ergo.Interpreter;
 using Ergo.Lang.Exceptions.Handler;
+using Ergo.Modules;
 using Ergo.Shell.Commands;
 using System.IO;
 using System.Runtime.ExceptionServices;

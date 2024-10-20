@@ -1,6 +1,6 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class SequenceType : BuiltIn
+public sealed class SequenceType : ErgoBuiltIn
 {
     public SequenceType()
         : base("", new("seq_type"), Maybe<int>.Some(2), WellKnown.Modules.Reflection)
@@ -11,7 +11,7 @@ public sealed class SequenceType : BuiltIn
     private static readonly Atom _T = new("tuple");
     private static readonly Atom _S = new("set");
 
-    public override ErgoVM.Op Compile() => vm =>
+    public override Op Compile() => vm =>
     {
         var args = vm.Args;
         var (type, seq) = (args[1], args[0]);

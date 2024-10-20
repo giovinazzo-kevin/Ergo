@@ -1,13 +1,13 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Nonvar : BuiltIn
+public sealed class Nonvar : ErgoBuiltIn
 {
     public Nonvar()
         : base("", new("nonvar"), Maybe<int>.Some(1), WellKnown.Modules.Reflection)
     {
     }
 
-    public override ErgoVM.Op Compile()
+    public override Op Compile()
     {
         return vm =>
         {

@@ -1,7 +1,7 @@
-﻿using Ergo.Interpreter;
-using Ergo.Lang;
+﻿using Ergo.Lang;
 using Ergo.Lang.Ast;
 using Ergo.Lang.Extensions;
+using Ergo.Modules;
 using Ergo.Runtime;
 
 namespace Tests;
@@ -11,7 +11,7 @@ public class ErgoTests<TFixture>(TFixture fixture)
 {
     public readonly ErgoInterpreter Interpreter = fixture.Interpreter;
     public InterpreterScope InterpreterScope = fixture.InterpreterScope;
-    public KnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
+    public ErgoKnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
     public ErgoVM VM = fixture.VM;
 
     // "⊤" : "⊥"

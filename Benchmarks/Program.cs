@@ -1,7 +1,7 @@
 ﻿using Ergo.Facade;
-using Ergo.Interpreter;
 using Ergo.Lang;
 using Ergo.Lang.Ast;
+using Ergo.Modules;
 using Ergo.Runtime;
 using System.Diagnostics;
 
@@ -43,14 +43,14 @@ public sealed class ErgoBenchmarks
             return interpreter.CreateScope();
         });
     }
-    public static Measured<KnowledgeBase> MeasureKnowledgeBaseCreation(InterpreterScope scope)
+    public static Measured<ErgoKnowledgeBase> MeasureKnowledgeBaseCreation(InterpreterScope scope)
     {
         return Measured.Measure(() =>
         {
             return scope.BuildKnowledgeBase();
         });
     }
-    public static Measured<ErgoVM> MeasureSpinUpTime(ErgoFacade facade, KnowledgeBase kb)
+    public static Measured<ErgoVM> MeasureSpinUpTime(ErgoFacade facade, ErgoKnowledgeBase kb)
     {
         return Measured.Measure(() =>
         {
@@ -64,14 +64,14 @@ public sealed class ErgoBenchmarks
             return scope.Parse<Query>(str);
         });
     }
-    public static Measured<ErgoVM.Op> MeasureQueryCompileTime(ErgoVM vm, Query query)
+    public static Measured<Op> MeasureQueryCompileTime(ErgoVM vm, Query query)
     {
         return Measured.Measure(() =>
         {
             return vm.CompileQuery(query);
         });
     }
-    public static Measured<int> MeasureQueryExecutionTime(ErgoVM vm, ErgoVM.Op op)
+    public static Measured<int> MeasureQueryExecutionTime(ErgoVM vm, Op op)
     {
         return Measured.Measure(() =>
         {

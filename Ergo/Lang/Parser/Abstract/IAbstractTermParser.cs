@@ -5,5 +5,6 @@ namespace Ergo.Lang.Parser;
 public interface IAbstractTermParser
 {
     int ParsePriority { get; }
-    Maybe<AbstractTerm> Parse(ErgoParser parser);
+    Type Type { get; }
+    Maybe<AbstractTerm> Parse(LegacyErgoParser parser);
 }

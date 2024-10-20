@@ -3,7 +3,7 @@
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain(false) }")]
-public readonly struct Directive : IExplainable
+public readonly struct Directive : IErgoAst, IExplainable
 {
     public readonly ITerm Body;
     public readonly string Documentation;

@@ -16,9 +16,9 @@ length(L, N) :- length(L, N, 0).
 append([], L, L).
 append([H|T], L, [H|R]) :- append(T, L, R).
 
-remove( _, [], []).
-remove( R, [R|T], T2) :- remove( R, T, T2).
-remove( R, [H|T], [H|T2]) :- H \= R, remove( R, T, T2).
+remove(_, [], []).
+remove(R, [R|T], T2) :- remove( R, T, T2).
+remove(R, [H|T], [H|T2]) :- H \= R, remove( R, T, T2).
 
 interleave([],[],[]).
 interleave([X],[],[X]).

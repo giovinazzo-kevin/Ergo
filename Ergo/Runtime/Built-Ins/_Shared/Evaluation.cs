@@ -8,7 +8,7 @@ public readonly struct Evaluation
     public Evaluation(bool result, SubstitutionMap subs = null)
     {
         Result = result;
-        Substitutions = subs ?? new();
+        Substitutions = subs ?? [];
     }
     public Evaluation(bool result, Substitution sub)
     {

@@ -3,15 +3,7 @@ using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Modules.Libraries.Math;
 
-public class Math : IErgoLibrary
-{
-    public override Atom Module => WellKnown.Modules.Math;
-
-    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
-        new Eval(),
-        new NumberString()
-    ];
-
-    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<ErgoDirective> ExportedDirectives => [];
-}
+public class Math(IServiceProvider sp) : ErgoLibrary(sp)
+    , IExportsBuiltIn<Eval>
+    , IExportsBuiltIn<NumberString>
+    ;

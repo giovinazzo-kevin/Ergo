@@ -175,7 +175,7 @@ public class Dict : AbstractTerm
     {
         if (IsGround)
             return this;
-        vars ??= new();
+        vars ??= [];
         var newFunctor = Functor.Reduce(
             a => a.Instantiate(ctx, vars),
             v => v.Instantiate(ctx, vars));

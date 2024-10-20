@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang.Ast;
 
-public interface ITerm : IComparable<ITerm>, IEquatable<ITerm>, IExplainable
+public interface ITerm : IErgoAst, IComparable<ITerm>, IEquatable<ITerm>, IExplainable
 {
     Maybe<ParserScope> Scope { get; }
     bool IsGround { get; }

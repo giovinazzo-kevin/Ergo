@@ -8,7 +8,7 @@ public abstract class SolveShellCommand : ShellCommand
     public readonly ConsoleColor DefaultAccentColor;
     public readonly SolveMode Mode;
 
-    private readonly Dictionary<int, CachedVM> VMCache = new();
+    private readonly Dictionary<int, CachedVM> VMCache = [];
 
     record class CachedVM(ErgoVM VM, CompilerFlags Flags);
 

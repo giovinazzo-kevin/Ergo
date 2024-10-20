@@ -9,7 +9,6 @@ namespace Ergo.Runtime;
 /// Represents any operation that can be invoked against the VM. Ops can be composed in order to direct control flow and capture outside context.
 /// </summary>
 public delegate void Op(ErgoVM vm);
-public delegate Op Call(ReadOnlySpan<ITerm> args);
 
 public partial class ErgoVM
 {
@@ -87,7 +86,7 @@ public partial class ErgoVM
     /// <summary>
     /// Represents the current execution state of the VM.
     /// </summary>
-    public VMState State { get; private set; } = VMState.Ready;
+    public VMState State { get; internal set; } = VMState.Ready;
     public VMMode Mode { get; private set; } = VMMode.Batch;
     /// <summary>
     /// The active set of substitutions containing the state for the current execution branch.

@@ -3,7 +3,7 @@
 namespace Ergo.Lang.Ast;
 
 [DebuggerDisplay("{ Explain() }")]
-public readonly partial struct Operator
+public readonly partial struct Operator : IErgoAst
 {
     public readonly Atom CanonicalFunctor;
     public readonly HashSet<Atom> Synonyms;

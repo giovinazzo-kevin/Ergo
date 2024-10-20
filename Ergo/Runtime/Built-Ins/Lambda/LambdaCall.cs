@@ -1,9 +1,9 @@
 ﻿namespace Ergo.Runtime.BuiltIns;
 
-public sealed class Lambda : ErgoBuiltIn
+public sealed class LambdaCall : ErgoBuiltIn
 {
 
-    public Lambda()
+    public LambdaCall()
         : base("", WellKnown.Functors.Lambda.First(), Maybe<int>.None, WellKnown.Modules.Lambda)
     {
     }

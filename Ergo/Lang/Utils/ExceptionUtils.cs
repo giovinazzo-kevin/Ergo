@@ -39,19 +39,19 @@ public static class ExceptionUtils
         return msg;
     }
 
-    public static string GetParserError(ErgoParser.ErrorType error, params object[] args)
+    public static string GetParserError(LegacyErgoParser.ErrorType error, params object[] args)
     {
         var msg = error switch
         {
-            ErgoParser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.').",
-            ErgoParser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_').",
-            ErgoParser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments.",
-            ErgoParser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}').",
-            ErgoParser.ErrorType.ExpectedClauseList => "Expected clause list.",
-            ErgoParser.ErrorType.UnterminatedClauseList => "Unterminated clause list.",
-            ErgoParser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file.",
-            ErgoParser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}",
-            ErgoParser.ErrorType.KeyExpected => "Key expected; found: {0}",
+            LegacyErgoParser.ErrorType.ExpectedPredicateDelimiterOrTerminator => "Expected predicate delimter (',') or terminator ('.').",
+            LegacyErgoParser.ErrorType.PredicateHasSingletonVariables => "Predicate {0} has singleton variables: {1}. Use them, or replace them with a discard ('_').",
+            LegacyErgoParser.ErrorType.ComplexHasNoArguments => "Complex term has no arguments.",
+            LegacyErgoParser.ErrorType.ExpectedArgumentDelimiterOrClosedParens => "Expected argument delimiter ('{0}') or terminator ('{1}').",
+            LegacyErgoParser.ErrorType.ExpectedClauseList => "Expected clause list.",
+            LegacyErgoParser.ErrorType.UnterminatedClauseList => "Unterminated clause list.",
+            LegacyErgoParser.ErrorType.UnexpectedEndOfFile => "Unexpected end of file.",
+            LegacyErgoParser.ErrorType.TermHasIllegalName => "Term has illegal or reserved name: {0}",
+            LegacyErgoParser.ErrorType.KeyExpected => "Key expected; found: {0}",
             _ => error.ToString()
         };
 

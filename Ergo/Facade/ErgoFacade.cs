@@ -16,21 +16,21 @@ namespace Ergo.Facade;
 /// </summary>
 public readonly struct ErgoFacade
 {
-    private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(ErgoParser).GetMethod(nameof(ErgoParser.AddAbstractParser));
+    private static readonly MethodInfo Parser_TryAddAbstractParser = typeof(LegacyErgoParser).GetMethod(nameof(LegacyErgoParser.AddAbstractParser));
     private static readonly MethodInfo This_AddParser = typeof(ErgoFacade).GetMethod(nameof(ErgoFacade.AddAbstractParser));
 
-    private static readonly Dictionary<string, ErgoParser> ParserCache = new();
+    private static readonly Dictionary<string, LegacyErgoParser> ParserCache = [];
 
     /// <summary>
     /// The default Ergo environment complete with all the standard Built-Ins, Directives, Commands and Abstract Term Parsers.
     /// </summary>
     public static readonly ErgoFacade Standard = new ErgoFacade()
-        .AddLibrariesByReflection(typeof(IErgoLibrary).Assembly)
+        .AddLibrariesByReflection(typeof(ErgoLibrary).Assembly)
         .AddCommandsByReflection(typeof(Save).Assembly)
         .AddParsersByReflection(typeof(DictParser).Assembly)
         ;
 
-    private readonly ImmutableHashSet<Func<IErgoLibrary>> _libraries = ImmutableHashSet<Func<IErgoLibrary>>.Empty;
+    private readonly ImmutableHashSet<Func<ErgoLibrary>> _libraries = ImmutableHashSet<Func<ErgoLibrary>>.Empty;
     private readonly ImmutableHashSet<ShellCommand> _commands = ImmutableHashSet<ShellCommand>.Empty;
     private readonly ImmutableDictionary<Type, IAbstractTermParser> _parsers = ImmutableDictionary<Type, IAbstractTermParser>.Empty;
 
@@ -52,7 +52,7 @@ public readonly struct ErgoFacade
     public ErgoFacade() { }
 
     private ErgoFacade(
-        ImmutableHashSet<Func<IErgoLibrary>> libs,
+        ImmutableHashSet<Func<ErgoLibrary>> libs,
         ImmutableHashSet<ShellCommand> commands,
         ImmutableDictionary<Type, IAbstractTermParser> parsers,
         Maybe<TextReader> inStream,
@@ -86,7 +86,7 @@ public readonly struct ErgoFacade
         InputReader = inReader;
     }
 
-    public ErgoFacade AddLibrary(Func<IErgoLibrary> lib)
+    public ErgoFacade AddLibrary(Func<ErgoLibrary> lib)
         => new(_libraries.Add(lib), _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade AddCommand(ShellCommand command)
         => new(_libraries, _commands.Add(command), _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
@@ -122,7 +122,7 @@ public readonly struct ErgoFacade
         {
             if (!type.IsAssignableTo(typeof(IErgoLibrary))) continue;
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0)) continue;
-            newFacade = newFacade.AddLibrary(() => (IErgoLibrary)Activator.CreateInstance(type));
+            newFacade = newFacade.AddLibrary(() => (ErgoLibrary)Activator.CreateInstance(type));
         }
 
         return newFacade;
@@ -190,15 +190,15 @@ public readonly struct ErgoFacade
         return shell;
     }
 
-    private ErgoParser ConfigureParser(ErgoParser parser)
+    private LegacyErgoParser ConfigureParser(LegacyErgoParser parser)
     {
         foreach (var (type, absParser) in _parsers)
             Parser_TryAddAbstractParser.MakeGenericMethod(type).Invoke(parser, new object[] { absParser });
         return parser;
     }
 
-    public ErgoParser BuildParser(ErgoStream stream, IEnumerable<Operator> operators = null)
-        => ConfigureParser(new(this, new(this, stream, operators ?? [])));
+    public LegacyErgoParser BuildParser(ErgoStream stream, IEnumerable<Operator> operators = null)
+        => ConfigureParser(new(new(stream, operators ?? [])));
     public ErgoInterpreter BuildInterpreter()
         => ConfigureInterpreter(new(this));
     public ErgoVM BuildVM(ErgoKnowledgeBase kb)

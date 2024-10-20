@@ -5,28 +5,19 @@ using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Modules.Libraries.Tabling;
 
-public class Tabling : IErgoLibrary
+public class Tabling(IServiceProvider sp) : ErgoLibrary(sp)
+    , IExportsBuiltIn<Tabled>
+
+    , IExportsDirective<DeclareTabledPredicate>
 {
     public override int LoadOrder => 10;
-    public override Atom Module => WellKnown.Modules.Tabling;
-
-    protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = new();
-    protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = new();
-
-    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
-        new Tabled(),
-    ];
-    private readonly ErgoDirective[] _interpreterDirectives = [
-        new DeclareTabledPredicate(),
-    ];
-
-    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
+    protected readonly Dictionary<ErgoVM, MemoizationContext> MemoizationContextTable = [];
+    protected readonly Dictionary<Atom, HashSet<Signature>> TabledPredicates = [];
 
     public void AddTabledPredicate(Atom module, Signature sig)
     {
         if (!TabledPredicates.TryGetValue(module, out var sigs))
-            TabledPredicates[module] = sigs = new();
+            TabledPredicates[module] = sigs = [];
         sigs.Add(sig);
     }
     public override void OnErgoEvent(ErgoEvent e)

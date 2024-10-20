@@ -3,20 +3,12 @@ using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Modules.Libraries._Stdlib;
 
-public class Stdlib : IErgoLibrary
+public class Stdlib(IServiceProvider sp) : ErgoLibrary(sp)
+    , IExportsDirective<DeclareInlinedPredicate>
+    , IExportsDirective<DeclareModule>
+    , IExportsDirective<DeclareOperator>
+    , IExportsDirective<SetModule>
+    , IExportsDirective<UseModule>
 {
     public override int LoadOrder => 0;
-    public override Atom Module => WellKnown.Modules.Stdlib;
-
-    private readonly ErgoDirective[] _exportedDirectives = [
-        new DeclareInlinedPredicate(),
-        new DeclareDynamicPredicate(),
-        new DeclareModule(),
-        new DeclareOperator(),
-        new SetModule(),
-        new UseModule()
-    ];
-
-    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => [];
-    public override IEnumerable<ErgoDirective> ExportedDirectives => _exportedDirectives;
 }

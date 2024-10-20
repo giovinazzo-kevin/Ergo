@@ -1,4 +1,5 @@
 ﻿using Ergo.Lang.Ast.Terms.Interfaces;
+using Ergo.Modules.Libraries;
 using System.Reflection;
 using System.Text;
 
@@ -137,7 +138,7 @@ public static class LanguageExtensions
 
     public static ITerm NumberVars(this ITerm term)
     {
-        return term.Instantiate(new("$VAR"), new());
+        return term.Instantiate(new("$VAR"), []);
     }
 
     public static string ToCSharpCase(this string s)
@@ -164,6 +165,13 @@ public static class LanguageExtensions
     public static string Indent(this string s, int indent, int tabWidth = 2)
     {
         return s.Split('\n').Select(s => new string(' ', indent * tabWidth) + s).Join("\n");
+    }
+
+    public static Atom ToModuleName(this Type t)
+    {
+        if (t.GetCustomAttribute<ModuleAttribute>() is { Module: var module })
+            return module;
+        return new Atom(t.Name.ToLower().ToErgoCase());
     }
 
     public static string ToErgoCase(this string s)

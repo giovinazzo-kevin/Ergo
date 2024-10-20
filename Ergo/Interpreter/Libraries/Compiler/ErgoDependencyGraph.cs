@@ -4,10 +4,10 @@ using Ergo.Runtime.BuiltIns;
 public class DependencyGraphNode
 {
     public ErgoDependencyGraph Graph { get; set; }
-    public List<Clause> Clauses { get; } = new();
+    public List<Clause> Clauses { get; } = [];
     public Signature Signature { get; set; }
-    public HashSet<DependencyGraphNode> Dependencies { get; } = new();
-    public HashSet<DependencyGraphNode> Dependents { get; } = new();
+    public HashSet<DependencyGraphNode> Dependencies { get; } = [];
+    public HashSet<DependencyGraphNode> Dependents { get; } = [];
     public bool IsInlined { get; set; }
     public bool IsCyclical { get; set; }
     public List<Clause> InlinedClauses { get; set; } = null;
@@ -15,7 +15,7 @@ public class DependencyGraphNode
 
 public class ErgoDependencyGraph
 {
-    private readonly Dictionary<Signature, DependencyGraphNode> _nodes = new Dictionary<Signature, DependencyGraphNode>();
+    private readonly Dictionary<Signature, DependencyGraphNode> _nodes = [];
     public readonly ErgoKnowledgeBase KnowledgeBase;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.

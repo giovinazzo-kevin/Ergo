@@ -2,6 +2,8 @@
 using Ergo.Pipelines.LoadModule;
 using Ergo.Lang.Ast;
 using Microsoft.Extensions.DependencyInjection;
+using Ergo.Pipelines;
+using Ergo.Modules;
 
 namespace Ergo;
 
@@ -11,7 +13,15 @@ public static class Program
     {
         public void Do()
         {
-            var stdlib = loadModule.Execute(WellKnown.Modules.Stdlib, env);
+            var stdlib = loadModule.Run(WellKnown.Modules.Stdlib, env);
+            if (stdlib.TryGetB(out var error))
+            {
+                Console.WriteLine(error.Step.ToString());
+                var ex = error.Exception;
+                while (ex != null)
+                    ex = ex.InnerException;
+                Console.WriteLine(error.Exception);
+            }
         }
     }
 
@@ -19,7 +29,7 @@ public static class Program
     {
         var services = new ServiceCollection();
         services.AddErgo();
-        services.AddSingleton<TestConsumer>();
+        services.AddTransient<TestConsumer>();
         var serviceProvider = services.BuildServiceProvider();
         var test = serviceProvider.GetRequiredService<TestConsumer>();
         test.Do();

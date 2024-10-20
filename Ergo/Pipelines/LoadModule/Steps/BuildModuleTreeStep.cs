@@ -7,60 +7,44 @@ using Ergo.Modules.Directives;
 using Ergo.Modules.Libraries;
 
 namespace Ergo;
-public interface IBuildModuleTreeStep : IErgoPipeline<ErgoStream, ErgoModuleTree, IBuildModuleTreeStep.Env>
+public interface IBuildModuleTreeStep : IErgoPipeline<LegacyErgoParser, ErgoModuleTree, IBuildModuleTreeStep.Env>
 {
     public interface Env
     {
+        Maybe<ErgoModuleTree> ModuleTree { get; set; }
+        Maybe<Atom> CurrentModule { get; set; }
         ISet<Operator> Operators { get; }
-        ErgoLexer.StreamState StreamState { get; set; }
     }
 }
 public class BuildModuleTreeStep(IServiceProvider sp) : IBuildModuleTreeStep
 {
-    public Either<ErgoModuleTree, PipelineError> Run(ErgoStream input, IBuildModuleTreeStep.Env env)
+    public Either<ErgoModuleTree, PipelineError> Run(LegacyErgoParser parser, IBuildModuleTreeStep.Env env)
     {
-        var moduleTree = new ErgoModuleTree(sp);
-        var lexer = new ErgoLexer(default, input, env.Operators);
-        var parser = new ErgoParser(default, lexer);
-        Commit();
-        // Bootstrap the parser by first loading the operator symbols defined in this module
-        var newOperators = parser.OperatorDeclarations();
-        lexer.AddOperators(newOperators);
-        env.Operators.Union(newOperators);
-        Backtrack();
+        var moduleTree = env.ModuleTree.GetOrLazy(() => new ErgoModuleTree(sp));
         // Build the module tree recursively by executing the directives found in each module
         var directivesAST = parser.ProgramDirectives2();
-        Backtrack();
-        var directivesImpl = directivesAST
-            .Select(x => (Signature: x.Body.GetSignature(), x.Body))
-            .Select(x => (x.Signature, x.Body, Implementation: Maybe.FromTryGet(() => (TryGetImpl(x.Signature, out var impl), impl))))
-            .ToArray();
-        var undefinedDirectives = directivesImpl
-            .Where(x => !x.Implementation.HasValue)
-            .Select(x => new InterpreterException(ErgoInterpreter.ErrorType.UndefinedDirective, x.Signature.Explain()))
-            .ToArray();
-        if (undefinedDirectives.Length > 0)
-            throw new AggregateException(undefinedDirectives);
-        var definedDirectives = directivesImpl
-            .Where(x => x.Implementation.HasValue);
-        foreach (var (sig, body, dir) in definedDirectives)
+        var ctx = new ErgoDirective.Context(moduleTree, env.CurrentModule);
+        foreach(var ast in directivesAST)
         {
-            if (TryGetImpl(sig, out var impl))
-                impl.Execute(moduleTree, body.GetArguments());
+            var sig = ast.Body.GetSignature();
+            if (!TryGetImpl(sig, out var impl))
+                throw new InterpreterException(ErgoInterpreter.ErrorType.UndefinedDirective, sig.Explain());
+            impl.Execute(ref ctx, ast.Body.GetArguments());
         }
-        // Then parse the clauses and return the module
-        foreach (var clause in parser.ProgramClauses2())
-        {
-        }
-
-
+        // Make the parser aware of all operators that were just defined
+        env.Operators.UnionWith(ctx.CurrentModule.Operators);
+        parser.AddOperators(env.Operators);
+        // Parse the clauses and return the module as-is
+        ctx.CurrentModule.Clauses.AddRange(parser.ProgramClauses2());
         return moduleTree;
-
         bool TryGetImpl(Signature sig, out ErgoDirective impl)
-            => moduleTree.Directives.TryGetValue(sig, out impl!)
-            || moduleTree.Directives.TryGetValue(sig.WithArity(default), out impl!); // variadic match
-        void Commit() => env.StreamState = parser.Lexer.State;
-        void Backtrack() => parser.Lexer.Seek(env.StreamState);
+        {
+            impl = DeclareModule.Instance;
+            if (sig.Equals(DeclareModule.Instance.Signature))
+                return true;
+            return moduleTree.Directives.TryGetValue(sig, out impl!)
+                || moduleTree.Directives.TryGetValue(sig.WithArity(default), out impl!); // variadic match
+        }
     }
 }
 

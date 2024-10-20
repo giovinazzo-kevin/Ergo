@@ -15,7 +15,7 @@ public sealed class TermMarshall
     public static Action RegisterTransform<T>(Func<T, T> transform)
     {
         if (!Transforms.TryGetValue(typeof(T), out var list))
-            Transforms[typeof(T)] = list = new();
+            Transforms[typeof(T)] = list = [];
         var cast = (object x) => (object)transform((T)x);
         list.Add(cast);
         return () => list.Remove(cast);

@@ -21,8 +21,8 @@ public partial class ErgoInterpreter
 #endif
     };
 
-    private readonly Dictionary<Atom, IErgoLibrary> _libraries = new();
-    public Maybe<IErgoLibrary> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
+    private readonly Dictionary<Atom, ErgoLibrary> _libraries = [];
+    public Maybe<ErgoLibrary> GetLibrary(Atom module) => _libraries.TryGetValue(module, out var lib) ? Maybe.Some(lib) : default;
 
     internal ErgoInterpreter(ErgoFacade facade)
     {
@@ -30,7 +30,7 @@ public partial class ErgoInterpreter
 
     }
 
-    public void AddLibrary(IErgoLibrary l)
+    public void AddLibrary(ErgoLibrary l)
     {
         if (_libraries.ContainsKey(l.Module))
             throw new ArgumentException($"A library for module {l.Module} was already added");
@@ -46,9 +46,9 @@ public partial class ErgoInterpreter
         {
             var sig = directive.Signature.Explain();
             var directiveWatch = Probe.Enter(sig);
-            var ret = directive.Execute(this, ref scope, [.. ((Complex)d.Body).Arguments]);
-            Probe.Leave(directiveWatch, sig);
-            return ret;
+            // var ret = directive.Execute(this, ref scope, [.. ((Complex)d.Body).Arguments]);
+            // Probe.Leave(directiveWatch, sig);
+            return false;
         }
 
         if (Flags.HasFlag(InterpreterFlags.ThrowOnDirectiveNotFound))
@@ -167,7 +167,7 @@ public partial class ErgoInterpreter
         {
             var sig = BuiltIn.Signature.Explain();
             var builtinWatch = Probe.Enter(sig);
-            BuiltIn.Execute(this, ref scope, [.. ((Complex)Ast.Body).Arguments]);
+            // BuiltIn.Execute(this, ref scope, [.. ((Complex)Ast.Body).Arguments]);
             // NOTE: It's only after module/2 has been called that the module actually gets its name!
             Probe.Leave(builtinWatch, sig);
         }

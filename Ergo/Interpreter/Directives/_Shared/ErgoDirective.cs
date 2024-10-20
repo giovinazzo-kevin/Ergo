@@ -2,6 +2,13 @@
 
 public abstract class ErgoDirective
 {
+    public readonly record struct Context(ErgoModuleTree ModuleTree, Maybe<Atom> CurrentModuleName)
+    {
+        public ErgoModule CurrentModule => CurrentModuleName.Map(AccessModule)
+            .GetOrThrow(() => new InterpreterException(ErgoInterpreter.ErrorType.UndefinedModule));
+        Maybe<ErgoModule> AccessModule(Atom m) => ModuleTree[m];
+    }
+
     public readonly int Priority;
     public readonly string Description;
     public readonly Signature Signature;
@@ -13,5 +20,5 @@ public abstract class ErgoDirective
         Priority = weight;
     }
 
-    public abstract bool Execute(ErgoModuleTree moduleTree, ref Maybe<Atom> currentModule, ImmutableArray<ITerm> args);
+    public abstract bool Execute(ref Context context, ImmutableArray<ITerm> args);
 }

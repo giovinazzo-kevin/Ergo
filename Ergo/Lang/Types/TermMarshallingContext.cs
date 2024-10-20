@@ -6,7 +6,7 @@ public sealed class TermMarshallingContext
 {
     private static readonly object _syncRoot = new();
     public readonly Stack<object> ReferenceStack = new();
-    internal readonly Dictionary<TermMarshalling, Dictionary<int, ITerm>> ToCache = new();
+    internal readonly Dictionary<TermMarshalling, Dictionary<int, ITerm>> ToCache = [];
 
     public bool TryGetCached(TermMarshalling mode, object key, Type type, Maybe<Atom> functor, out ITerm cached)
     {
@@ -16,7 +16,7 @@ public sealed class TermMarshallingContext
         lock (_syncRoot)
         {
             if (!ToCache.TryGetValue(mode, out var cache))
-                ToCache[mode] = cache = new();
+                ToCache[mode] = cache = [];
             var hashCode = HashCode.Combine(key, type);
             if (cache.TryGetValue(hashCode, out var cached_))
             {
@@ -33,7 +33,7 @@ public sealed class TermMarshallingContext
         lock (_syncRoot)
         {
             if (!ToCache.TryGetValue(mode, out var cache))
-                ToCache[mode] = cache = new();
+                ToCache[mode] = cache = [];
             var hashCode = HashCode.Combine(key, type);
             cache[hashCode] = term;
         }

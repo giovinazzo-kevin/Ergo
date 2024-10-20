@@ -1,11 +1,11 @@
-﻿using static Ergo.Lang.ErgoParser;
+﻿using static Ergo.Lang.LegacyErgoParser;
 
 namespace Ergo.Lang.Parser;
 
 public sealed class DictParser : IAbstractTermParser<Dict>
 {
     public int ParsePriority => 0;
-    public Maybe<Dict> Parse(ErgoParser parser)
+    public Maybe<Dict> Parse(LegacyErgoParser parser)
     {
         var scope = parser.GetScope();
         return ParseSugared()

@@ -34,7 +34,7 @@ public abstract class AbstractListParser<L> : IAbstractTermParser<L>
         return ParseTail(c);
     }
 
-    public virtual Maybe<L> Parse(ErgoParser parser)
+    public virtual Maybe<L> Parse(LegacyErgoParser parser)
     {
         Empty = Construct(ImmutableArray<ITerm>.Empty, default);
         var scope = parser.GetScope();

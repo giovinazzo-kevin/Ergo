@@ -22,32 +22,39 @@ public sealed class ErgoPipelineBuilder<TEnv>
 public sealed class ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>(IErgoPipeline[] prev, IErgoPipeline<TInter, TOutput, TEnv> curr) 
     : IErgoPipeline<TInput, TOutput, TEnv>
 {
-    private static readonly MethodInfo ExecuteStep = typeof(IErgoPipeline<,,>)
-        .GetMethod(nameof(IErgoPipeline<Unit, Unit, Unit>.Run), BindingFlags.Instance | BindingFlags.Public)
-        ?? throw new InvalidOperationException();
-    private static readonly MethodInfo TryGetResult = typeof(Either<,>)
-        .GetMethod(nameof(Either<Unit, Unit>.TryGetA), BindingFlags.Instance | BindingFlags.Public)
-        ?? throw new InvalidOperationException();
+
+    private static readonly ModuleBuilder ModuleBuilder;
+    static ErgoPipelineBuilder()
+    {
+        var assemblyName = new AssemblyName($"DynamicPipelineProxies");
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+        ModuleBuilder = assemblyBuilder.DefineDynamicModule($"Proxies");
+    }
+
     private static readonly PropertyInfo Error = typeof(Either<,>)
         .GetProperty("B", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException();
-    private static readonly MethodInfo CreateResult = typeof(Either<,>)
-        .GetMethod(nameof(Either<Unit, Unit>.FromA), BindingFlags.Static | BindingFlags.Public)
-        ?? throw new InvalidOperationException();
     private readonly Dictionary<Type, object> ProxyCache = [];
 
-    private readonly IErgoPipeline[] Steps = prev.Append(curr).ToArray();
-    private readonly (MethodInfo ExecuteStep, MethodInfo TryGetResult, MethodInfo CreateResult)[] MethodTable =
+    private readonly IErgoPipeline[] Steps = [.. prev, curr];
+    private readonly (MethodInfo ExecuteStep, PropertyInfo HasResult, PropertyInfo GetError, PropertyInfo GetResult, MethodInfo CreateResult)[] MethodTable =
         prev.Append(curr)
             .Select((step, i) =>
             {
-                var executeStep = ExecuteStep
-                    .MakeGenericMethod(step.InterType, step.OutputType);
-                var tryGetResult = TryGetResult
-                    .MakeGenericMethod(step.InterType, step.OutputType);
-                var createResult = CreateResult
-                    .MakeGenericMethod(step.OutputType, typeof(PipelineError));
-                return (executeStep, tryGetResult, createResult);
+                var executeStep = typeof(IErgoPipeline<,,>)
+                    .MakeGenericType(step.InterType, step.OutputType, step.EnvType)
+                    .GetMethod(nameof(IErgoPipeline<Unit, Unit, Unit>.Run), BindingFlags.Instance | BindingFlags.Public);
+                var either = typeof(Either<,>)
+                    .MakeGenericType(step.OutputType, typeof(PipelineError));
+                var hasResult = either
+                    .GetProperty("IsA", BindingFlags.Instance | BindingFlags.Public);
+                var getResult = either
+                    .GetProperty("A", BindingFlags.Instance | BindingFlags.NonPublic);
+                var getError = either
+                    .GetProperty("B", BindingFlags.Instance | BindingFlags.NonPublic);
+                var createResult = either
+                    .GetMethod(nameof(Either<Unit, Unit>.FromA), BindingFlags.Static | BindingFlags.Public);
+                return (executeStep, hasResult, getError, getResult, createResult);
             })
         .ToArray();
 
@@ -56,7 +63,7 @@ public sealed class ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>(IErgoPipe
 
     public Either<TOutput, PipelineError> Run(TInput input, TEnv environment)
     {
-        var result = new object[1];
+        var result = new object[1] { input };
         var data = (object)Either<TInput, PipelineError>.FromA(input);
         for (int i = 0; i < Steps.Length; i++)
         {
@@ -64,14 +71,16 @@ public sealed class ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>(IErgoPipe
             try
             {
                 data = MethodTable[i].ExecuteStep
-                    .Invoke(step, [data, environment])!;
-                var hasResult = (bool)MethodTable[i].TryGetResult
-                    .Invoke(data, result)!;
+                    .Invoke(step, [result[0], environment])!;
+                var hasResult = (bool)MethodTable[i].HasResult
+                    .GetValue(data);
                 if (!hasResult)
                 {
-                    var error = (PipelineError)Error.GetValue(data)!;
+                    var error = (PipelineError)MethodTable[i].GetError.GetValue(data)!;
                     return Either<TOutput, PipelineError>.FromB(error);
                 }
+                result[0] = MethodTable[i].GetResult
+                    .GetValue(data);
                 data = MethodTable[i].CreateResult
                     .Invoke(null, result);
             }
@@ -81,7 +90,7 @@ public sealed class ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>(IErgoPipe
                 return Either<TOutput, PipelineError>.FromB(error);
             }
         }
-        return Either<TOutput, PipelineError>.FromA((TOutput)data!);
+        return (Either<TOutput, PipelineError>)(data);
     }
 
     public TInterface Cast<TInterface>()
@@ -93,12 +102,8 @@ public sealed class ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>(IErgoPipe
         if (ProxyCache.TryGetValue(typeof(TInterface), out var proxy))
             return (TInterface)proxy;
 
-        var assemblyName = new AssemblyName($"{typeof(TInterface).Name}ProxyAssembly");
-        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-        var moduleBuilder = assemblyBuilder.DefineDynamicModule($"{typeof(TInterface).Name}ProxyModule");
-
         // Define a new type that implements TInterface
-        var typeBuilder = moduleBuilder.DefineType("DynamicProxy", TypeAttributes.Public);
+        var typeBuilder = ModuleBuilder.DefineType($"PipelineProxy__{typeof(TInterface).Name}", TypeAttributes.Public);
         typeBuilder.AddInterfaceImplementation(typeof(TInterface));
         // Create a field to hold the reference to the builder
         var builderField = typeBuilder.DefineField("_builder", typeof(ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>), FieldAttributes.Private);
@@ -115,22 +120,27 @@ public sealed class ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>(IErgoPipe
         il.Emit(OpCodes.Stfld, builderField);
         il.Emit(OpCodes.Ret);
 
+        var executeMethodName = nameof(IErgoPipeline<TInput, TOutput, TEnv>.Run);
         // Implement the Execute method
-        var executeMethod = typeof(TInterface).GetMethod(nameof(IErgoPipeline<TInput, TOutput, TEnv>.Run))!;
+        var executeMethodOnInterface = typeof(IErgoPipeline<TInput, TOutput, TEnv>).GetMethod(executeMethodName)!;
         var methodBuilder = typeBuilder.DefineMethod(
-            executeMethod.Name,
+            executeMethodOnInterface.Name,
             MethodAttributes.Public | MethodAttributes.Virtual,
-            executeMethod.ReturnType,
-            executeMethod.GetParameters().Select(p => p.ParameterType).ToArray());
+            executeMethodOnInterface.ReturnType,
+            executeMethodOnInterface.GetParameters().Select(p => p.ParameterType).ToArray());
 
+        var executeMethodOnBuilder = typeof(ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>).GetMethod(executeMethodName)!;
         il = methodBuilder.GetILGenerator();
-        // Load the input and environment arguments
-        for (int i = 0; i < executeMethod.GetParameters().Length; i++)
-            il.Emit(OpCodes.Ldarg, i);
-
-        // Load the builder field and call Execute on it
+        // Load the proxy instance (this)
+        il.Emit(OpCodes.Ldarg_0);
+        // Load the builder field (from 'this')
         il.Emit(OpCodes.Ldfld, builderField);
-        il.Emit(OpCodes.Callvirt, typeof(ErgoPipelineBuilder<TInput, TInter, TOutput, TEnv>).GetMethod("Execute")!); // Call Execute on the builder
+        // Load the input and environment arguments
+        il.Emit(OpCodes.Ldarg_1); // Assuming the first argument is the input
+        il.Emit(OpCodes.Ldarg_2); // Assuming the second argument is the environment
+        // Call the 'Run' method on the builder
+        il.Emit(OpCodes.Callvirt, executeMethodOnBuilder); // Call 'Run' on the builder
+        // Return the result
         il.Emit(OpCodes.Ret);
 
         // Create the type

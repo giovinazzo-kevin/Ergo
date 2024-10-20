@@ -5,14 +5,15 @@ using Ergo.Lang.Utils;
 
 namespace Ergo.Lang;
 
-public partial class ErgoParser : IDisposable
+
+public partial class LegacyErgoParser : IDisposable
 {
     private static readonly Comparer<IAbstractTermParser> _absComparer =
         Comparer<IAbstractTermParser>.Create((x, y) => x.ParsePriority.CompareTo(y.ParsePriority));
 
     private InstantiationContext _discardContext;
-    private HashSet<long> _memoizationFailures = new();
-    private Dictionary<long, object> _memoizationTable = new();
+    private HashSet<long> _memoizationFailures = [];
+    private Dictionary<long, object> _memoizationTable = [];
 
 
     private readonly DiagnosticProbe Probe = new()
@@ -21,11 +22,10 @@ public partial class ErgoParser : IDisposable
         IsEnabled = false,
 #endif
     };
-    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = new();
-    protected List<IAbstractTermParser> SortedAbstractTermParsers { get; private set; } = new();
+    protected Dictionary<Type, IAbstractTermParser> AbstractTermParsers { get; private set; } = [];
+    protected List<IAbstractTermParser> SortedAbstractTermParsers { get; private set; } = [];
 
     public ErgoLexer Lexer { get; set; }
-    public readonly ErgoFacade Facade;
 
     public ParserScope GetScope() => new(Lexer.State);
     private long GetMemoKey(ErgoLexer.StreamState state, string callerName)
@@ -90,11 +90,17 @@ public partial class ErgoParser : IDisposable
         return Fail<T>(state);
     }
 
-    public ErgoParser(ErgoFacade facade, ErgoLexer lexer)
+    public LegacyErgoParser(ErgoLexer lexer)
     {
-        Facade = facade;
         Lexer = lexer;
         _discardContext = new("_");
+    }
+
+    public void AddOperators(IEnumerable<Operator> ops)
+    {
+        Lexer.AddOperators(ops);
+        _memoizationFailures.Clear();
+        _memoizationTable.Clear();
     }
 
     public bool RemoveAbstractParser<T>(out IAbstractTermParser<T> parser)
@@ -107,10 +113,9 @@ public partial class ErgoParser : IDisposable
         parser = (IAbstractTermParser<T>)parser_;
         return true;
     }
-    public void AddAbstractParser<T>(IAbstractTermParser<T> parser)
-        where T : AbstractTerm
+    public void AddAbstractParser(IAbstractTermParser parser)
     {
-        AbstractTermParsers.Add(typeof(T), parser);
+        AbstractTermParsers.Add(parser.Type, parser);
         SortedAbstractTermParsers.Add(parser);
         SortedAbstractTermParsers.Sort(_absComparer);
     }
@@ -591,7 +596,7 @@ public partial class ErgoParser : IDisposable
             ;
     }
 
-    public Maybe<Clause> Predicate()
+    public Maybe<Clause> Clause()
     {
         var watch = Probe.Enter();
         var scope = GetScope();
@@ -662,7 +667,7 @@ public partial class ErgoParser : IDisposable
             directives.Add(directive);
         }
 
-        while (Predicate().TryGetValue(out var predicate))
+        while (Clause().TryGetValue(out var predicate))
         {
             predicates.Add(predicate);
         }
@@ -772,8 +777,9 @@ public partial class ErgoParser : IDisposable
     public IEnumerable<Clause> ProgramClauses2()
     {
         var watch = Probe.Enter();
-        while (Predicate().TryGetValue(out var predicate))
-            yield return predicate;
+        while (Clause().TryGetValue(out var clause))
+            yield return clause;
+        Probe.Leave(watch);
     }
 
     public void Dispose()

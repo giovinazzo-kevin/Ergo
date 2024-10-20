@@ -15,7 +15,7 @@ public sealed class Solutions : IEnumerable<Solution>
         public ISolutionEnumerable Solutions { get; set; } = sol;
     }
 
-    private readonly List<GeneratorDef> generators = new();
+    private readonly List<GeneratorDef> generators = [];
     public int Count { get; private set; }
 
     public void Clear()

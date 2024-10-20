@@ -7,22 +7,13 @@ using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Modules.Libraries.Expansions;
 
-public class Expansions : IErgoLibrary
+public class Expansions(IServiceProvider sp) : ErgoLibrary(sp)
+    , IExportsDirective<DefineExpansion>
 {
-    private static readonly InstantiationContext InstantiationContext = new("X");
-
     public override int LoadOrder => 1;
 
-    public override Atom Module => WellKnown.Modules.Expansions;
-
-    protected readonly Dictionary<Signature, HashSet<Expansion>> Table = new();
-    private readonly ErgoBuiltIn[] _exportedBuiltIns = [
-    ];
-    private readonly ErgoDirective[] _interpreterDirectives = [
-        new DefineExpansion()
-    ];
-    public override IEnumerable<ErgoBuiltIn> ExportedBuiltins => _exportedBuiltIns;
-    public override IEnumerable<ErgoDirective> ExportedDirectives => _interpreterDirectives;
+    private static readonly InstantiationContext InstantiationContext = new("X");
+    protected readonly Dictionary<Signature, HashSet<Expansion>> Table = [];
 
     public override void OnErgoEvent(ErgoEvent evt)
     {
@@ -88,7 +79,7 @@ public class Expansions : IErgoLibrary
     {
         var signature = pred.Head.GetSignature();
         if (!Table.TryGetValue(signature, out var set))
-            set = Table[signature] = new();
+            set = Table[signature] = [];
         set.Add(new(module, outVar, pred));
     }
 

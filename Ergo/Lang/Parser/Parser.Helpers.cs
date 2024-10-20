@@ -2,7 +2,7 @@
 
 namespace Ergo.Lang;
 
-public partial class ErgoParser
+public partial class LegacyErgoParser
 {
     public static bool IsPunctuation(ErgoLexer.Token token, [NotNull] string p) => token.Type == ErgoLexer.TokenType.Punctuation && p.Equals(token.Value);
     public static bool IsVariableIdentifier(string s) => s[0] == '_' || char.IsLetter(s[0]) && char.IsUpper(s[0]);

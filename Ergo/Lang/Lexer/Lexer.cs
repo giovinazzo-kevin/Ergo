@@ -16,9 +16,7 @@ public partial class ErgoLexer : IDisposable
 
     public readonly HashSet<Operator> AvailableOperators;
     public readonly Dictionary<string, List<Operator>> OperatorLookup;
-    public readonly ErgoFacade Facade;
-
-    protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = new();
+    protected readonly Dictionary<long, (StreamState State, Token Token)> _memoizationTable = [];
 
     #region Regular Expressions
     protected static readonly Regex UnescapeRegex =
@@ -63,9 +61,8 @@ public partial class ErgoLexer : IDisposable
 
     public bool Eof => Stream.Position >= Stream.Length;
 
-    public ErgoLexer(ErgoFacade facade, ErgoStream s, IEnumerable<Operator> userOperators)
+    public ErgoLexer(ErgoStream s, IEnumerable<Operator> userOperators)
     {
-        Facade = facade;
         Stream = s;
         AvailableOperators = userOperators.ToHashSet();
         OperatorSymbols.UnionWith(AvailableOperators
@@ -82,6 +79,7 @@ public partial class ErgoLexer : IDisposable
     {
         if (AvailableOperators.Contains(op))
             return;
+        _memoizationTable.Clear();
         AvailableOperators.Add(op);
         OperatorSymbols.UnionWith(op.Synonyms
             .Select(s => (string)s.Value));

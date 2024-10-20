@@ -7,7 +7,7 @@ namespace Ergo.Lang;
 
 public partial class ErgoKnowledgeBase : IReadOnlyCollection<Clause>
 {
-    protected readonly OrderedDictionary Predicates = new();
+    protected readonly OrderedDictionary Predicates = [];
 
     public readonly InterpreterScope Scope;
     public readonly ErgoDependencyGraph DependencyGraph;

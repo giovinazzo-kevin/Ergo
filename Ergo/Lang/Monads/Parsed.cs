@@ -20,19 +20,19 @@ public static class Parsed
 public readonly struct Parsed<T>
 {
     private static Maybe<U> Cast<V, U>(Maybe<V> value) => value.Select(u => (U)(object)u);
-    public static Func<ErgoParser, Maybe<T>> GetParser(string data, Func<string, Maybe<T>> onParseFail) => 0 switch
+    public static Func<LegacyErgoParser, Maybe<T>> GetParser(string data, Func<string, Maybe<T>> onParseFail) => 0 switch
     {
         _ when typeof(T) == typeof(Atom) => p => Cast<Atom, T>(p.Atom()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Variable) => p => Cast<Variable, T>(p.Variable()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Complex) => p => Cast<Complex, T>(p.Complex()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Expr) => p => Cast<Expr, T>(p.Expression()).Or(() => onParseFail(data)),
-        _ when typeof(T) == typeof(Clause) => p => Cast<Clause, T>(p.Predicate()).Or(() => onParseFail(data)),
+        _ when typeof(T) == typeof(Clause) => p => Cast<Clause, T>(p.Clause()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Directive) => p => Cast<Directive, T>(p.Directive()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(ErgoProgram) => p => Cast<ErgoProgram, T>(p.Program()).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(ITerm) => p => Cast<ITerm, T>(p.Term()).Or(() => onParseFail(data)),
         _ when typeof(T).IsAssignableTo(typeof(AbstractTerm)) => p => Cast<AbstractTerm, T>(p.Abstract(typeof(T))).Or(() => onParseFail(data)),
         _ when typeof(T) == typeof(Query) =>
-            (ErgoParser p) => p.ExpressionOrTerm().Map(t => Cast<Query, T>(new Query(t))
+            (LegacyErgoParser p) => p.ExpressionOrTerm().Map(t => Cast<Query, T>(new Query(t))
                 .Or(() => onParseFail(data))),
         _ => throw new ArgumentException($"Parsed<T> can't handle type: {typeof(T).Name}")
     };

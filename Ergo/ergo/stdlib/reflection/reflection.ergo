@@ -1,40 +1,30 @@
 ﻿:- module(reflection, [
-	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2, '\\=@='/2,
+	'=@='/2, '\\=@='/2,
 	'?='/2, '/'/2, '=..'/2,
-	'=='/2, '\\=='/2, 
-
+	'@<'/2, '@>'/2, '@≥'/2, '@≤'/2,
 	functor/3, arg/3,
 	atom_concat/3
 ]).
 
 :- op(700, fx, ['@']).
-:- op(51, xfy, ['@>']).
-:- op(51, xfy, ['@≥', '@>=']).
-:- op(49, yfx, ['@<']).
-:- op(49, yfx, ['@≤', '@<=']).
 :- op(50, xfx, ['=@=']).
 :- op(50, xfx, ['\\=@=']).
 :- op(50, xfx, ['?=']).
 :- op(50, xfx, ['=..']).
-:- op(50, xfx, ['==', '≡']).
-:- op(50, xfx, ['\\==', '≢']).
 
-:- inline('@<'/2, '@>'/2, '@≥'/2, '@≤'/2, '=@='/2, '\\=@='/2, '?='/2, '/'/2, '=..'/2, '=='/2, '\\=='/2).
+:- inline('?='/2, '/'/2, '=..'/2, '=='/2, '\\=='/2).
 
-%: Term expansion.
-'=..'(Term, [Functor|Args]) :- term(Functor, Args, Term), !.
+
 %: Term comparison (gt).
-'@>'(A, B)  :- compare(X, A, B), X  > 0.
+'@>'(A, B)  :- compare(X, A, B), X > 0.
 %: Term comparison (lt).
-'@<'(A, B)  :- compare(X, A, B), X  < 0.
+'@<'(A, B)  :- compare(X, A, B), X < 0.
 %: Term comparison (gte).
 '@≥'(A, B) :- compare(X, A, B), X >= 0.
 %: Term comparison (lte).
 '@≤'(A, B) :- compare(X, A, B), X <= 0.
-%: Arithmetic comparison (eq).
-'=='(A, B) :- compare(0, A, B).
-%: Arithmetic comparison (neq).
-'\\=='(A, B) :- not(compare(0, A, B)).
+%: Term expansion.
+'=..'(Term, [Functor|Args]) :- term(Functor, Args, Term), !.
 %: Synctactic equality of A and B.
 %: ⊤ iff the result of A == B will not change due to further instantiation of either term.
 '?='(A,B) :- \+unifiable(A,B,[_H|_T]).

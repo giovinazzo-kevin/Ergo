@@ -13,7 +13,7 @@ public partial class CommandDispatcher
     public CommandDispatcher([NotNull] Action<string> unknownCommand)
     {
         Contract.Requires(unknownCommand is { });
-        CommandList = new List<ShellCommand>();
+        CommandList = [];
         DefaultDispatcher = unknownCommand;
     }
 

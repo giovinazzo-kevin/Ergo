@@ -54,7 +54,7 @@ public readonly struct Variable : ITerm
 
     public ITerm Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
     {
-        vars ??= new();
+        vars ??= [];
         if (vars.TryGetValue(Name, out var inst))
         {
             return inst;

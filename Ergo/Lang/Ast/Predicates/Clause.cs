@@ -216,7 +216,7 @@ public readonly struct Clause : IExplainable
             return this;
         if (Head.GetFunctor().TryGetValue(out var head) && head.Equals(WellKnown.Literals.TopLevel))
             return this; // No need to instantiate the top level query, it would hide the fact that top level variables are not ignored thus preventing some optimizations.
-        vars ??= new Dictionary<string, Variable>();
+        vars ??= [];
         return new Clause(
             Documentation
             , DeclaringModule

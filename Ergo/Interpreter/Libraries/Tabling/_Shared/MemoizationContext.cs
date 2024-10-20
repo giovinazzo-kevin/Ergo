@@ -11,7 +11,7 @@ public readonly struct VariantKey
 
 public sealed class MemoizationContext
 {
-    private Dictionary<ITerm, MemoizationTable> MemoizationTable = new();
+    private Dictionary<ITerm, MemoizationTable> MemoizationTable = [];
 
     public void MemoizePioneer(ITerm pioneer)
     {

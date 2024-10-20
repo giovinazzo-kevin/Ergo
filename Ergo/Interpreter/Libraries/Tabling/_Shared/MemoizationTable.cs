@@ -2,8 +2,8 @@
 
 public sealed class MemoizationTable
 {
-    public readonly HashSet<ITerm> Followers = new();
-    public readonly HashSet<Solution> Solutions = new();
+    public readonly HashSet<ITerm> Followers = [];
+    public readonly HashSet<Solution> Solutions = [];
 
     public void AddFollowers(IEnumerable<ITerm> followers)
     {

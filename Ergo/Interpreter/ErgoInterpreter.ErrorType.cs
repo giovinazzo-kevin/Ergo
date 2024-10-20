@@ -6,6 +6,7 @@ public partial class ErgoInterpreter
     {
         CouldNotLoadFile
         , ExpectedTermOfTypeAt
+        , UndefinedModule
         , ModuleAlreadyImported
         , ModuleNameClash
         , CouldNotParseTerm

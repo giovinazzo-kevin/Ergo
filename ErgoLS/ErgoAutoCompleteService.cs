@@ -1,5 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using Ergo.Interpreter;
+using Ergo.Modules;
 
 class ErgoAutoCompleteService
 {

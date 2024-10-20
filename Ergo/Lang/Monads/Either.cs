@@ -30,6 +30,17 @@ public readonly struct Either<TA, TB>
         return !IsA;
     }
 
+    public TA GetAOrThrow(Exception ex = null)
+    {
+        if (!IsA) throw ex ?? new InvalidOperationException();
+        return A;
+    }
+    public TB GetBOrThrow(Exception ex = null)
+    {
+        if (IsA) throw ex ?? new InvalidOperationException();
+        return B;
+    }
+
     public TC Reduce<TC>(Func<TA, TC> mapA, Func<TB, TC> mapB)
     {
         if (IsA)

@@ -1,29 +1,28 @@
-﻿using Ergo.Lang;
-using Ergo.Lang.Parser;
+﻿using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 using System.IO;
 
 namespace Ergo;
 
-public interface IStreamFileStep : IErgoPipeline<string, ErgoStream, IStreamFileStep.Env>
+public interface IParseStreamStep : IErgoPipeline<ErgoStream, LegacyErgoParser, IParseStreamStep.Env>
 {
 
     public interface Env
     {
+        ISet<Operator> Operators { get; }
     }
 
 }
 
-public class StreamFileStep : IStreamFileStep
+public class ParseStreamStep(IEnumerable<IAbstractTermParser> abstractTermParsers) : IParseStreamStep
 {
-    public Either<ErgoStream, PipelineError> Run(string fileName, IStreamFileStep.Env env)
+    public Either<LegacyErgoParser, PipelineError> Run(ErgoStream stream, IParseStreamStep.Env env)
     {
-        if (!File.Exists(fileName))
-            return new PipelineError(this, new FileNotFoundException(null, fileName));
-        var fs = EncodedFileStream(File.OpenRead(fileName), closeStream: true);
-        fs.Seek(0, SeekOrigin.Begin);
-        var stream = new ErgoStream(fs, fileName);
-        return stream;
+        var lexer = new ErgoLexer(stream, env.Operators);
+        var parser = new LegacyErgoParser(lexer);
+        foreach (var abs in abstractTermParsers)
+            parser.AddAbstractParser(abs);
+        return parser;
     }
 
     protected static MemoryStream EncodedFileStream(FileStream file, bool closeStream = true)

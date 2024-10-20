@@ -7,7 +7,7 @@ public sealed class DiagnosticProbe : IDisposable
     private static readonly Stopwatch _sw = new Stopwatch();
 
     private record struct Datum(int Hits, int Leaves, int Recursion, TimeSpan TotalTime, TimeSpan AverageTime, ImmutableDictionary<string, int> Counters);
-    private Dictionary<string, Datum> _data = new();
+    private Dictionary<string, Datum> _data = [];
 
     public bool IsEnabled { get; set; } = true;
 

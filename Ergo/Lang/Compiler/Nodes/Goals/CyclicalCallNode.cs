@@ -1,4 +1,6 @@
-﻿namespace Ergo.Lang.Compiler;
+﻿using Ergo.Compiler;
+
+namespace Ergo.Lang.Compiler;
 public class CyclicalCallNode : DynamicNode
 {
     public class NodeRef
@@ -8,9 +10,9 @@ public class CyclicalCallNode : DynamicNode
     }
 
     public readonly Signature Signature;
-    public Clause Clause { get; set; }
+    public ClauseDefinition Clause { get; set; }
     public NodeRef Ref { get; set; } = new(default);
-    public bool IsTailCall => Clause.Body != null && Clause.IsTailCall(Goal, Clause.Body);
+    //public bool IsTailCall => !Clause.IsFactual && Clause.Goals.Last().Callee;
     public readonly ITerm Head;
     public override bool IsDeterminate => false;
 
@@ -21,10 +23,10 @@ public class CyclicalCallNode : DynamicNode
     }
     public override Op Compile()
     {
-        if (IsTailCall)
-        {
-            return vm => Ops.Goal(Goal)(vm);
-        }
+        //if (IsTailCall)
+        //{
+        //    return vm => Ops.Goal(Goal)(vm);
+        //}
         return Ops.Goal(Goal);
     }
 

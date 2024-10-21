@@ -19,11 +19,11 @@ public class DeclareModule() : ErgoDirective("", new("module"), 2, 0)
                 throw new InterpreterException(ErgoInterpreter.ErrorType.ExpectedTermOfTypeAt, default, WellKnown.Types.Signature, exp.Explain());
             exportSigs.Add(new Signature(new Atom(sig.Predicate), sig.Arity, default, default));
         }
-        module = ctx.ModuleTree.Define(moduleName);
+        module = ctx.ModuleTree.Declare(moduleName);
         foreach (var sig in exportSigs)
         {
             var pInfo = module.GetMetaTableEntry(sig);
-            module.MetaTable[sig] = pInfo with { IsExported = true };
+            module.SetMetaTableEntry(sig, pInfo with { IsExported = true });
         }
         ctx = ctx with { CurrentModuleName = moduleName };
         return true;

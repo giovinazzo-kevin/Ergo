@@ -7,7 +7,7 @@ namespace Ergo.Lang.Ast;
 public readonly struct ErgoProgram : IExplainable
 {
     public readonly Directive[] Directives;
-    public readonly ErgoKnowledgeBase KnowledgeBase;
+    public readonly LegacyKnowledgeBase KnowledgeBase;
     public readonly bool IsPartial;
 
     public string Explain(bool canonical)
@@ -19,7 +19,7 @@ public readonly struct ErgoProgram : IExplainable
     public ErgoProgram(Directive[] directives, Clause[] kb)
     {
         Directives = directives;
-        KnowledgeBase = new ErgoKnowledgeBase(default);
+        KnowledgeBase = new LegacyKnowledgeBase(default);
         foreach (var k in kb)
         {
             KnowledgeBase.AssertZ(k);
@@ -28,7 +28,7 @@ public readonly struct ErgoProgram : IExplainable
         IsPartial = false;
     }
 
-    private ErgoProgram(Directive[] dirs, ErgoKnowledgeBase kb, bool partial)
+    private ErgoProgram(Directive[] dirs, LegacyKnowledgeBase kb, bool partial)
     {
         Directives = dirs;
         KnowledgeBase = kb;

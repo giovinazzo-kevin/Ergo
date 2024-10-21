@@ -1,7 +1,4 @@
-﻿
-using Ergo.Modules.Libraries.Compiler;
-
-namespace Ergo.Modules.Directives;
+﻿namespace Ergo.Modules.Directives;
 
 public class DeclareInlinedPredicate() : ErgoDirective("Marks a predicate to be inlined.", new("inline"), default, 11)
 {

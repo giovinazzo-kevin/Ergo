@@ -1,9 +1,4 @@
-﻿using Ergo.Pipelines.LoadModule;
-using Ergo.Lang;
-using Ergo.Lang.Ast;
-using Ergo.Modules.Directives;
-
-namespace Ergo;
+﻿namespace Ergo;
 
 public interface IErgoPipeline
 {

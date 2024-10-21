@@ -36,8 +36,8 @@ public readonly struct ErgoFacade
 
     public readonly Func<InterpreterScope, InterpreterScope> ConfigureStdlibScopeHandler;
     public readonly Func<ErgoInterpreter, InterpreterScope, InterpreterScope> ConfigureInterpreterScopeHandler;
-    public readonly Action<ErgoKnowledgeBase> BeforeKbCompiledHandler;
-    public readonly Action<ErgoKnowledgeBase> AfterKbCompiledHandler;
+    public readonly Action<LegacyKnowledgeBase> BeforeKbCompiledHandler;
+    public readonly Action<LegacyKnowledgeBase> AfterKbCompiledHandler;
 
     public readonly bool TrimKnowledgeBase = true;
 
@@ -61,8 +61,8 @@ public readonly struct ErgoFacade
         Maybe<IAsyncInputReader> inReader,
         Func<InterpreterScope, InterpreterScope> configureStdlibScope,
         Func<ErgoInterpreter, InterpreterScope, InterpreterScope> configureInterpreterScope,
-        Action<ErgoKnowledgeBase> beforeKbCompiled,
-        Action<ErgoKnowledgeBase> afterKbCompiled,
+        Action<LegacyKnowledgeBase> beforeKbCompiled,
+        Action<LegacyKnowledgeBase> afterKbCompiled,
         InterpreterFlags interpreterFlags,
         CompilerFlags compilerFlags,
         DecimalType decimalType,
@@ -101,8 +101,8 @@ public readonly struct ErgoFacade
     public ErgoFacade SetError(TextWriter err) => new(_libraries, _commands, _parsers, Input, Output, err, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade ConfigureStdlibScope(Func<InterpreterScope, InterpreterScope> f) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, f, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade ConfigureInterpreterScope(Func<ErgoInterpreter, InterpreterScope, InterpreterScope> f) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, f, BeforeKbCompiledHandler, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
-    public ErgoFacade BeforeKnowledgeBaseCompile(Action<ErgoKnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, a, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
-    public ErgoFacade AfterKnowledgeBaseCompile(Action<ErgoKnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, a, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
+    public ErgoFacade BeforeKnowledgeBaseCompile(Action<LegacyKnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, a, AfterKbCompiledHandler, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
+    public ErgoFacade AfterKnowledgeBaseCompile(Action<LegacyKnowledgeBase> a) => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, a, InterpreterFlags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade SetInterpreterFlags(InterpreterFlags flags)
         => new(_libraries, _commands, _parsers, Input, Output, Error, InputReader, ConfigureStdlibScopeHandler, ConfigureInterpreterScopeHandler, BeforeKbCompiledHandler, AfterKbCompiledHandler, flags, CompilerFlags, DecimalType, TrimKnowledgeBase);
     public ErgoFacade SetCompilerFlags(CompilerFlags flags)
@@ -201,7 +201,7 @@ public readonly struct ErgoFacade
         => ConfigureParser(new(new(stream, operators ?? [])));
     public ErgoInterpreter BuildInterpreter()
         => ConfigureInterpreter(new(this));
-    public ErgoVM BuildVM(ErgoKnowledgeBase kb)
+    public ErgoVM BuildVM(LegacyKnowledgeBase kb)
         => ConfigureVM(new(kb));
     public ErgoVM BuildVM(ref InterpreterScope scope)
         => BuildVM((scope = scope.WithFacade(this)).BuildKnowledgeBase());

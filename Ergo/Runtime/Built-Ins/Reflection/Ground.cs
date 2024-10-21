@@ -9,7 +9,7 @@ public sealed class Ground : ErgoBuiltIn
     {
     }
 
-    public override ExecutionNode Optimize(BuiltInNode node) =>
+    public override ExecutionNode Optimize(OldBuiltInNode node) =>
         node.Goal.IsGround ? TrueNode.Instance : node;
     public override Op Compile()
     {

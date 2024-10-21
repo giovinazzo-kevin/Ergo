@@ -19,7 +19,7 @@ public abstract class ErgoBuiltIn(string documentation, Atom functor, Maybe<int>
     public virtual int OptimizationOrder => 0;
     public virtual bool IsDeterminate(ImmutableArray<ITerm> args) => false;
 
-    public virtual ExecutionNode Optimize(BuiltInNode node) => node;
+    public virtual ExecutionNode Optimize(OldBuiltInNode node) => node;
     public virtual List<ExecutionNode> OptimizeSequence(List<ExecutionNode> nodes) => nodes;
 
     public Clause GetStub(ImmutableArray<ITerm> arguments)

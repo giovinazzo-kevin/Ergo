@@ -1,7 +1,6 @@
-﻿using Ergo.Lang.Ast;
-using Ergo.Modules;
+﻿using Ergo.Modules;
 
-namespace Ergo.Pipelines.LoadModule;
+namespace Ergo.Pipelines;
 public interface IBuildModuleTreePipeline : IErgoPipeline<Atom, ErgoModuleTree, IBuildModuleTreePipeline.Env>
 {
     public interface Env

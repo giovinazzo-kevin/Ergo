@@ -10,21 +10,21 @@ public sealed class Not : ErgoBuiltIn
     {
     }
 
-    public override ExecutionNode Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(OldBuiltInNode node)
     {
         return node; // TODO: fix bug with \+(a </> _)
-        var op = node.Goal.GetArguments()[0]
-            .ToExecutionNode(node.Node.Graph, ctx: new("NOT"))
-            .Optimize()
-            .Compile();
-        return new VirtualNode(vm =>
-        {
-            var newVm = vm.ScopedInstance();
-            newVm.Query = op;
-            newVm.Run();
-            if (newVm.Solutions.Any())
-                vm.Fail();
-        }, node.Goal.GetArguments()[0].GetArguments());
+        //var op = node.Goal.GetArguments()[0]
+        //    .ToExecutionNode(node.Definition.Graph, ctx: new("NOT"))
+        //    .Optimize()
+        //    .Compile();
+        //return new VirtualNode(vm =>
+        //{
+        //    var newVm = vm.ScopedInstance();
+        //    newVm.Query = op;
+        //    newVm.Run();
+        //    if (newVm.Solutions.Any())
+        //        vm.Fail();
+        //}, node.Goal.GetArguments()[0].GetArguments());
     }
 
     public override Op Compile() => vm =>

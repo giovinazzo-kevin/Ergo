@@ -23,7 +23,7 @@ public class ErgoTestFixture : IDisposable
     public readonly ExceptionHandler ThrowingExceptionHandler = new(ex => throw ex);
     public readonly ErgoInterpreter Interpreter;
     public readonly InterpreterScope InterpreterScope;
-    public readonly ErgoKnowledgeBase KnowledgeBase;
+    public readonly LegacyKnowledgeBase KnowledgeBase;
     public readonly ErgoVM VM;
 
     protected virtual string TestsModuleName => "tests";

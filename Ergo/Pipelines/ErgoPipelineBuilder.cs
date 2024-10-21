@@ -1,7 +1,4 @@
-﻿using Ergo.Lang;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Extensions.DependencyInjection;
-using System.Reactive;
+﻿using System.Reactive;
 using System.Reflection;
 using System.Reflection.Emit;
 

@@ -1,6 +1,4 @@
-﻿using Ergo.Lang;
-using Ergo.Lang.Parser;
-using Ergo.Lang.Utils;
+﻿using Ergo.Lang.Utils;
 using System.IO;
 
 namespace Ergo;

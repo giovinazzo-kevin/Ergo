@@ -12,7 +12,7 @@ public sealed class Number : ErgoBuiltIn
     {
     }
 
-    public override ExecutionNode Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(OldBuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         if (args[0] is not Variable)

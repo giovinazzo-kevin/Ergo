@@ -190,14 +190,14 @@ public class Hook
         return lazyHook;
     }
 
-    public static CompiledHook Compile(Signature sig, ErgoKnowledgeBase kb, bool throwIfNotDefined = false)
+    public static CompiledHook Compile(Signature sig, LegacyKnowledgeBase kb, bool throwIfNotDefined = false)
     {
         var compiledHook = new CompiledHook(sig);
         compiledHook.Op = CompileOp(compiledHook, sig, kb, throwIfNotDefined) ?? Ops.Fail;
         return compiledHook;
     }
 
-    static Op CompileOp(CompiledHook compiledHook, Signature sig, ErgoKnowledgeBase kb, bool throwIfNotDefined)
+    static Op CompileOp(CompiledHook compiledHook, Signature sig, LegacyKnowledgeBase kb, bool throwIfNotDefined)
     {
         sig = sig.WithModule(sig.Module.GetOr(kb.Scope.Entry));
         if (!kb.Get(sig).TryGetValue(out var clauses))

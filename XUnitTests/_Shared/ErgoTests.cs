@@ -11,7 +11,7 @@ public class ErgoTests<TFixture>(TFixture fixture)
 {
     public readonly ErgoInterpreter Interpreter = fixture.Interpreter;
     public InterpreterScope InterpreterScope = fixture.InterpreterScope;
-    public ErgoKnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
+    public LegacyKnowledgeBase KnowledgeBase = fixture.KnowledgeBase;
     public ErgoVM VM = fixture.VM;
 
     // "⊤" : "⊥"

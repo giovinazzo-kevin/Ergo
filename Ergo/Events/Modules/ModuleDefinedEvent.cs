@@ -1,8 +1,2 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Ergo.Events.Modules;
+﻿namespace Ergo.Events.Modules;
 public record ModuleDefinedEvent() : ErgoEvent;

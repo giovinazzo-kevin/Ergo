@@ -93,8 +93,8 @@ public readonly struct InterpreterScope
         VisibleOperators = GetOperators().ToImmutableArray();
     }
 
-    public ErgoKnowledgeBase BuildKnowledgeBase() {
-        var kb = new ErgoKnowledgeBase(this);
+    public LegacyKnowledgeBase BuildKnowledgeBase() {
+        var kb = new LegacyKnowledgeBase(this);
         foreach (var builtIn in VisibleBuiltIns.Values)
         {
             kb.AssertZ(new Clause(builtIn));

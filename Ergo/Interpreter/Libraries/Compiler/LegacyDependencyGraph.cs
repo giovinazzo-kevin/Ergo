@@ -16,13 +16,13 @@ public class LegacyDependencyGraphNode
 public class LegacyDependencyGraph
 {
     private readonly Dictionary<Signature, LegacyDependencyGraphNode> _nodes = [];
-    public readonly ErgoKnowledgeBase KnowledgeBase;
+    public readonly LegacyKnowledgeBase KnowledgeBase;
     /// <summary>
     /// An instance of the Unify built-in that's scoped to this graph, enabling memoization.
     /// </summary>
     public readonly Unify UnifyInstance = new();
 
-    public LegacyDependencyGraph(ErgoKnowledgeBase knowledgeBase)
+    public LegacyDependencyGraph(LegacyKnowledgeBase knowledgeBase)
     {
         KnowledgeBase = knowledgeBase;
     }
@@ -110,14 +110,14 @@ public class LegacyDependencyGraph
         return node;
     }
 
-    public static IEnumerable<Signature> ExtractCalledSignatures(Clause pred, ErgoKnowledgeBase kb)
+    public static IEnumerable<Signature> ExtractCalledSignatures(Clause pred, LegacyKnowledgeBase kb)
     {
         var scope = kb.Scope.WithCurrentModule(pred.DeclaringModule);
         return Clause.GetGoals(pred)
             .SelectMany(c => ExtractCalledSignatures(c, scope, kb));
     }
 
-    public static IEnumerable<Signature> ExtractCalledSignatures(ITerm item, InterpreterScope scope, ErgoKnowledgeBase kb)
+    public static IEnumerable<Signature> ExtractCalledSignatures(ITerm item, InterpreterScope scope, LegacyKnowledgeBase kb)
     {
         var signature = item.GetSignature();
         if (signature.Module.TryGetValue(out _))

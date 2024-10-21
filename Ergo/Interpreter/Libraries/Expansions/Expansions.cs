@@ -3,7 +3,6 @@ using Ergo.Events.Interpreter;
 using Ergo.Events.Runtime;
 using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Modules.Directives;
-using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Modules.Libraries.Expansions;
 

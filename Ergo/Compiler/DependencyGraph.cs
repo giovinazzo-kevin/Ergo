@@ -1,21 +1,78 @@
 ﻿using Ergo.Modules;
 using Ergo.Runtime.BuiltIns;
-using Ergo.Shell.Commands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ergo.Compiler;
-public class ErgoDependencyGraph
+
+public abstract record ArgDefinition;
+public sealed record ConstArgDefinition(Atom Value) : ArgDefinition;
+public sealed record VariableArgDefinition(int VariableIndex) : ArgDefinition;
+public sealed record ComplexArgDefinition(Atom Functor, ArgDefinition[] Args) : ArgDefinition;
+
+public abstract record GoalDefinition;
+public record StaticGoalDefinition(Signature Signature, ArgDefinition[] Args) : GoalDefinition
 {
-    public record ClauseDefinition(ITerm Head, NTuple Body, Atom DeclaringModule, Maybe<Atom> DeclaredModule, bool IsFactual, bool IsTailRecursive, bool IsExported, bool IsDynamic);
-    public record PredicateDefinition(HashSet<PredicateDefinition> Dependencies, List<ClauseDefinition> Clauses, Maybe<ErgoBuiltIn> BuiltIn);
+    public PredicateDefinition Callee { get; internal set; }
+}
+
+public record RuntimeGoalDefinition(ArgDefinition Goal) : GoalDefinition;
+
+public record ClauseDefinition(
+    Atom DeclaringModule,
+    Maybe<Atom> DeclaredModule,
+    Atom Functor,
+    int Arity,
+    ArgDefinition[] Args,
+    GoalDefinition[] Goals,
+    bool IsGround, 
+    bool IsFactual, 
+    bool IsTailRecursive, 
+    Dictionary<Signature, PredicateDefinition> Dependencies
+)
+{
+    public bool IsCyclical { get; internal set; }
+    public int DependencyDepth { get; internal set; }
+}
+public record PredicateDefinition(
+    Atom Module,
+    Atom Functor,
+    Maybe<int> Arity,
+    Maybe<ErgoBuiltIn> BuiltIn,
+    List<ClauseDefinition> Clauses,
+    bool IsExported,
+    bool IsDynamic
+);
+
+public record class ErgoDependencyGraph(ErgoModuleTree ModuleTree)
+{
+    protected static readonly ClauseDefinition TRUE = new(
+        DeclaringModule: WellKnown.Modules.Stdlib,
+        DeclaredModule: default,
+        Functor: WellKnown.Literals.True,
+        Arity: 0,
+        Args: [],
+        Goals: [],
+        IsGround: true,
+        IsFactual: true,
+        IsTailRecursive: false,
+        Dependencies: []
+    );
+
+    protected static readonly ClauseDefinition FALSE = new(
+        DeclaringModule: WellKnown.Modules.Stdlib,
+        DeclaredModule: default,
+        Functor: WellKnown.Literals.False,
+        Arity: 0,
+        Args: [],
+        Goals: [],
+        IsGround: true,
+        IsFactual: true,
+        IsTailRecursive: false,
+        Dependencies: []
+    );
+
     public readonly Dictionary<Signature, PredicateDefinition> Predicates = new()
     {
-        { WellKnown.Literals.True.GetSignature(), new([], [], default) },
-        { WellKnown.Literals.False.GetSignature(), new([], [], default) }
+        { WellKnown.Signatures.True, new(WellKnown.Modules.Stdlib, WellKnown.Literals.True, 0, default, [TRUE], IsExported: true, IsDynamic: false) },
+        { WellKnown.Signatures.False, new(WellKnown.Modules.Stdlib, WellKnown.Literals.False, 0, default, [FALSE], IsExported: true, IsDynamic: false) },
     };
 }

@@ -18,7 +18,7 @@ public readonly struct Clause : IExplainable
     public readonly bool IsBuiltIn;
     public readonly bool IsVariadic;
     public readonly Maybe<ErgoBuiltIn> BuiltIn;
-    public readonly Maybe<ExecutionGraph> ExecutionGraph;
+    public readonly Maybe<LegacyExecutionGraph> ExecutionGraph;
     //public readonly bool IsDeterminate;
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
 
@@ -164,13 +164,13 @@ public readonly struct Clause : IExplainable
     }
 
     public static Clause Fact(Atom module, ITerm head, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.True, TrueNode.Instance));
+        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new LegacyExecutionGraph(WellKnown.Literals.True, TrueNode.Instance));
     public static Clause Falsehood(Atom module, ITerm head, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.False, FalseNode.Instance));
+        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new LegacyExecutionGraph(WellKnown.Literals.False, FalseNode.Instance));
     public static Clause FromOp(Atom module, ITerm head, Op op, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new ExecutionGraph(WellKnown.Literals.True, new VirtualNode(op, head.GetArguments())));
+        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new LegacyExecutionGraph(WellKnown.Literals.True, new VirtualNode(op, head.GetArguments())));
 
-    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<ExecutionGraph> graph)
+    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<LegacyExecutionGraph> graph)
     {
         Documentation = desc;
         DeclaringModule = module;
@@ -186,7 +186,7 @@ public readonly struct Clause : IExplainable
         ExecutionGraph = graph;
     }
 
-    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, Maybe<ExecutionGraph> graph)
+    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, Maybe<LegacyExecutionGraph> graph)
         : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body), graph)
     {
     }
@@ -271,7 +271,7 @@ public readonly struct Clause : IExplainable
         return new(Documentation, DeclaringModule, Head.Substitute(s), (NTuple)Body
             .Substitute(s), IsDynamic, IsExported, IsTailRecursive, ExecutionGraph.Select(g => g.Substitute(s)));
     }
-    public Clause WithExecutionGraph(Maybe<ExecutionGraph> newGraph)
+    public Clause WithExecutionGraph(Maybe<LegacyExecutionGraph> newGraph)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();

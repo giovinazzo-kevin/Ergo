@@ -1,5 +1,4 @@
-﻿using Ergo.Facade;
-using Ergo.Lang.Ast.Terms.Interfaces;
+﻿using Ergo.Lang.Ast.Terms.Interfaces;
 using Ergo.Lang.Parser;
 using Ergo.Lang.Utils;
 

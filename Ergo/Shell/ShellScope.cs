@@ -10,9 +10,9 @@ public readonly struct ShellScope
     public readonly bool TraceEnabled;
     public readonly CompilerFlags CompilerFlags;
     public readonly InterpreterScope InterpreterScope;
-    public readonly ErgoKnowledgeBase KnowledgeBase;
+    public readonly LegacyKnowledgeBase KnowledgeBase;
 
-    public ShellScope(InterpreterScope i, bool trace, ErgoKnowledgeBase kb, CompilerFlags compilerFlags)
+    public ShellScope(InterpreterScope i, bool trace, LegacyKnowledgeBase kb, CompilerFlags compilerFlags)
     {
         InterpreterScope = i;
         TraceEnabled = trace;
@@ -22,7 +22,7 @@ public readonly struct ShellScope
 
     public ShellScope WithInterpreterScope(InterpreterScope newScope) => new(newScope, TraceEnabled, KnowledgeBase, CompilerFlags);
     public ShellScope WithTrace(bool x) => new(InterpreterScope, x, KnowledgeBase, CompilerFlags);
-    public ShellScope WithKnowledgeBase(ErgoKnowledgeBase kb) => new(InterpreterScope, TraceEnabled, kb, CompilerFlags);
+    public ShellScope WithKnowledgeBase(LegacyKnowledgeBase kb) => new(InterpreterScope, TraceEnabled, kb, CompilerFlags);
     public ShellScope WithCompilerFlags(CompilerFlags flags) => new(InterpreterScope, TraceEnabled, KnowledgeBase, flags);
 
     public void Throw(string message) => InterpreterScope.ExceptionHandler.Throw(new ShellException(message));

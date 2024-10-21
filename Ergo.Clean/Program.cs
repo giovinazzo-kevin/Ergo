@@ -1,20 +1,17 @@
 ﻿using Ergo.DependencyInjection;
-using Ergo.Pipelines.LoadModule;
 using Ergo.Lang.Ast;
-using Microsoft.Extensions.DependencyInjection;
 using Ergo.Pipelines;
-using Ergo.Modules;
-using Ergo.Compiler;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ergo;
 
 public static class Program
 {
-    class TestConsumer(IErgoEnv env, IBuildDependencyGraphPipeline loadModule)
+    class TestConsumer(IErgoEnv env, IBuildExecutionGraphPipeline pipeline)
     {
         public void Do()
         {
-            var stdlib = loadModule.Run(WellKnown.Modules.Stdlib, env);
+            var stdlib = pipeline.Run(WellKnown.Modules.Stdlib, env);
             if (stdlib.TryGetB(out var error))
             {
                 Console.WriteLine(error.Step.ToString());

@@ -25,10 +25,10 @@ public sealed class Unify : ErgoBuiltIn
             // By now most evaluations on constants have reduced down to the form:
             // unify(__Kx, c)
             // When we find this pattern, we can remove the unification and replace __Kx with c wherever it occurs.
-            var constantUnifications = nodes.Where(x => x is BuiltInNode b && b.BuiltIn is Unify && IsConstUnif(b.Goal.GetArguments()))
-                .ToDictionary(x => (Variable)((BuiltInNode)x).Goal.GetArguments()[0]);
+            var constantUnifications = nodes.Where(x => x is OldBuiltInNode b && b.BuiltIn is Unify && IsConstUnif(b.Goal.GetArguments()))
+                .ToDictionary(x => (Variable)((OldBuiltInNode)x).Goal.GetArguments()[0]);
             var subs = constantUnifications
-                .Select(kv => new Substitution(kv.Key, ((BuiltInNode)kv.Value).Goal.GetArguments()[1]))
+                .Select(kv => new Substitution(kv.Key, ((OldBuiltInNode)kv.Value).Goal.GetArguments()[1]))
                 .ToList();
             for (int i = nodes.Count - 1; i >= 0; i--)
             {
@@ -52,8 +52,8 @@ public sealed class Unify : ErgoBuiltIn
                 .SelectMany(x => x.Goal.Variables)
                 .ToLookup(v => v.Name)
                 .ToDictionary(l => l.Key, l => l.Count());
-            var deadUnifications = nodes.Where(x => x is BuiltInNode b && b.BuiltIn is Unify && IsDeadUnif(b.Goal.GetArguments()))
-                .ToDictionary(x => (Variable)((BuiltInNode)x).Goal.GetArguments()[0]);
+            var deadUnifications = nodes.Where(x => x is OldBuiltInNode b && b.BuiltIn is Unify && IsDeadUnif(b.Goal.GetArguments()))
+                .ToDictionary(x => (Variable)((OldBuiltInNode)x).Goal.GetArguments()[0]);
             for (int i = nodes.Count - 1; i >= 0; i--)
             {
                 var current = nodes[i];
@@ -68,7 +68,7 @@ public sealed class Unify : ErgoBuiltIn
     }
     // TODO: Maybe use a name that can't be typed by the user.
     private static readonly Atom _u = new Atom("_u").AsQuoted(false);
-    public override ExecutionNode Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(OldBuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         // If two terms don't unify they don't unify, regardless of whether they're ground or not.
@@ -91,7 +91,7 @@ public sealed class Unify : ErgoBuiltIn
             // The resulting unification has most of the redundant structure factored out so that it executes faster at runtime.
             // This should be especially noticeable in cases where there's very large structures with deep nesting like dicts.
             // TODO: This might potentially break some abstract forms like EntityAsTerm in FieroEngine. Test this rigorously.
-            return new BuiltInNode(node.Node, MakeComplex(lhs, rhs), node.BuiltIn);
+            return new OldBuiltInNode(node.DependencyGraph, node.Definition, MakeComplex(lhs, rhs));
         }
         return TrueNode.Instance;
     }

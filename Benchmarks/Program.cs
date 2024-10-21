@@ -43,14 +43,14 @@ public sealed class ErgoBenchmarks
             return interpreter.CreateScope();
         });
     }
-    public static Measured<ErgoKnowledgeBase> MeasureKnowledgeBaseCreation(InterpreterScope scope)
+    public static Measured<LegacyKnowledgeBase> MeasureKnowledgeBaseCreation(InterpreterScope scope)
     {
         return Measured.Measure(() =>
         {
             return scope.BuildKnowledgeBase();
         });
     }
-    public static Measured<ErgoVM> MeasureSpinUpTime(ErgoFacade facade, ErgoKnowledgeBase kb)
+    public static Measured<ErgoVM> MeasureSpinUpTime(ErgoFacade facade, LegacyKnowledgeBase kb)
     {
         return Measured.Measure(() =>
         {

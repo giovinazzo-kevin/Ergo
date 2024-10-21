@@ -1,20 +1,13 @@
-﻿using Ergo.Pipelines.LoadModule;
-using Ergo.Lang;
-using Ergo.Lang.Ast;
-using Ergo.Modules.Directives;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Ergo.Compiler;
 using Ergo.Modules;
+using Ergo.Modules.Directives;
 
 namespace Ergo.Pipelines;
 
 public interface IErgoEnv
-    :
-        IBuildModuleTreePipeline.Env,
-        IBuildDependencyGraphPipeline.Env
+    : IBuildModuleTreePipeline.Env
+    , IBuildDependencyGraphPipeline.Env
+    , IBuildExecutionGraphPipeline.Env
     ;
 
 public class ErgoEnv : IErgoEnv
@@ -30,5 +23,6 @@ public class ErgoEnv : IErgoEnv
     public ErgoLexer.StreamState StreamState { get; set; }
     public Maybe<Atom> CurrentModule { get; set; }
     public Maybe<ErgoModuleTree> ModuleTree { get; set; }
+    public Maybe<ErgoDependencyGraph> DependencyGraph { get; set; }
     public int LoadOrder { get; set; }
 }

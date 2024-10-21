@@ -1,6 +1,4 @@
-﻿using static System.Formats.Asn1.AsnWriter;
-
-namespace Ergo.Modules.Directives;
+﻿namespace Ergo.Modules.Directives;
 
 public class DeclareOperator() : ErgoDirective("", new("op"), 3, 10)
 {

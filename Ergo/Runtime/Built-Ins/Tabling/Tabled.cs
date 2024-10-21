@@ -19,7 +19,7 @@ public sealed class Tabled : ErgoBuiltIn
         // If there are multiple calls to the same variant of a tabled predicate, they can be coalesced into one call.
         // This requires removing all redundant calls after the first, and replacing all referenced variables with variables from the pioneer.
         var tabledCalls = nodes
-            .OfType<BuiltInNode>()
+            .OfType<OldBuiltInNode>()
             .Where(x => x.BuiltIn is Tabled)
             .GroupBy(x => x.Goal.NumberVars())
             .Where(g => g.Count() > 1)

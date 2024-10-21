@@ -1,7 +1,5 @@
 ﻿using Ergo.Events;
 using Ergo.Events.Runtime;
-using Ergo.Modules.Directives;
-using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Modules.Libraries.Compiler;
 
@@ -83,7 +81,7 @@ public class Compiler(IServiceProvider sp) : ErgoLibrary(sp)
                 if (TryCompile(topLevel, qse.VM.KB.Scope.ExceptionHandler, qse.VM.KB.DependencyGraph, qse.Flags.HasFlag(CompilerFlags.EnableOptimizations)).TryGetValue(out var newClause))
                     qse.VM.KB.Replace(topLevel, newClause);
                 else
-                    qse.VM.KB.Replace(topLevel, topLevel.WithExecutionGraph(new ExecutionGraph(topLevel.Head, FalseNode.Instance)));
+                    qse.VM.KB.Replace(topLevel, topLevel.WithExecutionGraph(new LegacyExecutionGraph(topLevel.Head, FalseNode.Instance)));
             }
         }
 

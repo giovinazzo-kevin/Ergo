@@ -16,7 +16,7 @@ public class DeclareMetaPredicate() : ErgoDirective("", new ("meta_predicate"), 
         }
         var sig = args[0].GetSignature().WithModule(ctx.CurrentModule.Name);
         var pInfo = ctx.CurrentModule.GetMetaTableEntry(sig);
-        ctx.CurrentModule.MetaTable[sig] = pInfo with { Arguments = ImmutableArray.CreateRange(metaArgs) };
+        ctx.CurrentModule.SetMetaTableEntry(sig, pInfo with { Arguments = ImmutableArray.CreateRange(metaArgs) });
         return true;
     }
 }

@@ -1,12 +1,7 @@
-﻿
-using Ergo.Events.Interpreter;
-using Ergo.Events.Modules;
-using Ergo.Modules.Directives;
+﻿using Ergo.Modules.Directives;
 using Ergo.Modules.Libraries;
-using Ergo.Modules.Libraries._Stdlib;
 using Ergo.Runtime.BuiltIns;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data;
 namespace Ergo.Modules;
 
 public sealed class ErgoModuleTree(IServiceProvider serviceProvider)
@@ -35,7 +30,7 @@ public sealed class ErgoModuleTree(IServiceProvider serviceProvider)
         get => Maybe.FromTryGet(() => (_modules.TryGetValue(key, out var val), val));
     }
 
-    public ErgoModule Define(Atom moduleName)
+    public ErgoModule Declare(Atom moduleName)
     {
         if (_modules.ContainsKey(moduleName))
             throw new InterpreterException(ErgoInterpreter.ErrorType.ModuleRedefinition, default);

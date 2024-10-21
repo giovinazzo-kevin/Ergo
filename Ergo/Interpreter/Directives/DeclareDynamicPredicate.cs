@@ -7,7 +7,7 @@ public class DeclareDynamicPredicate() : ErgoDirective("", new("dynamic"), 1, 30
         if (!Signature.FromCanonical(args[0], out var sig))
             sig = args[0].GetSignature();
         var pInfo = ctx.CurrentModule.GetMetaTableEntry(sig);
-        ctx.CurrentModule.MetaTable[sig] = pInfo with { IsDynamic = true };
+        ctx.CurrentModule.SetMetaTableEntry(sig, pInfo with { IsDynamic = true });
         return true;
     }
 }

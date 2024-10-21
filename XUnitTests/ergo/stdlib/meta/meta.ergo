@@ -12,10 +12,10 @@ ignore(Goal) :- Goal, !.
 ignore(_).
 ignore_all(Goal) :- findall(_, Goal, _), !.
 
+for(I, From, To) :- for(I, From, To, 1).
 once(Goal) :- call(Goal) -> () ; ().
 repeat(Times, Goal) :- for(_, 0, Times), once(Goal).
 forever(Goal) :- once(Goal) ; forever(Goal).
 
 forall(Cond, Action) :- \+(Cond, \+Action).
 
-for(I, From, To) :- for(I, From, To, 1).

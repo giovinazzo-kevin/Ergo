@@ -22,7 +22,7 @@ public partial class ErgoVM
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     #endregion
     public readonly DecimalType DecimalType;
-    public readonly ErgoKnowledgeBase KB;
+    public readonly LegacyKnowledgeBase KB;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
@@ -48,7 +48,7 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
-    public ErgoVM(ErgoKnowledgeBase kb)
+    public ErgoVM(LegacyKnowledgeBase kb)
     {
         args = new ITerm[MAX_ARGUMENTS];
         KB = kb;

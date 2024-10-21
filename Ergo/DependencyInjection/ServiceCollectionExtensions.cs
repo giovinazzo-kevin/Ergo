@@ -1,13 +1,9 @@
-﻿using Ergo.Pipelines.LoadModule;
-using Ergo.Lang.Extensions;
+﻿using Ergo.Lang.Parser;
 using Ergo.Modules.Libraries;
 using Ergo.Modules.Libraries._Stdlib;
+using Ergo.Pipelines;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Ergo.Pipelines;
-using Ergo.Facade;
-using Ergo.Lang.Parser;
 
 namespace Ergo.DependencyInjection;
 public static class ServiceCollectionExtensions
@@ -90,5 +86,20 @@ public static class ServiceCollectionExtensions
                 .AddStep(sp.GetRequiredService<IBuildModuleTreePipeline>())
                 .AddStep(sp.GetRequiredService<IBuildDependencyGraphStep>())
                 .Cast<IBuildDependencyGraphPipeline>())
+            // -- ICompileGoalPipeline --
+            .AddSingleton<ICompileClauseStep, CompileClauseStep>()
+            .AddSingleton<ICompilePredicateStep, CompilePredicateStep>()
+            .AddSingleton<ICompileGoalStep, CompileGoalStep>()
+            .AddErgoPipeline((sp, builder) => builder
+                .FixEnvironment<ICompilePredicatePipeline.Env>()
+                .AddStep(sp.GetRequiredService<ICompilePredicateStep>())
+                .Cast<ICompilePredicatePipeline>())
+            // -- IBuildExecutionGraphPipeline --
+            .AddSingleton<IBuildExecutionGraphStep, BuildExecutionGraphStep>()
+            .AddErgoPipeline((sp, builder) => builder
+                .FixEnvironment<IBuildExecutionGraphPipeline.Env>()
+                .AddStep(sp.GetRequiredService<IBuildDependencyGraphPipeline>())
+                .AddStep(sp.GetRequiredService<IBuildExecutionGraphStep>())
+                .Cast<IBuildExecutionGraphPipeline>())
         ;
 }

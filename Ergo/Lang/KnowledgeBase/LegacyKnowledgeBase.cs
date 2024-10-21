@@ -5,20 +5,20 @@ using System.Diagnostics;
 
 namespace Ergo.Lang;
 
-public partial class ErgoKnowledgeBase : IReadOnlyCollection<Clause>
+public partial class LegacyKnowledgeBase : IReadOnlyCollection<Clause>
 {
     protected readonly OrderedDictionary Predicates = [];
 
     public readonly InterpreterScope Scope;
     public readonly LegacyDependencyGraph DependencyGraph;
 
-    public ErgoKnowledgeBase(InterpreterScope scope)
+    public LegacyKnowledgeBase(InterpreterScope scope)
     {
         Scope = scope;
         DependencyGraph = new(this);
     }
 
-    private ErgoKnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, LegacyDependencyGraph dependencyGraph)
+    private LegacyKnowledgeBase(InterpreterScope scope, OrderedDictionary predicates, LegacyDependencyGraph dependencyGraph)
     {
         Scope = scope;
         Predicates = predicates;
@@ -49,7 +49,7 @@ public partial class ErgoKnowledgeBase : IReadOnlyCollection<Clause>
         }
     }
 
-    public ErgoKnowledgeBase Clone()
+    public LegacyKnowledgeBase Clone()
     {
         var inner = new OrderedDictionary();
         foreach (DictionaryEntry kv in Predicates)

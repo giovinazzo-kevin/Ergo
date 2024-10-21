@@ -11,7 +11,7 @@ public sealed class Eval : MathBuiltIn
 
     public override bool IsDeterminate(ImmutableArray<ITerm> args) => true;
     public override int OptimizationOrder => base.OptimizationOrder + 20;
-    public override ExecutionNode Optimize(BuiltInNode node)
+    public override ExecutionNode Optimize(OldBuiltInNode node)
     {
         var args = node.Goal.GetArguments();
         if (!args[1].IsGround)
@@ -24,9 +24,9 @@ public sealed class Eval : MathBuiltIn
                 if (args[0].Equals(new Atom(ret)))
                     return TrueNode.Instance;
             }
-            else if (node.Node.Graph.GetNode(WellKnown.Signatures.Unify).TryGetValue(out var unifyNode))
+            else if (node.DependencyGraph.Predicates.TryGetValue(WellKnown.Signatures.Unify, out var unifyNode))
             {
-                return new BuiltInNode(unifyNode, Unify.MakeComplex(args[0], new Atom(ret)), node.Node.Graph.UnifyInstance);
+                return new OldBuiltInNode(node.DependencyGraph, unifyNode, Unify.MakeComplex(args[0], new Atom(ret)));
             }
             return FalseNode.Instance;
         }

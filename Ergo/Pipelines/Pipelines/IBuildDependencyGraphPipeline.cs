@@ -1,6 +1,6 @@
 ﻿using Ergo.Compiler;
 
-namespace Ergo.Pipelines.LoadModule;
+namespace Ergo.Pipelines;
 
 public interface IBuildDependencyGraphPipeline : IErgoPipeline<Atom, ErgoDependencyGraph, IBuildDependencyGraphPipeline.Env>
 {

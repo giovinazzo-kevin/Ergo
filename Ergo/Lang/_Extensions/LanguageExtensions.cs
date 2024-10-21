@@ -136,9 +136,11 @@ public static class LanguageExtensions
             .ToArray());
     }
 
-    public static ITerm NumberVars(this ITerm term)
+    public static ITerm NumberVars(this ITerm term) => NumberVars(term, out _);
+    public static ITerm NumberVars(this ITerm term, out Dictionary<string, Variable> vars)
     {
-        return term.Instantiate(new("$VAR"), []);
+        vars = new Dictionary<string, Variable>();
+        return term.Instantiate(new("$VAR"), vars);
     }
 
     public static string ToCSharpCase(this string s)

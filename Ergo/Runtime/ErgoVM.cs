@@ -1,4 +1,5 @@
-﻿using Ergo.Events.Runtime;
+﻿using Ergo.Compiler;
+using Ergo.Events.Runtime;
 using System.Diagnostics;
 using System.IO;
 using static Ergo.Runtime.Solutions;
@@ -22,7 +23,6 @@ public partial class ErgoVM
     public readonly record struct ChoicePoint(Op Continue, SubstitutionMap Environment);
     #endregion
     public readonly DecimalType DecimalType;
-    public readonly LegacyKnowledgeBase KB;
     public readonly InstantiationContext InstantiationContext = new("VM");
     #region Internal VM State
     protected Stack<ChoicePoint> choicePoints = new();
@@ -39,7 +39,7 @@ public partial class ErgoVM
     /// <summary>
     /// Acts as a register for the current goal's arguments.
     /// </summary>
-    protected ITerm[] args;
+    protected MemoryAddress[] args;
     /// <summary>
     /// Register for the number of arguments for the current call. Needed by variadics.
     /// </summary>
@@ -48,11 +48,10 @@ public partial class ErgoVM
     /// Register for the current continuation.
     /// </summary>
     internal Op @continue;
-    public ErgoVM(LegacyKnowledgeBase kb)
+    public ErgoVM()
     {
-        args = new ITerm[MAX_ARGUMENTS];
-        KB = kb;
-        DecimalType = kb.Scope.Facade.DecimalType;
+        args = new MemoryAddress[MAX_ARGUMENTS];
+        DecimalType = DecimalType.CliDecimal;
         In = Console.In;
         Out = Console.Out;
         Err = Console.Error;
@@ -88,6 +87,7 @@ public partial class ErgoVM
     /// </summary>
     public VMState State { get; internal set; } = VMState.Ready;
     public VMMode Mode { get; private set; } = VMMode.Batch;
+    public ErgoMemory Memory { get; private set; } = new();
     /// <summary>
     /// The active set of substitutions containing the state for the current execution branch.
     /// </summary>
@@ -113,7 +113,8 @@ public partial class ErgoVM
     /// <summary>
     /// Creates a new ErgoVM instance that shares the same knowledge base as the current one.
     /// </summary>
-    public ErgoVM ScopedInstance() => new(KB)
+    [Obsolete]
+    public ErgoVM ScopedInstance() => new()
     { In = In, Err = Err, Out = Out, /*args = [.. args], Arity = Arity*/ };
     /// <summary>
     /// Executes <see cref="Query"/> and backtracks until all solutions are computed. See also <see cref="Solutions"/> and <see cref="RunInteractive"/>.
@@ -152,10 +153,13 @@ public partial class ErgoVM
     #endregion
     #region Goal API
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SetArg(int index, ITerm value) => args[index] = value;
+    public void SetArg(int index, MemoryAddress value) => args[index] = value;
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ITerm Arg(int index) => args[index];
-    public ReadOnlySpan<ITerm> Args => args.AsSpan()[..Arity];
+    public MemoryAddress Arg(int index) => args[index];
+    public ReadOnlySpan<MemoryAddress> Args => args.AsSpan()[..Arity];
+    [Obsolete]
+    public ITerm[] MaterializedArgs => args.Select(Memory.Materialize).ToArray();
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Flag(VMFlags flag) => flags.HasFlag(flag);
@@ -172,7 +176,7 @@ public partial class ErgoVM
     {
         LogState();
         State = VMState.Fail;
-        KB.Scope.ExceptionHandler.Throw(new RuntimeException(error, args));
+        throw new RuntimeException(error, args);
         choicePoints.Clear();
     }
     /// <summary>
@@ -343,48 +347,42 @@ public partial class ErgoVM
         Debug.WriteLine($"vm{Id:000}:: {state}".Indent(NumChoicePoints, tabWidth: 1));
     }
 
-    public Op ParseAndCompileQuery(string query, CompilerFlags flags = CompilerFlags.Default)
-    {
-        if (KB.Scope.Parse<Query>(query).TryGetValue(out var q))
-            return CompileQuery(q, flags);
-        return Ops.Fail;
-    }
-
     public Op CompileQuery(Query query, CompilerFlags flags = CompilerFlags.Default)
     {
-        LogState();
-        var exps = GetQueryExpansions(query, flags);
-        var ops = new Op[exps.Length];
-        for (int i = 0; i < exps.Length; i++)
-        {
-            var subs = exps[i].Substitutions; subs.Invert();
-            var newPred = exps[i].Predicate.Substitute(subs);
-            ops[i] = newPred.ExecutionGraph.TryGetValue(out var graph)
-                ? graph.Compile()
-                : Ops.NoOp;
-        }
-        var branch = Ops.Or(ops);
-        return vm =>
-        {
-            foreach (var var in query.Goals.Variables)
-                vm.refCounts.Count(var);
-            branch(vm);
-        };
+        return null;
+        //LogState();
+        //var exps = GetQueryExpansions(query, flags);
+        //var ops = new Op[exps.Length];
+        //for (int i = 0; i < exps.Length; i++)
+        //{
+        //    var subs = exps[i].Substitutions; subs.Invert();
+        //    var newPred = exps[i].Predicate.Substitute(subs);
+        //    ops[i] = newPred.ExecutionGraph.TryGetValue(out var graph)
+        //        ? graph.Compile()
+        //        : Ops.NoOp;
+        //}
+        //var branch = Ops.Or(ops);
+        //return vm =>
+        //{
+        //    foreach (var var in query.Goals.Variables)
+        //        vm.refCounts.Count(var);
+        //    branch(vm);
+        //};
     }
 
-    KBMatch[] GetQueryExpansions(Query query, CompilerFlags flags)
-    {
-        var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
-        var topLevel = new Clause(string.Empty, KB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
-        KB.AssertA(topLevel);
-        // Let libraries know that a query is being submitted, so they can expand or modify it.
-        KB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
-        var queryExpansions = KB
-            .GetMatches(InstantiationContext, topLevelHead, desugar: false)
-            .AsEnumerable()
-            .SelectMany(x => x)
-            .ToArray();
-        KB.RetractAll(topLevelHead);
-        return queryExpansions;
-    }
+    //KBMatch[] GetQueryExpansions(Query query, CompilerFlags flags)
+    //{
+    //    var topLevelHead = new Complex(WellKnown.Literals.TopLevel, query.Goals.Contents.SelectMany(g => g.Variables).Distinct().Cast<ITerm>().ToArray());
+    //    var topLevel = new Clause(string.Empty, KB.Scope.Entry, topLevelHead, query.Goals, dynamic: true, exported: false, tailRecursive: false, graph: default);
+    //    KB.AssertA(topLevel);
+    //    // Let libraries know that a query is being submitted, so they can expand or modify it.
+    //    KB.Scope.ForwardEventToLibraries(new QuerySubmittedEvent(this, query, flags));
+    //    var queryExpansions = KB
+    //        .GetMatches(InstantiationContext, topLevelHead, desugar: false)
+    //        .AsEnumerable()
+    //        .SelectMany(x => x)
+    //        .ToArray();
+    //    KB.RetractAll(topLevelHead);
+    //    return queryExpansions;
+    //}
 }

@@ -17,14 +17,9 @@ public readonly partial struct Expr
         Term = term;
     }
 
-    public Expr(Complex fromComplex, Maybe<InterpreterScope> maybeScope = default)
+    public Expr(Complex fromComplex)
     {
         var ops = WellKnown.Operators.DeclaredOperators.AsEnumerable();
-        if (maybeScope.TryGetValue(out var scope))
-        {
-            ops = ops.Concat(scope.VisibleOperators)
-                .Distinct();
-        }
         Operator = ops.Single(op => op.Synonyms.Contains(fromComplex.Functor) &&
             (op.Fixity == Fixity.Infix && fromComplex.Arguments.Length == 2
             || op.Fixity != Fixity.Infix && fromComplex.Arguments.Length == 1));

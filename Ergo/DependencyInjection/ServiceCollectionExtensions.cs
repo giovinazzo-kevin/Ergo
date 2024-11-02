@@ -86,15 +86,9 @@ public static class ServiceCollectionExtensions
                 .AddStep(sp.GetRequiredService<IBuildModuleTreePipeline>())
                 .AddStep(sp.GetRequiredService<IBuildDependencyGraphStep>())
                 .Cast<IBuildDependencyGraphPipeline>())
-            // -- ICompileGoalPipeline --
-            .AddSingleton<ICompileClauseStep, CompileClauseStep>()
-            .AddSingleton<ICompilePredicateStep, CompilePredicateStep>()
-            .AddSingleton<ICompileGoalStep, CompileGoalStep>()
-            .AddErgoPipeline((sp, builder) => builder
-                .FixEnvironment<ICompilePredicatePipeline.Env>()
-                .AddStep(sp.GetRequiredService<ICompilePredicateStep>())
-                .Cast<ICompilePredicatePipeline>())
             // -- IBuildExecutionGraphPipeline --
+            .AddSingleton<ICompileClauseStep, CompileClauseStep>()
+            .AddSingleton<ICompileGoalStep, CompileGoalStep>()
             .AddSingleton<IBuildExecutionGraphStep, BuildExecutionGraphStep>()
             .AddErgoPipeline((sp, builder) => builder
                 .FixEnvironment<IBuildExecutionGraphPipeline.Env>()

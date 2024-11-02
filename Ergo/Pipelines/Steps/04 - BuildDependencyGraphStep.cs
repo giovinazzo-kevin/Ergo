@@ -28,6 +28,7 @@ public class BuildDependencyGraphStep : IBuildDependencyGraphStep
                 IsExported: true,
                 IsDynamic: false
             );
+        var globalVarIndex = 1;
         var queue = new Queue<(PredicateDefinition Pred, ClauseDefinition Clause, GoalDefinition Goal)>();
         foreach (var module in moduleTree.Modules.Values.OrderBy(x => x.LoadOrder))
         {
@@ -68,7 +69,8 @@ public class BuildDependencyGraphStep : IBuildDependencyGraphStep
                     .Concat(clause.Body.Variables)
                     .Distinct()
                     .Select((v, i) => (v, i))
-                    .ToDictionary(x => x.v, x => x.i);
+                    .ToDictionary(x => x.v, x => globalVarIndex + x.i);
+                globalVarIndex += clauseVariables.Count;
                 var args = clause.Head.GetArguments()
                     .Select(a => MapArg(a, clauseVariables));
                 var goals = clause.Body.Contents
@@ -155,9 +157,9 @@ public class BuildDependencyGraphStep : IBuildDependencyGraphStep
         {
             return arg switch
             {
-                Atom a => new ConstArgDefinition(a),
+                Atom a => new ConstArgDefinition(a.Value),
                 Variable v => new VariableArgDefinition(clauseVars[v]),
-                Complex c => new ComplexArgDefinition(c.Functor, [.. c.Arguments.Select(arg => MapArg(arg, clauseVars))]),
+                Complex c => new ComplexArgDefinition(c.Functor.Value, [.. c.Arguments.Select(arg => MapArg(arg, clauseVars))]),
                 AbstractTerm b => MapArg(b.CanonicalForm, clauseVars),
                 _ => throw new NotSupportedException()
             };

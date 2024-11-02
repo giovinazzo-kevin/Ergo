@@ -17,8 +17,6 @@ public readonly struct Clause : IExplainable
     public readonly bool IsFactual;
     public readonly bool IsBuiltIn;
     public readonly bool IsVariadic;
-    public readonly Maybe<ErgoBuiltIn> BuiltIn;
-    public readonly Maybe<LegacyExecutionGraph> ExecutionGraph;
     //public readonly bool IsDeterminate;
     //public bool IsLastCallOptimizable => IsTailRecursive && IsDeterminate;
 
@@ -48,28 +46,6 @@ public readonly struct Clause : IExplainable
             }
         }
         return false;
-    }
-
-    public bool IsSameDeclarationAs(Clause other)
-    {
-        if (BuiltIn.TryGetValue(out var b1) && other.BuiltIn.TryGetValue(out var b2))
-            return b1 == b2;
-        if (other.DeclaringModule != DeclaringModule)
-            return false;
-        if (!other.Head.GetSignature().Equals(Head.GetSignature()))
-            return false;
-        return true;
-    }
-
-    public bool IsSameDefinitionAs(Clause other)
-    {
-        if (!IsSameDeclarationAs(other))
-            return false;
-        if (!Head.NumberVars().Equals(other.Head.NumberVars()))
-            return false;
-        if (!Body.NumberVars().Equals(other.Body.NumberVars()))
-            return false;
-        return true;
     }
 
     public static IEnumerable<ITerm> GetGoals(Clause p)
@@ -163,14 +139,7 @@ public readonly struct Clause : IExplainable
         }
     }
 
-    public static Clause Fact(Atom module, ITerm head, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new LegacyExecutionGraph(WellKnown.Literals.True, TrueNode.Instance));
-    public static Clause Falsehood(Atom module, ITerm head, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new LegacyExecutionGraph(WellKnown.Literals.False, FalseNode.Instance));
-    public static Clause FromOp(Atom module, ITerm head, Op op, bool dynamic = false, bool exported = false)
-        => new(string.Empty, module, head, NTuple.Empty, dynamic, exported, new LegacyExecutionGraph(WellKnown.Literals.True, new VirtualNode(op, head.GetArguments())));
-
-    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive, Maybe<LegacyExecutionGraph> graph)
+    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, bool tailRecursive)
     {
         Documentation = desc;
         DeclaringModule = module;
@@ -181,13 +150,11 @@ public readonly struct Clause : IExplainable
         IsTailRecursive = tailRecursive;
         IsFactual = Body.Contents.Length == 0 || Body.Contents.Length == 1 && Body.Contents.Single().Equals(WellKnown.Literals.True);
         IsBuiltIn = false;
-        BuiltIn = default;
         IsVariadic = false;
-        ExecutionGraph = graph;
     }
 
-    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported, Maybe<LegacyExecutionGraph> graph)
-        : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body), graph)
+    public Clause(string desc, Atom module, ITerm head, NTuple body, bool dynamic, bool exported)
+        : this(desc, module, head, body, dynamic, exported, GetIsTailRecursive(head, body))
     {
     }
 
@@ -207,7 +174,6 @@ public readonly struct Clause : IExplainable
         IsTailRecursive = false;
         IsFactual = arity == 0 && !IsVariadic;
         IsBuiltIn = true;
-        BuiltIn = builtIn;
     }
 
     public Clause Instantiate(InstantiationContext ctx, Dictionary<string, Variable> vars = null)
@@ -225,7 +191,6 @@ public readonly struct Clause : IExplainable
             , IsDynamic
             , IsExported
             , IsTailRecursive
-            , ExecutionGraph.Select(g => g.Instantiate(ctx, vars))
         );
     }
 
@@ -234,78 +199,64 @@ public readonly struct Clause : IExplainable
     /// </summary>
     public static Clause InlineHead(InstantiationContext ctx, Clause pred)
     {
-        if (pred.IsBuiltIn)
-            return pred;
-        var inst = pred.Instantiate(ctx);
-        if (inst.Head is not Complex cplx)
-            return inst;
-        var varArgs = cplx.Arguments
-            .Select(x => x is Variable ? x : ctx.GetFreeVariable())
-            .ToImmutableArray();
-        var any = false;
-        var preconditions = new List<ITerm>();
-        for (int i = 0; i < cplx.Arity; i++)
-        {
-            if (cplx.Arguments[i] is Variable)
-                continue;
-            any = true;
-            var unif = Unify.MakeComplex(varArgs[i], cplx.Arguments[i]);
-            preconditions.Add(unif);
-        }
-        if (!any)
-            return inst;
-        var newHead = cplx.WithArguments(varArgs);
-        if (pred.IsFactual)
-        {
-            return inst.WithHead(newHead).WithBody(new NTuple(preconditions));
-        }
-        var newBodyStart = new NTuple(preconditions);
-        var ifThenConstruct = WellKnown.Operators.If.ToComplex(newBodyStart, pred.Body);
-        return inst.WithHead(newHead).WithBody(new NTuple(new ITerm[] { ifThenConstruct }));
+        //if (pred.IsBuiltIn)
+        //    return pred;
+        //var inst = pred.Instantiate(ctx);
+        //if (inst.Head is not Complex cplx)
+        //    return inst;
+        //var varArgs = cplx.Arguments
+        //    .Select(x => x is Variable ? x : ctx.GetFreeVariable())
+        //    .ToImmutableArray();
+        //var any = false;
+        //var preconditions = new List<ITerm>();
+        //for (int i = 0; i < cplx.Arity; i++)
+        //{
+        //    if (cplx.Arguments[i] is Variable)
+        //        continue;
+        //    any = true;
+        //    var unif = Unify.MakeComplex(varArgs[i], cplx.Arguments[i]);
+        //    preconditions.Add(unif);
+        //}
+        //if (!any)
+        //    return inst;
+        //var newHead = cplx.WithArguments(varArgs);
+        //if (pred.IsFactual)
+        //{
+        //    return inst.WithHead(newHead).WithBody(new NTuple(preconditions));
+        //}
+        //var newBodyStart = new NTuple(preconditions);
+        //var ifThenConstruct = WellKnown.Operators.If.ToComplex(newBodyStart, pred.Body);
+        //return inst.WithHead(newHead).WithBody(new NTuple(new ITerm[] { ifThenConstruct }));
+        return default;
     }
 
-    public Clause Substitute(IEnumerable<Substitution> s)
-    {
-        if (IsBuiltIn)
-            return WithHead(Head.Substitute(s));
-        return new(Documentation, DeclaringModule, Head.Substitute(s), (NTuple)Body
-            .Substitute(s), IsDynamic, IsExported, IsTailRecursive, ExecutionGraph.Select(g => g.Substitute(s)));
-    }
-    public Clause WithExecutionGraph(Maybe<LegacyExecutionGraph> newGraph)
-    {
-        if (IsBuiltIn)
-            throw new NotSupportedException();
-        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, IsExported, IsTailRecursive, newGraph);
-    }
     public Clause WithHead(ITerm newHead)
     {
-        if (BuiltIn.TryGetValue(out var builtIn))
-            return new(builtIn, Maybe.Some(newHead));
-        return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
+        return new(Documentation, DeclaringModule, newHead, Body, IsDynamic, IsExported, IsTailRecursive);
     }
     public Clause WithBody(NTuple newBody)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
-        return new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
+        return new(Documentation, DeclaringModule, Head, newBody, IsDynamic, IsExported, IsTailRecursive);
     }
     public Clause WithModuleName(Atom module)
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
-        return new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive, ExecutionGraph);
+        return new(Documentation, module, Head, Body, IsDynamic, IsExported, IsTailRecursive);
     }
     public Clause Dynamic()
     {
         if (IsBuiltIn)
             throw new NotSupportedException();
-        return new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive, ExecutionGraph);
+        return new(Documentation, DeclaringModule, Head, Body, true, IsExported, IsTailRecursive);
     }
     public Clause Exported()
     {
         if (IsBuiltIn)
             return this;
-        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive, ExecutionGraph);
+        return new(Documentation, DeclaringModule, Head, Body, IsDynamic, true, IsTailRecursive);
     }
     public Clause Qualified()
     {

@@ -12,35 +12,39 @@ public interface IBuildExecutionGraphStep : IErgoPipeline<ErgoDependencyGraph, E
     }
 }
 
-public class BuildExecutionGraphStep(ICompilePredicatePipeline compilePredicate, ICompileClauseStep compileClause) : IBuildExecutionGraphStep
+public class BuildExecutionGraphStep(ICompileClauseStep compileClause) : IBuildExecutionGraphStep
 {
-    internal class CompileEnv(ErgoDependencyGraph depGraph, ErgoExecutionGraph execGraph) : ICompilePredicatePipeline.Env
+    internal class CompileEnv(ErgoDependencyGraph depGraph, ErgoExecutionGraph execGraph) : ICompileClauseStep.Env
     {
         public InstantiationContext InstantiationContext { get; } = new("$");
         public ErgoDependencyGraph DependencyGraph { get; } = depGraph;
         public ErgoExecutionGraph ExecutionGraph { get; } = execGraph;
+        public ErgoMemory Memory { get; } = new();
+        public Dictionary<int, int> VarMap { get; } = [];
     }
 
     public Either<ErgoExecutionGraph, PipelineError> Run(ErgoDependencyGraph depGraph, IBuildExecutionGraphStep.Env env)
     {
         var execGraph = new ErgoExecutionGraph();
         var compileEnv = new CompileEnv(depGraph, execGraph);
-        // Compile clauses in order of max dependency depth.
-        // This ensures that all dependencies of a clause are
-        // available and compiled by the time they are needed.
-        var sortedClauses = depGraph.Predicates.Values
-            .SelectMany(x => x.Clauses
-                .Select(y => (Predicate: x, Clause: y))
-            .OrderBy(x => x.Clause.DependencyDepth));
-        var dict = new Dictionary<PredicateDefinition, List<ClauseNode>>();
-        foreach (var (pred, clause) in sortedClauses)
+        foreach (var (_, pred) in depGraph.Predicates)
         {
-            if (!dict.TryGetValue(pred, out var clauses))
-                clauses = dict[pred] = [];
+            var builtIn = pred.BuiltIn
+                .Select(some => {
+                    var headAddr = compileEnv.Memory.StoreHead(some);
+                    return new BuiltInNode(headAddr, some);
+                });
+            execGraph.Declare(pred, pred.Clauses.Count, builtIn);
+        }
+        var clauses = depGraph.Predicates.Values
+            .SelectMany(x => x.Clauses
+                .Select((y, i) => (Pred: x, Clause: y, i)));
+        foreach (var (pred, clause, i) in clauses)
+        {
             var compileResult = compileClause.Run(clause, compileEnv);
             if (compileResult.TryGetB(out var error))
                 return error;
-            clauses.Add(compileResult.GetAOrThrow());
+            execGraph[pred].Clauses[i] = compileResult.GetAOrThrow();
         }
         return execGraph;
     }

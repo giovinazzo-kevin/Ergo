@@ -1,16 +1,5 @@
 ﻿:- module(stdlib, []).
-:- use_module(csharp).
-:- use_module(compiler).
-:- use_module(prologue).
-:- use_module(meta).
-:- use_module(math).
-:- use_module(list).
-:- use_module(reflection).
-:- use_module(func).
-:- use_module(lambda).
-:- use_module(expansions).
-:- use_module(tabling).
-:- use_module(io).
-:- use_module(dict).
-:- use_module(set).
-:- use_module(string).
+
+test(1).
+test(2).
+test(3).

@@ -3,10 +3,23 @@ using Ergo.Runtime.BuiltIns;
 
 namespace Ergo.Compiler;
 
-public abstract record ArgDefinition;
-public sealed record ConstArgDefinition(Atom Value) : ArgDefinition;
-public sealed record VariableArgDefinition(int VariableIndex) : ArgDefinition;
-public sealed record ComplexArgDefinition(Atom Functor, ArgDefinition[] Args) : ArgDefinition;
+public abstract record ArgDefinition
+{
+    public abstract bool IsGround { get; }
+}
+public sealed record ConstArgDefinition(object Value) : ArgDefinition
+{
+    public override bool IsGround => true;
+}
+public sealed record VariableArgDefinition(int VariableIndex) : ArgDefinition
+{
+    public override bool IsGround => false;
+}
+public sealed record ComplexArgDefinition(object Functor, ArgDefinition[] Args) : ArgDefinition
+{
+    private readonly bool _isGround = Args.Any(x => x.IsGround);
+    public override bool IsGround => _isGround;
+}
 
 public abstract record GoalDefinition;
 public record StaticGoalDefinition(Signature Signature, ArgDefinition[] Args) : GoalDefinition

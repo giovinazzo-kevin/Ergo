@@ -9,6 +9,8 @@ public interface ICompileGoalStep : IErgoPipeline<GoalDefinition, CallNode, ICom
         InstantiationContext InstantiationContext { get; }
         ErgoDependencyGraph DependencyGraph { get; }
         ErgoExecutionGraph ExecutionGraph { get; }
+        ErgoMemory Memory { get; }
+        Dictionary<int, int> VarMap { get; }
     }
 }
 
@@ -16,21 +18,18 @@ public class CompileGoalStep : ICompileGoalStep
 {
     public Either<CallNode, PipelineError> Run(GoalDefinition def, ICompileGoalStep.Env env)
     {
-        //if (!env.ExecutionGraph.Predicates.TryGetValue(def.Signature, out var pred))
-        //    throw new InvalidOperationException();
-        //var nodes = new List<GoalNode>();
-        //if (pred.BuiltIn.TryGetValue(out var builtIn))
-        //    nodes.Add(new BuiltInNode(builtIn));
-        //foreach (var clause in pred.Clauses)
-        //{
-
-        //}
-        //if (nodes.Count == 0)
-        //    throw new InvalidOperationException();
-        //if (nodes.Count == 1)
-        //    return nodes.Single();
-        //return new SequenceNode([..nodes]);
-        return default;
+        switch (def)
+        {
+            case StaticGoalDefinition @static when env.ExecutionGraph.TryGet(@static.Callee, out var node):
+                var addr = @static.Args.Length == 0
+                    ? env.Memory.Store(new ConstArgDefinition(@static.Callee.Functor.Value))
+                    : env.Memory.Store(new ComplexArgDefinition(@static.Callee.Functor.Value, @static.Args));
+                return new StaticCallNode(addr, node);
+            case RuntimeGoalDefinition @runtime:
+                var goal = env.Memory.Store(runtime.Goal);
+                return new DynamicCallNode(goal);
+        }
+        throw new NotSupportedException();
     }
 }
 

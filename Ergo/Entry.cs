@@ -1,7 +1,7 @@
-﻿using Ergo.Facade;
+﻿//using Ergo.Facade;
 
-var facade = ErgoFacade.Standard;
-var shell = facade.BuildShell();
+//var facade = ErgoFacade.Standard;
+//var shell = facade.BuildShell();
 
-await foreach (var _ in shell.Repl())
-    ;
+//await foreach (var _ in shell.Repl())
+//    ;
